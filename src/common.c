@@ -11,6 +11,57 @@
 
 #include "common.h"
 
+static unsigned short fcrc_table_is_valid = 0;     // preset: CRC Table not initialized
+static unsigned short fcrc_table[256];       // CRC table - working copy
+
+// generate the table for POLY == 0x1012
+static uint16_t fcrc_table_init(uint16_t *pTbl )
+{
+    int ii, jj;
+    uint16_t ww;
+
+    for (ii = 0; ii < 256; ii++) {
+        ww = (uint16_t)(ii << 8);
+        for (jj = 0; jj< 8; jj++) {
+            if ( ww& 0x8000 ) {
+                ww = (ww<< 1) ^ 0x1021;
+            } else {
+                ww = (ww<< 1);
+            }
+        }
+        pTbl[ii] = ww;
+    }
+    return 1;
+}
+
+// table based CRC - this is the "direct table" mode
+uint16_t compute_crc16(uint8_t *data, int  len)
+{
+    int i;
+    uint16_t crc = 0;
+
+    if (fcrc_table_is_valid == 0)
+        fcrc_table_is_valid = fcrc_table_init(fcrc_table);
+
+    for (i = 0, crc = 0x1D0F; i < len; i++)
+        crc = (crc << 8) ^ fcrc_table[ ((crc >> 8) ^ data[i]) & 0xFF ];
+
+    return crc;
+}
+
+uint8_t compute_checksum(uint8_t *msg, int length)
+{
+    uint8_t checksum = 0;
+    int i, whole_checksum;
+
+    whole_checksum = 0;
+    for (i = 0; i < length; i++) {
+        whole_checksum += msg[i];
+        checksum = ~(0xff & whole_checksum) + 1;
+    }
+    return checksum;
+}
+
 void print(osdp_t *ctx, int log_level, const char *fmt, ...)
 {
     va_list args;

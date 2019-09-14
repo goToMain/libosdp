@@ -50,6 +50,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
         to_pd(ctx, i)->baud_rate = p->baud_rate;
         to_pd(ctx, i)->address = p->address;
         to_pd(ctx, i)->flags = p->init_flags;
+        to_pd(ctx, i)->seq_number = -1;
     }
 
     print(ctx, LOG_INFO, "cp setup complete");

@@ -11,10 +11,10 @@
 
 #include "common.h"
 
-static unsigned short fcrc_table_is_valid = 0;     // preset: CRC Table not initialized
-static unsigned short fcrc_table[256];       // CRC table - working copy
+static unsigned short fcrc_table_is_valid = 0;  /* preset: CRC Table not initialized */
+static unsigned short fcrc_table[256];          /* CRC table - working copy */
 
-// generate the table for POLY == 0x1012
+/* generate the table for POLY == 0x1012 */
 static uint16_t fcrc_table_init(uint16_t *pTbl )
 {
     int ii, jj;
@@ -34,7 +34,7 @@ static uint16_t fcrc_table_init(uint16_t *pTbl )
     return 1;
 }
 
-// table based CRC - this is the "direct table" mode
+/* table based CRC - this is the "direct table" mode */
 uint16_t compute_crc16(uint8_t *data, int  len)
 {
     int i;

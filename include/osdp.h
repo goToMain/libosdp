@@ -12,6 +12,13 @@
 
 typedef void * osdp_cp_t;
 
+enum osdp_card_formats_e {
+    OSDP_CARD_FMT_RAW_UNSPECIFIED,
+    OSDP_CARD_FMT_RAW_WIEGAND,
+    OSDP_CARD_FMT_ASCII,
+    OSDP_CARD_FMT_SENTINEL
+};
+
 typedef struct {
     int baud_rate;
     int address;

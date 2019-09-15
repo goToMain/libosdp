@@ -20,10 +20,10 @@
 #define set_flag(p, f)               ((p)->flags |= (f))
 #define clear_flag(p, f)             ((p)->flags &= ~(f))
 
-#define BYTE_0(x)                    (uint8_t)((x)&0xFF)
-#define BYTE_1(x)                    (uint8_t)(((x)>> 8)&0xFF)
-#define BYTE_2(x)                    (uint8_t)(((x)>>16)&0xFF)
-#define BYTE_3(x)                    (uint8_t)(((x)>>24)&0xFF)
+#define byte_0(x)                    (uint8_t)((x)&0xFF)
+#define byte_1(x)                    (uint8_t)(((x)>> 8)&0xFF)
+#define byte_2(x)                    (uint8_t)(((x)>>16)&0xFF)
+#define byte_3(x)                    (uint8_t)(((x)>>24)&0xFF)
 
 /* casting helpers */
 #define to_osdp(p)                   ((osdp_t *)p)
@@ -32,6 +32,206 @@
 #define to_current_pd(p)             (to_cp(p) ? to_cp(p)->current_pd : (p)->pd)
 
 #define set_current_pd(d, p)         (to_current_pd(d) = (p))
+#define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))
+
+/* OSDP reserved commands */
+#define CMD_POLL                     0x60
+#define CMD_ID                       0x61
+#define CMD_CAP                      0x62
+#define CMD_DIAG                     0x63
+#define CMD_LSTAT                    0x64
+#define CMD_ISTAT                    0x65
+#define CMD_OSTAT                    0x66
+#define CMD_RSTAT                    0x67
+#define CMD_OUT                      0x68
+#define CMD_LED                      0x69
+#define CMD_BUZ                      0x6A
+#define CMD_TEXT                     0x6B
+#define CMD_RMODE                    0x6C
+#define CMD_TDSET                    0x6D
+#define CMD_COMSET                   0x6E
+#define CMD_DATA                     0x6F
+#define CMD_XMIT                     0x70
+#define CMD_PROMPT                   0x71
+#define CMD_SPE                      0x72
+#define CMD_BIOREAD                  0x73
+#define CMD_BIOMATCH                 0x74
+#define CMD_KEYSET                   0x75
+#define CMD_CHLNG                    0x76
+#define CMD_SCRYPT                   0x77
+#define CMD_CONT                     0x79
+#define CMD_ABORT                    0x7A
+#define CMD_MAXREPLY                 0x7B
+#define CMD_MFG                      0x80
+#define CMD_SCDONE                   0xA0
+#define CMD_XWR                      0xA1
+
+/* OSDP reserved responses */
+#define REPLY_ACK                    0x40
+#define REPLY_NAK                    0x41
+#define REPLY_PDID                   0x45
+#define REPLY_PDCAP                  0x46
+#define REPLY_LSTATR                 0x48
+#define REPLY_ISTATR                 0x49
+#define REPLY_OSTATR                 0x4A
+#define REPLY_RSTATR                 0x4B
+#define REPLY_RAW                    0x50
+#define REPLY_FMT                    0x51
+#define REPLY_PRES                   0x52
+#define REPLY_KEYPPAD                0x53
+#define REPLY_COM                    0x54
+#define REPLY_SCREP                  0x55
+#define REPLY_SPER                   0x56
+#define REPLY_BIOREADR               0x57
+#define REPLY_BIOMATCHR              0x58
+#define REPLY_CCRYPT                 0x76
+#define REPLY_RMAC_I                 0x78
+#define REPLY_MFGREP                 0x90
+#define REPLY_BUSY                   0x79
+#define REPLY_XRD                    0xB1
+
+/* Global flags */
+#define FLAG_CP_MODE                 0x00000001 /* Set when initialized as CP */
+
+/* CP flags */
+#define CP_FLAG_INIT_DONE            0x00000001 /* set after data is malloc-ed and initialized */
+
+/* PD Flags */
+#define PD_FLAG_SC_CAPABLE           0x00000001 /* PD secure channel capable */
+#define PD_FLAG_TAMPER               0x00000002 /* local tamper status */
+#define PD_FLAG_POWER                0x00000004 /* local power status */
+#define PD_FLAG_R_TAMPER             0x00000008 /* remote tamper status */
+#define PD_FLAG_COMSET_INPROG        0x00000010 /* set when comset is enabled */
+
+/* CMD_OUT */
+enum cmd_output_control_code {
+    CMD_OP_NOP,
+    CMD_OP_POFF,
+    CMD_OP_PON,
+    CMD_OP_POFF_T,
+    CMD_OP_PON_T,
+    CMD_OP_TON,
+    CMD_OP_TOFF,
+};
+
+struct cmd_output {
+    uint8_t output_no;
+    uint8_t control_code;
+    uint16_t tmr_count;
+};
+
+/* CMD_LED */
+enum hmi_cmd_temp_ctrl_code_e {
+    TEMP_CC_TEMP_NOP,
+    TEMP_CC_TEMP_CANCEL,
+    TEMP_CC_TEMP_SET
+};
+
+enum hmi_cmd_perm_ctrl_code_e {
+    TEMP_CC_PERM_NOP,
+    TEMP_CC_PERM_SET
+};
+
+struct _led_params {
+    uint8_t control_code;
+    uint8_t on_time;
+    uint8_t off_time;
+    uint8_t on_color;
+    uint8_t off_color;
+    uint16_t timer;
+};
+
+struct cmd_led {
+    uint8_t reader;
+    uint8_t number;
+    struct _led_params temperory;
+    struct _led_params permanent;
+};
+
+/* CMD_BUZ */
+enum buzzer_tone_code_e {
+    TONE_NONE,
+    TONE_OFF,
+    TONE_DEFAULT,
+};
+
+struct cmd_buzzer {
+    uint8_t reader;
+    uint8_t tone_code;
+    uint8_t on_time;
+    uint8_t off_time;
+    uint8_t rep_count;
+};
+
+/* CMD_TEXT */
+enum text_command_e {
+    PERM_TEXT_NO_WRAP=1,
+    PERM_TEXT_WRAP,
+    TEMP_TEXT_NO_WRAP,
+    TEMP_TEXT_WRAP
+};
+
+struct cmd_text {
+    uint8_t reader;
+    uint8_t cmd;
+    uint8_t temp_time;
+    uint8_t offset_row;
+    uint8_t offset_col;
+    uint8_t length;
+    uint8_t data[32];
+};
+
+/* CMD_COMSET */
+struct cmd_comset {
+    uint8_t addr;
+    uint32_t baud;
+};
+
+/* got in response to OSDP_REPLY_PDCAP */
+struct pd_cap {
+    uint8_t compliance_level;
+    uint8_t num_items;
+};
+
+enum osdp_capabilities_e {
+    CAP_UNUSED,
+    CAP_CONTACT_STATUS_MONITORING,
+    CAP_OUTPUT_CONTROL,
+    CAP_CARD_DATA_FORMAT,
+    CAP_READER_LED_CONTROL,
+    CAP_READER_AUDIBLE_OUTPUT,
+    CAP_READER_TEXT_OUTPUT,
+    CAP_TIME_KEEPING,
+    CAP_CHECK_CHARACTER_SUPPORT,
+    CAP_COMMUNICATION_SECURITY,
+    CAP_RECEIVE_BUFFERSIZE,
+    CAP_LARGEST_COMBINED_MESSAGE_SIZE,
+    CAP_SMART_CARD_SUPPORT,
+    CAP_READERS,
+    CAP_BIOMETRICS,
+    CAP_SENTINEL
+};
+
+struct cmd {
+    int id;
+    void *arg;
+};
+
+union cmd_all {
+    struct cmd_led *led;
+    struct cmd_buzzer *buzzer;
+    struct cmd_text *text;
+    struct cmd_output *output;
+    struct cmd_comset *comset;
+};
+
+struct pd_id {
+    int version;
+    int model;
+    uint32_t vendor_code;
+    uint32_t serial_number;
+    uint32_t firmware_version;
+};
 
 typedef struct {
     int pd_id;
@@ -40,7 +240,8 @@ typedef struct {
     int baud_rate;
     int address;
     int seq_number;
-
+    struct pd_cap cap[CAP_SENTINEL];
+    struct pd_id id;
     int (*send_func)(uint8_t *buf, int len);
     int (*recv_func)(uint8_t *buf, int len);
 } pd_t;
@@ -51,6 +252,8 @@ typedef struct {
     int flags;
 
     pd_t *current_pd;
+    int (*keypress_handler)(int address, uint8_t key);
+    int (*cardread_handler)(int address, int format, uint8_t *data, int len);
 } cp_t;
 
 typedef struct {

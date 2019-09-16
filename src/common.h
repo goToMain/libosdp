@@ -31,7 +31,7 @@
 #define to_pd(p, i)                  ((to_osdp(p))->pd + i)
 #define to_current_pd(p)             (to_cp(p) ? to_cp(p)->current_pd : (p)->pd)
 
-#define set_current_pd(d, p)         (to_current_pd(d) = (p))
+#define set_current_pd(d, p)         (to_cp(d)->current_pd = (p))
 #define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))
 
 /* OSDP reserved commands */
@@ -279,5 +279,6 @@ enum log_levels_e {
 uint8_t compute_checksum(uint8_t *msg, int length);
 uint16_t compute_crc16(uint8_t *data, int  len);
 void print(osdp_t *ctx, int log_level, const char *fmt, ...);
+void hexdump(const char *head, const uint8_t *data, int len);
 
 #endif

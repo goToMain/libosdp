@@ -5,6 +5,7 @@
  *    Date: Sat Sep 14 23:00:44 IST 2019
  */
 
+#include <string.h>
 #include "cp-private.h"
 
 #define PKT_CONTROL_SQN 0x03
@@ -31,7 +32,7 @@ static int cp_get_seq_number(pd_t *p, int do_inc)
     return p->seq_number & PKT_CONTROL_SQN;
 }
 
-int cp_build_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t cmd, int clen)
+int cp_build_packet(osdp_t *ctx, uint8_t *cmd, int clen, uint8_t *buf, int blen)
 {
     int pkt_len, crc16;
     struct osdp_packet_header *pkt;
@@ -42,11 +43,11 @@ int cp_build_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t cmd, int clen)
     pkt->mark = 0xFF;
     pkt->som = 0x53;
     pkt->pd_address = p->address & 0xFF;  /* Use only the lower 8 bits */
-    pkt->control = get_seq_number(p, TRUE);
+    pkt->control = cp_get_seq_number(p, TRUE);
     pkt->control |= PKT_CONTROL_CRC;
-    pkt_len = sizeof(struct osdp_packet_header);
+    pkt_len = sizeof(struct osdp_packet_header) - 1; /* excluding mark byte */
 
-    p->seq_number += 1;
+    /* copy command data */
     memcpy(pkt->data, cmd, clen);
     pkt_len += clen;
 
@@ -55,12 +56,12 @@ int cp_build_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t cmd, int clen)
     pkt->len_msb = byte_1(pkt_len + 2);
 
     /* fill crc16 */
-    crc16 = compute_crc16(buf, pkt_len);
-    buf[pkt_len + 0] = byte_0(crc16);
-    buf[pkt_len + 1] = byte_1(crc16);
+    crc16 = compute_crc16(buf + 1, pkt_len); /* excluding mark byte */
+    buf[pkt_len + 1] = byte_0(crc16);
+    buf[pkt_len + 2] = byte_1(crc16);
     pkt_len += 2;
 
-    return pkt_len;
+    return pkt_len + 1; /* including mark byte */
 }
 
 int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen)
@@ -149,19 +150,21 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
     case CMD_DIAG:
         buf[len++] = 0x00;
         print(ctx, LOG_DEBUG, "cmd:0x%02x is not yet defined", cmd->id);
+        ret = 0;
         break;
     case CMD_OUT:
         if (cmd->arg == NULL)
-            return 0;
+            break;
         c = cmd->arg;
         buf[len++] = c->output->output_no;
         buf[len++] = c->output->control_code;
         buf[len++] = byte_0(c->output->tmr_count);
         buf[len++] = byte_1(c->output->tmr_count);
+        ret = 0;
         break;
     case CMD_LED:
         if (cmd->arg == NULL)
-            return 0;
+            break;
         c = cmd->arg;
         buf[len++] = c->led->reader;
         buf[len++] = c->led->number;
@@ -179,21 +182,23 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         buf[len++] = c->led->temperory.off_time;
         buf[len++] = c->led->temperory.on_color;
         buf[len++] = c->led->temperory.off_color;
+        ret = 0;
         break;
     case CMD_BUZ:
         if (cmd->arg == NULL)
-            return 0;
+            break;
         c = cmd->arg;
         buf[len++] = c->buzzer->reader;
         buf[len++] = c->buzzer->tone_code;
         buf[len++] = c->buzzer->on_time;
         buf[len++] = c->buzzer->off_time;
         buf[len++] = c->buzzer->rep_count;
+        ret = 0;
         break;
     case CMD_TEXT:
         if (cmd->arg == NULL)
-            return 0;
-        c->text = cmd->arg;
+            break;
+        c = cmd->arg;
         buf[len++] = c->text->reader;
         buf[len++] = c->text->cmd;
         buf[len++] = c->text->temp_time;
@@ -202,16 +207,18 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         buf[len++] = c->text->length;
         for (i=0; i<c->text->length; i++)
             buf[len++] = c->text->data[i];
+        ret = 0;
         break;
     case CMD_COMSET:
         if (cmd->arg == NULL)
-            return 0;
+            break;
         c = cmd->arg;
         buf[len++] = c->comset->addr;
         buf[len++] = byte_0(c->comset->baud);
         buf[len++] = byte_1(c->comset->baud);
         buf[len++] = byte_2(c->comset->baud);
         buf[len++] = byte_3(c->comset->baud);
+        ret = 0;
         break;
     case CMD_KEYSET:
     case CMD_CHLNG:
@@ -225,7 +232,7 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
     case CMD_MAXREPLY:
     case CMD_MFG:
         print(ctx, LOG_ERR, "command 0x%02x isn't supported", cmd->id);
-        return 0;
+        break;
     case CMD_SCDONE:
     case CMD_XWR:
     case CMD_SPE:
@@ -233,11 +240,13 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
     case CMD_RMODE:
     case CMD_XMIT:
         print(ctx, LOG_ERR, "command 0x%02x is obsolete", cmd->id);
-        return 0;
+        break;
     default:
         print(ctx, LOG_ERR, "command 0x%02x is unrecognized", cmd->id);
-        return 0;
+        break;
     }
+
+    return ret;
 }
 
 const char *get_nac_reason(int code)
@@ -384,7 +393,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
         key_len = buf[pos++];
         fmt = OSDP_CARD_FMT_ASCII;
         if (ctx->cp->cardread_handler) {
-            ctx->cp->cardread_handler(p->address, fmt, key_len, buf + pos);
+            ctx->cp->cardread_handler(p->address, fmt, buf + pos, key_len);
         }
         ret = 0;
         break;
@@ -405,12 +414,12 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
     case REPLY_SCREP:
     case REPLY_PRES:
     case REPLY_SPER:
-        osdp_log(ctx, LOG_ERR, "deprecated reply: 0x%02x", reply_id);
+        print(ctx, LOG_ERR, "deprecated reply: 0x%02x", reply_id);
         ret = 0;
         break;
     }
     if (ret == -1) {
-        osdp_log(ctx, LOG_DEBUG, "unexpected reply: 0x%02x", reply_id);
+        print(ctx, LOG_DEBUG, "unexpected reply: 0x%02x", reply_id);
     }
 
     return ret;

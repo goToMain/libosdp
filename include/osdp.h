@@ -28,7 +28,7 @@ typedef struct {
 } osdp_pd_info_t;
 
 /* --- CP ---- */
-osdp_cp_t *osdp_cp_init(int num_pd, osdp_pd_info_t *info);
+osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info);
 void osdp_cp_refresh(osdp_cp_t *ctx);
 void osdp_cp_teardown(osdp_cp_t *ctx);
 

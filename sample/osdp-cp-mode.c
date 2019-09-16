@@ -40,7 +40,7 @@ int main()
         },
     };
 
-    osdp_cp_t *ctx = osdp_cp_init(OSDP_PD_SENTINEL, &info[0]);
+    osdp_cp_t *ctx = osdp_cp_setup(OSDP_PD_SENTINEL, &info[0]);
 
     return 0;
 }

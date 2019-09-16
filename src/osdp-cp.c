@@ -54,7 +54,8 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
     }
 
     print(ctx, LOG_INFO, "cp setup complete");
-    return (osdp_cp_t)ctx;
+
+    return (osdp_cp_t *)ctx;
 }
 
 void osdp_cp_refresh(osdp_cp_t *ctx)

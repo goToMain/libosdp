@@ -25,9 +25,19 @@ set(LIB_OSDP osdp)
 list(APPEND LIB_OSDP_SRC
         "src/common.c"
         "src/cp-fsm.c"
+        "src/cp-phy.c"
         "src/osdp-cp.c"
 )
 ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})
+
+## tests
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+list(APPEND LIB_OSDP_TEST_SRC
+        "test/test.c"
+        "test/test-cp-phy.c"
+)
+add_executable(test ${LIB_OSDP_TEST_SRC})
+target_link_libraries(test osdp)
 
 ## Install
 set(CMAKE_INSTALL_DIR $ENV{INSTALL_PREFIX})

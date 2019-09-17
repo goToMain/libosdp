@@ -44,6 +44,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
     }
 
     ctx->magic = 0xDEADBEAF;
+    ctx->log_level = LOG_WARNING;
     to_cp(ctx)->num_pd = num_pd;
     for (i=0; i<num_pd; i++) {
         osdp_pd_info_t *p = info + i;

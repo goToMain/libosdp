@@ -218,11 +218,11 @@ struct cmd {
 };
 
 union cmd_all {
-    struct cmd_led *led;
-    struct cmd_buzzer *buzzer;
-    struct cmd_text *text;
-    struct cmd_output *output;
-    struct cmd_comset *comset;
+    struct cmd_led led;
+    struct cmd_buzzer buzzer;
+    struct cmd_text text;
+    struct cmd_output output;
+    struct cmd_comset comset;
 };
 
 struct pd_id {

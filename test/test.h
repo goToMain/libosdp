@@ -21,6 +21,18 @@
         }                           \
     } while(0)
 
+#define CHECK_ARRAY(a, l, e)    do {                        \
+        if (l < 0)                                          \
+            printf ("error! invalid length %d\n", len);     \
+        if (l != sizeof(e) || memcmp(a, e, sizeof(e))) {    \
+            printf("error! comparison failed!\n");          \
+            hexdump("  Expected: ", e, sizeof(e));          \
+            hexdump("  Got", a, l);                         \
+            return -1;                                      \
+        }                                                   \
+        printf("success!\n");                               \
+    } while(0)
+
 struct test {
     int success;
     int failure;

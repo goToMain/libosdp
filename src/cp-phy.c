@@ -34,9 +34,13 @@ static int cp_get_seq_number(pd_t *p, int do_inc)
 
 int cp_build_packet(osdp_t *ctx, uint8_t *cmd, int clen, uint8_t *buf, int blen)
 {
-    int pkt_len, crc16;
+    int pkt_len;
+    uint16_t crc16;
     struct osdp_packet_header *pkt;
     pd_t *p = to_current_pd(ctx);
+
+    if (blen < (clen + sizeof(struct osdp_packet_header) + 2))
+        return -1;
 
     /* Fill packet header */
     pkt = (struct osdp_packet_header *)buf;
@@ -66,7 +70,8 @@ int cp_build_packet(osdp_t *ctx, uint8_t *cmd, int clen, uint8_t *buf, int blen)
 
 int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen)
 {
-    int pkt_len, comp, cur;
+    int pkt_len;
+    uint16_t comp, cur;
     struct osdp_packet_header *pkt;
     pd_t *p = to_current_pd(ctx);
 
@@ -85,29 +90,29 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen
         return -1;
     }
     pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-    if (pkt_len != blen) {
-        print(ctx, LOG_ERR, "packet length mismatch %d/%d", pkt_len, clen);
+    if (pkt_len != blen - 1) {
+        print(ctx, LOG_ERR, "packet length mismatch %d/%d", pkt_len, blen);
         return -1;
     }
-    blen -= sizeof(struct osdp_packet_header);
+    blen -= sizeof(struct osdp_packet_header); /* consume header */
 
     /* validate CRC/checksum */
     if (pkt->control & PKT_CONTROL_CRC) {
-        comp = compute_crc16(buf, pkt_len - 2);
-        cur = (buf[pkt_len - 1] << 8) | buf[pkt_len - 2];
+        cur = (buf[pkt_len] << 8) | buf[pkt_len - 1];
+        blen -= 2; /* consume 2byte CRC */
+        comp = compute_crc16(buf + 1, pkt_len - 2);
         if (comp != cur) {
             print(ctx, LOG_ERR, "invalid crc 0x%04x/0x%04x", comp, cur);
             return -1;
         }
-        blen -= 2;
     } else {
-        comp = compute_checksum(buf, pkt_len - 1);
-        cur = buf[pkt_len-1];
+        cur = buf[blen - 1];
+        blen -= 1; /* consume 1byte checksum */
+        comp = compute_checksum(buf + 1, pkt_len - 1);
         if (comp != cur) {
             print(ctx, LOG_ERR, "invalid checksum 0x%02x/0x%02x", comp, cur);
             return -1;
         }
-        blen -= 1;
     }
 
     /* copy decoded message block into cmd buf */
@@ -116,14 +121,13 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen
         return -1;
     }
     memcpy(cmd, pkt->data, blen);
-
     return blen;
 }
 
 /**
  * Returns:
- *  0: command built successfully
- * -1: error
+ * +ve: length of command
+ * -ve: error
  */
 int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
 {
@@ -156,68 +160,68 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         if (cmd->arg == NULL)
             break;
         c = cmd->arg;
-        buf[len++] = c->output->output_no;
-        buf[len++] = c->output->control_code;
-        buf[len++] = byte_0(c->output->tmr_count);
-        buf[len++] = byte_1(c->output->tmr_count);
+        buf[len++] = c->output.output_no;
+        buf[len++] = c->output.control_code;
+        buf[len++] = byte_0(c->output.tmr_count);
+        buf[len++] = byte_1(c->output.tmr_count);
         ret = 0;
         break;
     case CMD_LED:
         if (cmd->arg == NULL)
             break;
         c = cmd->arg;
-        buf[len++] = c->led->reader;
-        buf[len++] = c->led->number;
+        buf[len++] = c->led.reader;
+        buf[len++] = c->led.number;
 
-        buf[len++] = c->led->temperory.control_code;
-        buf[len++] = c->led->temperory.on_time;
-        buf[len++] = c->led->temperory.off_time;
-        buf[len++] = c->led->temperory.on_color;
-        buf[len++] = c->led->temperory.off_color;
-        buf[len++] = byte_0(c->led->temperory.timer);
-        buf[len++] = byte_1(c->led->temperory.timer);
+        buf[len++] = c->led.temperory.control_code;
+        buf[len++] = c->led.temperory.on_time;
+        buf[len++] = c->led.temperory.off_time;
+        buf[len++] = c->led.temperory.on_color;
+        buf[len++] = c->led.temperory.off_color;
+        buf[len++] = byte_0(c->led.temperory.timer);
+        buf[len++] = byte_1(c->led.temperory.timer);
 
-        buf[len++] = c->led->temperory.control_code;
-        buf[len++] = c->led->temperory.on_time;
-        buf[len++] = c->led->temperory.off_time;
-        buf[len++] = c->led->temperory.on_color;
-        buf[len++] = c->led->temperory.off_color;
+        buf[len++] = c->led.temperory.control_code;
+        buf[len++] = c->led.temperory.on_time;
+        buf[len++] = c->led.temperory.off_time;
+        buf[len++] = c->led.temperory.on_color;
+        buf[len++] = c->led.temperory.off_color;
         ret = 0;
         break;
     case CMD_BUZ:
         if (cmd->arg == NULL)
             break;
         c = cmd->arg;
-        buf[len++] = c->buzzer->reader;
-        buf[len++] = c->buzzer->tone_code;
-        buf[len++] = c->buzzer->on_time;
-        buf[len++] = c->buzzer->off_time;
-        buf[len++] = c->buzzer->rep_count;
+        buf[len++] = c->buzzer.reader;
+        buf[len++] = c->buzzer.tone_code;
+        buf[len++] = c->buzzer.on_time;
+        buf[len++] = c->buzzer.off_time;
+        buf[len++] = c->buzzer.rep_count;
         ret = 0;
         break;
     case CMD_TEXT:
         if (cmd->arg == NULL)
             break;
         c = cmd->arg;
-        buf[len++] = c->text->reader;
-        buf[len++] = c->text->cmd;
-        buf[len++] = c->text->temp_time;
-        buf[len++] = c->text->offset_row;
-        buf[len++] = c->text->offset_col;
-        buf[len++] = c->text->length;
-        for (i=0; i<c->text->length; i++)
-            buf[len++] = c->text->data[i];
+        buf[len++] = c->text.reader;
+        buf[len++] = c->text.cmd;
+        buf[len++] = c->text.temp_time;
+        buf[len++] = c->text.offset_row;
+        buf[len++] = c->text.offset_col;
+        buf[len++] = c->text.length;
+        for (i=0; i<c->text.length; i++)
+            buf[len++] = c->text.data[i];
         ret = 0;
         break;
     case CMD_COMSET:
         if (cmd->arg == NULL)
             break;
         c = cmd->arg;
-        buf[len++] = c->comset->addr;
-        buf[len++] = byte_0(c->comset->baud);
-        buf[len++] = byte_1(c->comset->baud);
-        buf[len++] = byte_2(c->comset->baud);
-        buf[len++] = byte_3(c->comset->baud);
+        buf[len++] = c->comset.addr;
+        buf[len++] = byte_0(c->comset.baud);
+        buf[len++] = byte_1(c->comset.baud);
+        buf[len++] = byte_2(c->comset.baud);
+        buf[len++] = byte_3(c->comset.baud);
         ret = 0;
         break;
     case CMD_KEYSET:
@@ -246,7 +250,7 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         break;
     }
 
-    return ret;
+    return (ret < 0) ? ret : len;
 }
 
 const char *get_nac_reason(int code)
@@ -281,6 +285,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
     pd_t *p = to_current_pd(ctx);
 
     reply_id = buf[pos++];
+    len--; /* consume reply id from the head */
 
     switch(reply_id) {
     case REPLY_ACK:
@@ -417,10 +422,9 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
         print(ctx, LOG_ERR, "deprecated reply: 0x%02x", reply_id);
         ret = 0;
         break;
-    }
-    if (ret == -1) {
+    default:
         print(ctx, LOG_DEBUG, "unexpected reply: 0x%02x", reply_id);
+        break;
     }
-
     return ret;
 }

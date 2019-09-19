@@ -16,6 +16,8 @@
 
 #define TRUE                         (1)
 #define FALSE                        (0)
+#define CP_CMD_QUEUE_SIZE            (128)
+
 #define isset_flag(p, f)             (((p)->flags & (f)) == (f))
 #define set_flag(p, f)               ((p)->flags |= (f))
 #define clear_flag(p, f)             ((p)->flags &= ~(f))
@@ -29,10 +31,18 @@
 #define to_osdp(p)                   ((osdp_t *)p)
 #define to_cp(p)                     ((to_osdp(p))->cp)
 #define to_pd(p, i)                  ((to_osdp(p))->pd + i)
-#define to_current_pd(p)             (to_cp(p) ? to_cp(p)->current_pd : (p)->pd)
+#define to_current_pd(p)             (to_cp(p)->current_pd)
+#define to_current_queue(p)          (to_cp(p)->queue + to_cp(p)->pd_offset)
 
-#define set_current_pd(d, p)         (to_cp(d)->current_pd = (p))
+#define __ctx                        osdp_t *ctx
 #define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))
+#define osdp_log(...)                osdp_log_print(ctx, ## __VA_ARGS__)
+
+#define set_current_pd(p, i)                        \
+    do {                                            \
+        to_cp(p)->current_pd = to_pd(p, i);         \
+        to_cp(p)->pd_offset = i;                    \
+    } while (0)
 
 /* OSDP reserved commands */
 #define CMD_POLL                     0x60
@@ -214,7 +224,8 @@ enum osdp_capabilities_e {
 
 struct cmd {
     int id;
-    void *arg;
+    int len;
+    uint8_t data[0];
 };
 
 union cmd_all {
@@ -246,12 +257,22 @@ typedef struct {
     int (*recv_func)(uint8_t *buf, int len);
 } pd_t;
 
+struct cmd_queue {
+    int push_count;
+    int pop_count;
+    uint8_t buf[CP_CMD_QUEUE_SIZE];
+};
+
 typedef struct {
     int num_pd;
     int state;
     int flags;
 
-    pd_t *current_pd;
+    pd_t *current_pd;  /* current operational pd's pointer */
+    int pd_offset;     /* current pd's offset into ctx->pd */
+
+    struct cmd_queue *queue;
+
     int (*keypress_handler)(int address, uint8_t key);
     int (*cardread_handler)(int address, int format, uint8_t *data, int len);
 } cp_t;
@@ -276,9 +297,11 @@ enum log_levels_e {
     LOG_DEBUG
 };
 
+void safe_free(void *p);
+
 uint8_t compute_checksum(uint8_t *msg, int length);
 uint16_t compute_crc16(uint8_t *data, int  len);
-void print(osdp_t *ctx, int log_level, const char *fmt, ...);
-void hexdump(const char *head, const uint8_t *data, int len);
+void osdp_dump(const char *head, const uint8_t *data, int len);
+void osdp_log_print(osdp_t *ctx, int log_level, const char *fmt, ...);
 
 #endif

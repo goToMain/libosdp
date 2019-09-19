@@ -8,8 +8,8 @@
 #include <string.h>
 #include "cp-private.h"
 
-#define PKT_CONTROL_SQN 0x03
-#define PKT_CONTROL_CRC 0x04
+#define PKT_CONTROL_SQN             0x03
+#define PKT_CONTROL_CRC             0x04
 
 struct osdp_packet_header {
     uint8_t mark;
@@ -32,15 +32,17 @@ static int cp_get_seq_number(pd_t *p, int do_inc)
     return p->seq_number & PKT_CONTROL_SQN;
 }
 
-int cp_build_packet(osdp_t *ctx, uint8_t *cmd, int clen, uint8_t *buf, int blen)
+int cp_build_packet_head(osdp_t *ctx, uint8_t *buf, int maxlen)
 {
-    int pkt_len;
-    uint16_t crc16;
+    int exp_len;
     struct osdp_packet_header *pkt;
     pd_t *p = to_current_pd(ctx);
 
-    if (blen < (clen + sizeof(struct osdp_packet_header) + 2))
+    exp_len = sizeof(struct osdp_packet_header);
+    if (maxlen < exp_len) {
+        osdp_log(LOG_NOTICE, "pkt_buf len err - %d/%d", maxlen, exp_len);
         return -1;
+    }
 
     /* Fill packet header */
     pkt = (struct osdp_packet_header *)buf;
@@ -49,26 +51,60 @@ int cp_build_packet(osdp_t *ctx, uint8_t *cmd, int clen, uint8_t *buf, int blen)
     pkt->pd_address = p->address & 0xFF;  /* Use only the lower 8 bits */
     pkt->control = cp_get_seq_number(p, TRUE);
     pkt->control |= PKT_CONTROL_CRC;
-    pkt_len = sizeof(struct osdp_packet_header) - 1; /* excluding mark byte */
 
-    /* copy command data */
-    memcpy(pkt->data, cmd, clen);
-    pkt_len += clen;
-
-    /* fill packet length into header with the  2 bytes for crc16 */
-    pkt->len_lsb = byte_0(pkt_len + 2);
-    pkt->len_msb = byte_1(pkt_len + 2);
-
-    /* fill crc16 */
-    crc16 = compute_crc16(buf + 1, pkt_len); /* excluding mark byte */
-    buf[pkt_len + 1] = byte_0(crc16);
-    buf[pkt_len + 2] = byte_1(crc16);
-    pkt_len += 2;
-
-    return pkt_len + 1; /* including mark byte */
+    return sizeof(struct osdp_packet_header);
 }
 
-int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen)
+int cp_build_packet_tail(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
+{
+    uint16_t crc16;
+    struct osdp_packet_header *pkt;
+
+    /* expect head to be prefilled */
+    if (buf[0] != 0xFF || buf[1] != 0x53)
+        return -1;
+
+    pkt = (struct osdp_packet_header *)buf;
+
+    /* fill packet length into header w/ 2b crc; wo/ 1b mark */
+    pkt->len_lsb = byte_0(len - 1 + 2);
+    pkt->len_msb = byte_1(len - 1 + 2);
+
+    /* fill crc16 */
+    crc16 = compute_crc16(buf + 1, len - 1); /* excluding mark byte */
+    buf[len + 0] = byte_0(crc16);
+    buf[len + 1] = byte_1(crc16);
+    len += 2;
+
+    return len;
+}
+
+int cp_build_packet(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
+{
+    int cmd_len;
+    uint8_t cmd_buf[128];
+
+    if (len > 128) {
+        osdp_log(LOG_NOTICE, "cmd_buf len err - %d/%d", len, 128);
+        return -1;
+    }
+    cmd_len = len;
+    memcpy(cmd_buf, buf, len);
+
+    if ((len = cp_build_packet_head(ctx, buf, maxlen)) < 0) {
+        osdp_log(LOG_ERR, "failed to build_packet_head");
+        return -1;
+    }
+    memcpy(buf + len, cmd_buf, cmd_len);
+    len += cmd_len;
+    if ((len = cp_build_packet_tail(ctx, buf, len, maxlen)) < 0) {
+        osdp_log(LOG_ERR, "failed to build command");
+        return -1;
+    }
+    return len;
+}
+
+int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen)
 {
     int pkt_len;
     uint16_t comp, cur;
@@ -78,20 +114,20 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen
     /* validate packet header */
     pkt = (struct osdp_packet_header *)buf;
     if (pkt->mark != 0xFF) {
-        print(ctx, LOG_ERR, "invalid marking byte '0x%x'", pkt->mark);
+        osdp_log(LOG_ERR, "invalid marking byte '0x%x'", pkt->mark);
         return -1;
     }
     if (pkt->som != 0x53) {
-        print(ctx, LOG_ERR, "invalid mark SOM '%d'", pkt->som);
+        osdp_log(LOG_ERR, "invalid mark SOM '%d'", pkt->som);
         return -1;
     }
     if (pkt->pd_address != (p->address & 0xFF)) {
-        print(ctx, LOG_ERR, "invalid pd address %d", pkt->pd_address);
+        osdp_log(LOG_ERR, "invalid pd address %d", pkt->pd_address);
         return -1;
     }
     pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
     if (pkt_len != blen - 1) {
-        print(ctx, LOG_ERR, "packet length mismatch %d/%d", pkt_len, blen);
+        osdp_log(LOG_ERR, "packet length mismatch %d/%d", pkt_len, blen);
         return -1;
     }
     blen -= sizeof(struct osdp_packet_header); /* consume header */
@@ -102,7 +138,7 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen
         blen -= 2; /* consume 2byte CRC */
         comp = compute_crc16(buf + 1, pkt_len - 2);
         if (comp != cur) {
-            print(ctx, LOG_ERR, "invalid crc 0x%04x/0x%04x", comp, cur);
+            osdp_log(LOG_ERR, "invalid crc 0x%04x/0x%04x", comp, cur);
             return -1;
         }
     } else {
@@ -110,17 +146,13 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen
         blen -= 1; /* consume 1byte checksum */
         comp = compute_checksum(buf + 1, pkt_len - 1);
         if (comp != cur) {
-            print(ctx, LOG_ERR, "invalid checksum 0x%02x/0x%02x", comp, cur);
+            osdp_log(LOG_ERR, "invalid checksum 0x%02x/0x%02x", comp, cur);
             return -1;
         }
     }
 
     /* copy decoded message block into cmd buf */
-    if (blen > clen) {
-        print(ctx, LOG_ERR, "Not enough space cmd buf");
-        return -1;
-    }
-    memcpy(cmd, pkt->data, blen);
+    memcpy(buf, pkt->data, blen);
     return blen;
 }
 
@@ -129,12 +161,13 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen, uint8_t *cmd, int clen
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
+int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
 {
     union cmd_all *c;
     int ret=-1, i, len = 0;
 
     buf[len++] = cmd->id;
+
     switch(cmd->id) {
     case CMD_POLL:
     case CMD_LSTAT:
@@ -153,13 +186,13 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         break;
     case CMD_DIAG:
         buf[len++] = 0x00;
-        print(ctx, LOG_DEBUG, "cmd:0x%02x is not yet defined", cmd->id);
+        osdp_log(LOG_DEBUG, "cmd:0x%02x is not yet defined", cmd->id);
         ret = 0;
         break;
     case CMD_OUT:
-        if (cmd->arg == NULL)
+        if (cmd->len == 0)
             break;
-        c = cmd->arg;
+        c = (union cmd_all *)cmd->data;
         buf[len++] = c->output.output_no;
         buf[len++] = c->output.control_code;
         buf[len++] = byte_0(c->output.tmr_count);
@@ -167,9 +200,9 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         ret = 0;
         break;
     case CMD_LED:
-        if (cmd->arg == NULL)
+        if (cmd->len == 0)
             break;
-        c = cmd->arg;
+        c = (union cmd_all *)cmd->data;
         buf[len++] = c->led.reader;
         buf[len++] = c->led.number;
 
@@ -189,9 +222,9 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         ret = 0;
         break;
     case CMD_BUZ:
-        if (cmd->arg == NULL)
+        if (cmd->len == 0)
             break;
-        c = cmd->arg;
+        c = (union cmd_all *)cmd->data;
         buf[len++] = c->buzzer.reader;
         buf[len++] = c->buzzer.tone_code;
         buf[len++] = c->buzzer.on_time;
@@ -200,9 +233,9 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         ret = 0;
         break;
     case CMD_TEXT:
-        if (cmd->arg == NULL)
+        if (cmd->len == 0)
             break;
-        c = cmd->arg;
+        c = (union cmd_all *)cmd->data;
         buf[len++] = c->text.reader;
         buf[len++] = c->text.cmd;
         buf[len++] = c->text.temp_time;
@@ -214,9 +247,9 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
         ret = 0;
         break;
     case CMD_COMSET:
-        if (cmd->arg == NULL)
+        if (cmd->len == 0)
             break;
-        c = cmd->arg;
+        c = (union cmd_all *)cmd->data;
         buf[len++] = c->comset.addr;
         buf[len++] = byte_0(c->comset.baud);
         buf[len++] = byte_1(c->comset.baud);
@@ -235,7 +268,7 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
     case CMD_ABORT:
     case CMD_MAXREPLY:
     case CMD_MFG:
-        print(ctx, LOG_ERR, "command 0x%02x isn't supported", cmd->id);
+        osdp_log(LOG_ERR, "command 0x%02x isn't supported", cmd->id);
         break;
     case CMD_SCDONE:
     case CMD_XWR:
@@ -243,10 +276,10 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen)
     case CMD_CONT:
     case CMD_RMODE:
     case CMD_XMIT:
-        print(ctx, LOG_ERR, "command 0x%02x is obsolete", cmd->id);
+        osdp_log(LOG_ERR, "command 0x%02x is obsolete", cmd->id);
         break;
     default:
-        print(ctx, LOG_ERR, "command 0x%02x is unrecognized", cmd->id);
+        osdp_log(LOG_ERR, "command 0x%02x is unrecognized", cmd->id);
         break;
     }
 
@@ -274,11 +307,11 @@ const char *get_nac_reason(int code)
 
 /**
  * Returns:
- *  1: retry current command
- *  0: got a valid response
+ *  0: success
  * -1: error
+ *  2: retry current command
  */
-int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
+int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
 {
     int i, ret=-1, reply_id, pos=0;
     uint32_t temp32;
@@ -293,7 +326,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
         break;
     case REPLY_NAK:
         if (buf[pos]) {
-            print(ctx, LOG_ERR, get_nac_reason(buf[pos]));
+            osdp_log(LOG_ERR, get_nac_reason(buf[pos]));
         }
         ret = 0;
         break;
@@ -302,7 +335,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
         struct pd_id *s = &p->id;
 
         if (len != 12) {
-            print(ctx, LOG_DEBUG, "PDID format error, %d/%d", len, pos);
+            osdp_log(LOG_DEBUG, "PDID format error, %d/%d", len, pos);
             break;
         }
 
@@ -326,7 +359,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
     }
     case REPLY_PDCAP:
         if (len % 3 != 0) {
-            print(ctx, LOG_DEBUG, "PDCAP format error, %d/%d", len, pos);
+            osdp_log(LOG_DEBUG, "PDCAP format error, %d/%d", len, pos);
             break;
         }
         while (pos < len) {
@@ -351,7 +384,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
         temp32 |= buf[pos++] << 8;
         temp32 |= buf[pos++] << 16;
         temp32 |= buf[pos++] << 24;
-        print(ctx, LOG_CRIT, "COMSET responded with ID:%d baud:%d", i, temp32);
+        osdp_log(LOG_CRIT, "COMSET responded with ID:%d baud:%d", i, temp32);
         p->baud_rate = temp32;
         set_flag(p, PD_FLAG_COMSET_INPROG);
         ret = 0;
@@ -405,7 +438,7 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
     }
     case REPLY_BUSY:
         /* PD busy; signal upper layer to retry command */
-        ret = 1;
+        ret = 2;
         break;
     case REPLY_ISTATR:
     case REPLY_OSTATR:
@@ -413,18 +446,79 @@ int cp_process_response(osdp_t *ctx, uint8_t *buf, int len)
     case REPLY_BIOMATCHR:
     case REPLY_MFGREP:
     case REPLY_XRD:
-        print(ctx, LOG_ERR, "unsupported reply: 0x%02x", reply_id);
+        osdp_log(LOG_ERR, "unsupported reply: 0x%02x", reply_id);
         ret = 0;
         break;
     case REPLY_SCREP:
     case REPLY_PRES:
     case REPLY_SPER:
-        print(ctx, LOG_ERR, "deprecated reply: 0x%02x", reply_id);
+        osdp_log(LOG_ERR, "deprecated reply: 0x%02x", reply_id);
         ret = 0;
         break;
     default:
-        print(ctx, LOG_DEBUG, "unexpected reply: 0x%02x", reply_id);
+        osdp_log(LOG_DEBUG, "unexpected reply: 0x%02x", reply_id);
         break;
     }
     return ret;
+}
+
+int cp_send_command(osdp_t *ctx, struct cmd *cmd)
+{
+    int len;
+    uint8_t buf[512];
+
+    if ((len = cp_build_packet_head(ctx, buf, 512)) < 0) {
+        osdp_log(LOG_ERR, "failed to build_packet_head");
+        return -1;
+    }
+
+    if ((len = cp_build_command(ctx, cmd, buf + len, 512 - len)) < 0) {
+        osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
+        return -1;
+    }
+
+    if ((len = cp_build_packet_tail(ctx, buf, len, 512 - len)) < 0) {
+        osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
+        return -1;
+    }
+
+    return to_current_pd(ctx)->send_func(buf, len);
+}
+
+/**
+ * Returns:
+ *  0: success
+ * -1: error
+ *  1: no data yet
+ *  2: re-issue command
+ */
+int cp_process_response(osdp_t *ctx)
+{
+    int len;
+    uint8_t resp[512];
+    pd_t *p = to_current_pd(ctx);
+
+    len = p->recv_func(resp, 512);
+    if (len <= 0)
+        return 1; // no data
+
+    if ((len = cp_decode_packet(ctx, resp, len)) < 0) {
+        osdp_log(LOG_ERR, "failed recode response");
+        return -1;
+    }
+    return cp_decode_response(ctx, resp, len);
+}
+
+int cp_enqueue_command(osdp_t *ctx, int cmd_id, uint8_t *data, int len)
+{
+    struct cmd_queue *q = to_current_queue(ctx);
+    // TODO implement circular queue
+    return 0;
+}
+
+int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen)
+{
+    struct cmd_queue *q = to_current_queue(ctx);
+    // TODO implement circular queue
+    return 0;
 }

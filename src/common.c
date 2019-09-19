@@ -12,6 +12,12 @@
 
 #include "common.h"
 
+void safe_free(void *p)
+{
+    if (p != NULL)
+        free(p);
+}
+
 static unsigned short fcrc_table_is_valid = 0;  /* preset: CRC Table not initialized */
 static unsigned short fcrc_table[256];          /* CRC table - working copy */
 
@@ -63,7 +69,7 @@ uint8_t compute_checksum(uint8_t *msg, int length)
     return checksum;
 }
 
-void print(osdp_t *ctx, int log_level, const char *fmt, ...)
+void osdp_log_print(osdp_t *ctx, int log_level, const char *fmt, ...)
 {
     va_list args;
     char *buf;
@@ -88,7 +94,7 @@ void print(osdp_t *ctx, int log_level, const char *fmt, ...)
     free(buf);
 }
 
-void hexdump(const char *head, const uint8_t *data, int len)
+void osdp_dump(const char *head, const uint8_t *data, int len)
 {
     int i;
     char str[16+1] = { 0 };

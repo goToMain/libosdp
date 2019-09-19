@@ -6,6 +6,7 @@
  */
 
 #include "test.h"
+#include "cp-private.h"
 
 int cp_build_packet(osdp_t *ctx, uint8_t *buf, int len, int maxlen);
 int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int len);
@@ -24,6 +25,7 @@ int test_cp_build_packet_poll(osdp_t *ctx)
         printf("error!\n");
     }
     CHECK_ARRAY(packet, len, expected);
+    printf("success!\n");
     return 0;
 }
 
@@ -40,6 +42,7 @@ int test_cp_build_packet_id(osdp_t *ctx)
         return -1;
     }
     CHECK_ARRAY(packet, len, expected);
+    printf("success!\n");
     return 0;
 }
 
@@ -56,6 +59,7 @@ int test_cp_decode_packet_ack(osdp_t *ctx)
         return -1;
     }
     CHECK_ARRAY(packet, len, expected);
+    printf("success!\n");
     return 0;
 }
 
@@ -81,6 +85,7 @@ int test_cp_build_command(osdp_t *ctx)
         return -1;
     }
     CHECK_ARRAY(output, len, expected);
+    printf("success!\n");
     return 0;
 }
 
@@ -106,6 +111,66 @@ int test_cp_process_response_id(osdp_t *ctx)
                p->id.serial_number, p->id.firmware_version);
         return -1;
     }
+    printf("success!\n");
+    return 0;
+}
+
+int test_cp_queue_command(osdp_t *ctx)
+{
+    int len;
+    uint8_t buf[128];
+    uint8_t cmd96[] = {
+        0x60, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x60, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x60, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    };
+    uint8_t cmd32[] = {
+        0x20, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    };
+
+    uint8_t cmd16[] = {
+        0x10, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    };
+
+    printf("Testing cp_queue_command() -- ");
+
+    if (cp_enqueue_command(ctx, cmd96, 96)) {
+        printf("enqueue cmd96 error!\n");
+        return -1;
+    }
+
+    len = cp_dequeue_command(ctx, FALSE, buf, 128);
+    CHECK_ARRAY(buf, len, cmd96);
+
+    if (cp_enqueue_command(ctx, cmd32, 32)) {
+        printf("enqueue cmd32 error!\n");
+        return -1;
+    }
+
+    len = cp_dequeue_command(ctx, FALSE, buf, 128);
+    CHECK_ARRAY(buf, len, cmd32);
+
+    if (cp_enqueue_command(ctx, cmd16, 16)) {
+        printf("enqueue cmd16 error!\n");
+        return -1;
+    }
+
+    len = cp_dequeue_command(ctx, FALSE, buf, 128);
+    CHECK_ARRAY(buf, len, cmd16);
+
     printf("success!\n");
     return 0;
 }
@@ -145,6 +210,7 @@ void run_cp_phy_tests(struct test *t)
     DO_TEST(t, test_cp_decode_packet_ack);
     DO_TEST(t, test_cp_build_command);
     DO_TEST(t, test_cp_process_response_id);
+    DO_TEST(t, test_cp_queue_command);
 
     test_cp_phy_teardown(t);
 }

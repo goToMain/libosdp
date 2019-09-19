@@ -509,16 +509,68 @@ int cp_process_response(osdp_t *ctx)
     return cp_decode_response(ctx, resp, len);
 }
 
-int cp_enqueue_command(osdp_t *ctx, int cmd_id, uint8_t *data, int len)
+int cp_enqueue_command(osdp_t *ctx, uint8_t *cmd_buf, int len)
 {
+    int fs, start, end;
     struct cmd_queue *q = to_current_queue(ctx);
-    // TODO implement circular queue
+
+    fs = q->tail - q->head;
+    if (fs <= 0)
+        fs += CP_CMD_QUEUE_SIZE;
+
+    if (len > fs)
+        return -1;
+
+    start = q->head + 1;
+    if (start >= CP_CMD_QUEUE_SIZE)
+        start = 0;
+
+    // if the head + 1 == tail, circular buffer is full. Notice that one slot
+    // is always left empty to differentiate empty vs full condition
+    if (start == q->tail)
+        return -1;
+
+    end = start + len;
+    if (end >= CP_CMD_QUEUE_SIZE)
+        end = end % CP_CMD_QUEUE_SIZE;
+
+    if (start > end) {
+        memcpy(q->buffer + start, cmd_buf, CP_CMD_QUEUE_SIZE - start);
+        memcpy(q->buffer, cmd_buf + CP_CMD_QUEUE_SIZE - start, end);
+    } else {
+        memcpy(q->buffer + start, cmd_buf, len);
+    }
+
+    q->head = end;
     return 0;
 }
 
 int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen)
 {
+    int start, end, len;
     struct cmd_queue *q = to_current_queue(ctx);
-    // TODO implement circular queue
-    return 0;
+
+    if (q->head == q->tail)
+        return -1;
+
+    start = q->tail + 1;
+    len = q->buffer[start];
+
+    if (len > maxlen)
+        return -1;
+
+    end = start + len;
+    if(end >= CP_CMD_QUEUE_SIZE)
+        end = end % CP_CMD_QUEUE_SIZE;
+
+    if (start > end) {
+        memcpy(cmd_buf, q->buffer + start, CP_CMD_QUEUE_SIZE - start);
+        memcpy(cmd_buf + CP_CMD_QUEUE_SIZE - start, q->buffer, end);
+    } else {
+        memcpy(cmd_buf, q->buffer + start, len);
+    }
+
+    if (!readonly)
+        q->tail = end;
+    return len;
 }

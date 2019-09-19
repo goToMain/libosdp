@@ -17,10 +17,10 @@ enum cp_fsm_state_e {
 
 int cp_send_wait_resp(osdp_t *ctx, int cmd_id)
 {
-    if (cp_enqueue_command(ctx, cmd_id, NULL, 0)) {
-        osdp_log(LOG_INFO, "failed to queue command");
-        return -1;
-    }
+    // if (cp_enqueue_command(ctx, cmd_id, NULL, 0)) {
+    //     osdp_log(LOG_INFO, "failed to queue command");
+    //     return -1;
+    // }
 
     return 0;
 }

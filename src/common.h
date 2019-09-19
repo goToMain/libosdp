@@ -31,6 +31,7 @@
 #define to_osdp(p)                   ((osdp_t *)p)
 #define to_cp(p)                     ((to_osdp(p))->cp)
 #define to_pd(p, i)                  ((to_osdp(p))->pd + i)
+#define to_queue(p, i)               (to_cp(p)->queue + i)
 #define to_current_pd(p)             (to_cp(p)->current_pd)
 #define to_current_queue(p)          (to_cp(p)->queue + to_cp(p)->pd_offset)
 
@@ -223,8 +224,8 @@ enum osdp_capabilities_e {
 };
 
 struct cmd {
-    int id;
-    int len;
+    uint8_t len;
+    uint8_t id;
     uint8_t data[0];
 };
 
@@ -258,9 +259,9 @@ typedef struct {
 } pd_t;
 
 struct cmd_queue {
-    int push_count;
-    int pop_count;
-    uint8_t buf[CP_CMD_QUEUE_SIZE];
+    int head;
+    int tail;
+    uint8_t buffer[CP_CMD_QUEUE_SIZE];
 };
 
 typedef struct {

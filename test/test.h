@@ -30,7 +30,6 @@
             osdp_dump("  Got", a, l);                       \
             return -1;                                      \
         }                                                   \
-        printf("success!\n");                               \
     } while(0)
 
 struct test {

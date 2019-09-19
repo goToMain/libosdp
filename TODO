@@ -1,0 +1,36 @@
+List of pending tasks
+---------------------
+
+CP Mode:
+
+[*] Implement top-level state machine
+[*] Command queue implementation
+[*] Add support for Secure Channel
+[*] Add secure channel unit test cases
+[*] Implement worker threads for PD(s) in a given CP
+[*] Transparent mode support
+
+PD Mode:
+
+[*] Come up with an architecture for exposing PD features as API
+[*] Come up with an architecture PD capabilities management
+[*] Implement PD mode phy functions
+[*] Check how much of CP phy can be reused in PD phy layer.
+[*] Implement top-level state machine
+[*] Add support for Secure Channel
+[*] Add secure channel unit test cases
+[*] Transparent mode support
+
+Documentation:
+
+[*] osdp.h method params to be documented
+[*] Integration guide for cp and pd mode
+[*] PD/CP API documentation in wiki
+[*] Supported commands/replies and their limitations
+[*] Secure channel setup process
+[*] Master key-set process; a note on install mode
+
+Tests/Emulations:
+
+[*] Cleanup ad-hoc test methods
+[*] Create a python tkinter GUI tool that emulates a PD

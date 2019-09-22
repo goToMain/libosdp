@@ -71,6 +71,7 @@ int test_cp_fsm_setup(struct test *t)
     }
     // ctx->log_level = LOG_DEBUG;
     set_current_pd(ctx, 0);
+    set_flag(to_current_pd(ctx), PD_FLAG_SKIP_SEQ_CHECK);
     t->mock_data = (void *)ctx;
     return 0;
 }

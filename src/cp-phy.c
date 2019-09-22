@@ -105,6 +105,12 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen)
         osdp_log(LOG_ERR, "packet length mismatch %d/%d", pkt_len, blen - 1);
         return -1;
     }
+    cur = pkt->control & PKT_CONTROL_SQN;
+    comp = cp_get_seq_number(p, FALSE);
+    if (comp != cur && !isset_flag(p, PD_FLAG_SKIP_SEQ_CHECK)) {
+        osdp_log(LOG_ERR, "packet seq mismatch %d/%d", comp, cur);
+        return -1;
+    }
     blen -= sizeof(struct osdp_packet_header); /* consume header */
 
     /* validate CRC/checksum */

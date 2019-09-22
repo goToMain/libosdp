@@ -113,7 +113,7 @@
 #define PD_FLAG_R_TAMPER             0x00000008 /* remote tamper status */
 #define PD_FLAG_COMSET_INPROG        0x00000010 /* set when comset is enabled */
 #define PD_FLAG_AWAIT_RESP           0x00000020 /* set after command is sent */
-
+#define PD_FLAG_SKIP_SEQ_CHECK       0x00000040 /* disable seq checks (debug) */
 typedef uint64_t millis_t;
 
 /* CMD_OUT */

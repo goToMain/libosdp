@@ -3,8 +3,6 @@ List of pending tasks
 
 CP Mode:
 
-[*] Implement top-level state machine
-[*] Command queue implementation
 [*] Add support for Secure Channel
 [*] Add secure channel unit test cases
 [*] Implement worker threads for PD(s) in a given CP
@@ -32,5 +30,4 @@ Documentation:
 
 Tests/Emulations:
 
-[*] Cleanup ad-hoc test methods
 [*] Create a python tkinter GUI tool that emulates a PD

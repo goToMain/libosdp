@@ -47,5 +47,7 @@ int main(int argc, char *argv[])
 
     run_cp_phy_fsm_tests(&t);
 
+    run_cp_fsm_tests(&t);
+
     return test_end(&t);
 }

@@ -12,6 +12,12 @@
 
 typedef void * osdp_cp_t;
 
+#define OSDP_PD_ERR_RETRY_SEC             (60)
+#define OSDP_PD_POLL_TIMEOUT_MS           (50)
+#define OSDP_PD_CMD_QUEUE_SIZE            (128)
+#define OSDP_RESP_TOUT_MS                 (400)
+#define OSDP_PD_SCRATCH_SIZE              (64)
+
 enum osdp_card_formats_e {
     OSDP_CARD_FMT_RAW_UNSPECIFIED,
     OSDP_CARD_FMT_RAW_WIEGAND,

@@ -14,12 +14,20 @@
 
 #define DO_TEST(t, m) do {          \
         t->tests++;                 \
-        if(m(t->mock_data)) {       \
+        if (m(t->mock_data)) {      \
             t->failure++;           \
         } else {                    \
             t->success++;           \
         }                           \
     } while(0)
+
+#define TEST_REPORT(t, s) do {      \
+        t->tests++;                 \
+        if (s == TRUE)              \
+            t->success++;           \
+        else                        \
+            t->failure++;           \
+    } while (0)
 
 #define CHECK_ARRAY(a, l, e)    do {                        \
         if (l < 0)                                          \
@@ -41,5 +49,6 @@ struct test {
 
 void run_cp_phy_tests(struct test *t);
 void run_cp_phy_fsm_tests(struct test *t);
+void run_cp_fsm_tests(struct test *t);
 
 #endif

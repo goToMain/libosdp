@@ -141,33 +141,27 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
     union cmd_all *c;
     int ret=-1, i, len = 0;
 
-    buf[len++] = cmd->id;
-
     switch(cmd->id) {
     case CMD_POLL:
     case CMD_LSTAT:
     case CMD_ISTAT:
     case CMD_OSTAT:
     case CMD_RSTAT:
+        buf[len++] = cmd->id;
         ret = 0;
         break;
     case CMD_ID:
-        buf[len++] = 0x00;
-        ret = 0;
-        break;
     case CMD_CAP:
-        buf[len++] = 0x00;
-        ret = 0;
-        break;
     case CMD_DIAG:
+        buf[len++] = cmd->id;
         buf[len++] = 0x00;
-        osdp_log(LOG_DEBUG, "cmd:0x%02x is not yet defined", cmd->id);
         ret = 0;
         break;
     case CMD_OUT:
-        if (cmd->len == 0)
+        if (cmd->len != sizeof(struct cmd) + 4)
             break;
         c = (union cmd_all *)cmd->data;
+        buf[len++] = cmd->id;
         buf[len++] = c->output.output_no;
         buf[len++] = c->output.control_code;
         buf[len++] = byte_0(c->output.tmr_count);
@@ -175,9 +169,10 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         ret = 0;
         break;
     case CMD_LED:
-        if (cmd->len == 0)
+        if (cmd->len != sizeof(struct cmd) + 16)
             break;
         c = (union cmd_all *)cmd->data;
+        buf[len++] = cmd->id;
         buf[len++] = c->led.reader;
         buf[len++] = c->led.number;
 
@@ -189,17 +184,18 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         buf[len++] = byte_0(c->led.temperory.timer);
         buf[len++] = byte_1(c->led.temperory.timer);
 
-        buf[len++] = c->led.temperory.control_code;
-        buf[len++] = c->led.temperory.on_time;
-        buf[len++] = c->led.temperory.off_time;
-        buf[len++] = c->led.temperory.on_color;
-        buf[len++] = c->led.temperory.off_color;
+        buf[len++] = c->led.permanent.control_code;
+        buf[len++] = c->led.permanent.on_time;
+        buf[len++] = c->led.permanent.off_time;
+        buf[len++] = c->led.permanent.on_color;
+        buf[len++] = c->led.permanent.off_color;
         ret = 0;
         break;
     case CMD_BUZ:
-        if (cmd->len == 0)
+        if (cmd->len != sizeof(struct cmd) + 5)
             break;
         c = (union cmd_all *)cmd->data;
+        buf[len++] = cmd->id;
         buf[len++] = c->buzzer.reader;
         buf[len++] = c->buzzer.tone_code;
         buf[len++] = c->buzzer.on_time;
@@ -208,9 +204,10 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         ret = 0;
         break;
     case CMD_TEXT:
-        if (cmd->len == 0)
+        if (cmd->len != sizeof(struct cmd) + 38)
             break;
         c = (union cmd_all *)cmd->data;
+        buf[len++] = cmd->id;
         buf[len++] = c->text.reader;
         buf[len++] = c->text.cmd;
         buf[len++] = c->text.temp_time;
@@ -222,9 +219,10 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         ret = 0;
         break;
     case CMD_COMSET:
-        if (cmd->len == 0)
+        if (cmd->len != sizeof(struct cmd) + 5)
             break;
         c = (union cmd_all *)cmd->data;
+        buf[len++] = cmd->id;
         buf[len++] = c->comset.addr;
         buf[len++] = byte_0(c->comset.baud);
         buf[len++] = byte_1(c->comset.baud);
@@ -258,7 +256,12 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         break;
     }
 
-    return (ret < 0) ? ret : len;
+    if (ret < 0) {
+        osdp_log(LOG_WARNING, "cmd 0x%02x format error! -- %d", cmd->id, ret);
+        return ret;
+    }
+
+    return len;
 }
 
 const char *get_nac_reason(int code)
@@ -295,7 +298,7 @@ int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
     reply_id = buf[pos++];
     len--; /* consume reply id from the head */
 
-    osdp_log(LOG_DEBUG, "Processing resp %d with %d data bytes", reply_id, len);
+    osdp_log(LOG_DEBUG, "Processing resp 0x%02x with %d data bytes", reply_id, len);
 
     switch(reply_id) {
     case REPLY_ACK:
@@ -436,7 +439,7 @@ int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
 
 int cp_send_command(osdp_t *ctx, struct cmd *cmd)
 {
-    int len;
+    int ret, len;
     uint8_t buf[512];
 
     if ((len = cp_build_packet_head(ctx, buf, 512)) < 0) {
@@ -444,17 +447,20 @@ int cp_send_command(osdp_t *ctx, struct cmd *cmd)
         return -1;
     }
 
-    if ((len += cp_build_command(ctx, cmd, buf + len, 512 - len)) < 0) {
+    if ((ret = cp_build_command(ctx, cmd, buf + len, 512 - len)) < 0) {
         osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
         return -1;
     }
+    len += ret;
 
     if ((len = cp_build_packet_tail(ctx, buf, len, 512)) < 0) {
         osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
         return -1;
     }
 
-    return to_current_pd(ctx)->send_func(buf, len);
+    ret = to_current_pd(ctx)->send_func(buf, len);
+
+    return (ret == len) ? 0 : -1;
 }
 
 /**
@@ -488,26 +494,26 @@ int cp_enqueue_command(osdp_t *ctx, struct cmd *c)
 
     fs = q->tail - q->head;
     if (fs <= 0)
-        fs += CP_CMD_QUEUE_SIZE;
+        fs += OSDP_PD_CMD_QUEUE_SIZE;
 
     len = c->len;
     if (len > fs)
         return -1;
 
     start = q->head + 1;
-    if (start >= CP_CMD_QUEUE_SIZE)
+    if (start >= OSDP_PD_CMD_QUEUE_SIZE)
         start = 0;
 
     if (start == q->tail)
         return -1;
 
     end = start + len;
-    if (end >= CP_CMD_QUEUE_SIZE)
-        end = end % CP_CMD_QUEUE_SIZE;
+    if (end >= OSDP_PD_CMD_QUEUE_SIZE)
+        end = end % OSDP_PD_CMD_QUEUE_SIZE;
 
     if (start > end) {
-        memcpy(q->buffer + start, c, CP_CMD_QUEUE_SIZE - start);
-        memcpy(q->buffer, (uint8_t *)c + CP_CMD_QUEUE_SIZE - start, end);
+        memcpy(q->buffer + start, c, OSDP_PD_CMD_QUEUE_SIZE - start);
+        memcpy(q->buffer, (uint8_t *)c + OSDP_PD_CMD_QUEUE_SIZE - start, end);
     } else {
         memcpy(q->buffer + start, c, len);
     }
@@ -531,12 +537,12 @@ int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen)
         return -1;
 
     end = start + len;
-    if(end >= CP_CMD_QUEUE_SIZE)
-        end = end % CP_CMD_QUEUE_SIZE;
+    if(end >= OSDP_PD_CMD_QUEUE_SIZE)
+        end = end % OSDP_PD_CMD_QUEUE_SIZE;
 
     if (start > end) {
-        memcpy(cmd_buf, q->buffer + start, CP_CMD_QUEUE_SIZE - start);
-        memcpy(cmd_buf + CP_CMD_QUEUE_SIZE - start, q->buffer, end);
+        memcpy(cmd_buf, q->buffer + start, OSDP_PD_CMD_QUEUE_SIZE - start);
+        memcpy(cmd_buf + OSDP_PD_CMD_QUEUE_SIZE - start, q->buffer, end);
     } else {
         memcpy(cmd_buf, q->buffer + start, len);
     }
@@ -570,7 +576,7 @@ int cp_phy_state_update(osdp_t *ctx)
 
     switch(pd->phy_state) {
     case CP_PHY_STATE_IDLE:
-        ret = cp_dequeue_command(ctx, FALSE, pd->scratch, PD_SCRATCH_SPACE_SIZE);
+        ret = cp_dequeue_command(ctx, FALSE, pd->scratch, OSDP_PD_SCRATCH_SIZE);
         if (ret == 0)
             break;
         if (ret < 0) {
@@ -581,13 +587,14 @@ int cp_phy_state_update(osdp_t *ctx)
         ret = 1;
         /* no break */
     case CP_PHY_STATE_SEND_CMD:
-        if ((cp_send_command(ctx, cmd)) != 0) {
+        if ((cp_send_command(ctx, cmd)) < 0) {
             osdp_log(LOG_INFO, "command dispatch error");
             pd->phy_state = CP_PHY_STATE_ERR;
+            ret = -1;
             break;
         }
         pd->phy_state = CP_PHY_STATE_RESP_WAIT;
-        pd->cmd_sent = millis_now();
+        pd->phy_tstamp = millis_now();
         break;
     case CP_PHY_STATE_RESP_WAIT:
         if ((ret = cp_process_response(ctx)) == 0) {
@@ -604,9 +611,10 @@ int cp_phy_state_update(osdp_t *ctx)
             pd->phy_state = CP_PHY_STATE_SEND_CMD;
             break;
         }
-        if (millis_since(pd->cmd_sent) > OSDP_RESP_TOUT_MS) {
+        if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
             osdp_log(LOG_INFO, "read response timeout");
             pd->phy_state = CP_PHY_STATE_ERR;
+            ret = 1;
         }
         break;
     case CP_PHY_STATE_ERR:
@@ -615,4 +623,10 @@ int cp_phy_state_update(osdp_t *ctx)
     }
 
     return ret;
+}
+
+void cp_phy_state_reset(pd_t *pd)
+{
+    pd->state = 0;
+    pd->seq_number = -1;
 }

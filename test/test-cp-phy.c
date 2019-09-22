@@ -103,7 +103,7 @@ int test_cp_build_command(osdp_t *ctx)
     struct cmd_buzzer *buz = (struct cmd_buzzer *)&c->data;
 
     c->id = CMD_BUZ;
-    c->len = sizeof(struct cmd_buzzer);
+    c->len = sizeof(struct cmd) + sizeof(struct cmd_buzzer);
     buz->on_time = 10;
     buz->off_time = 10;
     buz->reader = 101;

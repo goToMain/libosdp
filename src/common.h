@@ -16,9 +16,6 @@
 
 #define TRUE                         (1)
 #define FALSE                        (0)
-#define CP_CMD_QUEUE_SIZE            (128)
-#define OSDP_RESP_TOUT_MS            (400)
-#define PD_SCRATCH_SPACE_SIZE        (64)
 
 #define isset_flag(p, f)             (((p)->flags & (f)) == (f))
 #define set_flag(p, f)               ((p)->flags |= (f))
@@ -115,6 +112,7 @@
 #define PD_FLAG_POWER                0x00000004 /* local power status */
 #define PD_FLAG_R_TAMPER             0x00000008 /* remote tamper status */
 #define PD_FLAG_COMSET_INPROG        0x00000010 /* set when comset is enabled */
+#define PD_FLAG_AWAIT_RESP           0x00000020 /* set after command is sent */
 
 typedef uint64_t millis_t;
 
@@ -259,10 +257,11 @@ typedef struct {
 
     /* PD state management */
     int state;
+    int flags;
+    millis_t tstamp;
     int phy_state;
     uint8_t scratch[64];
-    millis_t cmd_sent;
-    int flags;
+    millis_t phy_tstamp;
 
     /* callbacks */
     int (*send_func)(uint8_t *buf, int len);
@@ -272,7 +271,7 @@ typedef struct {
 struct cmd_queue {
     int head;
     int tail;
-    uint8_t buffer[CP_CMD_QUEUE_SIZE];
+    uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
 };
 
 typedef struct {

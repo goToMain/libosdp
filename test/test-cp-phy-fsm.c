@@ -11,48 +11,45 @@
 
 int cp_enqueue_command(osdp_t *ctx, struct cmd *c);
 
-int phy_fsm__resp_offset = 0;
+int phy_fsm_resp_offset = 0;
 
 int test_cp_phy_fsm_send(uint8_t *buf, int len)
 {
-    const uint8_t phy_fsm__cmd_poll[] = { 0xff, 0x53, 0x65, 0x08, 0x00, 0x04,
-                                          0x60, 0x60, 0x90 };
-    const uint8_t phy_fsm__cmd_id[]   = { 0xff, 0x53, 0x65, 0x09, 0x00, 0x05,
-                                          0x61, 0x00, 0xe9, 0x4d };
-    switch(phy_fsm__resp_offset) {
+    uint8_t cmd_poll[] = { 0xff, 0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90 };
+    uint8_t cmd_id[]   = { 0xff, 0x53, 0x65, 0x09, 0x00, 0x05, 0x61, 0x00, 0xe9, 0x4d };
+
+    switch(phy_fsm_resp_offset) {
     case 0:
-        if (memcmp(buf, phy_fsm__cmd_poll, len) != 0) {
+        if (memcmp(buf, cmd_poll, len) != 0) {
             printf("    -- poll buf Mismatch!\n");
             osdp_dump("Attempt to send", buf, len);
         }
         break;
     case 1:
-        if (memcmp(buf, phy_fsm__cmd_id, len) != 0) {
+        if (memcmp(buf, cmd_id, len) != 0) {
             printf("    -- id buf Mismatch!\n");
             osdp_dump("Attempt to send", buf, len);
         }
         break;
     }
-    return 0;
+    return len;
 }
 
 int test_cp_phy_fsm_receive(uint8_t *buf, int len)
 {
-    const uint8_t phy_fsm__resp_ack[] = { 0xff, 0x53, 0x65, 0x08, 0x00, 0x04,
-                                          0x40, 0x02, 0xb4 };
-    const uint8_t phy_fsm__resp_id[]  = { 0xff, 0x53, 0x65, 0x14, 0x00, 0x05,
-                                          0x45, 0xa1, 0xa2, 0xa3, 0xb1, 0xc1,
-                                          0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2,
-                                          0xe3, 0x91, 0x52 };
-    switch(phy_fsm__resp_offset) {
+    uint8_t resp_ack[] = { 0xff, 0x53, 0x65, 0x08, 0x00, 0x04, 0x40, 0x02, 0xb4 };
+    uint8_t resp_id[]  = { 0xff, 0x53, 0x65, 0x14, 0x00, 0x05, 0x45, 0xa1, 0xa2,
+                           0xa3, 0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2,
+                           0xe3, 0x91, 0x52 };
+    switch(phy_fsm_resp_offset) {
     case 0:
-        memcpy(buf, phy_fsm__resp_ack, sizeof(phy_fsm__resp_ack));
-        phy_fsm__resp_offset++;
-        return sizeof(phy_fsm__resp_ack);
+        memcpy(buf, resp_ack, sizeof(resp_ack));
+        phy_fsm_resp_offset++;
+        return sizeof(resp_ack);
     case 1:
-        memcpy(buf, phy_fsm__resp_id, sizeof(phy_fsm__resp_id));
-        phy_fsm__resp_offset++;
-        return sizeof(phy_fsm__resp_id);
+        memcpy(buf, resp_id, sizeof(resp_id));
+        phy_fsm_resp_offset++;
+        return sizeof(resp_id);
     }
     return 0;
 }
@@ -128,6 +125,8 @@ void run_cp_phy_fsm_tests(struct test *t)
                p->id.serial_number, p->id.firmware_version);
         return;
     }
+
+    TEST_REPORT(t, TRUE);
 
     printf("    -- test_cp_phy_fsm() complete -- %d\n", ret);
 

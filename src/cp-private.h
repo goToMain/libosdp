@@ -10,8 +10,7 @@
 
 #include "common.h"
 
-int cp_fsm_execute(osdp_t *ctx);
-int cp_enqueue_command(osdp_t *ctx, uint8_t *cmd_buf, int len);
-int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen);
+int cp_phy_state_update(osdp_t *ctx);
+int cp_state_update(osdp_t *ctx);
 
 #endif /* _CP_PRIVATE_H_ */

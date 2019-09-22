@@ -15,28 +15,16 @@ enum cp_fsm_state_e {
     CP_STATE_SENTINEL
 };
 
-int cp_send_wait_resp(osdp_t *ctx, int cmd_id)
+int cp_state_update(osdp_t *ctx)
 {
-    // if (cp_enqueue_command(ctx, cmd_id, NULL, 0)) {
-    //     osdp_log(LOG_INFO, "failed to queue command");
-    //     return -1;
-    // }
+    pd_t *pd = to_current_pd(ctx);
+    int phy_state;
 
-    return 0;
-}
+    phy_state = cp_phy_state_update(ctx);
+    if (phy_state == 1) /* commands are being executed */
+        return -1;
 
-/**
- * Returns:
- *  1: in-progress
- *  0: completed
- * -1: error
- */
-int cp_fsm_execute(osdp_t *ctx)
-{
-    int ret = -1;
-    cp_t *cp = to_cp(ctx);
-
-    switch (cp->state) {
+    switch (pd->state) {
     case CP_STATE_INIT:
         break;
     case CP_STATE_ONLINE:
@@ -46,9 +34,8 @@ int cp_fsm_execute(osdp_t *ctx)
     case CP_STATE_CAPDET:
         break;
     default:
-        ret = -1;
         break;
     }
 
-    return ret;
+    return 0;
 }

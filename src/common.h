@@ -17,6 +17,8 @@
 #define TRUE                         (1)
 #define FALSE                        (0)
 #define CP_CMD_QUEUE_SIZE            (128)
+#define OSDP_RESP_TOUT_MS            (400)
+#define PD_SCRATCH_SPACE_SIZE        (64)
 
 #define isset_flag(p, f)             (((p)->flags & (f)) == (f))
 #define set_flag(p, f)               ((p)->flags |= (f))
@@ -113,6 +115,8 @@
 #define PD_FLAG_POWER                0x00000004 /* local power status */
 #define PD_FLAG_R_TAMPER             0x00000008 /* remote tamper status */
 #define PD_FLAG_COMSET_INPROG        0x00000010 /* set when comset is enabled */
+
+typedef uint64_t millis_t;
 
 /* CMD_OUT */
 enum cmd_output_control_code {
@@ -246,14 +250,21 @@ struct pd_id {
 };
 
 typedef struct {
-    int pd_id;
-    int state;
-    int flags;
+    /* OSDP specified data */
     int baud_rate;
     int address;
     int seq_number;
     struct pd_cap cap[CAP_SENTINEL];
     struct pd_id id;
+
+    /* PD state management */
+    int state;
+    int phy_state;
+    uint8_t scratch[64];
+    millis_t cmd_sent;
+    int flags;
+
+    /* callbacks */
     int (*send_func)(uint8_t *buf, int len);
     int (*recv_func)(uint8_t *buf, int len);
 } pd_t;
@@ -274,6 +285,7 @@ typedef struct {
 
     struct cmd_queue *queue;
 
+    /* callbacks */
     int (*keypress_handler)(int address, uint8_t key);
     int (*cardread_handler)(int address, int format, uint8_t *data, int len);
 } cp_t;
@@ -300,8 +312,12 @@ enum log_levels_e {
 
 void safe_free(void *p);
 
+millis_t millis_now();
+millis_t millis_since(millis_t last);
+
 uint8_t compute_checksum(uint8_t *msg, int length);
 uint16_t compute_crc16(uint8_t *data, int  len);
+
 void osdp_dump(const char *head, const uint8_t *data, int len);
 void osdp_log_print(osdp_t *ctx, int log_level, const char *fmt, ...);
 

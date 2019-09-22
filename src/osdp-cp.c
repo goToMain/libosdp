@@ -71,6 +71,8 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
         to_pd(ctx, i)->address = p->address;
         to_pd(ctx, i)->flags = p->init_flags;
         to_pd(ctx, i)->seq_number = -1;
+        to_pd(ctx, i)->send_func = p->send_func;
+        to_pd(ctx, i)->recv_func = p->recv_func;
     }
 
     osdp_log(LOG_INFO, "cp setup complete");
@@ -89,7 +91,7 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
     n = to_cp(ctx)->num_pd;
 
     for (i=0; i<n; i++) {
-        cp_fsm_execute(to_osdp(ctx));
+        cp_state_update(to_osdp(ctx));
     }
 }
 

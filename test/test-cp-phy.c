@@ -8,10 +8,40 @@
 #include "test.h"
 #include "cp-private.h"
 
-int cp_build_packet(osdp_t *ctx, uint8_t *buf, int len, int maxlen);
+int cp_build_packet_head(osdp_t *ctx, uint8_t *buf, int maxlen);
+int cp_build_packet_tail(osdp_t *ctx, uint8_t *buf, int len, int maxlen);
 int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int len);
+
 int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int blen);
 int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len);
+
+int cp_enqueue_command(osdp_t *ctx, struct cmd *c);
+int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen);
+
+int test_cp_build_packet(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
+{
+    int cmd_len;
+    uint8_t cmd_buf[128];
+
+    if (len > 128) {
+        osdp_log(LOG_NOTICE, "cmd_buf len err - %d/%d", len, 128);
+        return -1;
+    }
+    cmd_len = len;
+    memcpy(cmd_buf, buf, len);
+
+    if ((len = cp_build_packet_head(ctx, buf, maxlen)) < 0) {
+        osdp_log(LOG_ERR, "failed to build_packet_head");
+        return -1;
+    }
+    memcpy(buf + len, cmd_buf, cmd_len);
+    len += cmd_len;
+    if ((len = cp_build_packet_tail(ctx, buf, len, maxlen)) < 0) {
+        osdp_log(LOG_ERR, "failed to build command");
+        return -1;
+    }
+    return len;
+}
 
 int test_cp_build_packet_poll(osdp_t *ctx)
 {
@@ -21,7 +51,7 @@ int test_cp_build_packet_poll(osdp_t *ctx)
                            0x04, 0x60, 0x60, 0x90 };
 
     printf("Testing cp_build_packet(CMD_POLL) -- ");
-    if ((len = cp_build_packet(ctx, packet, 1, 512)) < 0) {
+    if ((len = test_cp_build_packet(ctx, packet, 1, 512)) < 0) {
         printf("error!\n");
     }
     CHECK_ARRAY(packet, len, expected);
@@ -37,7 +67,7 @@ int test_cp_build_packet_id(osdp_t *ctx)
                            0x05, 0x61, 0x00, 0xe9, 0x4d };
 
     printf("Testing cp_build_packet(CMD_ID) -- ");
-    if ((len = cp_build_packet(ctx, packet, 2, 512)) < 0) {
+    if ((len = test_cp_build_packet(ctx, packet, 2, 512)) < 0) {
         printf("error!\n");
         return -1;
     }
@@ -147,26 +177,28 @@ int test_cp_queue_command(osdp_t *ctx)
 
     printf("Testing cp_queue_command() -- ");
 
-    if (cp_enqueue_command(ctx, cmd96, 96)) {
+    if (cp_enqueue_command(ctx, (struct cmd *)cmd96)) {
         printf("enqueue cmd96 error!\n");
         return -1;
     }
-
     len = cp_dequeue_command(ctx, FALSE, buf, 128);
     CHECK_ARRAY(buf, len, cmd96);
 
-    if (cp_enqueue_command(ctx, cmd32, 32)) {
+    if (cp_enqueue_command(ctx, (struct cmd *)cmd32)) {
         printf("enqueue cmd32 error!\n");
         return -1;
     }
-
     len = cp_dequeue_command(ctx, FALSE, buf, 128);
     CHECK_ARRAY(buf, len, cmd32);
 
-    if (cp_enqueue_command(ctx, cmd16, 16)) {
+    if (cp_enqueue_command(ctx, (struct cmd *)cmd16)) {
         printf("enqueue cmd16 error!\n");
         return -1;
     }
+
+    /* test readonly mode */
+    len = cp_dequeue_command(ctx, TRUE, buf, 128);
+    CHECK_ARRAY(buf, len, cmd16);
 
     len = cp_dequeue_command(ctx, FALSE, buf, 128);
     CHECK_ARRAY(buf, len, cmd16);

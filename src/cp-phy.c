@@ -79,31 +79,6 @@ int cp_build_packet_tail(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
     return len;
 }
 
-int cp_build_packet(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
-{
-    int cmd_len;
-    uint8_t cmd_buf[128];
-
-    if (len > 128) {
-        osdp_log(LOG_NOTICE, "cmd_buf len err - %d/%d", len, 128);
-        return -1;
-    }
-    cmd_len = len;
-    memcpy(cmd_buf, buf, len);
-
-    if ((len = cp_build_packet_head(ctx, buf, maxlen)) < 0) {
-        osdp_log(LOG_ERR, "failed to build_packet_head");
-        return -1;
-    }
-    memcpy(buf + len, cmd_buf, cmd_len);
-    len += cmd_len;
-    if ((len = cp_build_packet_tail(ctx, buf, len, maxlen)) < 0) {
-        osdp_log(LOG_ERR, "failed to build command");
-        return -1;
-    }
-    return len;
-}
-
 int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen)
 {
     int pkt_len;
@@ -127,7 +102,7 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen)
     }
     pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
     if (pkt_len != blen - 1) {
-        osdp_log(LOG_ERR, "packet length mismatch %d/%d", pkt_len, blen);
+        osdp_log(LOG_ERR, "packet length mismatch %d/%d", pkt_len, blen - 1);
         return -1;
     }
     blen -= sizeof(struct osdp_packet_header); /* consume header */
@@ -320,6 +295,8 @@ int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
     reply_id = buf[pos++];
     len--; /* consume reply id from the head */
 
+    osdp_log(LOG_DEBUG, "Processing resp %d with %d data bytes", reply_id, len);
+
     switch(reply_id) {
     case REPLY_ACK:
         ret = 0;
@@ -331,32 +308,27 @@ int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
         ret = 0;
         break;
     case REPLY_PDID:
-    {
-        struct pd_id *s = &p->id;
-
         if (len != 12) {
             osdp_log(LOG_DEBUG, "PDID format error, %d/%d", len, pos);
             break;
         }
+        p->id.vendor_code  = buf[pos++];
+        p->id.vendor_code |= buf[pos++] << 8;
+        p->id.vendor_code |= buf[pos++] << 16;
 
-        s->vendor_code  = buf[pos++];
-        s->vendor_code |= buf[pos++] << 8;
-        s->vendor_code |= buf[pos++] << 16;
+        p->id.model = buf[pos++];
+        p->id.version = buf[pos++];
 
-        s->model = buf[pos++];
-        s->version = buf[pos++];
+        p->id.serial_number  = buf[pos++];
+        p->id.serial_number |= buf[pos++] << 8;
+        p->id.serial_number |= buf[pos++] << 16;
+        p->id.serial_number |= buf[pos++] << 24;
 
-        s->serial_number  = buf[pos++];
-        s->serial_number |= buf[pos++] << 8;
-        s->serial_number |= buf[pos++] << 16;
-        s->serial_number |= buf[pos++] << 24;
-
-        s->firmware_version  = buf[pos++] << 16;
-        s->firmware_version |= buf[pos++] << 8;
-        s->firmware_version |= buf[pos++];
+        p->id.firmware_version  = buf[pos++] << 16;
+        p->id.firmware_version |= buf[pos++] << 8;
+        p->id.firmware_version |= buf[pos++];
         ret = 0;
         break;
-    }
     case REPLY_PDCAP:
         if (len % 3 != 0) {
             osdp_log(LOG_DEBUG, "PDCAP format error, %d/%d", len, pos);
@@ -472,12 +444,12 @@ int cp_send_command(osdp_t *ctx, struct cmd *cmd)
         return -1;
     }
 
-    if ((len = cp_build_command(ctx, cmd, buf + len, 512 - len)) < 0) {
+    if ((len += cp_build_command(ctx, cmd, buf + len, 512 - len)) < 0) {
         osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
         return -1;
     }
 
-    if ((len = cp_build_packet_tail(ctx, buf, len, 512 - len)) < 0) {
+    if ((len = cp_build_packet_tail(ctx, buf, len, 512)) < 0) {
         osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
         return -1;
     }
@@ -503,21 +475,22 @@ int cp_process_response(osdp_t *ctx)
         return 1; // no data
 
     if ((len = cp_decode_packet(ctx, resp, len)) < 0) {
-        osdp_log(LOG_ERR, "failed recode response");
+        osdp_log(LOG_ERR, "failed decode response");
         return -1;
     }
     return cp_decode_response(ctx, resp, len);
 }
 
-int cp_enqueue_command(osdp_t *ctx, uint8_t *cmd_buf, int len)
+int cp_enqueue_command(osdp_t *ctx, struct cmd *c)
 {
-    int fs, start, end;
+    int len, fs, start, end;
     struct cmd_queue *q = to_current_queue(ctx);
 
     fs = q->tail - q->head;
     if (fs <= 0)
         fs += CP_CMD_QUEUE_SIZE;
 
+    len = c->len;
     if (len > fs)
         return -1;
 
@@ -525,8 +498,6 @@ int cp_enqueue_command(osdp_t *ctx, uint8_t *cmd_buf, int len)
     if (start >= CP_CMD_QUEUE_SIZE)
         start = 0;
 
-    // if the head + 1 == tail, circular buffer is full. Notice that one slot
-    // is always left empty to differentiate empty vs full condition
     if (start == q->tail)
         return -1;
 
@@ -535,10 +506,10 @@ int cp_enqueue_command(osdp_t *ctx, uint8_t *cmd_buf, int len)
         end = end % CP_CMD_QUEUE_SIZE;
 
     if (start > end) {
-        memcpy(q->buffer + start, cmd_buf, CP_CMD_QUEUE_SIZE - start);
-        memcpy(q->buffer, cmd_buf + CP_CMD_QUEUE_SIZE - start, end);
+        memcpy(q->buffer + start, c, CP_CMD_QUEUE_SIZE - start);
+        memcpy(q->buffer, (uint8_t *)c + CP_CMD_QUEUE_SIZE - start, end);
     } else {
-        memcpy(q->buffer + start, cmd_buf, len);
+        memcpy(q->buffer + start, c, len);
     }
 
     q->head = end;
@@ -551,7 +522,7 @@ int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen)
     struct cmd_queue *q = to_current_queue(ctx);
 
     if (q->head == q->tail)
-        return -1;
+        return 0; /* empty */
 
     start = q->tail + 1;
     len = q->buffer[start];
@@ -573,4 +544,75 @@ int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen)
     if (!readonly)
         q->tail = end;
     return len;
+}
+
+enum {
+    CP_PHY_STATE_IDLE,
+    CP_PHY_STATE_SEND_CMD,
+    CP_PHY_STATE_RESP_WAIT,
+    CP_PHY_STATE_ERR,
+};
+
+/**
+ * Returns:
+ *  -1: phy is in error state. Main state machine must reset it.
+ *   0: No command in queue
+ *   1: Command is in progress; this method must to be called again later.
+ *   2: In command boundaries. There may or may not be other commands in queue.
+ *
+ * Note: This method must not dequeue cmd unless it reaches an invalid state.
+ */
+int cp_phy_state_update(osdp_t *ctx)
+{
+    int ret=0;
+    pd_t *pd = to_current_pd(ctx);
+    struct cmd *cmd = (struct cmd *)pd->scratch;
+
+    switch(pd->phy_state) {
+    case CP_PHY_STATE_IDLE:
+        ret = cp_dequeue_command(ctx, FALSE, pd->scratch, PD_SCRATCH_SPACE_SIZE);
+        if (ret == 0)
+            break;
+        if (ret < 0) {
+            osdp_log(LOG_INFO, "command dequeue error");
+            pd->phy_state = CP_PHY_STATE_ERR;
+            break;
+        }
+        ret = 1;
+        /* no break */
+    case CP_PHY_STATE_SEND_CMD:
+        if ((cp_send_command(ctx, cmd)) != 0) {
+            osdp_log(LOG_INFO, "command dispatch error");
+            pd->phy_state = CP_PHY_STATE_ERR;
+            break;
+        }
+        pd->phy_state = CP_PHY_STATE_RESP_WAIT;
+        pd->cmd_sent = millis_now();
+        break;
+    case CP_PHY_STATE_RESP_WAIT:
+        if ((ret = cp_process_response(ctx)) == 0) {
+            pd->phy_state = CP_PHY_STATE_IDLE;
+            ret = 2;
+            break;
+        }
+        if (ret == -1) {
+            pd->phy_state = CP_PHY_STATE_ERR;
+            break;
+        }
+        if (ret == 2) {
+            osdp_log(LOG_INFO, "PD busy; retry last command");
+            pd->phy_state = CP_PHY_STATE_SEND_CMD;
+            break;
+        }
+        if (millis_since(pd->cmd_sent) > OSDP_RESP_TOUT_MS) {
+            osdp_log(LOG_INFO, "read response timeout");
+            pd->phy_state = CP_PHY_STATE_ERR;
+        }
+        break;
+    case CP_PHY_STATE_ERR:
+        ret = -1;
+        break;
+    }
+
+    return ret;
 }

@@ -9,7 +9,7 @@
 #include "test.h"
 #include "cp-private.h"
 
-int cp_enqueue_command(osdp_t *ctx, struct cmd *c);
+int cp_enqueue_command(pd_t *pd, struct cmd *c);
 
 int phy_fsm_resp_offset = 0;
 
@@ -69,7 +69,7 @@ int test_cp_phy_fsm_setup(struct test *t)
         printf("   init failed!\n");
         return -1;
     }
-    // ctx->log_level = LOG_DEBUG;
+    // osdp_set_log_level(LOG_DEBUG);
     set_current_pd(ctx, 0);
     t->mock_data = (void *)ctx;
     return 0;
@@ -96,19 +96,19 @@ void run_cp_phy_fsm_tests(struct test *t)
 
     p = to_current_pd(ctx);
 
-    if (cp_enqueue_command(ctx, &cmd_poll)) {
+    if (cp_enqueue_command(p, &cmd_poll)) {
         printf("enqueue cmd_poll error!\n");
         return;
     }
 
-    if (cp_enqueue_command(ctx, &cmd_id)) {
+    if (cp_enqueue_command(p, &cmd_id)) {
         printf("enqueue cmd_poll error!\n");
         return;
     }
 
     printf("    -- executing test_cp_phy_fsm()\n");
     while (1) {
-        ret = cp_phy_state_update(ctx);
+        ret = cp_phy_state_update(p);
         if (ret != 1 && ret != 2)
             break;
         /* continue when in command and between commands */

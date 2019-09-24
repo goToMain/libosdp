@@ -13,12 +13,7 @@
 
 #include "common.h"
 
-void safe_free(void *p)
-{
-    if (p != NULL)
-        free(p);
-}
-
+int g_log_level;  /* Note: log level is not contextual */
 static unsigned short fcrc_table_is_valid = 0;  /* preset: CRC Table not initialized */
 static unsigned short fcrc_table[256];          /* CRC table - working copy */
 
@@ -70,28 +65,28 @@ uint8_t compute_checksum(uint8_t *msg, int length)
     return checksum;
 }
 
-void osdp_log_print(osdp_t *ctx, int log_level, const char *fmt, ...)
+void osdp_set_log_level(int log_level)
+{
+    g_log_level = log_level;
+}
+
+void osdp_log(int log_level, const char *fmt, ...)
 {
     va_list args;
     char *buf;
-    pd_t *pd = to_current_pd(ctx);
     const char *levels[] = {
         "EMERG", "ALERT", "CRIT ", "ERROR",
         "WARN ", "NOTIC", "INFO ", "DEBUG"
     };
 
-    if (ctx && log_level > ctx->log_level)
+    if (log_level > g_log_level)
         return;
 
     va_start(args, fmt);
     vasprintf(&buf, fmt, args);
     va_end(args);
 
-    if (pd == NULL)
-        printf("OSDP: %s: %s\n", levels[log_level], buf);
-    else
-        printf("OSDP: %s: PD[%d]: %s\n", levels[log_level], pd->address, buf);
-
+    printf("OSDP: %s: %s\n", levels[log_level], buf);
     free(buf);
 }
 

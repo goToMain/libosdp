@@ -11,7 +11,7 @@
 #include "test.h"
 #include "cp-private.h"
 
-int cp_enqueue_command(osdp_t *ctx, struct cmd *c);
+int cp_enqueue_command(pd_t *p, struct cmd *c);
 
 int test_fsm_resp = 0;
 
@@ -69,7 +69,7 @@ int test_cp_fsm_setup(struct test *t)
         printf("   init failed!\n");
         return -1;
     }
-    // ctx->log_level = LOG_DEBUG;
+    // osdp_set_log_level(LOG_DEBUG);
     set_current_pd(ctx, 0);
     set_flag(to_current_pd(ctx), PD_FLAG_SKIP_SEQ_CHECK);
     t->mock_data = (void *)ctx;
@@ -93,7 +93,7 @@ void run_cp_fsm_tests(struct test *t)
 
     printf("    -- executing cp_state_update()\n");
     while (1) {
-        cp_state_update(ctx);
+        cp_state_update(to_current_pd(ctx));
         if (count++ > 300)
             break;
         usleep(1000);

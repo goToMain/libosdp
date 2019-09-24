@@ -32,11 +32,10 @@ static int cp_get_seq_number(pd_t *p, int do_inc)
     return p->seq_number & PKT_CONTROL_SQN;
 }
 
-int cp_build_packet_head(osdp_t *ctx, uint8_t *buf, int maxlen)
+int cp_build_packet_head(pd_t *p, uint8_t *buf, int maxlen)
 {
     int exp_len;
     struct osdp_packet_header *pkt;
-    pd_t *p = to_current_pd(ctx);
 
     exp_len = sizeof(struct osdp_packet_header);
     if (maxlen < exp_len) {
@@ -55,7 +54,7 @@ int cp_build_packet_head(osdp_t *ctx, uint8_t *buf, int maxlen)
     return sizeof(struct osdp_packet_header);
 }
 
-int cp_build_packet_tail(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
+int cp_build_packet_tail(pd_t *p, uint8_t *buf, int len, int maxlen)
 {
     uint16_t crc16;
     struct osdp_packet_header *pkt;
@@ -79,12 +78,11 @@ int cp_build_packet_tail(osdp_t *ctx, uint8_t *buf, int len, int maxlen)
     return len;
 }
 
-int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen)
+int cp_decode_packet(pd_t *p, uint8_t *buf, int blen)
 {
     int pkt_len;
     uint16_t comp, cur;
     struct osdp_packet_header *pkt;
-    pd_t *p = to_current_pd(ctx);
 
     /* validate packet header */
     pkt = (struct osdp_packet_header *)buf;
@@ -142,7 +140,7 @@ int cp_decode_packet(osdp_t *ctx, uint8_t *buf, int blen)
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
+int cp_build_command(pd_t *p, struct cmd *cmd, uint8_t *buf, int maxlen)
 {
     union cmd_all *c;
     int ret=-1, i, len = 0;
@@ -183,16 +181,16 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         buf[len++] = c->led.number;
 
         buf[len++] = c->led.temperory.control_code;
-        buf[len++] = c->led.temperory.on_time;
-        buf[len++] = c->led.temperory.off_time;
+        buf[len++] = c->led.temperory.on_count;
+        buf[len++] = c->led.temperory.off_count;
         buf[len++] = c->led.temperory.on_color;
         buf[len++] = c->led.temperory.off_color;
         buf[len++] = byte_0(c->led.temperory.timer);
         buf[len++] = byte_1(c->led.temperory.timer);
 
         buf[len++] = c->led.permanent.control_code;
-        buf[len++] = c->led.permanent.on_time;
-        buf[len++] = c->led.permanent.off_time;
+        buf[len++] = c->led.permanent.on_count;
+        buf[len++] = c->led.permanent.off_count;
         buf[len++] = c->led.permanent.on_color;
         buf[len++] = c->led.permanent.off_color;
         ret = 0;
@@ -204,8 +202,8 @@ int cp_build_command(osdp_t *ctx, struct cmd *cmd, uint8_t *buf, int maxlen)
         buf[len++] = cmd->id;
         buf[len++] = c->buzzer.reader;
         buf[len++] = c->buzzer.tone_code;
-        buf[len++] = c->buzzer.on_time;
-        buf[len++] = c->buzzer.off_time;
+        buf[len++] = c->buzzer.on_count;
+        buf[len++] = c->buzzer.off_count;
         buf[len++] = c->buzzer.rep_count;
         ret = 0;
         break;
@@ -295,11 +293,11 @@ const char *get_nac_reason(int code)
  * -1: error
  *  2: retry current command
  */
-int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
+int cp_decode_response(pd_t *p, uint8_t *buf, int len)
 {
+    osdp_t *ctx = to_ctx(p);
     int i, ret=-1, reply_id, pos=0;
     uint32_t temp32;
-    pd_t *p = to_current_pd(ctx);
 
     reply_id = buf[pos++];
     len--; /* consume reply id from the head */
@@ -443,28 +441,28 @@ int cp_decode_response(osdp_t *ctx, uint8_t *buf, int len)
     return ret;
 }
 
-int cp_send_command(osdp_t *ctx, struct cmd *cmd)
+int cp_send_command(pd_t *p, struct cmd *cmd)
 {
     int ret, len;
     uint8_t buf[512];
 
-    if ((len = cp_build_packet_head(ctx, buf, 512)) < 0) {
+    if ((len = cp_build_packet_head(p, buf, 512)) < 0) {
         osdp_log(LOG_ERR, "failed to build_packet_head");
         return -1;
     }
 
-    if ((ret = cp_build_command(ctx, cmd, buf + len, 512 - len)) < 0) {
+    if ((ret = cp_build_command(p, cmd, buf + len, 512 - len)) < 0) {
         osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
         return -1;
     }
     len += ret;
 
-    if ((len = cp_build_packet_tail(ctx, buf, len, 512)) < 0) {
+    if ((len = cp_build_packet_tail(p, buf, len, 512)) < 0) {
         osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
         return -1;
     }
 
-    ret = to_current_pd(ctx)->send_func(buf, len);
+    ret = p->send_func(buf, len);
 
     return (ret == len) ? 0 : -1;
 }
@@ -476,27 +474,26 @@ int cp_send_command(osdp_t *ctx, struct cmd *cmd)
  *  1: no data yet
  *  2: re-issue command
  */
-int cp_process_response(osdp_t *ctx)
+int cp_process_response(pd_t *p)
 {
     int len;
     uint8_t resp[512];
-    pd_t *p = to_current_pd(ctx);
 
     len = p->recv_func(resp, 512);
     if (len <= 0)
         return 1; // no data
 
-    if ((len = cp_decode_packet(ctx, resp, len)) < 0) {
+    if ((len = cp_decode_packet(p, resp, len)) < 0) {
         osdp_log(LOG_ERR, "failed decode response");
         return -1;
     }
-    return cp_decode_response(ctx, resp, len);
+    return cp_decode_response(p, resp, len);
 }
 
-int cp_enqueue_command(osdp_t *ctx, struct cmd *c)
+int cp_enqueue_command(pd_t *p, struct cmd *c)
 {
     int len, fs, start, end;
-    struct cmd_queue *q = to_current_queue(ctx);
+    struct cmd_queue *q = p->queue;
 
     fs = q->tail - q->head;
     if (fs <= 0)
@@ -528,10 +525,10 @@ int cp_enqueue_command(osdp_t *ctx, struct cmd *c)
     return 0;
 }
 
-int cp_dequeue_command(osdp_t *ctx, int readonly, uint8_t *cmd_buf, int maxlen)
+int cp_dequeue_command(pd_t *pd, int readonly, uint8_t *cmd_buf, int maxlen)
 {
     int start, end, len;
-    struct cmd_queue *q = to_current_queue(ctx);
+    struct cmd_queue *q = pd->queue;
 
     if (q->head == q->tail)
         return 0; /* empty */
@@ -574,15 +571,14 @@ enum {
  *
  * Note: This method must not dequeue cmd unless it reaches an invalid state.
  */
-int cp_phy_state_update(osdp_t *ctx)
+int cp_phy_state_update(pd_t *pd)
 {
     int ret=0;
-    pd_t *pd = to_current_pd(ctx);
     struct cmd *cmd = (struct cmd *)pd->scratch;
 
     switch(pd->phy_state) {
     case CP_PHY_STATE_IDLE:
-        ret = cp_dequeue_command(ctx, FALSE, pd->scratch, OSDP_PD_SCRATCH_SIZE);
+        ret = cp_dequeue_command(pd, FALSE, pd->scratch, OSDP_PD_SCRATCH_SIZE);
         if (ret == 0)
             break;
         if (ret < 0) {
@@ -593,7 +589,7 @@ int cp_phy_state_update(osdp_t *ctx)
         ret = 1;
         /* no break */
     case CP_PHY_STATE_SEND_CMD:
-        if ((cp_send_command(ctx, cmd)) < 0) {
+        if ((cp_send_command(pd, cmd)) < 0) {
             osdp_log(LOG_INFO, "command dispatch error");
             pd->phy_state = CP_PHY_STATE_ERR;
             ret = -1;
@@ -603,7 +599,7 @@ int cp_phy_state_update(osdp_t *ctx)
         pd->phy_tstamp = millis_now();
         break;
     case CP_PHY_STATE_RESP_WAIT:
-        if ((ret = cp_process_response(ctx)) == 0) {
+        if ((ret = cp_process_response(pd)) == 0) {
             pd->phy_state = CP_PHY_STATE_IDLE;
             ret = 2;
             break;

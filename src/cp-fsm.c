@@ -35,10 +35,9 @@ enum cp_fsm_state_e {
         p->flags = 0;                                   \
     } while (0)
 
-int cp_cmd_dispatcher(osdp_t *ctx, int cmd)
+int cp_cmd_dispatcher(pd_t *p, int cmd)
 {
     struct cmd c;
-    pd_t *p = to_current_pd(ctx);
 
     if (isset_flag(p, PD_FLAG_AWAIT_RESP)) {
         clear_flag(p, PD_FLAG_AWAIT_RESP);
@@ -47,19 +46,18 @@ int cp_cmd_dispatcher(osdp_t *ctx, int cmd)
 
     c.id = cmd;
     c.len = sizeof(struct cmd);
-    if (cp_enqueue_command(ctx, &c) != 0) {
+    if (cp_enqueue_command(p, &c) != 0) {
         osdp_log(LOG_WARNING, "command_enqueue error!");
     }
     set_flag(p, PD_FLAG_AWAIT_RESP);
     return 1;
 }
 
-int cp_state_update(osdp_t *ctx)
+int cp_state_update(pd_t *pd)
 {
-    pd_t *pd = to_current_pd(ctx);
     int phy_state;
 
-    phy_state = cp_phy_state_update(ctx);
+    phy_state = cp_phy_state_update(pd);
     if (phy_state == 1 ||           /* commands are being executed */
             phy_state == 2)         /* in-between commands */
         return -1 * phy_state;
@@ -75,7 +73,7 @@ int cp_state_update(osdp_t *ctx)
     case CP_STATE_ONLINE:
         if (millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS)
             break;
-        if (cp_cmd_dispatcher(ctx, CMD_POLL) == 0)
+        if (cp_cmd_dispatcher(pd, CMD_POLL) == 0)
             pd->tstamp = millis_now();
         break;
     case CP_STATE_OFFLINE:
@@ -86,12 +84,12 @@ int cp_state_update(osdp_t *ctx)
         cp_set_state(pd, CP_STATE_IDREQ);
         /* no break */
     case CP_STATE_IDREQ:
-        if (cp_cmd_dispatcher(ctx, CMD_ID) != 0)
+        if (cp_cmd_dispatcher(pd, CMD_ID) != 0)
             break;
         cp_set_state(pd, CP_STATE_CAPDET);
         /* no break */
     case CP_STATE_CAPDET:
-        if (cp_cmd_dispatcher(ctx, CMD_CAP) != 0)
+        if (cp_cmd_dispatcher(pd, CMD_CAP) != 0)
             break;
         cp_set_state(pd, CP_STATE_ONLINE);
         break;

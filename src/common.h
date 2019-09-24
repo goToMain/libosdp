@@ -28,20 +28,18 @@
 
 /* casting helpers */
 #define to_osdp(p)                   ((osdp_t *)p)
-#define to_cp(p)                     ((to_osdp(p))->cp)
-#define to_pd(p, i)                  ((to_osdp(p))->pd + i)
-#define to_queue(p, i)               (to_cp(p)->queue + i)
+#define to_cp(p)                     (((osdp_t *)(p))->cp)
+#define to_pd(p, i)                  (((osdp_t *)(p))->pd + i)
+#define to_ctx(p)                    ((osdp_t *)p->__parent)
+#define child_set_parent(c, p)       ((c)->__parent = (void *)(p))
 #define to_current_pd(p)             (to_cp(p)->current_pd)
-#define to_current_queue(p)          (to_cp(p)->queue + to_cp(p)->pd_offset)
 
-#define __ctx                        osdp_t *ctx
 #define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))
-#define osdp_log(...)                osdp_log_print(ctx, ## __VA_ARGS__)
 
-#define set_current_pd(p, i)                        \
-    do {                                            \
-        to_cp(p)->current_pd = to_pd(p, i);         \
-        to_cp(p)->pd_offset = i;                    \
+#define set_current_pd(p, i)                                \
+    do {                                                    \
+        to_cp(p)->current_pd = to_pd(p, i);                 \
+        to_cp(p)->pd_offset = i;                            \
     } while (0)
 
 /* OSDP reserved commands */
@@ -147,8 +145,8 @@ enum hmi_cmd_perm_ctrl_code_e {
 
 struct _led_params {
     uint8_t control_code;
-    uint8_t on_time;
-    uint8_t off_time;
+    uint8_t on_count;
+    uint8_t off_count;
     uint8_t on_color;
     uint8_t off_color;
     uint16_t timer;
@@ -171,8 +169,8 @@ enum buzzer_tone_code_e {
 struct cmd_buzzer {
     uint8_t reader;
     uint8_t tone_code;
-    uint8_t on_time;
-    uint8_t off_time;
+    uint8_t on_count;
+    uint8_t off_count;
     uint8_t rep_count;
 };
 
@@ -249,6 +247,7 @@ struct pd_id {
 
 typedef struct {
     /* OSDP specified data */
+    void *__parent;
     int baud_rate;
     int address;
     int seq_number;
@@ -260,7 +259,8 @@ typedef struct {
     int flags;
     millis_t tstamp;
     int phy_state;
-    uint8_t scratch[64];
+    struct cmd_queue *queue;
+    uint8_t scratch[OSDP_PD_SCRATCH_SIZE];
     millis_t phy_tstamp;
 
     /* callbacks */
@@ -275,14 +275,13 @@ struct cmd_queue {
 };
 
 typedef struct {
+    void *__parent;
     int num_pd;
     int state;
     int flags;
 
     pd_t *current_pd;  /* current operational pd's pointer */
     int pd_offset;     /* current pd's offset into ctx->pd */
-
-    struct cmd_queue *queue;
 
     /* callbacks */
     int (*keypress_handler)(int address, uint8_t key);
@@ -292,7 +291,6 @@ typedef struct {
 typedef struct {
     int magic;
     int flags;
-    int log_level;
 
     cp_t *cp;
     pd_t *pd;
@@ -309,8 +307,6 @@ enum log_levels_e {
     LOG_DEBUG
 };
 
-void safe_free(void *p);
-
 millis_t millis_now();
 millis_t millis_since(millis_t last);
 
@@ -318,6 +314,7 @@ uint8_t compute_checksum(uint8_t *msg, int length);
 uint16_t compute_crc16(uint8_t *data, int  len);
 
 void osdp_dump(const char *head, const uint8_t *data, int len);
-void osdp_log_print(osdp_t *ctx, int log_level, const char *fmt, ...);
+void osdp_log(int log_level, const char *fmt, ...);
+void osdp_set_log_level(int log_level);
 
 #endif

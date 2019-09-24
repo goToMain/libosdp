@@ -1,4 +1,4 @@
-# libosdp
+# LibOSDP - Open Supervised Device Protocol Library
 
 [![Build Status][1]][2]
 
@@ -9,12 +9,24 @@ is currently in-process to become a standard recognized by the American National
 Standards Institute (ANSI).
 
 OSDP describes the communication protocol for interfacing one or more Peripheral
-Devices (PD) to a Control Panel (CP). This document specifies the protocol
+Devices (PD) to a Control Panel (CP). The OSDP specification describes the protocol
 implementation over a two-wire RS-485 multi-drop serial communication channel.
-In theory, this protocol can be used to transfer secure data over any physical
+Nevertheless, this protocol can be used to transfer secure data over any physical
+channel.
 
+## Salient Features of LibOSDP
 
-## Compile libosdp
+- Supports secure channel communication (AES-128).
+- LibOSDP can be used to setup a PD or CP.
+- Exposed a well defined contract though `include/osdp.h`.
+- No runtime memory allocation. All memory is allocated at init-time.
+- Well designed source code architecure.
+
+## Compile LibOSDP
+
+Build required you to have `cmake3` or above and a C compiler installed. This
+repository builds a `libosdp.a` that you can link with your application. Have a
+look at `sample/*` for details on how to consume this library.
 
 ```sh
 mkdir build
@@ -22,6 +34,9 @@ cd build
 cmake ..
 make
 ```
+
+This repository is a work in progress; read the `TODO` file for list of pending
+tasks. Patches in those areas are welcome; open an issue if you find a bug.
 
 [1]: https://travis-ci.org/cbsiddharth/libosdp.svg?branch=master
 [2]: https://travis-ci.org/cbsiddharth/libosdp

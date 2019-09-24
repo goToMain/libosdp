@@ -10,7 +10,9 @@
 
 #include <stdint.h>
 
+/* --- masked objects ---- */
 typedef void * osdp_cp_t;
+typedef void * osdp_pd_t;
 
 #define OSDP_PD_ERR_RETRY_SEC             (60)
 #define OSDP_PD_POLL_TIMEOUT_MS           (50)

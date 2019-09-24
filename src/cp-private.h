@@ -11,7 +11,7 @@
 #include "common.h"
 
 int cp_phy_state_update(pd_t *pd);
-void cp_phy_state_reset(pd_t *pd);
+void phy_state_reset(pd_t *pd);
 int cp_state_update(pd_t *pd);
 int cp_enqueue_command(pd_t *pd, struct cmd *c);
 

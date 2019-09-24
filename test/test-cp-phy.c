@@ -8,9 +8,9 @@
 #include "test.h"
 #include "cp-private.h"
 
-int cp_build_packet_head(pd_t *pd, uint8_t *buf, int maxlen);
-int cp_build_packet_tail(pd_t *pd, uint8_t *buf, int len, int maxlen);
-int cp_decode_packet(pd_t *pd, uint8_t *buf, int len);
+int phy_build_packet_head(pd_t *pd, uint8_t *buf, int maxlen);
+int phy_build_packet_tail(pd_t *pd, uint8_t *buf, int len, int maxlen);
+int phy_decode_packet(pd_t *pd, uint8_t *buf, int len);
 
 int cp_build_command(pd_t *pd, struct cmd *cmd, uint8_t *buf, int blen);
 int cp_decode_response(pd_t *pd, uint8_t *buf, int len);
@@ -30,13 +30,13 @@ static int test_cp_build_packet(pd_t *p, uint8_t *buf, int len, int maxlen)
     cmd_len = len;
     memcpy(cmd_buf, buf, len);
 
-    if ((len = cp_build_packet_head(p, buf, maxlen)) < 0) {
-        osdp_log(LOG_ERR, "failed to build_packet_head");
+    if ((len = phy_build_packet_head(p, buf, maxlen)) < 0) {
+        osdp_log(LOG_ERR, "failed to phy_build_packet_head");
         return -1;
     }
     memcpy(buf + len, cmd_buf, cmd_len);
     len += cmd_len;
-    if ((len = cp_build_packet_tail(p, buf, len, maxlen)) < 0) {
+    if ((len = phy_build_packet_tail(p, buf, len, maxlen)) < 0) {
         osdp_log(LOG_ERR, "failed to build command");
         return -1;
     }
@@ -78,7 +78,7 @@ int test_cp_build_packet_id(osdp_t *ctx)
     return 0;
 }
 
-int test_cp_decode_packet_ack(osdp_t *ctx)
+int test_phy_decode_packet_ack(osdp_t *ctx)
 {
     int len;
     pd_t *p = to_current_pd(ctx);
@@ -86,8 +86,8 @@ int test_cp_decode_packet_ack(osdp_t *ctx)
                             0x05, 0x40, 0x33, 0x87 };
     uint8_t expected[] = { REPLY_ACK };
 
-    printf("Testing cp_decode_packet(REPLY_ACK) -- ");
-    if ((len = cp_decode_packet(p, packet, 9)) < 0) {
+    printf("Testing phy_decode_packet(REPLY_ACK) -- ");
+    if ((len = phy_decode_packet(p, packet, 9)) < 0) {
         printf("error!\n");
         return -1;
     }
@@ -245,7 +245,7 @@ void run_cp_phy_tests(struct test *t)
 
     DO_TEST(t, test_cp_build_packet_poll);
     DO_TEST(t, test_cp_build_packet_id);
-    DO_TEST(t, test_cp_decode_packet_ack);
+    DO_TEST(t, test_phy_decode_packet_ack);
     DO_TEST(t, test_cp_build_command);
     DO_TEST(t, test_cp_process_response_id);
     DO_TEST(t, test_cp_queue_command);

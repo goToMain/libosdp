@@ -10,35 +10,6 @@
 
 #include "cp-private.h"
 
-void osdp_cp_teardown(osdp_cp_t *ctx)
-{
-    int i;
-    cp_t *cp;
-    pd_t *pd;
-
-    if (ctx == NULL)
-        return;
-
-    cp = to_cp(ctx);
-
-    /* teardown pd */
-    for (i = 0; i < cp->num_pd; i++) {
-        pd = to_pd(ctx, i);
-        if (pd != NULL) {
-            if (pd->queue != NULL)
-                free(pd->queue);
-            free(pd);
-        }
-    }
-
-    /* teardown cp */
-    if (cp != NULL) {
-        free(cp);
-    }
-
-    free(ctx);
-}
-
 osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
 {
     int i;
@@ -92,6 +63,33 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
 malloc_err:
     osdp_cp_teardown((osdp_cp_t *)ctx);
     return NULL;
+}
+
+void osdp_cp_teardown(osdp_cp_t *ctx)
+{
+    int i;
+    cp_t *cp;
+    pd_t *pd;
+
+    if (ctx == NULL)
+        return;
+
+    cp = to_cp(ctx);
+    if (cp == NULL)
+        return;
+
+    for (i = cp->num_pd - 1; i >= 0; i--) {
+        pd = to_pd(ctx, i);
+        if (pd != NULL) {
+            if (pd->queue != NULL)
+                free(pd->queue);
+            if (i == 0)
+                free(pd); // final
+        }
+    }
+
+    free(cp);
+    free(ctx);
 }
 
 void osdp_cp_refresh(osdp_cp_t *ctx)

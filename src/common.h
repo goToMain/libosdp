@@ -112,6 +112,7 @@
 #define PD_FLAG_COMSET_INPROG        0x00000010 /* set when comset is enabled */
 #define PD_FLAG_AWAIT_RESP           0x00000020 /* set after command is sent */
 #define PD_FLAG_SKIP_SEQ_CHECK       0x00000040 /* disable seq checks (debug) */
+#define PD_FLAG_PD_MODE              0x80000000 /* device is setup as PD */
 typedef uint64_t millis_t;
 
 /* CMD_OUT */
@@ -307,12 +308,32 @@ enum log_levels_e {
     LOG_DEBUG
 };
 
+enum pd_nak_code_e {
+    PD_NAK_NONE,
+    PD_NAK_MSG_CHK,
+    PD_NAK_CMD_LEN,
+    PD_NAK_CMD_UNKNOWN,
+    PD_NAK_SEQ_NUM,
+    PD_NAK_SC_UNSUPPORTED,
+    PD_NAK_SC_COND,
+    PD_NAK_BIO_TYPE,
+    PD_NAK_BIO_FMT,
+    PD_NAK_RECORD,
+    PD_NAK_SENTINEL
+};
+
+/* from phy.c */
+int phy_build_packet_head(pd_t *p, uint8_t *buf, int maxlen);
+int phy_build_packet_tail(pd_t *p, uint8_t *buf, int len, int maxlen);
+int phy_decode_packet(pd_t *p, uint8_t *buf, int blen);
+const char *get_nac_reason(int code);
+void phy_state_reset(pd_t *pd);
+
+/* from common.c */
 millis_t millis_now();
 millis_t millis_since(millis_t last);
-
 uint8_t compute_checksum(uint8_t *msg, int length);
 uint16_t compute_crc16(uint8_t *data, int  len);
-
 void osdp_dump(const char *head, const uint8_t *data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);

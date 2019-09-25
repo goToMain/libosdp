@@ -82,8 +82,8 @@ int test_phy_decode_packet_ack(osdp_t *ctx)
 {
     int len;
     pd_t *p = to_current_pd(ctx);
-    uint8_t packet[128] = { 0xff, 0x53, 0x65, 0x08, 0x00,
-                            0x05, 0x40, 0x33, 0x87 };
+    uint8_t packet[128] = { 0xff, 0x53, 0xe5, 0x08, 0x00,
+                            0x05, 0x40, 0xe3, 0xa5 };
     uint8_t expected[] = { REPLY_ACK };
 
     printf("Testing phy_decode_packet(REPLY_ACK) -- ");

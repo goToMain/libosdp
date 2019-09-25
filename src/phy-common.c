@@ -29,7 +29,7 @@ const char *get_nac_reason(int code)
         [PD_NAK_CMD_LEN]     = "NAK: Command length error",
         [PD_NAK_CMD_UNKNOWN] = "NAK: Unknown Command Code. Command not implemented by PD",
         [PD_NAK_SEQ_NUM]     = "NAK: Unexpected sequence number detected in the header",
-        [PD_NAK_SC_UNSUPPORTED] = "NAK: This PD does not support the security block that was received",
+        [PD_NAK_SC_UNSUP]    = "NAK: This PD does not support the security block that was received",
         [PD_NAK_SC_COND]     = "NAK: Communication security conditions not met",
         [PD_NAK_BIO_TYPE]    = "NAK: BIO_TYPE not supported",
         [PD_NAK_BIO_FMT]     = "NAK: BIO_FORMAT not supported",
@@ -55,9 +55,10 @@ static int phy_get_seq_number(pd_t *p, int do_inc)
 
 int phy_build_packet_head(pd_t *p, uint8_t *buf, int maxlen)
 {
-    int exp_len;
+    int exp_len, pd_mode;
     struct osdp_packet_header *pkt;
 
+    pd_mode = isset_flag(p, PD_FLAG_PD_MODE);
     exp_len = sizeof(struct osdp_packet_header);
     if (maxlen < exp_len) {
         osdp_log(LOG_NOTICE, "pkt_buf len err - %d/%d", maxlen, exp_len);
@@ -68,7 +69,9 @@ int phy_build_packet_head(pd_t *p, uint8_t *buf, int maxlen)
     pkt = (struct osdp_packet_header *)buf;
     pkt->mark = 0xFF;
     pkt->som = 0x53;
-    pkt->pd_address = p->address & 0xFF;  /* Use only the lower 8 bits */
+    pkt->pd_address = p->address & 0x7F;  /* Use only the lower 7 bits */
+    if (pd_mode)
+        pkt->pd_address |= 0x80;
     pkt->control = phy_get_seq_number(p, !isset_flag(p, PD_FLAG_PD_MODE));
     pkt->control |= PKT_CONTROL_CRC;
 
@@ -101,12 +104,14 @@ int phy_build_packet_tail(pd_t *p, uint8_t *buf, int len, int maxlen)
 
 int phy_decode_packet(pd_t *p, uint8_t *buf, int blen)
 {
-    int pkt_len;
+    int pkt_len, pd_mode;
     uint16_t comp, cur;
     struct osdp_packet_header *pkt;
 
-    /* validate packet header */
+    pd_mode = isset_flag(p, PD_FLAG_PD_MODE);
     pkt = (struct osdp_packet_header *)buf;
+
+    /* validate packet header */
     if (pkt->mark != 0xFF) {
         osdp_log(LOG_ERR, "invalid marking byte '0x%x'", pkt->mark);
         return -1;
@@ -115,8 +120,12 @@ int phy_decode_packet(pd_t *p, uint8_t *buf, int blen)
         osdp_log(LOG_ERR, "invalid mark SOM '%d'", pkt->som);
         return -1;
     }
-    if (pkt->pd_address != (p->address & 0xFF)) {
-        osdp_log(LOG_ERR, "invalid pd address %d", pkt->pd_address);
+    if (!pd_mode && !(pkt->pd_address & 0x80)) {
+        osdp_log(LOG_ERR, "reply without MSB set 0x%02x", pkt->pd_address);
+        return -1;
+    }
+    if ((pkt->pd_address & 0x7F) != (p->address & 0x7F)) {
+        osdp_log(LOG_ERR, "invalid pd address %d", (pkt->pd_address & 0x7F));
         return -1;
     }
     pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
@@ -125,7 +134,7 @@ int phy_decode_packet(pd_t *p, uint8_t *buf, int blen)
         return -1;
     }
     cur = pkt->control & PKT_CONTROL_SQN;
-    comp = phy_get_seq_number(p, isset_flag(p, PD_FLAG_PD_MODE));
+    comp = phy_get_seq_number(p, pd_mode);
     if (comp != cur && !isset_flag(p, PD_FLAG_SKIP_SEQ_CHECK)) {
         osdp_log(LOG_ERR, "packet seq mismatch %d/%d", comp, cur);
         return -1;

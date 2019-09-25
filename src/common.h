@@ -281,7 +281,7 @@ enum pd_nak_code_e {
     PD_NAK_CMD_LEN,
     PD_NAK_CMD_UNKNOWN,
     PD_NAK_SEQ_NUM,
-    PD_NAK_SC_UNSUPPORTED,
+    PD_NAK_SC_UNSUP,
     PD_NAK_SC_COND,
     PD_NAK_BIO_TYPE,
     PD_NAK_BIO_FMT,

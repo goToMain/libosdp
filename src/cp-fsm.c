@@ -22,7 +22,7 @@
 #define cp_reset_state(p)                               \
     do {                                                \
         p->state = CP_STATE_INIT;                       \
-        phy_state_reset(p);                          \
+        phy_state_reset(p);                             \
         p->flags = 0;                                   \
     } while (0)
 

@@ -50,5 +50,6 @@ struct test {
 void run_cp_phy_tests(struct test *t);
 void run_cp_phy_fsm_tests(struct test *t);
 void run_cp_fsm_tests(struct test *t);
+void run_mixed_fsm_tests(struct test *t);
 
 #endif

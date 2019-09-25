@@ -29,6 +29,7 @@ list(APPEND LIB_OSDP_SRC
         "src/cp-fsm.c"
         "src/cp.c"
         "src/pd-phy"
+        "src/pd.c"
 )
 ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})
 
@@ -40,6 +41,7 @@ list(APPEND LIB_OSDP_TEST_SRC
         "test/test-cp-phy.c"
         "test/test-cp-phy-fsm.c"
         "test/test-cp-fsm.c"
+        "test/test-mixed-fsm.c"
 )
 add_executable(${LIB_OSDP_TEST} ${LIB_OSDP_TEST_SRC})
 target_link_libraries(${LIB_OSDP_TEST} osdp)

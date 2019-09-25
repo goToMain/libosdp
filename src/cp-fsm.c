@@ -7,15 +7,6 @@
 
 #include "cp-private.h"
 
-enum cp_fsm_state_e {
-    CP_STATE_INIT,
-    CP_STATE_IDREQ,
-    CP_STATE_CAPDET,
-    CP_STATE_ONLINE,
-    CP_STATE_OFFLINE,
-    CP_STATE_SENTINEL
-};
-
 #define cp_set_offline(p)                               \
     do {                                                \
         p->state = CP_STATE_OFFLINE;                    \

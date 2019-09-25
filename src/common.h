@@ -199,31 +199,6 @@ struct cmd_comset {
     uint32_t baud;
 };
 
-/* got in response to OSDP_REPLY_PDCAP */
-struct pd_cap {
-    uint8_t compliance_level;
-    uint8_t num_items;
-};
-
-enum osdp_capabilities_e {
-    CAP_UNUSED,
-    CAP_CONTACT_STATUS_MONITORING,
-    CAP_OUTPUT_CONTROL,
-    CAP_CARD_DATA_FORMAT,
-    CAP_READER_LED_CONTROL,
-    CAP_READER_AUDIBLE_OUTPUT,
-    CAP_READER_TEXT_OUTPUT,
-    CAP_TIME_KEEPING,
-    CAP_CHECK_CHARACTER_SUPPORT,
-    CAP_COMMUNICATION_SECURITY,
-    CAP_RECEIVE_BUFFERSIZE,
-    CAP_LARGEST_COMBINED_MESSAGE_SIZE,
-    CAP_SMART_CARD_SUPPORT,
-    CAP_READERS,
-    CAP_BIOMETRICS,
-    CAP_SENTINEL
-};
-
 struct cmd {
     uint8_t len;
     uint8_t id;
@@ -236,14 +211,6 @@ union cmd_all {
     struct cmd_text text;
     struct cmd_output output;
     struct cmd_comset comset;
-};
-
-struct pd_id {
-    int version;
-    int model;
-    uint32_t vendor_code;
-    uint32_t serial_number;
-    uint32_t firmware_version;
 };
 
 typedef struct {

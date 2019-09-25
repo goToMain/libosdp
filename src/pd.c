@@ -5,13 +5,17 @@
  *    Date: Tue Sep 24 23:09:20 IST 2019
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include "common.h"
 
 osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
 {
+    int fc;
     pd_t *pd;
     cp_t *cp;
     osdp_t *ctx;
+    struct pd_cap * cap;
 
     ctx = calloc(1, sizeof(osdp_t));
     if (ctx == NULL) {
@@ -35,8 +39,8 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
         goto malloc_err;
     }
 
+    set_current_pd(ctx, 0);
     pd = to_pd(ctx, 0);
-    ctx->pd->queue = calloc(1, sizeof(struct cmd_queue));
     child_set_parent(pd, ctx);
     pd->baud_rate = p->baud_rate;
     pd->address = p->address;
@@ -44,6 +48,18 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
     pd->seq_number = -1;
     pd->send_func = p->send_func;
     pd->recv_func = p->recv_func;
+    memcpy(&pd->id, &p->id, sizeof(struct pd_id));
+    cap = pd->cap;
+    while (cap && cap->function_code > 0) {
+        fc = pd->cap->function_code;
+        if (fc >= CAP_SENTINEL)
+            break;
+        pd->cap[fc].function_code = cap->function_code;
+        pd->cap[fc].compliance_level = cap->compliance_level;
+        pd->cap[fc].num_items = cap->num_items;
+        cap++;
+    }
+
     set_flag(pd, PD_FLAG_PD_MODE);
 
     osdp_set_log_level(LOG_WARNING);
@@ -57,7 +73,6 @@ malloc_err:
 
 void osdp_pd_teardown(osdp_pd_t *ctx)
 {
-    int i;
     cp_t *cp;
     pd_t *pd;
 

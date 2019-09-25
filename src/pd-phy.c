@@ -5,7 +5,32 @@
  *    Date: Tue Sep 24 19:24:49 IST 2019
  */
 
-#include "common.h"
+#include "pd-private.h"
+
+int pd_set_output(struct cmd_output *p)
+{
+    return 0;
+}
+
+int pd_set_led(struct cmd_led *p)
+{
+    return 0;
+}
+
+int pd_set_buzzer(struct cmd_buzzer *p)
+{
+    return 0;
+}
+
+int pd_set_text(struct cmd_text *p)
+{
+    return 0;
+}
+
+int pd_set_comm_params(struct cmd_comset *p)
+{
+    return 0;
+}
 
 /**
  * Returns:
@@ -17,8 +42,6 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
 {
     int i, ret=-1, cmd_id, pos=0;
     union cmd_all cmd;
-    osdp_t *ctx = to_ctx(p);
-    uint32_t temp32;
 
     cmd_id = buf[pos++];
     len--;
@@ -146,7 +169,7 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
  */
 int pd_build_reply(pd_t *p, struct cmd *reply, uint8_t *buf, int maxlen)
 {
-    int i, ret_val=-1, len=0;
+    int i, len=0;
 
     switch(reply->id) {
     case REPLY_ACK:
@@ -154,25 +177,27 @@ int pd_build_reply(pd_t *p, struct cmd *reply, uint8_t *buf, int maxlen)
         break;
     case REPLY_PDID:
         buf[len++] = reply->id;
-        buf[len++] = BYTE_1(p->id.vendor_code);
-        buf[len++] = BYTE_2(p->id.vendor_code);
-        buf[len++] = BYTE_3(p->id.vendor_code);
+        buf[len++] = byte_0(p->id.vendor_code);
+        buf[len++] = byte_1(p->id.vendor_code);
+        buf[len++] = byte_2(p->id.vendor_code);
 
         buf[len++] = p->id.model;
         buf[len++] = p->id.version;
 
-        buf[len++] = BYTE_1(p->id.serial_number);
-        buf[len++] = BYTE_2(p->id.serial_number);
-        buf[len++] = BYTE_3(p->id.serial_number);
-        buf[len++] = BYTE_4(p->id.serial_number);
+        buf[len++] = byte_0(p->id.serial_number);
+        buf[len++] = byte_1(p->id.serial_number);
+        buf[len++] = byte_2(p->id.serial_number);
+        buf[len++] = byte_3(p->id.serial_number);
 
-        buf[len++] = BYTE_3(p->id.firmware_version);
-        buf[len++] = BYTE_2(p->id.firmware_version);
-        buf[len++] = BYTE_1(p->id.firmware_version);
+        buf[len++] = byte_3(p->id.firmware_version);
+        buf[len++] = byte_2(p->id.firmware_version);
+        buf[len++] = byte_1(p->id.firmware_version);
         break;
     case REPLY_PDCAP:
         buf[len++] = reply->id;
         for (i=0; i<CAP_SENTINEL; i++) {
+            if (p->cap[i].function_code != i)
+                continue;
             buf[len++] = i;
             buf[len++] = p->cap[i].compliance_level;
             buf[len++] = p->cap[i].num_items;
@@ -189,10 +214,10 @@ int pd_build_reply(pd_t *p, struct cmd *reply, uint8_t *buf, int maxlen)
         break;
     case REPLY_COM:
         buf[len++] = reply->id;
-        buf[len++] = BYTE_1(p->baud_rate);
-        buf[len++] = BYTE_2(p->baud_rate);
-        buf[len++] = BYTE_3(p->baud_rate);
-        buf[len++] = BYTE_4(p->baud_rate);
+        buf[len++] = byte_0(p->baud_rate);
+        buf[len++] = byte_1(p->baud_rate);
+        buf[len++] = byte_2(p->baud_rate);
+        buf[len++] = byte_3(p->baud_rate);
         break;
     case REPLY_NAK:
     default:
@@ -250,23 +275,14 @@ int pd_process_command(pd_t *p, struct cmd *reply)
         osdp_log(LOG_ERR, "failed decode response");
         return -1;
     }
+
     return pd_decode_command(p, reply, resp, len);
 }
-
-enum {
-    PD_PHY_STATE_IDLE,
-    PD_PHY_STATE_SEND_REPLY,
-    PD_PHY_STATE_ERR,
-};
 
 /**
  * Returns:
  *  -1: phy is in error state. Main state machine must reset it.
- *   0: No command in queue
- *   1: Command is in progress; this method must to be called again later.
- *   2: In command boundaries. There may or may not be other commands in queue.
- *
- * Note: This method must not dequeue cmd unless it reaches an invalid state.
+ *   0: Success
  */
 int pd_phy_state_update(pd_t *pd)
 {
@@ -288,8 +304,7 @@ int pd_phy_state_update(pd_t *pd)
         break;
     case PD_PHY_STATE_SEND_REPLY:
         if ((ret = pd_send_reply(pd, reply)) == 0) {
-            pd->phy_state = PD_PHY_STATE_ERR;
-            ret = 2;
+            pd->phy_state = PD_PHY_STATE_IDLE;
             break;
         }
         if (ret == -1) {

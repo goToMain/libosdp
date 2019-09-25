@@ -183,9 +183,12 @@ int cp_decode_response(pd_t *p, uint8_t *buf, int len)
             break;
         }
         while (pos < len) {
-            int cap_code = buf[pos++];
-            p->cap[cap_code].compliance_level = buf[pos++];
-            p->cap[cap_code].num_items = buf[pos++];
+            int func_code = buf[pos++];
+            if (func_code > CAP_SENTINEL)
+                break;
+            p->cap[func_code].function_code = func_code;
+            p->cap[func_code].compliance_level = buf[pos++];
+            p->cap[func_code].num_items = buf[pos++];
         }
         ret = 0;
         break;
@@ -395,13 +398,6 @@ int cp_dequeue_command(pd_t *pd, int readonly, uint8_t *cmd_buf, int maxlen)
         q->tail = end;
     return len;
 }
-
-enum {
-    CP_PHY_STATE_IDLE,
-    CP_PHY_STATE_SEND_CMD,
-    CP_PHY_STATE_RESP_WAIT,
-    CP_PHY_STATE_ERR,
-};
 
 /**
  * Returns:

@@ -4,7 +4,6 @@ List of pending tasks
 CP Mode:
 
 [*] Add support for Secure Channel
-[*] Add secure channel unit test cases
 [*] Implement worker threads for PD(s) in a given CP
 [*] Transparent mode support
 
@@ -12,11 +11,8 @@ PD Mode:
 
 [*] Come up with an architecture for exposing PD features as API
 [*] Come up with an architecture PD capabilities management
-[*] Implement PD mode phy functions
-[*] Check how much of CP phy can be reused in PD phy layer.
 [*] Implement top-level state machine
 [*] Add support for Secure Channel
-[*] Add secure channel unit test cases
 [*] Transparent mode support
 
 Documentation:
@@ -30,4 +26,5 @@ Documentation:
 
 Tests/Emulations:
 
+[*] Add secure channel unit test cases
 [*] Create a python tkinter GUI tool that emulates a PD

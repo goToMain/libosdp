@@ -35,12 +35,18 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
 
     ctx->pd = calloc(1, sizeof(pd_t));
     if (ctx->pd == NULL) {
-        osdp_log(LOG_ERR, "Failed to alloc cp_t[]");
+        osdp_log(LOG_ERR, "Failed to alloc pd_t");
+        goto malloc_err;
+    }
+    set_current_pd(ctx, 0);
+    pd = to_pd(ctx, 0);
+
+    pd->cmd_handler = calloc(1, sizeof(struct pd_cmd_handler));
+    if (pd->cmd_handler == NULL) {
+        osdp_log(LOG_ERR, "Failed to alloc pd_cmd_handler");
         goto malloc_err;
     }
 
-    set_current_pd(ctx, 0);
-    pd = to_pd(ctx, 0);
     child_set_parent(pd, ctx);
     pd->baud_rate = p->baud_rate;
     pd->address = p->address;
@@ -60,7 +66,7 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
         cap++;
     }
 
-    set_flag(pd, PD_FLAG_PD_MODE);
+    set_flag(pd, PD_FLAG_PD_MODE); /* used to understand operational mode */
 
     osdp_set_log_level(LOG_WARNING);
     osdp_log(LOG_INFO, "pd setup complete");
@@ -79,16 +85,60 @@ void osdp_pd_teardown(osdp_pd_t *ctx)
     if (ctx == NULL)
         return;
 
-    /* teardown pd */
+    /* teardown PD */
     pd = to_pd(ctx, 0);
-    if (pd != NULL)
+    if (pd != NULL) {
+        if (pd->cmd_handler != NULL)
+            free(pd->cmd_handler);
         free(pd);
+    }
 
-    /* teardown cp */
+    /* teardown CP */
     cp = to_cp(ctx);
     if (cp != NULL) {
         free(cp);
     }
 
     free(ctx);
+}
+
+int osdp_pd_set_led_handler(osdp_pd_t *ctx, int (*led)(struct cmd_led *p))
+{
+    pd_t *pd = to_current_pd(ctx);
+
+    pd->cmd_handler->led = led;
+    return 0;
+}
+
+
+int osdp_pd_set_buzzer_handler(osdp_pd_t *ctx, int (*buzzer)(struct cmd_buzzer *p))
+{
+    pd_t *pd = to_current_pd(ctx);
+
+    pd->cmd_handler->buzzer = buzzer;
+    return 0;
+}
+
+int osdp_pd_set_output_handler(osdp_pd_t *ctx, int (*output)(struct cmd_output *p))
+{
+    pd_t *pd = to_current_pd(ctx);
+
+    pd->cmd_handler->output = output;
+    return 0;
+}
+
+int osdp_pd_set_text_handler(osdp_pd_t *ctx, int (*text)(struct cmd_text *p))
+{
+    pd_t *pd = to_current_pd(ctx);
+
+    pd->cmd_handler->text = text;
+    return 0;
+}
+
+int osdp_pd_set_comset_handler(osdp_pd_t *ctx, int (*comset)(struct cmd_comset *p))
+{
+    pd_t *pd = to_current_pd(ctx);
+
+    pd->cmd_handler->comset = comset;
+    return 0;
 }

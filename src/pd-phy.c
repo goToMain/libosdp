@@ -7,30 +7,12 @@
 
 #include "pd-private.h"
 
-int pd_set_output(struct cmd_output *p)
-{
-    return 0;
-}
-
-int pd_set_led(struct cmd_led *p)
-{
-    return 0;
-}
-
-int pd_set_buzzer(struct cmd_buzzer *p)
-{
-    return 0;
-}
-
-int pd_set_text(struct cmd_text *p)
-{
-    return 0;
-}
-
-int pd_set_comm_params(struct cmd_comset *p)
-{
-    return 0;
-}
+#define call_fprt(fp, ...)          ({int r=-1; if(fp != NULL) r = fp(__VA_ARGS__); r;})
+#define pd_set_output(p, c)         call_fprt((p)->cmd_handler->output, (c))
+#define pd_set_led(p, c)            call_fprt((p)->cmd_handler->led,    (c))
+#define pd_set_buzzer(p, c)         call_fprt((p)->cmd_handler->buzzer, (c))
+#define pd_set_text(p, c)           call_fprt((p)->cmd_handler->text,   (c))
+#define pd_set_comm_params(p, c)    call_fprt((p)->cmd_handler->comset, (c))
 
 /**
  * Returns:
@@ -76,7 +58,7 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
         cmd.output.control_code = buf[pos++];
         cmd.output.tmr_count    = buf[pos++];
         cmd.output.tmr_count   |= buf[pos++] << 8;
-        if (pd_set_output(&cmd.output) != 0)
+        if (pd_set_output(p, &cmd.output) != 0)
             break;
         reply->id = REPLY_OSTATR;
         ret = 0;
@@ -100,7 +82,7 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
         cmd.led.permanent.off_count    = buf[pos++];
         cmd.led.permanent.on_color     = buf[pos++];
         cmd.led.permanent.off_color    = buf[pos++];
-        if (pd_set_led(&cmd.led) != 0)
+        if (pd_set_led(p, &cmd.led) < 0)
             break;
         reply->id = REPLY_ACK;
         ret = 0;
@@ -112,7 +94,7 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
         cmd.buzzer.on_count  = buf[pos++];
         cmd.buzzer.off_count = buf[pos++];
         cmd.buzzer.rep_count = buf[pos++];
-        if (pd_set_buzzer(&cmd.buzzer) != 0)
+        if (pd_set_buzzer(p, &cmd.buzzer) < 0)
             break;
         reply->id = REPLY_ACK;
         ret = 0;
@@ -131,7 +113,7 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
             break;
         for (i = 0; i < cmd.text.length; i++)
             cmd.text.data[i] = buf[pos++];
-        if (pd_set_text(&cmd.text) != 0)
+        if (pd_set_text(p, &cmd.text) < 0)
             break;
         reply->id = REPLY_ACK;
         ret = 0;
@@ -144,7 +126,7 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
         cmd.comset.baud |= buf[pos++] << 8;
         cmd.comset.baud |= buf[pos++] << 16;
         cmd.comset.baud |= buf[pos++] << 24;
-        if (pd_set_comm_params(&cmd.comset))
+        if (pd_set_comm_params(p, &cmd.comset) < 0)
             break;
         reply->id = REPLY_COM;
         ret = 0;

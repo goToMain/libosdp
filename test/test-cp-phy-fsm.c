@@ -102,7 +102,7 @@ void run_cp_phy_fsm_tests(struct test *t)
     }
 
     if (cp_enqueue_command(p, &cmd_id)) {
-        printf("enqueue cmd_poll error!\n");
+        printf("enqueue cmd_id error!\n");
         return;
     }
 

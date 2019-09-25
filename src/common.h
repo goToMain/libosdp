@@ -115,90 +115,6 @@
 #define PD_FLAG_PD_MODE              0x80000000 /* device is setup as PD */
 typedef uint64_t millis_t;
 
-/* CMD_OUT */
-enum cmd_output_control_code {
-    CMD_OP_NOP,
-    CMD_OP_POFF,
-    CMD_OP_PON,
-    CMD_OP_POFF_T,
-    CMD_OP_PON_T,
-    CMD_OP_TON,
-    CMD_OP_TOFF,
-};
-
-struct cmd_output {
-    uint8_t output_no;
-    uint8_t control_code;
-    uint16_t tmr_count;
-};
-
-/* CMD_LED */
-enum hmi_cmd_temp_ctrl_code_e {
-    TEMP_CC_TEMP_NOP,
-    TEMP_CC_TEMP_CANCEL,
-    TEMP_CC_TEMP_SET
-};
-
-enum hmi_cmd_perm_ctrl_code_e {
-    TEMP_CC_PERM_NOP,
-    TEMP_CC_PERM_SET
-};
-
-struct _led_params {
-    uint8_t control_code;
-    uint8_t on_count;
-    uint8_t off_count;
-    uint8_t on_color;
-    uint8_t off_color;
-    uint16_t timer;
-};
-
-struct cmd_led {
-    uint8_t reader;
-    uint8_t number;
-    struct _led_params temperory;
-    struct _led_params permanent;
-};
-
-/* CMD_BUZ */
-enum buzzer_tone_code_e {
-    TONE_NONE,
-    TONE_OFF,
-    TONE_DEFAULT,
-};
-
-struct cmd_buzzer {
-    uint8_t reader;
-    uint8_t tone_code;
-    uint8_t on_count;
-    uint8_t off_count;
-    uint8_t rep_count;
-};
-
-/* CMD_TEXT */
-enum text_command_e {
-    PERM_TEXT_NO_WRAP=1,
-    PERM_TEXT_WRAP,
-    TEMP_TEXT_NO_WRAP,
-    TEMP_TEXT_WRAP
-};
-
-struct cmd_text {
-    uint8_t reader;
-    uint8_t cmd;
-    uint8_t temp_time;
-    uint8_t offset_row;
-    uint8_t offset_col;
-    uint8_t length;
-    uint8_t data[32];
-};
-
-/* CMD_COMSET */
-struct cmd_comset {
-    uint8_t addr;
-    uint32_t baud;
-};
-
 struct cmd {
     uint8_t len;
     uint8_t id;
@@ -211,6 +127,14 @@ union cmd_all {
     struct cmd_text text;
     struct cmd_output output;
     struct cmd_comset comset;
+};
+
+struct pd_cmd_handler {
+    int (*led)(struct cmd_led *p);
+    int (*buzzer)(struct cmd_buzzer *p);
+    int (*text)(struct cmd_text *p);
+    int (*output)(struct cmd_output *p);
+    int (*comset)(struct cmd_comset *p);
 };
 
 typedef struct {
@@ -227,9 +151,14 @@ typedef struct {
     int flags;
     millis_t tstamp;
     int phy_state;
-    struct cmd_queue *queue;
     uint8_t scratch[OSDP_PD_SCRATCH_SIZE];
     millis_t phy_tstamp;
+
+    /* CP mode only data */
+    struct cmd_queue *queue;
+
+    /* PD mode only data */
+    struct pd_cmd_handler *cmd_handler;
 
     /* callbacks */
     int (*send_func)(uint8_t *buf, int len);

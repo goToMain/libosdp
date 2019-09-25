@@ -35,7 +35,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
 
     ctx->pd = calloc(1, sizeof(pd_t) * num_pd);
     if (ctx->pd == NULL) {
-        osdp_log(LOG_ERR, "Failed to alloc cp_t[]");
+        osdp_log(LOG_ERR, "Failed to alloc pd_t[]");
         goto malloc_err;
     }
 

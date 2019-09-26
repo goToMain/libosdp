@@ -45,7 +45,7 @@ int main()
     osdp_cp_t *ctx = osdp_cp_setup(OSDP_PD_SENTINEL, info);
 
     if (ctx == NULL) {
-        printf("   init failed!\n");
+        printf("cp init failed!\n");
         return -1;
     }
     // osdp_set_log_level(LOG_DEBUG);

@@ -69,13 +69,13 @@ int pd_decode_command(pd_t *p, struct cmd *reply, uint8_t *buf, int len)
         cmd.led.reader                 = buf[pos++];
         cmd.led.number                 = buf[pos++];
 
-        cmd.led.temperory.control_code = buf[pos++];
-        cmd.led.temperory.on_count     = buf[pos++];
-        cmd.led.temperory.off_count    = buf[pos++];
-        cmd.led.temperory.on_color     = buf[pos++];
-        cmd.led.temperory.off_color    = buf[pos++];
-        cmd.led.temperory.timer        = buf[pos++];
-        cmd.led.temperory.timer       |= buf[pos++] << 8;
+        cmd.led.temporary.control_code = buf[pos++];
+        cmd.led.temporary.on_count     = buf[pos++];
+        cmd.led.temporary.off_count    = buf[pos++];
+        cmd.led.temporary.on_color     = buf[pos++];
+        cmd.led.temporary.off_color    = buf[pos++];
+        cmd.led.temporary.timer        = buf[pos++];
+        cmd.led.temporary.timer       |= buf[pos++] << 8;
 
         cmd.led.permanent.control_code = buf[pos++];
         cmd.led.permanent.on_count     = buf[pos++];

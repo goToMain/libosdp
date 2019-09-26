@@ -53,13 +53,13 @@ int cp_build_command(pd_t *p, struct cmd *cmd, uint8_t *buf, int maxlen)
         buf[len++] = c->led.reader;
         buf[len++] = c->led.number;
 
-        buf[len++] = c->led.temperory.control_code;
-        buf[len++] = c->led.temperory.on_count;
-        buf[len++] = c->led.temperory.off_count;
-        buf[len++] = c->led.temperory.on_color;
-        buf[len++] = c->led.temperory.off_color;
-        buf[len++] = byte_0(c->led.temperory.timer);
-        buf[len++] = byte_1(c->led.temperory.timer);
+        buf[len++] = c->led.temporary.control_code;
+        buf[len++] = c->led.temporary.on_count;
+        buf[len++] = c->led.temporary.off_count;
+        buf[len++] = c->led.temporary.on_color;
+        buf[len++] = c->led.temporary.off_color;
+        buf[len++] = byte_0(c->led.temporary.timer);
+        buf[len++] = byte_1(c->led.temporary.timer);
 
         buf[len++] = c->led.permanent.control_code;
         buf[len++] = c->led.permanent.on_count;

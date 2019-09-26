@@ -99,7 +99,7 @@ struct __osdp_cmd_led_params {
 struct osdp_cmd_led {
     uint8_t reader;
     uint8_t number;
-    struct __osdp_cmd_led_params temperory;
+    struct __osdp_cmd_led_params temporary;
     struct __osdp_cmd_led_params permanent;
 };
 

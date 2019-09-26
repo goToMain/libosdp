@@ -76,7 +76,6 @@ int test_mixed_fsm_setup(struct test *t)
         printf("   cp init failed!\n");
         return -1;
     }
-    set_current_pd(test_data.cp_ctx, 0);
 
     struct pd_cap cap[] = {
         {
@@ -84,7 +83,7 @@ int test_mixed_fsm_setup(struct test *t)
             .compliance_level = 1,
             .num_items = 1
         },
-        { -1, 0, 0 } /* notify end of cap list */
+        OSDP_PD_CAP_SENTINEL
     };
     osdp_pd_info_t info_pd = {
         .address = 101,
@@ -107,7 +106,6 @@ int test_mixed_fsm_setup(struct test *t)
         osdp_cp_teardown((osdp_cp_t *)test_data.cp_ctx);
         return -1;
     }
-    set_current_pd(test_data.pd_ctx, 0);
     // osdp_set_log_level(LOG_DEBUG);
     t->mock_data = (void *)&test_data;
     return 0;
@@ -139,7 +137,7 @@ void run_mixed_fsm_tests(struct test *t)
         cp_state_update(to_current_pd(p->cp_ctx));
         pd_phy_state_update(to_current_pd(p->pd_ctx));
 
-        if (to_current_pd(p->cp_ctx)->phy_state == CP_PHY_STATE_ERR ||
+        if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE ||
                 to_current_pd(p->pd_ctx)->phy_state == PD_PHY_STATE_ERR) {
             printf("    -- phy state error!\n");
             result = FALSE;

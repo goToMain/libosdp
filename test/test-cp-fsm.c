@@ -83,6 +83,7 @@ void test_cp_fsm_teardown(struct test *t)
 
 void run_cp_fsm_tests(struct test *t)
 {
+    int result = TRUE;
     uint32_t count=0;
     osdp_t *ctx = t->mock_data;
 
@@ -94,13 +95,18 @@ void run_cp_fsm_tests(struct test *t)
     printf("    -- executing cp_state_update()\n");
     while (1) {
         cp_state_update(to_current_pd(ctx));
+
+        if (to_current_pd(ctx)->state == CP_STATE_OFFLINE) {
+            result = FALSE;
+            break;
+        }
         if (count++ > 300)
             break;
         usleep(1000);
     }
     printf("    -- cp_state_update() complete\n");
 
-    TEST_REPORT(t, TRUE);
+    TEST_REPORT(t, result);
 
     test_cp_fsm_teardown(t);
 }

@@ -122,19 +122,19 @@ struct cmd {
 };
 
 union cmd_all {
-    struct cmd_led led;
-    struct cmd_buzzer buzzer;
-    struct cmd_text text;
-    struct cmd_output output;
-    struct cmd_comset comset;
+    struct osdp_cmd_led led;
+    struct osdp_cmd_buzzer buzzer;
+    struct osdp_cmd_text text;
+    struct osdp_cmd_output output;
+    struct osdp_cmd_comset comset;
 };
 
 struct pd_cmd_handler {
-    int (*led)(struct cmd_led *p);
-    int (*buzzer)(struct cmd_buzzer *p);
-    int (*text)(struct cmd_text *p);
-    int (*output)(struct cmd_output *p);
-    int (*comset)(struct cmd_comset *p);
+    int (*led)(struct osdp_cmd_led *p);
+    int (*buzzer)(struct osdp_cmd_buzzer *p);
+    int (*text)(struct osdp_cmd_text *p);
+    int (*output)(struct osdp_cmd_output *p);
+    int (*comset)(struct osdp_cmd_comset *p);
 };
 
 typedef struct {

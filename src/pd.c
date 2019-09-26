@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "common.h"
+#include "pd-private.h"
 
 osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
 {
@@ -102,7 +102,14 @@ void osdp_pd_teardown(osdp_pd_t *ctx)
     free(ctx);
 }
 
-int osdp_pd_set_led_handler(osdp_pd_t *ctx, int (*led)(struct cmd_led *p))
+void osdp_pd_refresh(osdp_pd_t *ctx)
+{
+    pd_t *pd = to_current_pd(ctx);
+
+    pd_phy_state_update(pd);
+}
+
+int osdp_pd_set_led_handler(osdp_pd_t *ctx, int (*led)(struct osdp_cmd_led *p))
 {
     pd_t *pd = to_current_pd(ctx);
 
@@ -111,7 +118,7 @@ int osdp_pd_set_led_handler(osdp_pd_t *ctx, int (*led)(struct cmd_led *p))
 }
 
 
-int osdp_pd_set_buzzer_handler(osdp_pd_t *ctx, int (*buzzer)(struct cmd_buzzer *p))
+int osdp_pd_set_buzzer_handler(osdp_pd_t *ctx, int (*buzzer)(struct osdp_cmd_buzzer *p))
 {
     pd_t *pd = to_current_pd(ctx);
 
@@ -119,7 +126,7 @@ int osdp_pd_set_buzzer_handler(osdp_pd_t *ctx, int (*buzzer)(struct cmd_buzzer *
     return 0;
 }
 
-int osdp_pd_set_output_handler(osdp_pd_t *ctx, int (*output)(struct cmd_output *p))
+int osdp_pd_set_output_handler(osdp_pd_t *ctx, int (*output)(struct osdp_cmd_output *p))
 {
     pd_t *pd = to_current_pd(ctx);
 
@@ -127,7 +134,7 @@ int osdp_pd_set_output_handler(osdp_pd_t *ctx, int (*output)(struct cmd_output *
     return 0;
 }
 
-int osdp_pd_set_text_handler(osdp_pd_t *ctx, int (*text)(struct cmd_text *p))
+int osdp_pd_set_text_handler(osdp_pd_t *ctx, int (*text)(struct osdp_cmd_text *p))
 {
     pd_t *pd = to_current_pd(ctx);
 
@@ -135,7 +142,7 @@ int osdp_pd_set_text_handler(osdp_pd_t *ctx, int (*text)(struct cmd_text *p))
     return 0;
 }
 
-int osdp_pd_set_comset_handler(osdp_pd_t *ctx, int (*comset)(struct cmd_comset *p))
+int osdp_pd_set_comset_handler(osdp_pd_t *ctx, int (*comset)(struct osdp_cmd_comset *p))
 {
     pd_t *pd = to_current_pd(ctx);
 

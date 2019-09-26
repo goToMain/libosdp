@@ -82,32 +82,34 @@ void test_cp_phy_fsm_teardown(struct test *t)
 
 void run_cp_phy_fsm_tests(struct test *t)
 {
-    int ret;
+    int ret, result = TRUE;
     osdp_t *ctx = t->mock_data;
     pd_t *p;
 
-    printf("\nStarting CP Phy state tests\n");
+    printf("\nStarting CP fsm state tests\n");
 
     struct cmd cmd_poll = { .id = CMD_POLL, .len = 2 };
     struct cmd cmd_id = { .id = CMD_ID, .len = 2 };
 
-    if (test_cp_phy_fsm_setup(t))
+    if (test_cp_phy_fsm_setup(t)) {
+        printf("    -- error failed to setup cp_phy\n");
         return;
+    }
 
     p = to_current_pd(ctx);
 
     if (cp_enqueue_command(p, &cmd_poll)) {
         printf("enqueue cmd_poll error!\n");
-        return;
+        result = FALSE;
     }
 
     if (cp_enqueue_command(p, &cmd_id)) {
         printf("enqueue cmd_id error!\n");
-        return;
+        result = FALSE;
     }
 
     printf("    -- executing test_cp_phy_fsm()\n");
-    while (1) {
+    while (result) {
         ret = cp_phy_state_update(p);
         if (ret != 1 && ret != 2)
             break;
@@ -123,10 +125,10 @@ void run_cp_phy_fsm_tests(struct test *t)
         printf("    -- error ID mismatch! 0x%04x 0x%02x 0x%02x 0x04%x 0x04%x\n",
                p->id.vendor_code, p->id.model, p->id.version,
                p->id.serial_number, p->id.firmware_version);
-        return;
+        result = FALSE;
     }
 
-    TEST_REPORT(t, TRUE);
+    TEST_REPORT(t, result);
 
     printf("    -- test_cp_phy_fsm() complete -- %d\n", ret);
 

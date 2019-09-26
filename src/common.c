@@ -13,7 +13,7 @@
 
 #include "common.h"
 
-int g_log_level;  /* Note: log level is not contextual */
+int g_log_level = LOG_WARNING;  /* Note: log level is not contextual */
 static unsigned short fcrc_table_is_valid = 0;  /* preset: CRC Table not initialized */
 static unsigned short fcrc_table[256];          /* CRC table - working copy */
 

@@ -104,10 +104,10 @@ int test_cp_build_command(osdp_t *ctx)
     uint8_t cmd_buf[64];
     uint8_t expected[] = { 0x6a, 0x65, 0x00, 0x0a, 0x0a, 0x00 };
     struct cmd *c = (struct cmd *)cmd_buf;
-    struct cmd_buzzer *buz = (struct cmd_buzzer *)&c->data;
+    struct osdp_cmd_buzzer *buz = (struct osdp_cmd_buzzer *)&c->data;
 
     c->id = CMD_BUZ;
-    c->len = sizeof(struct cmd) + sizeof(struct cmd_buzzer);
+    c->len = sizeof(struct cmd) + sizeof(struct osdp_cmd_buzzer);
     buz->on_count = 10;
     buz->off_count = 10;
     buz->reader = 101;

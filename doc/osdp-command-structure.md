@@ -23,14 +23,16 @@ struct osdp_cmd_led {
 };
 ```
 
-**reader:** 0 = First Reader, 1 = Second Reader, etc.
-**number:** 0 = first LED, 1 = second LED, etc.
-**control_code:** see table below
-**on_count:** The ON duration of the flash, in units of 100 ms
-**off_count:** The OFF duration of the flash, in units of 100 ms
-**on_color:** The color to set during the ON time
-**off_color:** The color to set during the OFF time
-**timer:** time in units of 100 ms (only for temporary mode)
+| Field           | Description                                         |
+|-----------------|-----------------------------------------------------|
+| reader          | 0 = First Reader, 1 = Second Reader, etc.           |
+| number          | 0 = first LED, 1 = second LED, etc.                 |
+| control_code    | see table below                                     |
+| on_count        | The ON duration of the flash, in units of 100 ms    |
+| off_count       | The OFF duration of the flash, in units of 100 ms   |
+| on_color        | The color to set during the ON timer                |
+| off_color       | The color to set during the OFF timer               |
+| timer           | Time in units of 100 ms (only for temporary mode)   |
 
 ### Temporary Control Code
 
@@ -58,9 +60,11 @@ struct osdp_cmd_output {
 };
 ```
 
-**output_no:** 0 = First Output, 1 = Second Output, etc.
-**control_code:** See blow table
-**tmr_count:** Time in units of 100 ms
+| Field           | Description                                         |
+|-----------------|-----------------------------------------------------|
+| output_no       | 0 = First Output, 1 = Second Output, etc.           |
+| control_code    | See blow table                                      |
+| tmr_count       | Time in units of 100 ms                             |
 
 | Control Code | Meaning                                                            |
 |:------------:|:-------------------------------------------------------------------|
@@ -84,11 +88,13 @@ struct osdp_cmd_buzzer {
 };
 ```
 
-**reader:** 0 = First Reader, 1 = Second Reader, etc.
-**tone_code:** 0: no tone, 1: off, 2: default tone, 3+ is TBD.
-**on_count:** The ON duration of the flash, in units of 100 ms
-**off_count:** The OFF duration of the flash, in units of 100 ms
-**rep_count:** The number of times to repeat the ON/OFF cycle; 0: forever
+| Field           | Description                                                 |
+|-----------------|-------------------------------------------------------------|
+| reader          | 0 = First Reader, 1 = Second Reader, etc.                   |
+| tone_code       | 0: no tone, 1: off, 2: default tone, 3+ is TBD.             |
+| on_count        | The ON duration of the flash, in units of 100 ms            |
+| off_count       | The OFF duration of the flash, in units of 100 ms           |
+| rep_count       | The number of times to repeat the ON/OFF cycle; 0: forever  |
 
 ## Command Test
 
@@ -104,13 +110,15 @@ struct osdp_cmd_text {
 };
 ```
 
-**reader:** 0 = First Reader, 1 = Second Reader, etc.
-**cmd:** How to treat the text; see table below
-**temp_time:** The duration to display temporary text, in seconds
-**offset_row:** The row where the first character will be displayed (1 is the top row)
-**offset_col:** The column where the first character will be displayed (1 is the left-most column)
-**length:** Number of characters in the string
-**data:** The string to display
+| Field           | Description                                                                         |
+|-----------------|-------------------------------------------------------------------------------------|
+| reader          | 0 = First Reader, 1 = Second Reader, etc.                                           |
+| cmd             | How to treat the text; see table below                                              |
+| temp_time       | The duration to display temporary text, in seconds                                  |
+| offset_row      | The row where the first character will be displayed (1 is the top row)              |
+| offset_col      | The column where the first character will be displayed (1 is the left-most column)  |
+| length          | Number of characters in the string                                                  |
+| data            | The string to display                                                               |
 
 | Command | Meaning                     |
 |:-------:|:----------------------------|
@@ -128,5 +136,7 @@ struct osdp_cmd_comset {
 };
 ```
 
-**addr:** Unit ID to which this PD will respond after the change takes effect
-**baud:** baud rate value 9600/38400/115200
+| Field           | Description                                                         |
+|-----------------|---------------------------------------------------------------------|
+| addr            | Unit ID to which this PD will respond after the change takes effect |
+| baud            | baud rate value 9600/38400/115200                                   |

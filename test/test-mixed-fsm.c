@@ -1,8 +1,7 @@
-/**
- *  SPDX-License-Identifier: MIT
+/*
+ * Copyright (c) 2019 Siddharth Chandrasekaran
  *
- *  Author: Siddharth Chandrasekaran
- *    Date: Sun Sep 22 14:33:07 IST 2019
+ * SPDX-License-Identifier: MIT
  */
 
 #include <unistd.h>

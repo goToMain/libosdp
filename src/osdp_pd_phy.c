@@ -1,8 +1,7 @@
-/**
- *  SPDX-License-Identifier: MIT
+/*
+ * Copyright (c) 2019 Siddharth Chandrasekaran
  *
- *  Author: Siddharth Chandrasekaran
- *    Date: Tue Sep 24 19:24:49 IST 2019
+ * SPDX-License-Identifier: MIT
  */
 
 #include "osdp_pd_private.h"

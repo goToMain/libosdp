@@ -16,129 +16,129 @@
 #define OSDP_PD_CMD_QUEUE_SIZE            (128)
 #define OSDP_RESP_TOUT_MS                 (400)
 #define OSDP_PD_SCRATCH_SIZE              (64)
-#define OSDP_PD_CAP_SENTINEL              { -1, 0, 0 } /* struct pd_cap[] end */
+#define OSDP_PD_CAP_SENTINEL              { -1, 0, 0 }	/* struct pd_cap[] end */
 
 enum osdp_card_formats_e {
-    OSDP_CARD_FMT_RAW_UNSPECIFIED,
-    OSDP_CARD_FMT_RAW_WIEGAND,
-    OSDP_CARD_FMT_ASCII,
-    OSDP_CARD_FMT_SENTINEL
+	OSDP_CARD_FMT_RAW_UNSPECIFIED,
+	OSDP_CARD_FMT_RAW_WIEGAND,
+	OSDP_CARD_FMT_ASCII,
+	OSDP_CARD_FMT_SENTINEL
 };
 
 /* struct pd_cap::function_code */
 enum osdp_pd_cap_function_code_e {
-    CAP_UNUSED,
-    CAP_CONTACT_STATUS_MONITORING,
-    CAP_OUTPUT_CONTROL,
-    CAP_CARD_DATA_FORMAT,
-    CAP_READER_LED_CONTROL,
-    CAP_READER_AUDIBLE_OUTPUT,
-    CAP_READER_TEXT_OUTPUT,
-    CAP_TIME_KEEPING,
-    CAP_CHECK_CHARACTER_SUPPORT,
-    CAP_COMMUNICATION_SECURITY,
-    CAP_RECEIVE_BUFFERSIZE,
-    CAP_LARGEST_COMBINED_MESSAGE_SIZE,
-    CAP_SMART_CARD_SUPPORT,
-    CAP_READERS,
-    CAP_BIOMETRICS,
-    CAP_SENTINEL
+	CAP_UNUSED,
+	CAP_CONTACT_STATUS_MONITORING,
+	CAP_OUTPUT_CONTROL,
+	CAP_CARD_DATA_FORMAT,
+	CAP_READER_LED_CONTROL,
+	CAP_READER_AUDIBLE_OUTPUT,
+	CAP_READER_TEXT_OUTPUT,
+	CAP_TIME_KEEPING,
+	CAP_CHECK_CHARACTER_SUPPORT,
+	CAP_COMMUNICATION_SECURITY,
+	CAP_RECEIVE_BUFFERSIZE,
+	CAP_LARGEST_COMBINED_MESSAGE_SIZE,
+	CAP_SMART_CARD_SUPPORT,
+	CAP_READERS,
+	CAP_BIOMETRICS,
+	CAP_SENTINEL
 };
 
 /* CMD_OUT */
 struct osdp_cmd_output {
-    uint8_t output_no;
-    uint8_t control_code;
-    uint16_t tmr_count;
+	uint8_t output_no;
+	uint8_t control_code;
+	uint16_t tmr_count;
 };
 
 /* CMD_LED */
 struct __osdp_cmd_led_params {
-    uint8_t control_code;
-    uint8_t on_count;
-    uint8_t off_count;
-    uint8_t on_color;
-    uint8_t off_color;
-    uint16_t timer;
+	uint8_t control_code;
+	uint8_t on_count;
+	uint8_t off_count;
+	uint8_t on_color;
+	uint8_t off_color;
+	uint16_t timer;
 };
 
 struct osdp_cmd_led {
-    uint8_t reader;
-    uint8_t number;
-    struct __osdp_cmd_led_params temporary;
-    struct __osdp_cmd_led_params permanent;
+	uint8_t reader;
+	uint8_t number;
+	struct __osdp_cmd_led_params temporary;
+	struct __osdp_cmd_led_params permanent;
 };
 
 /* CMD_BUZ */
 struct osdp_cmd_buzzer {
-    uint8_t reader;
-    uint8_t tone_code;
-    uint8_t on_count;
-    uint8_t off_count;
-    uint8_t rep_count;
+	uint8_t reader;
+	uint8_t tone_code;
+	uint8_t on_count;
+	uint8_t off_count;
+	uint8_t rep_count;
 };
 
 /* CMD_TEXT */
 struct osdp_cmd_text {
-    uint8_t reader;
-    uint8_t cmd;
-    uint8_t temp_time;
-    uint8_t offset_row;
-    uint8_t offset_col;
-    uint8_t length;
-    uint8_t data[32];
+	uint8_t reader;
+	uint8_t cmd;
+	uint8_t temp_time;
+	uint8_t offset_row;
+	uint8_t offset_col;
+	uint8_t length;
+	uint8_t data[32];
 };
 
 /* CMD_COMSET */
 struct osdp_cmd_comset {
-    uint8_t addr;
-    uint32_t baud;
+	uint8_t addr;
+	uint32_t baud;
 };
 
 struct pd_cap {
-    uint8_t function_code; /* enum osdp_pd_cap_function_code_e */
-    uint8_t compliance_level;
-    uint8_t num_items;
+	uint8_t function_code;	/* enum osdp_pd_cap_function_code_e */
+	uint8_t compliance_level;
+	uint8_t num_items;
 };
 
 struct pd_id {
-    int version;
-    int model;
-    uint32_t vendor_code;
-    uint32_t serial_number;
-    uint32_t firmware_version;
+	int version;
+	int model;
+	uint32_t vendor_code;
+	uint32_t serial_number;
+	uint32_t firmware_version;
 };
 
 typedef struct {
     /**
      * Can be one of 9600/38400/115200.
      */
-    int baud_rate;
+	int baud_rate;
 
     /**
      * 7 bit PD address. the rest of the bits are ignored. The special address
      * 0x7F is used for broadcast. So there can be 2^7-1 devices on a multi-
      * drop channel.
      */
-    int address;
+	int address;
 
     /**
      * Used to modify the way the context is setup.
      */
-    int init_flags;
+	int init_flags;
 
     /**
      * Static info that the PD reports to the CP when it received a `CMD_ID`.
      * This is used only in PD mode of operation.
      */
-    struct pd_id id;
+	struct pd_id id;
 
     /**
      * This is a pointer to an array of structures containing the PD's
      * capabilities. Use macro `OSDP_PD_CAP_SENTINEL` to terminate the array.
      * This is used only PD mode of operation.
      */
-    struct pd_cap *cap;
+	struct pd_cap *cap;
 
     /**
      * send_func - Sends byte array into some channel
@@ -148,7 +148,7 @@ typedef struct {
      * Returns:
      *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
      */
-    int (*send_func)(uint8_t *buf, int len);
+	int (*send_func) (uint8_t * buf, int len);
 
     /**
      * recv_func - Copies received bytes into buffer
@@ -158,7 +158,7 @@ typedef struct {
      * Returns:
      *  +ve: number of bytes copied on to `bug`. Must be <= `len`
      */
-    int (*recv_func)(uint8_t *buf, int len);
+	int (*recv_func) (uint8_t * buf, int len);
 
 } osdp_pd_info_t;
 
@@ -168,38 +168,38 @@ typedef struct {
  * level of abstaction looked reasonable as _technically_ no one should attempt
  * to modify it outside fo the LibOSDP.
  */
-typedef void * osdp_cp_t;
-typedef void * osdp_pd_t;
+typedef void *osdp_cp_t;
+typedef void *osdp_pd_t;
 
 /* --- CP Only---- */
 
 struct osdp_cp_notifiers {
-    int (*keypress)(int address, uint8_t key);
-    int (*cardread)(int address, int format, uint8_t *data, int len);
+	int (*keypress) (int address, uint8_t key);
+	int (*cardread) (int address, int format, uint8_t * data, int len);
 };
 
-osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info);
-void osdp_cp_refresh(osdp_cp_t *ctx);
-void osdp_cp_teardown(osdp_cp_t *ctx);
+osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info);
+void osdp_cp_refresh(osdp_cp_t * ctx);
+void osdp_cp_teardown(osdp_cp_t * ctx);
 
-int osdp_cp_set_notifiers(osdp_cp_t *ctx, struct osdp_cp_notifiers *n);
-int osdp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p);
-int osdp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p);
-int osdp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
-int osdp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p);
+int osdp_cp_set_notifiers(osdp_cp_t * ctx, struct osdp_cp_notifiers *n);
+int osdp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p);
+int osdp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p);
+int osdp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p);
+int osdp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
 
 /* --- PD Only --- */
 
 struct pd_cmd_handler {
-    int (*led)(struct osdp_cmd_led *p);
-    int (*buzzer)(struct osdp_cmd_buzzer *p);
-    int (*text)(struct osdp_cmd_text *p);
-    int (*output)(struct osdp_cmd_output *p);
-    int (*comset)(struct osdp_cmd_comset *p);
+	int (*led) (struct osdp_cmd_led * p);
+	int (*buzzer) (struct osdp_cmd_buzzer * p);
+	int (*text) (struct osdp_cmd_text * p);
+	int (*output) (struct osdp_cmd_output * p);
+	int (*comset) (struct osdp_cmd_comset * p);
 };
 
-osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p);
-void osdp_pd_teardown(osdp_pd_t *ctx);
-int osdp_pd_set_cmd_handlers(osdp_pd_t *ctx, struct pd_cmd_handler *h);
+osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p);
+void osdp_pd_teardown(osdp_pd_t * ctx);
+int osdp_pd_set_cmd_handlers(osdp_pd_t * ctx, struct pd_cmd_handler *h);
 
-#endif /* _OSDP_H_ */
+#endif				/* _OSDP_H_ */

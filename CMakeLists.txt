@@ -23,13 +23,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 ## build libosdp.a
 set(LIB_OSDP osdp)
 list(APPEND LIB_OSDP_SRC
-        "src/osdp_common.c"
-        "src/osdp_common_phy.c"
-        "src/osdp_cp_phy.c"
-        "src/osdp_cp_fsm.c"
-        "src/osdp_cp.c"
-        "src/osdp_pd_phy"
-        "src/osdp_pd.c"
+	"src/osdp_common.c"
+	"src/osdp_common_phy.c"
+	"src/osdp_cp_phy.c"
+	"src/osdp_cp_fsm.c"
+	"src/osdp_cp.c"
+	"src/osdp_pd_phy"
+	"src/osdp_pd.c"
 )
 ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})
 
@@ -37,11 +37,11 @@ ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})
 set(LIB_OSDP_TEST osdp-test)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 list(APPEND LIB_OSDP_TEST_SRC
-        "test/test.c"
-        "test/test-cp-phy.c"
-        "test/test-cp-phy-fsm.c"
-        "test/test-cp-fsm.c"
-        "test/test-mixed-fsm.c"
+	"test/test.c"
+	"test/test-cp-phy.c"
+	"test/test-cp-phy-fsm.c"
+	"test/test-cp-fsm.c"
+	"test/test-mixed-fsm.c"
 )
 add_executable(${LIB_OSDP_TEST} ${LIB_OSDP_TEST_SRC})
 target_link_libraries(${LIB_OSDP_TEST} osdp)

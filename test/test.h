@@ -41,10 +41,10 @@
     } while(0)
 
 struct test {
-    int success;
-    int failure;
-    int tests;
-    void *mock_data;
+	int success;
+	int failure;
+	int tests;
+	void *mock_data;
 };
 
 void run_cp_phy_tests(struct test *t);

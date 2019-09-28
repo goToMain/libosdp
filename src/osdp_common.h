@@ -99,128 +99,128 @@
 #define REPLY_XRD                    0xB1
 
 /* Global flags */
-#define FLAG_CP_MODE                 0x00000001 /* Set when initialized as CP */
+#define FLAG_CP_MODE                 0x00000001	/* Set when initialized as CP */
 
 /* CP flags */
-#define CP_FLAG_INIT_DONE            0x00000001 /* set after data is malloc-ed and initialized */
+#define CP_FLAG_INIT_DONE            0x00000001	/* set after data is malloc-ed and initialized */
 
 /* PD Flags */
-#define PD_FLAG_SC_CAPABLE           0x00000001 /* PD secure channel capable */
-#define PD_FLAG_TAMPER               0x00000002 /* local tamper status */
-#define PD_FLAG_POWER                0x00000004 /* local power status */
-#define PD_FLAG_R_TAMPER             0x00000008 /* remote tamper status */
-#define PD_FLAG_COMSET_INPROG        0x00000010 /* set when comset is enabled */
-#define PD_FLAG_AWAIT_RESP           0x00000020 /* set after command is sent */
-#define PD_FLAG_SKIP_SEQ_CHECK       0x00000040 /* disable seq checks (debug) */
-#define PD_FLAG_PD_MODE              0x80000000 /* device is setup as PD */
+#define PD_FLAG_SC_CAPABLE           0x00000001	/* PD secure channel capable */
+#define PD_FLAG_TAMPER               0x00000002	/* local tamper status */
+#define PD_FLAG_POWER                0x00000004	/* local power status */
+#define PD_FLAG_R_TAMPER             0x00000008	/* remote tamper status */
+#define PD_FLAG_COMSET_INPROG        0x00000010	/* set when comset is enabled */
+#define PD_FLAG_AWAIT_RESP           0x00000020	/* set after command is sent */
+#define PD_FLAG_SKIP_SEQ_CHECK       0x00000040	/* disable seq checks (debug) */
+#define PD_FLAG_PD_MODE              0x80000000	/* device is setup as PD */
 typedef uint64_t millis_t;
 
 struct cmd {
-    uint8_t len;
-    uint8_t id;
-    uint8_t data[0];
+	uint8_t len;
+	uint8_t id;
+	uint8_t data[0];
 };
 
 union cmd_all {
-    struct osdp_cmd_led led;
-    struct osdp_cmd_buzzer buzzer;
-    struct osdp_cmd_text text;
-    struct osdp_cmd_output output;
-    struct osdp_cmd_comset comset;
+	struct osdp_cmd_led led;
+	struct osdp_cmd_buzzer buzzer;
+	struct osdp_cmd_text text;
+	struct osdp_cmd_output output;
+	struct osdp_cmd_comset comset;
 };
 
 struct cmd_queue {
-    int head;
-    int tail;
-    uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
+	int head;
+	int tail;
+	uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
 };
 
 typedef struct {
-    /* OSDP specified data */
-    void *__parent;
-    int baud_rate;
-    int address;
-    int seq_number;
-    struct pd_cap cap[CAP_SENTINEL];
-    struct pd_id id;
+	/* OSDP specified data */
+	void *__parent;
+	int baud_rate;
+	int address;
+	int seq_number;
+	struct pd_cap cap[CAP_SENTINEL];
+	struct pd_id id;
 
-    /* PD state management */
-    int state;
-    int flags;
-    millis_t tstamp;
-    int phy_state;
-    uint8_t scratch[OSDP_PD_SCRATCH_SIZE];
-    millis_t phy_tstamp;
+	/* PD state management */
+	int state;
+	int flags;
+	millis_t tstamp;
+	int phy_state;
+	uint8_t scratch[OSDP_PD_SCRATCH_SIZE];
+	millis_t phy_tstamp;
 
-    /* CP mode only data */
-    struct cmd_queue *queue;
+	/* CP mode only data */
+	struct cmd_queue *queue;
 
-    /* PD mode only data */
-    struct pd_cmd_handler *cmd_handler;
+	/* PD mode only data */
+	struct pd_cmd_handler *cmd_handler;
 
-    /* callbacks */
-    int (*send_func)(uint8_t *buf, int len);
-    int (*recv_func)(uint8_t *buf, int len);
+	/* callbacks */
+	int (*send_func) (uint8_t * buf, int len);
+	int (*recv_func) (uint8_t * buf, int len);
 } pd_t;
 
 typedef struct {
-    void *__parent;
-    int num_pd;
-    int state;
-    int flags;
+	void *__parent;
+	int num_pd;
+	int state;
+	int flags;
 
-    pd_t *current_pd;  /* current operational pd's pointer */
-    int pd_offset;     /* current pd's offset into ctx->pd */
+	pd_t *current_pd;	/* current operational pd's pointer */
+	int pd_offset;		/* current pd's offset into ctx->pd */
 } cp_t;
 
 typedef struct {
-    int magic;
-    int flags;
-    struct osdp_cp_notifiers notifier;
+	int magic;
+	int flags;
+	struct osdp_cp_notifiers notifier;
 
-    cp_t *cp;
-    pd_t *pd;
+	cp_t *cp;
+	pd_t *pd;
 } osdp_t;
 
 enum log_levels_e {
-    LOG_EMERG,
-    LOG_ALERT,
-    LOG_CRIT,
-    LOG_ERR,
-    LOG_WARNING,
-    LOG_NOTICE,
-    LOG_INFO,
-    LOG_DEBUG
+	LOG_EMERG,
+	LOG_ALERT,
+	LOG_CRIT,
+	LOG_ERR,
+	LOG_WARNING,
+	LOG_NOTICE,
+	LOG_INFO,
+	LOG_DEBUG
 };
 
 enum pd_nak_code_e {
-    PD_NAK_NONE,
-    PD_NAK_MSG_CHK,
-    PD_NAK_CMD_LEN,
-    PD_NAK_CMD_UNKNOWN,
-    PD_NAK_SEQ_NUM,
-    PD_NAK_SC_UNSUP,
-    PD_NAK_SC_COND,
-    PD_NAK_BIO_TYPE,
-    PD_NAK_BIO_FMT,
-    PD_NAK_RECORD,
-    PD_NAK_SENTINEL
+	PD_NAK_NONE,
+	PD_NAK_MSG_CHK,
+	PD_NAK_CMD_LEN,
+	PD_NAK_CMD_UNKNOWN,
+	PD_NAK_SEQ_NUM,
+	PD_NAK_SC_UNSUP,
+	PD_NAK_SC_COND,
+	PD_NAK_BIO_TYPE,
+	PD_NAK_BIO_FMT,
+	PD_NAK_RECORD,
+	PD_NAK_SENTINEL
 };
 
 /* from phy.c */
-int phy_build_packet_head(pd_t *p, uint8_t *buf, int maxlen);
-int phy_build_packet_tail(pd_t *p, uint8_t *buf, int len, int maxlen);
-int phy_decode_packet(pd_t *p, uint8_t *buf, int blen);
+int phy_build_packet_head(pd_t * p, uint8_t * buf, int maxlen);
+int phy_build_packet_tail(pd_t * p, uint8_t * buf, int len, int maxlen);
+int phy_decode_packet(pd_t * p, uint8_t * buf, int blen);
 const char *get_nac_reason(int code);
-void phy_state_reset(pd_t *pd);
+void phy_state_reset(pd_t * pd);
 
 /* from common.c */
 millis_t millis_now();
 millis_t millis_since(millis_t last);
-uint8_t compute_checksum(uint8_t *msg, int length);
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
-void osdp_dump(const char *head, const uint8_t *data, int len);
+uint8_t compute_checksum(uint8_t * msg, int length);
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len);
+void osdp_dump(const char *head, const uint8_t * data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);
 
-#endif
+#endif	/* _OSDP_COMMON_H_ */

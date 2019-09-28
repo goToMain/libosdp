@@ -129,12 +129,10 @@ union cmd_all {
     struct osdp_cmd_comset comset;
 };
 
-struct pd_cmd_handler {
-    int (*led)(struct osdp_cmd_led *p);
-    int (*buzzer)(struct osdp_cmd_buzzer *p);
-    int (*text)(struct osdp_cmd_text *p);
-    int (*output)(struct osdp_cmd_output *p);
-    int (*comset)(struct osdp_cmd_comset *p);
+struct cmd_queue {
+    int head;
+    int tail;
+    uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
 };
 
 typedef struct {
@@ -165,12 +163,6 @@ typedef struct {
     int (*recv_func)(uint8_t *buf, int len);
 } pd_t;
 
-struct cmd_queue {
-    int head;
-    int tail;
-    uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
-};
-
 typedef struct {
     void *__parent;
     int num_pd;
@@ -179,15 +171,12 @@ typedef struct {
 
     pd_t *current_pd;  /* current operational pd's pointer */
     int pd_offset;     /* current pd's offset into ctx->pd */
-
-    /* callbacks */
-    int (*keypress_handler)(int address, uint8_t key);
-    int (*cardread_handler)(int address, int format, uint8_t *data, int len);
 } cp_t;
 
 typedef struct {
     int magic;
     int flags;
+    struct osdp_cp_notifiers notifier;
 
     cp_t *cp;
     pd_t *pd;

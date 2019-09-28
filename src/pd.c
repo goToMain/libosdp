@@ -109,43 +109,10 @@ void osdp_pd_refresh(osdp_pd_t *ctx)
     pd_phy_state_update(pd);
 }
 
-int osdp_pd_set_led_handler(osdp_pd_t *ctx, int (*led)(struct osdp_cmd_led *p))
+int osdp_pd_set_cmd_handlers(osdp_pd_t *ctx, struct pd_cmd_handler *h)
 {
     pd_t *pd = to_current_pd(ctx);
 
-    pd->cmd_handler->led = led;
-    return 0;
-}
-
-
-int osdp_pd_set_buzzer_handler(osdp_pd_t *ctx, int (*buzzer)(struct osdp_cmd_buzzer *p))
-{
-    pd_t *pd = to_current_pd(ctx);
-
-    pd->cmd_handler->buzzer = buzzer;
-    return 0;
-}
-
-int osdp_pd_set_output_handler(osdp_pd_t *ctx, int (*output)(struct osdp_cmd_output *p))
-{
-    pd_t *pd = to_current_pd(ctx);
-
-    pd->cmd_handler->output = output;
-    return 0;
-}
-
-int osdp_pd_set_text_handler(osdp_pd_t *ctx, int (*text)(struct osdp_cmd_text *p))
-{
-    pd_t *pd = to_current_pd(ctx);
-
-    pd->cmd_handler->text = text;
-    return 0;
-}
-
-int osdp_pd_set_comset_handler(osdp_pd_t *ctx, int (*comset)(struct osdp_cmd_comset *p))
-{
-    pd_t *pd = to_current_pd(ctx);
-
-    pd->cmd_handler->comset = comset;
+    memcpy(pd->cmd_handler, h, sizeof(struct pd_cmd_handler));
     return 0;
 }

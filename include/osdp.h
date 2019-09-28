@@ -45,40 +45,6 @@ enum osdp_pd_cap_function_code_e {
     CAP_SENTINEL
 };
 
-enum osdp_cmd_output_control_code {
-    CMD_OP_NOP,
-    CMD_OP_POFF,
-    CMD_OP_PON,
-    CMD_OP_POFF_T,
-    CMD_OP_PON_T,
-    CMD_OP_TON,
-    CMD_OP_TOFF,
-};
-
-enum osdp_cmd_temp_ctrl_code_e {
-    TEMP_CC_TEMP_NOP,
-    TEMP_CC_TEMP_CANCEL,
-    TEMP_CC_TEMP_SET
-};
-
-enum osdp_cmd_perm_ctrl_code_e {
-    TEMP_CC_PERM_NOP,
-    TEMP_CC_PERM_SET
-};
-
-enum osdp_cmd_buzzer_tone_code_e {
-    TONE_NONE,
-    TONE_OFF,
-    TONE_DEFAULT,
-};
-
-enum osdp_cmd_text_command_e {
-    PERM_TEXT_NO_WRAP=1,
-    PERM_TEXT_WRAP,
-    TEMP_TEXT_NO_WRAP,
-    TEMP_TEXT_WRAP
-};
-
 /* CMD_OUT */
 struct osdp_cmd_output {
     uint8_t output_no;
@@ -205,24 +171,35 @@ typedef struct {
 typedef void * osdp_cp_t;
 typedef void * osdp_pd_t;
 
-/* --- CP ---- */
+/* --- CP Only---- */
+
+struct osdp_cp_notifiers {
+    int (*keypress)(int address, uint8_t key);
+    int (*cardread)(int address, int format, uint8_t *data, int len);
+};
+
 osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info);
 void osdp_cp_refresh(osdp_cp_t *ctx);
 void osdp_cp_teardown(osdp_cp_t *ctx);
 
+int osdp_cp_set_notifiers(osdp_cp_t *ctx, struct osdp_cp_notifiers *n);
 int osdp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p);
 int osdp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p);
 int osdp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
 int osdp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p);
 
-/* --- PD --- */
+/* --- PD Only --- */
+
+struct pd_cmd_handler {
+    int (*led)(struct osdp_cmd_led *p);
+    int (*buzzer)(struct osdp_cmd_buzzer *p);
+    int (*text)(struct osdp_cmd_text *p);
+    int (*output)(struct osdp_cmd_output *p);
+    int (*comset)(struct osdp_cmd_comset *p);
+};
+
 osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p);
 void osdp_pd_teardown(osdp_pd_t *ctx);
-
-int osdp_pd_set_led_handler(osdp_pd_t *ctx, int (*led)(struct osdp_cmd_led *p));
-int osdp_pd_set_buzzer_handler(osdp_pd_t *ctx, int (*buzzer)(struct osdp_cmd_buzzer *p));
-int osdp_pd_set_output_handler(osdp_pd_t *ctx, int (*output)(struct osdp_cmd_output *p));
-int osdp_pd_set_text_handler(osdp_pd_t *ctx, int (*text)(struct osdp_cmd_text *p));
-int osdp_pd_set_comset_handler(osdp_pd_t *ctx, int (*comset)(struct osdp_cmd_comset *p));
+int osdp_pd_set_cmd_handlers(osdp_pd_t *ctx, struct pd_cmd_handler *h);
 
 #endif /* _OSDP_H_ */

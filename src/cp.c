@@ -104,6 +104,12 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
     }
 }
 
+int osdp_cp_set_notifiers(osdp_cp_t *ctx, struct osdp_cp_notifiers *n)
+{
+    memcpy(&(to_osdp(ctx))->notifier, n, sizeof(struct osdp_cp_notifiers));
+    return 0;
+}
+
 int osdp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
     uint8_t cmd_buf[64];

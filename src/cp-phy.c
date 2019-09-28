@@ -222,10 +222,10 @@ int cp_decode_response(pd_t *p, uint8_t *buf, int len)
         pos++; /* skip one byte */
         klen = buf[pos++];
 
-        if (ctx->cp->keypress_handler) {
+        if (ctx->notifier.keypress) {
             for (i=0; i<klen; i++) {
                 key = buf[pos + i];
-                ctx->cp->keypress_handler(p->address, key);
+                ctx->notifier.keypress(p->address, key);
             }
         }
         ret = 0;
@@ -239,8 +239,8 @@ int cp_decode_response(pd_t *p, uint8_t *buf, int len)
         fmt = buf[pos++];
         len  = buf[pos++];
         len |= buf[pos++] << 8;
-        if (ctx->cp->cardread_handler) {
-            ctx->cp->cardread_handler(p->address, fmt, buf + pos, len);
+        if (ctx->notifier.cardread) {
+            ctx->notifier.cardread(p->address, fmt, buf + pos, len);
         }
         ret = 0;
         break;
@@ -253,8 +253,8 @@ int cp_decode_response(pd_t *p, uint8_t *buf, int len)
         pos++; /* skip one byte -- TODO: discuss about reader direction */
         key_len = buf[pos++];
         fmt = OSDP_CARD_FMT_ASCII;
-        if (ctx->cp->cardread_handler) {
-            ctx->cp->cardread_handler(p->address, fmt, buf + pos, key_len);
+        if (ctx->notifier.cardread) {
+            ctx->notifier.cardread(p->address, fmt, buf + pos, key_len);
         }
         ret = 0;
         break;

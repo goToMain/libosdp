@@ -5,6 +5,8 @@
  *    Date: Sat Sep 14 14:02:33 IST 2019
  */
 
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,42 +16,17 @@
 #include "common.h"
 
 int g_log_level = LOG_WARNING;  /* Note: log level is not contextual */
-static unsigned short fcrc_table_is_valid = 0;  /* preset: CRC Table not initialized */
-static unsigned short fcrc_table[256];          /* CRC table - working copy */
 
-/* generate the table for POLY == 0x1012 */
-static uint16_t fcrc_table_init(uint16_t *pTbl )
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 {
-    int ii, jj;
-    uint16_t ww;
-
-    for (ii = 0; ii < 256; ii++) {
-        ww = (uint16_t)(ii << 8);
-        for (jj = 0; jj< 8; jj++) {
-            if ( ww& 0x8000 ) {
-                ww = (ww<< 1) ^ 0x1021;
-            } else {
-                ww = (ww<< 1);
-            }
-        }
-        pTbl[ii] = ww;
+    for (; len > 0; len--) {
+        seed = (seed >> 8U) | (seed << 8U);
+        seed ^= *src++;
+        seed ^= (seed & 0xffU) >> 4U;
+        seed ^= seed << 12U;
+        seed ^= (seed & 0xffU) << 5U;
     }
-    return 1;
-}
-
-/* table based CRC - this is the "direct table" mode */
-uint16_t compute_crc16(uint8_t *data, int  len)
-{
-    int i;
-    uint16_t crc = 0;
-
-    if (fcrc_table_is_valid == 0)
-        fcrc_table_is_valid = fcrc_table_init(fcrc_table);
-
-    for (i = 0, crc = 0x1D0F; i < len; i++)
-        crc = (crc << 8) ^ fcrc_table[ ((crc >> 8) ^ data[i]) & 0xFF ];
-
-    return crc;
+    return seed;
 }
 
 uint8_t compute_checksum(uint8_t *msg, int length)

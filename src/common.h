@@ -218,7 +218,7 @@ void phy_state_reset(pd_t *pd);
 millis_t millis_now();
 millis_t millis_since(millis_t last);
 uint8_t compute_checksum(uint8_t *msg, int length);
-uint16_t compute_crc16(uint8_t *data, int  len);
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
 void osdp_dump(const char *head, const uint8_t *data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);

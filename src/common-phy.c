@@ -93,7 +93,7 @@ int phy_build_packet_tail(pd_t *p, uint8_t *buf, int len, int maxlen)
     pkt->len_msb = byte_1(len - 1 + 2);
 
     /* fill crc16 */
-    crc16 = compute_crc16(buf + 1, len - 1); /* excluding mark byte */
+    crc16 = crc16_itu_t(0x1D0F, buf + 1, len - 1); /* excluding mark byte */
     buf[len + 0] = byte_0(crc16);
     buf[len + 1] = byte_1(crc16);
     len += 2;
@@ -144,7 +144,7 @@ int phy_decode_packet(pd_t *p, uint8_t *buf, int blen)
     if (pkt->control & PKT_CONTROL_CRC) {
         cur = (buf[pkt_len] << 8) | buf[pkt_len - 1];
         blen -= 2; /* consume 2byte CRC */
-        comp = compute_crc16(buf + 1, pkt_len - 2);
+        comp = crc16_itu_t(0x1D0F, buf + 1, pkt_len - 2);
         if (comp != cur) {
             osdp_log(LOG_ERR, "invalid crc 0x%04x/0x%04x", comp, cur);
             return -1;

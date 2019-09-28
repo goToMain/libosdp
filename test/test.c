@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <osdp.h>
-#include "common.h"
+#include "osdp_common.h"
 
 #include "test.h"
 

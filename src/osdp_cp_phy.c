@@ -6,7 +6,7 @@
  */
 
 #include <string.h>
-#include "cp-private.h"
+#include "osdp_cp_private.h"
 
 /**
  * Returns:

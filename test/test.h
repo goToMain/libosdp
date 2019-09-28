@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "common.h"
+#include "osdp_common.h"
 
 #define DO_TEST(t, m) do {          \
         t->tests++;                 \

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cp-private.h"
+#include "osdp_cp_private.h"
 
 osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info)
 {

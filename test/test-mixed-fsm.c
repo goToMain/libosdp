@@ -9,8 +9,8 @@
 
 #include <osdp.h>
 #include "test.h"
-#include "cp-private.h"
-#include "pd-private.h"
+#include "osdp_cp_private.h"
+#include "osdp_pd_private.h"
 
 struct test_mixed {
     osdp_t *cp_ctx;

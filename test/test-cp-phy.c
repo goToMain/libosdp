@@ -6,7 +6,7 @@
  */
 
 #include "test.h"
-#include "cp-private.h"
+#include "osdp_cp_private.h"
 
 int phy_build_packet_head(pd_t *pd, uint8_t *buf, int maxlen);
 int phy_build_packet_tail(pd_t *pd, uint8_t *buf, int len, int maxlen);

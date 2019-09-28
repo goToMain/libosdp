@@ -9,7 +9,7 @@
 
 #include <osdp.h>
 #include "test.h"
-#include "cp-private.h"
+#include "osdp_cp_private.h"
 
 int cp_enqueue_command(pd_t *p, struct cmd *c);
 

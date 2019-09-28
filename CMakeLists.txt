@@ -23,13 +23,13 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 ## build libosdp.a
 set(LIB_OSDP osdp)
 list(APPEND LIB_OSDP_SRC
-        "src/common.c"
-        "src/common-phy.c"
-        "src/cp-phy.c"
-        "src/cp-fsm.c"
-        "src/cp.c"
-        "src/pd-phy"
-        "src/pd.c"
+        "src/osdp_common.c"
+        "src/osdp_common_phy.c"
+        "src/osdp_cp_phy.c"
+        "src/osdp_cp_fsm.c"
+        "src/osdp_cp.c"
+        "src/osdp_pd_phy"
+        "src/osdp_pd.c"
 )
 ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})
 

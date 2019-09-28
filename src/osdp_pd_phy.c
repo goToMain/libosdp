@@ -5,7 +5,7 @@
  *    Date: Tue Sep 24 19:24:49 IST 2019
  */
 
-#include "pd-private.h"
+#include "osdp_pd_private.h"
 
 #define call_fprt(fp, ...)          ({int r=-1; if(fp != NULL) r = fp(__VA_ARGS__); r;})
 #define pd_set_output(p, c)         call_fprt((p)->cmd_handler->output, (c))

@@ -5,7 +5,7 @@
  *    Date: Sat Sep 14 19:25:18 IST 2019
  */
 
-#include "cp-private.h"
+#include "osdp_cp_private.h"
 
 #define cp_set_offline(p)                               \
     do {                                                \

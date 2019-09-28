@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include "common.h"
+#include "osdp_common.h"
 
 #define PKT_CONTROL_SQN             0x03
 #define PKT_CONTROL_CRC             0x04

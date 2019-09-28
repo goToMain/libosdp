@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <sys/time.h>
 
-#include "common.h"
+#include "osdp_common.h"
 
 int g_log_level = LOG_WARNING;  /* Note: log level is not contextual */
 

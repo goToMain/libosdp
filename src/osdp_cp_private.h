@@ -8,7 +8,7 @@
 #ifndef _CP_PRIVATE_H_
 #define _CP_PRIVATE_H_
 
-#include "common.h"
+#include "osdp_common.h"
 
 enum {
     CP_PHY_STATE_IDLE,

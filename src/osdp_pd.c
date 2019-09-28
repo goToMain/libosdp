@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "pd-private.h"
+#include "osdp_pd_private.h"
 
 osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t *p)
 {

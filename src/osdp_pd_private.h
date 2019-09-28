@@ -9,7 +9,7 @@
 #ifndef _PD_PRIVATE_H_
 #define _PD_PRIVATE_H_
 
-#include "common.h"
+#include "osdp_common.h"
 
 enum {
     PD_PHY_STATE_IDLE,

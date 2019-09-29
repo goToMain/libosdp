@@ -16,31 +16,6 @@
 
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
-{
-	for (; len > 0; len--) {
-		seed = (seed >> 8U) | (seed << 8U);
-		seed ^= *src++;
-		seed ^= (seed & 0xffU) >> 4U;
-		seed ^= seed << 12U;
-		seed ^= (seed & 0xffU) << 5U;
-	}
-	return seed;
-}
-
-uint8_t compute_checksum(uint8_t * msg, int length)
-{
-	uint8_t checksum = 0;
-	int i, whole_checksum;
-
-	whole_checksum = 0;
-	for (i = 0; i < length; i++) {
-		whole_checksum += msg[i];
-		checksum = ~(0xff & whole_checksum) + 1;
-	}
-	return checksum;
-}
-
 void osdp_set_log_level(int log_level)
 {
 	g_log_level = log_level;

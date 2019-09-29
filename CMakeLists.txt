@@ -23,7 +23,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(LIB_OSDP osdp)
 list(APPEND LIB_OSDP_SRC
 	"src/osdp_common.c"
-	"src/osdp_common_phy.c"
+	"src/osdp_phy.c"
 	"src/osdp_cp_phy.c"
 	"src/osdp_cp_fsm.c"
 	"src/osdp_cp.c"

@@ -33,6 +33,31 @@ const char *osdp_nak_reasons[PD_NAK_SENTINEL] = {
 	[PD_NAK_RECORD] = "NAK: Unable to process command record",
 };
 
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
+{
+	for (; len > 0; len--) {
+		seed = (seed >> 8U) | (seed << 8U);
+		seed ^= *src++;
+		seed ^= (seed & 0xffU) >> 4U;
+		seed ^= seed << 12U;
+		seed ^= (seed & 0xffU) << 5U;
+	}
+	return seed;
+}
+
+uint8_t compute_checksum(uint8_t * msg, int length)
+{
+	uint8_t checksum = 0;
+	int i, whole_checksum;
+
+	whole_checksum = 0;
+	for (i = 0; i < length; i++) {
+		whole_checksum += msg[i];
+		checksum = ~(0xff & whole_checksum) + 1;
+	}
+	return checksum;
+}
+
 const char *get_nac_reason(int code)
 {
 	if (code < 0 || code >= PD_NAK_SENTINEL)

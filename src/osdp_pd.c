@@ -16,7 +16,7 @@
 #define pd_set_text(p, c)           call_fprt((p)->cmd_handler->text,   (c))
 #define pd_set_comm_params(p, c)    call_fprt((p)->cmd_handler->comset, (c))
 
-enum {
+enum osdp_phy_state_e {
 	PD_PHY_STATE_IDLE,
 	PD_PHY_STATE_SEND_REPLY,
 	PD_PHY_STATE_ERR,

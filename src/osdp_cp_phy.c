@@ -221,7 +221,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 	case REPLY_RMAC_I:
 	case REPLY_KEYPPAD:
 		pos++;	/* skip one byte */
-		t1 = buf[pos++]; /* key lenght */
+		t1 = buf[pos++]; /* key length */
 		if (ctx->notifier.keypress) {
 			for (i = 0; i < t1; i++) {
 				t2 = buf[pos + i]; /* key */
@@ -233,7 +233,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 	case REPLY_RAW:
 		pos++;	/* skip one byte */
 		t1 = buf[pos++]; /* format */
-		t2 = buf[pos++]; /* lenght */
+		t2 = buf[pos++]; /* length */
 		len |= buf[pos++] << 8;
 		if (ctx->notifier.cardread) {
 			ctx->notifier.cardread(p->address, t1, buf + pos, t2);
@@ -243,7 +243,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 	case REPLY_FMT:
 		pos++;	/* skip one byte */
 		pos++;	/* skip one byte -- TODO: discuss about reader direction */
-		t1 = buf[pos++]; /* Key Lenght */
+		t1 = buf[pos++]; /* Key length */
 		if (ctx->notifier.cardread) {
 			ctx->notifier.cardread(p->address, OSDP_CARD_FMT_ASCII,
 					       buf + pos, t1);

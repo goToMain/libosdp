@@ -20,28 +20,28 @@ struct osdp_packet_header {
 	uint8_t data[0];
 };
 
+const char *osdp_nak_reasons[PD_NAK_SENTINEL] = {
+	[PD_NAK_NONE] = "",
+	[PD_NAK_MSG_CHK] = "NAK: Message check character(s) error (bad cksum/crc)",
+	[PD_NAK_CMD_LEN] = "NAK: Command length error",
+	[PD_NAK_CMD_UNKNOWN] = "NAK: Unknown Command Code. Command not implemented by PD",
+	[PD_NAK_SEQ_NUM] = "NAK: Unexpected sequence number detected in the header",
+	[PD_NAK_SC_UNSUP] = "NAK: This PD does not support the security block that was received",
+	[PD_NAK_SC_COND] = "NAK: Communication security conditions not met",
+	[PD_NAK_BIO_TYPE] = "NAK: BIO_TYPE not supported",
+	[PD_NAK_BIO_FMT] = "NAK: BIO_FORMAT not supported",
+	[PD_NAK_RECORD] = "NAK: Unable to process command record",
+};
+
 const char *get_nac_reason(int code)
 {
-	const char *nak_reasons[PD_NAK_SENTINEL] = {
-		[PD_NAK_NONE] = "",
-		[PD_NAK_MSG_CHK] = "NAK: Message check character(s) error (bad cksum/crc)",
-		[PD_NAK_CMD_LEN] = "NAK: Command length error",
-		[PD_NAK_CMD_UNKNOWN] = "NAK: Unknown Command Code. Command not implemented by PD",
-		[PD_NAK_SEQ_NUM] = "NAK: Unexpected sequence number detected in the header",
-		[PD_NAK_SC_UNSUP] = "NAK: This PD does not support the security block that was received",
-		[PD_NAK_SC_COND] = "NAK: Communication security conditions not met",
-		[PD_NAK_BIO_TYPE] = "NAK: BIO_TYPE not supported",
-		[PD_NAK_BIO_FMT] = "NAK: BIO_FORMAT not supported",
-		[PD_NAK_RECORD] = "NAK: Unable to process command record",
-	};
-
-	if (code < 0 || code >= sizeof_array(nak_reasons))
+	if (code < 0 || code >= PD_NAK_SENTINEL)
 		code = 0;
 
-	return nak_reasons[code];
+	return osdp_nak_reasons[code];
 }
 
-static int phy_get_seq_number(pd_t * p, int do_inc)
+static int phy_get_seq_number(struct osdp_pd *p, int do_inc)
 {
 	/* p->seq_num is set to -1 to reset phy cmd state */
 	if (do_inc) {
@@ -52,7 +52,7 @@ static int phy_get_seq_number(pd_t * p, int do_inc)
 	return p->seq_number & PKT_CONTROL_SQN;
 }
 
-int phy_build_packet_head(pd_t * p, uint8_t * buf, int maxlen)
+int phy_build_packet_head(struct osdp_pd *p, uint8_t * buf, int maxlen)
 {
 	int exp_len, pd_mode;
 	struct osdp_packet_header *pkt;
@@ -78,7 +78,7 @@ int phy_build_packet_head(pd_t * p, uint8_t * buf, int maxlen)
 	return sizeof(struct osdp_packet_header);
 }
 
-int phy_build_packet_tail(pd_t * p, uint8_t * buf, int len, int maxlen)
+int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 {
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
@@ -102,7 +102,7 @@ int phy_build_packet_tail(pd_t * p, uint8_t * buf, int len, int maxlen)
 	return len;
 }
 
-int phy_decode_packet(pd_t * p, uint8_t * buf, int blen)
+int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen)
 {
 	int pkt_len, pd_mode;
 	uint16_t comp, cur;
@@ -170,7 +170,7 @@ int phy_decode_packet(pd_t * p, uint8_t * buf, int blen)
 	return blen;
 }
 
-void phy_state_reset(pd_t * pd)
+void phy_state_reset(struct osdp_pd *pd)
 {
 	pd->state = 0;
 	pd->seq_number = -1;

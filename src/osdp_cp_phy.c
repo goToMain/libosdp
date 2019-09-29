@@ -12,7 +12,7 @@
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(pd_t * p, struct cmd *cmd, uint8_t * buf, int maxlen)
+int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxlen)
 {
 	union cmd_all *c;
 	int ret, i, len = 0;
@@ -136,9 +136,9 @@ int cp_build_command(pd_t * p, struct cmd *cmd, uint8_t * buf, int maxlen)
  * -1: error
  *  2: retry current command
  */
-int cp_decode_response(pd_t * p, uint8_t * buf, int len)
+int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 {
-	osdp_t *ctx = to_ctx(p);
+	struct osdp *ctx = to_ctx(p);
 	int i, ret = -1, reply_id, pos = 0, t1, t2;
 	uint32_t temp32;
 
@@ -276,7 +276,7 @@ int cp_decode_response(pd_t * p, uint8_t * buf, int len)
 	return ret;
 }
 
-int cp_send_command(pd_t * p, struct cmd *cmd)
+int cp_send_command(struct osdp_pd *p, struct cmd *cmd)
 {
 	int ret, len;
 	uint8_t buf[512];
@@ -309,7 +309,7 @@ int cp_send_command(pd_t * p, struct cmd *cmd)
  *  1: no data yet
  *  2: re-issue command
  */
-int cp_process_response(pd_t * p)
+int cp_process_response(struct osdp_pd *p)
 {
 	int len;
 	uint8_t resp[512];
@@ -325,7 +325,7 @@ int cp_process_response(pd_t * p)
 	return cp_decode_response(p, resp, len);
 }
 
-int cp_enqueue_command(pd_t * p, struct cmd *c)
+int cp_enqueue_command(struct osdp_pd *p, struct cmd *c)
 {
 	int len, fs, start, end;
 	struct cmd_queue *q = p->queue;
@@ -361,7 +361,7 @@ int cp_enqueue_command(pd_t * p, struct cmd *c)
 	return 0;
 }
 
-int cp_dequeue_command(pd_t * pd, int readonly, uint8_t * cmd_buf, int maxlen)
+int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen)
 {
 	int start, end, len;
 	struct cmd_queue *q = pd->queue;
@@ -400,7 +400,7 @@ int cp_dequeue_command(pd_t * pd, int readonly, uint8_t * cmd_buf, int maxlen)
  *
  * Note: This method must not dequeue cmd unless it reaches an invalid state.
  */
-int cp_phy_state_update(pd_t * pd)
+int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
 	struct cmd *cmd = (struct cmd *)pd->scratch;

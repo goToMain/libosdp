@@ -201,4 +201,4 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p);
 void osdp_pd_teardown(osdp_pd_t * ctx);
 int osdp_pd_set_cmd_handlers(osdp_pd_t * ctx, struct pd_cmd_handler *h);
 
-#endif				/* _OSDP_H_ */
+#endif	/* _OSDP_H_ */

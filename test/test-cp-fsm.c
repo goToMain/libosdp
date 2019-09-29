@@ -10,7 +10,7 @@
 #include "test.h"
 #include "osdp_cp_private.h"
 
-int cp_enqueue_command(pd_t * p, struct cmd *c);
+int cp_enqueue_command(struct osdp_pd *p, struct cmd *c);
 
 int test_fsm_resp = 0;
 
@@ -69,7 +69,7 @@ int test_cp_fsm_setup(struct test *t)
 		.send_func = test_cp_fsm_send,
 		.recv_func = test_cp_fsm_receive
 	};
-	osdp_t *ctx = (osdp_t *) osdp_cp_setup(1, &info);
+	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;
@@ -90,7 +90,7 @@ void run_cp_fsm_tests(struct test *t)
 {
 	int result = TRUE;
 	uint32_t count = 0;
-	osdp_t *ctx = t->mock_data;
+	struct osdp *ctx = t->mock_data;
 
 	printf("\nStarting CP Phy state tests\n");
 

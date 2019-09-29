@@ -12,32 +12,32 @@
 osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info)
 {
 	int i;
-	pd_t *pd;
-	cp_t *cp;
-	osdp_t *ctx;
+	struct osdp_pd *pd;
+	struct osdp_cp *cp;
+	struct osdp *ctx;
 
 	if (num_pd <= 0 || info == NULL)
 		return NULL;
 
-	ctx = calloc(1, sizeof(osdp_t));
+	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc osdp_t");
+		osdp_log(LOG_ERR, "Failed to alloc struct osdp");
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
 
-	ctx->cp = calloc(1, sizeof(cp_t));
+	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc cp_t");
+		osdp_log(LOG_ERR, "Failed to alloc struct osdp_cp");
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
 	child_set_parent(cp, ctx);
 	cp->num_pd = num_pd;
 
-	ctx->pd = calloc(1, sizeof(pd_t) * num_pd);
+	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc pd_t[]");
+		osdp_log(LOG_ERR, "Failed to alloc struct osdp_pd[]");
 		goto malloc_err;
 	}
 
@@ -66,11 +66,11 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info)
 	return NULL;
 }
 
-void osdp_cp_teardown(osdp_cp_t * ctx)
+void osdp_cp_teardown(osdp_cp_t *ctx)
 {
 	int i;
-	cp_t *cp;
-	pd_t *pd;
+	struct osdp_cp *cp;
+	struct osdp_pd *pd;
 
 	if (ctx == NULL)
 		return;
@@ -93,7 +93,7 @@ void osdp_cp_teardown(osdp_cp_t * ctx)
 	free(ctx);
 }
 
-void osdp_cp_refresh(osdp_cp_t * ctx)
+void osdp_cp_refresh(osdp_cp_t *ctx)
 {
 	int i;
 
@@ -103,13 +103,13 @@ void osdp_cp_refresh(osdp_cp_t * ctx)
 	}
 }
 
-int osdp_cp_set_notifiers(osdp_cp_t * ctx, struct osdp_cp_notifiers *n)
+int osdp_cp_set_notifiers(osdp_cp_t *ctx, struct osdp_cp_notifiers *n)
 {
 	memcpy(&(to_osdp(ctx))->notifier, n, sizeof(struct osdp_cp_notifiers));
 	return 0;
 }
 
-int osdp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p)
+int osdp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
 	uint8_t cmd_buf[64];
 	struct cmd *cmd = (struct cmd *)cmd_buf;
@@ -125,7 +125,7 @@ int osdp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p)
 	return 0;
 }
 
-int osdp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p)
+int osdp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
 	uint8_t cmd_buf[64];
 	struct cmd *cmd = (struct cmd *)cmd_buf;
@@ -141,7 +141,7 @@ int osdp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p)
 	return 0;
 }
 
-int osdp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p)
+int osdp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
 	uint8_t cmd_buf[64];
 	struct cmd *cmd = (struct cmd *)cmd_buf;
@@ -157,7 +157,7 @@ int osdp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p)
 	return 0;
 }
 
-int osdp_set_text(osdp_cp_t * ctx, int pd, struct osdp_cmd_text *p)
+int osdp_set_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
 	uint8_t cmd_buf[64];
 	struct cmd *cmd = (struct cmd *)cmd_buf;
@@ -173,7 +173,7 @@ int osdp_set_text(osdp_cp_t * ctx, int pd, struct osdp_cmd_text *p)
 	return 0;
 }
 
-int osdp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p)
+int osdp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
 	uint8_t cmd_buf[64];
 	struct cmd *cmd = (struct cmd *)cmd_buf;

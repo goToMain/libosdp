@@ -15,6 +15,6 @@ enum {
 	PD_PHY_STATE_ERR,
 };
 
-int pd_phy_state_update(pd_t * pd);
+int pd_phy_state_update(struct osdp_pd *pd);
 
 #endif	/* _PD_PRIVATE_H_ */

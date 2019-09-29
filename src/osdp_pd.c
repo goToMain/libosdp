@@ -11,30 +11,30 @@
 osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 {
 	int fc;
-	pd_t *pd;
-	cp_t *cp;
-	osdp_t *ctx;
+	struct osdp_pd *pd;
+	struct osdp_cp *cp;
+	struct osdp *ctx;
 	struct pd_cap *cap;
 
-	ctx = calloc(1, sizeof(osdp_t));
+	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc osdp_t");
+		osdp_log(LOG_ERR, "Failed to alloc struct osdp");
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
 
-	ctx->cp = calloc(1, sizeof(cp_t));
+	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc cp_t");
+		osdp_log(LOG_ERR, "Failed to alloc struct osdp_cp");
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
 	child_set_parent(cp, ctx);
 	cp->num_pd = 1;
 
-	ctx->pd = calloc(1, sizeof(pd_t));
+	ctx->pd = calloc(1, sizeof(struct osdp_pd));
 	if (ctx->pd == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc pd_t");
+		osdp_log(LOG_ERR, "Failed to alloc struct osdp_pd");
 		goto malloc_err;
 	}
 	set_current_pd(ctx, 0);
@@ -76,10 +76,10 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 	return NULL;
 }
 
-void osdp_pd_teardown(osdp_pd_t * ctx)
+void osdp_pd_teardown(osdp_pd_t *ctx)
 {
-	cp_t *cp;
-	pd_t *pd;
+	struct osdp_cp *cp;
+	struct osdp_pd *pd;
 
 	if (ctx == NULL)
 		return;
@@ -101,16 +101,16 @@ void osdp_pd_teardown(osdp_pd_t * ctx)
 	free(ctx);
 }
 
-void osdp_pd_refresh(osdp_pd_t * ctx)
+void osdp_pd_refresh(osdp_pd_t *ctx)
 {
-	pd_t *pd = to_current_pd(ctx);
+	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd_phy_state_update(pd);
 }
 
-int osdp_pd_set_cmd_handlers(osdp_pd_t * ctx, struct pd_cmd_handler *h)
+int osdp_pd_set_cmd_handlers(osdp_pd_t *ctx, struct pd_cmd_handler *h)
 {
-	pd_t *pd = to_current_pd(ctx);
+	struct osdp_pd *pd = to_current_pd(ctx);
 
 	memcpy(pd->cmd_handler, h, sizeof(struct pd_cmd_handler));
 	return 0;

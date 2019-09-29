@@ -25,9 +25,9 @@ enum cp_fsm_state_e {
 	CP_STATE_SENTINEL
 };
 
-int cp_phy_state_update(pd_t * pd);
-void phy_state_reset(pd_t * pd);
-int cp_state_update(pd_t * pd);
-int cp_enqueue_command(pd_t * pd, struct cmd *c);
+int cp_phy_state_update(struct osdp_pd *pd);
+void phy_state_reset(struct osdp_pd *pd);
+int cp_state_update(struct osdp_pd *pd);
+int cp_enqueue_command(struct osdp_pd *pd, struct cmd *c);
 
 #endif	/* _CP_PRIVATE_H_ */

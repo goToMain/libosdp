@@ -19,7 +19,7 @@
  * -1: error
  *  2: retry current command
  */
-int pd_decode_command(pd_t * p, struct cmd *reply, uint8_t * buf, int len)
+int pd_decode_command(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int len)
 {
 	int i, ret = -1, cmd_id, pos = 0;
 	union cmd_all cmd;
@@ -156,7 +156,7 @@ int pd_decode_command(pd_t * p, struct cmd *reply, uint8_t * buf, int len)
  * +ve: length of command
  * -ve: error
  */
-int pd_build_reply(pd_t * p, struct cmd *reply, uint8_t * buf, int maxlen)
+int pd_build_reply(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int maxlen)
 {
 	int i, len = 0;
 
@@ -218,7 +218,7 @@ int pd_build_reply(pd_t * p, struct cmd *reply, uint8_t * buf, int maxlen)
 	return len;
 }
 
-int pd_send_reply(pd_t * p, struct cmd *reply)
+int pd_send_reply(struct osdp_pd *p, struct cmd *reply)
 {
 	int ret, len;
 	uint8_t buf[512];
@@ -251,7 +251,7 @@ int pd_send_reply(pd_t * p, struct cmd *reply)
  *  1: no data yet
  *  2: re-issue command
  */
-int pd_process_command(pd_t * p, struct cmd *reply)
+int pd_process_command(struct osdp_pd *p, struct cmd *reply)
 {
 	int len;
 	uint8_t resp[512];
@@ -273,7 +273,7 @@ int pd_process_command(pd_t * p, struct cmd *reply)
  *  -1: phy is in error state. Main state machine must reset it.
  *   0: Success
  */
-int pd_phy_state_update(pd_t * pd)
+int pd_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
 	struct cmd *reply = (struct cmd *)pd->scratch;

@@ -6,26 +6,26 @@
 
 #include "osdp_cp_private.h"
 
-#define cp_set_offline(p)                               \
-    do {                                                \
-        p->state = CP_STATE_OFFLINE;                    \
-        p->tstamp = millis_now();                       \
-    } while (0)
+#define cp_set_offline(p)                    \
+	do {                                 \
+		p->state = CP_STATE_OFFLINE; \
+		p->tstamp = millis_now();    \
+	} while (0)
 
-#define cp_set_state(p, s)                              \
-    do {                                                \
-        p->state = s;                                   \
-        clear_flag(p, PD_FLAG_AWAIT_RESP);              \
-    } while (0)
+#define cp_set_state(p, s)                         \
+	do {                                       \
+		p->state = s;                      \
+		clear_flag(p, PD_FLAG_AWAIT_RESP); \
+	} while (0)
 
-#define cp_reset_state(p)                               \
-    do {                                                \
-        p->state = CP_STATE_INIT;                       \
-        phy_state_reset(p);                             \
-        p->flags = 0;                                   \
-    } while (0)
+#define cp_reset_state(p)                 \
+	do {                              \
+		p->state = CP_STATE_INIT; \
+		phy_state_reset(p);       \
+		p->flags = 0;             \
+	} while (0)
 
-int cp_cmd_dispatcher(pd_t * p, int cmd)
+int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 {
 	struct cmd c;
 
@@ -43,7 +43,7 @@ int cp_cmd_dispatcher(pd_t * p, int cmd)
 	return 1;
 }
 
-int cp_state_update(pd_t * pd)
+int cp_state_update(struct osdp_pd *pd)
 {
 	int phy_state;
 

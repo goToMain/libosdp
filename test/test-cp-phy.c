@@ -7,17 +7,17 @@
 #include "test.h"
 #include "osdp_cp_private.h"
 
-int phy_build_packet_head(pd_t * pd, uint8_t * buf, int maxlen);
-int phy_build_packet_tail(pd_t * pd, uint8_t * buf, int len, int maxlen);
-int phy_decode_packet(pd_t * pd, uint8_t * buf, int len);
+int phy_build_packet_head(struct osdp_pd *pd, uint8_t * buf, int maxlen);
+int phy_build_packet_tail(struct osdp_pd *pd, uint8_t * buf, int len, int maxlen);
+int phy_decode_packet(struct osdp_pd *pd, uint8_t * buf, int len);
 
-int cp_build_command(pd_t * pd, struct cmd *cmd, uint8_t * buf, int blen);
-int cp_decode_response(pd_t * pd, uint8_t * buf, int len);
+int cp_build_command(struct osdp_pd *pd, struct cmd *cmd, uint8_t * buf, int blen);
+int cp_decode_response(struct osdp_pd *pd, uint8_t * buf, int len);
 
-int cp_enqueue_command(pd_t * pd, struct cmd *c);
-int cp_dequeue_command(pd_t * pd, int readonly, uint8_t * cmd_buf, int maxlen);
+int cp_enqueue_command(struct osdp_pd *pd, struct cmd *c);
+int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen);
 
-static int test_cp_build_packet(pd_t * p, uint8_t * buf, int len, int maxlen)
+static int test_cp_build_packet(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 {
 	int cmd_len;
 	uint8_t cmd_buf[128];
@@ -42,10 +42,10 @@ static int test_cp_build_packet(pd_t * p, uint8_t * buf, int len, int maxlen)
 	return len;
 }
 
-int test_cp_build_packet_poll(osdp_t * ctx)
+int test_cp_build_packet_poll(struct osdp * ctx)
 {
 	int len;
-	pd_t *p = to_current_pd(ctx);
+	struct osdp_pd *p = to_current_pd(ctx);
 	uint8_t packet[512] = { CMD_POLL };
 	uint8_t expected[] = { 0xff, 0x53, 0x65, 0x08, 0x00,
 		0x04, 0x60, 0x60, 0x90
@@ -60,10 +60,10 @@ int test_cp_build_packet_poll(osdp_t * ctx)
 	return 0;
 }
 
-int test_cp_build_packet_id(osdp_t * ctx)
+int test_cp_build_packet_id(struct osdp * ctx)
 {
 	int len;
-	pd_t *p = to_current_pd(ctx);
+	struct osdp_pd *p = to_current_pd(ctx);
 	uint8_t packet[512] = { CMD_ID, 0x00 };
 	uint8_t expected[] = { 0xff, 0x53, 0x65, 0x09, 0x00,
 		0x05, 0x61, 0x00, 0xe9, 0x4d
@@ -79,10 +79,10 @@ int test_cp_build_packet_id(osdp_t * ctx)
 	return 0;
 }
 
-int test_phy_decode_packet_ack(osdp_t * ctx)
+int test_phy_decode_packet_ack(struct osdp * ctx)
 {
 	int len;
-	pd_t *p = to_current_pd(ctx);
+	struct osdp_pd *p = to_current_pd(ctx);
 	uint8_t packet[128] = { 0xff, 0x53, 0xe5, 0x08, 0x00,
 		0x05, 0x40, 0xe3, 0xa5
 	};
@@ -98,10 +98,10 @@ int test_phy_decode_packet_ack(osdp_t * ctx)
 	return 0;
 }
 
-int test_cp_build_command(osdp_t * ctx)
+int test_cp_build_command(struct osdp * ctx)
 {
 	int len;
-	pd_t *p = to_current_pd(ctx);
+	struct osdp_pd *p = to_current_pd(ctx);
 	uint8_t output[128];
 	uint8_t cmd_buf[64];
 	uint8_t expected[] = { 0x6a, 0x65, 0x00, 0x0a, 0x0a, 0x00 };
@@ -125,9 +125,9 @@ int test_cp_build_command(osdp_t * ctx)
 	return 0;
 }
 
-int test_cp_process_response_id(osdp_t * ctx)
+int test_cp_process_response_id(struct osdp * ctx)
 {
-	pd_t *p = to_current_pd(ctx);
+	struct osdp_pd *p = to_current_pd(ctx);
 	uint8_t resp[] = { REPLY_PDID, 0xa1, 0xa2, 0xa3, 0xb1, 0xc1,
 		0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2, 0xe3
 	};
@@ -152,9 +152,9 @@ int test_cp_process_response_id(osdp_t * ctx)
 	return 0;
 }
 
-int test_cp_queue_command(osdp_t * ctx)
+int test_cp_queue_command(struct osdp * ctx)
 {
-	pd_t *p = to_current_pd(ctx);
+	struct osdp_pd *p = to_current_pd(ctx);
 
 	int len;
 	uint8_t buf[128];
@@ -226,7 +226,7 @@ int test_cp_phy_setup(struct test *t)
 		.send_func = NULL,
 		.recv_func = NULL
 	};
-	osdp_t *ctx = (osdp_t *) osdp_cp_setup(1, &info);
+	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;

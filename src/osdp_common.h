@@ -26,10 +26,10 @@
 #define byte_3(x)                    (uint8_t)(((x)>>24)&0xFF)
 
 /* casting helpers */
-#define to_osdp(p)                   ((osdp_t *)p)
-#define to_cp(p)                     (((osdp_t *)(p))->cp)
-#define to_pd(p, i)                  (((osdp_t *)(p))->pd + i)
-#define to_ctx(p)                    ((osdp_t *)p->__parent)
+#define to_osdp(p)                   ((struct osdp *)p)
+#define to_cp(p)                     (((struct osdp *)(p))->cp)
+#define to_pd(p, i)                  (((struct osdp *)(p))->pd + i)
+#define to_ctx(p)                    ((struct osdp *)p->__parent)
 #define child_set_parent(c, p)       ((c)->__parent = (void *)(p))
 #define to_current_pd(p)             (to_cp(p)->current_pd)
 
@@ -134,7 +134,7 @@ struct cmd_queue {
 	uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
 };
 
-typedef struct {
+struct osdp_pd {
 	/* OSDP specified data */
 	void *__parent;
 	int baud_rate;
@@ -160,26 +160,26 @@ typedef struct {
 	/* callbacks */
 	int (*send_func) (uint8_t * buf, int len);
 	int (*recv_func) (uint8_t * buf, int len);
-} pd_t;
+};
 
-typedef struct {
+struct osdp_cp {
 	void *__parent;
 	int num_pd;
 	int state;
 	int flags;
 
-	pd_t *current_pd;	/* current operational pd's pointer */
+	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;		/* current pd's offset into ctx->pd */
-} cp_t;
+};
 
-typedef struct {
+struct osdp {
 	int magic;
 	int flags;
 	struct osdp_cp_notifiers notifier;
 
-	cp_t *cp;
-	pd_t *pd;
-} osdp_t;
+	struct osdp_cp *cp;
+	struct osdp_pd *pd;
+};
 
 enum log_levels_e {
 	LOG_EMERG,
@@ -207,11 +207,11 @@ enum pd_nak_code_e {
 };
 
 /* from phy.c */
-int phy_build_packet_head(pd_t * p, uint8_t * buf, int maxlen);
-int phy_build_packet_tail(pd_t * p, uint8_t * buf, int len, int maxlen);
-int phy_decode_packet(pd_t * p, uint8_t * buf, int blen);
+int phy_build_packet_head(struct osdp_pd *p, uint8_t * buf, int maxlen);
+int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen);
+int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen);
 const char *get_nac_reason(int code);
-void phy_state_reset(pd_t * pd);
+void phy_state_reset(struct osdp_pd *pd);
 
 /* from common.c */
 millis_t millis_now();

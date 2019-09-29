@@ -41,7 +41,7 @@ int main()
 		},
 	};
 
-	osdp_cp_t *ctx = osdp_cp_setup(OSDP_PD_SENTINEL, info);
+	struct osdp_cp *ctx = osdp_cp_setup(OSDP_PD_SENTINEL, info);
 
 	if (ctx == NULL)
 	{

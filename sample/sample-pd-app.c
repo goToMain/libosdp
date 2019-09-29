@@ -24,7 +24,7 @@ int sample_pd_recv_func(uint8_t *buf, int len)
 
 int main()
 {
-	osdp_pd_t *ctx;
+	struct osdp_pd *ctx;
 	struct pd_cap cap[] = {
 		{
 			.function_code = CAP_READER_LED_CONTROL,

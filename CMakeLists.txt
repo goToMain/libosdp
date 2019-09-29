@@ -27,7 +27,6 @@ list(APPEND LIB_OSDP_SRC
 	"src/osdp_cp_phy.c"
 	"src/osdp_cp_fsm.c"
 	"src/osdp_cp.c"
-	"src/osdp_pd_phy"
 	"src/osdp_pd.c"
 )
 ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})

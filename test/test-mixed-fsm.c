@@ -9,7 +9,8 @@
 #include <osdp.h>
 #include "test.h"
 #include "osdp_cp_private.h"
-#include "osdp_pd_private.h"
+
+int pd_phy_state_update(struct osdp_pd *pd);
 
 struct test_mixed {
 	struct osdp *cp_ctx;
@@ -138,7 +139,7 @@ void run_mixed_fsm_tests(struct test *t)
 		pd_phy_state_update(to_current_pd(p->pd_ctx));
 
 		if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE ||
-		    to_current_pd(p->pd_ctx)->phy_state == PD_PHY_STATE_ERR) {
+		    to_current_pd(p->pd_ctx)->phy_state == 2) {
 			printf("    -- phy state error!\n");
 			result = FALSE;
 			break;

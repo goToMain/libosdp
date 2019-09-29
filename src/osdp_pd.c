@@ -218,10 +218,12 @@ int pd_build_reply(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int maxl
 		buf[len++] = byte_3(p->baud_rate);
 		break;
 	case REPLY_NAK:
-	default:
 		buf[len++] = reply->id;
 		buf[len++] = (reply->len > sizeof(struct cmd)) ?
-		    reply->data[0] : PD_NAK_RECORD;
+					reply->data[0] : PD_NAK_RECORD;
+	default:
+		buf[len++] = REPLY_NAK;
+		buf[len++] = PD_NAK_SC_UNSUP;
 		break;
 	}
 	return len;

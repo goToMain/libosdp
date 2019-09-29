@@ -44,6 +44,16 @@ list(APPEND LIB_OSDP_TEST_SRC
 add_executable(${LIB_OSDP_TEST} ${LIB_OSDP_TEST_SRC})
 target_link_libraries(${LIB_OSDP_TEST} osdp)
 
+## Sample CP
+set(LIB_OSDP_SAMPLE_CP osdp-cp-sample)
+list(APPEND LIB_OSDP_SAMPLE_CP_SRC
+	"sample/rs232.c"
+	"sample/uart.c"
+	"sample/cp_app.c"
+)
+add_executable(${LIB_OSDP_SAMPLE_CP} ${LIB_OSDP_SAMPLE_CP_SRC})
+target_link_libraries(${LIB_OSDP_SAMPLE_CP} osdp)
+
 ## Install
 set(CMAKE_INSTALL_DIR $ENV{INSTALL_PREFIX})
 install(TARGETS ${LIB_OSDP} DESTINATION ${CMAKE_INSTALL_DIR}/lib)

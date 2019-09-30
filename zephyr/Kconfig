@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2019 Siddharth Chandraskeran <siddharth@embedjournal.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig OSDP
+	bool "Open Supervised Device Protocol (OSDP) driver"
+	help
+	  Add support for Open Supervised Device Protocol (OSDP)
+
+if OSDP
+
+config OSDP_UART_DEV_NAME
+	string "Device mame of UART device for OSDP"
+	default "$(dt_chosen_label,osdp)" if HAS_DTS
+	default "UART_1"
+	help
+	  This option specifies the name of UART device to be used for
+	  OSDP
+
+config OSDP_CONF_MODE_CP
+	bool "Configure OSDP in CP mode"
+	select OSDP_CONF_MODE
+	help
+	  Configure this device to operate as a Peripheral Device
+
+config OSDP_CONF_MODE_PD
+	bool "Configure OSDP in PD mode"
+	select OSDP_CONF_MODE
+	help
+	  Configure this device to operate as a Control Pannel
+
+config OSDP_CONF_NUM_PD
+	int "Number of configured PDs"
+	default 1
+	help
+	  In CP mode, this variable indicates the number of PD connected
+	  the this CP. In multi-drop connection, there can be as many as
+	  127 PDs. When initialized as PD, this value must left to 1.
+
+if OSDP_CONF_MODE_PD
+
+
+
+endif #OSDP_CONF_MODE_PD
+
+endif # OSDP

@@ -10,6 +10,7 @@
 #include <signal.h>
 
 #include "rs232.h"
+#include "uart.h"
 
 int uart_num = -1;
 

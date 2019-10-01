@@ -27,7 +27,7 @@
 
 int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 {
-	struct cmd c;
+	struct osdp_data c;
 
 	if (isset_flag(p, PD_FLAG_AWAIT_RESP)) {
 		clear_flag(p, PD_FLAG_AWAIT_RESP);
@@ -35,7 +35,7 @@ int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 	}
 
 	c.id = cmd;
-	c.len = sizeof(struct cmd);
+	c.len = sizeof(struct osdp_data);
 	if (cp_enqueue_command(p, &c) != 0) {
 		osdp_log(LOG_WARNING, "command_enqueue error!");
 	}

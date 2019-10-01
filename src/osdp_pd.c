@@ -10,11 +10,11 @@
 #include "osdp_common.h"
 
 #define call_fprt(fp, ...)          ({int r=-1; if(fp != NULL) r = fp(__VA_ARGS__); r;})
-#define pd_set_output(p, c)         call_fprt((p)->cmd_handler->output, (c))
-#define pd_set_led(p, c)            call_fprt((p)->cmd_handler->led,    (c))
-#define pd_set_buzzer(p, c)         call_fprt((p)->cmd_handler->buzzer, (c))
-#define pd_set_text(p, c)           call_fprt((p)->cmd_handler->text,   (c))
-#define pd_set_comm_params(p, c)    call_fprt((p)->cmd_handler->comset, (c))
+#define pd_set_output(p, c)         call_fprt((p)->cmd_cb.output, (c))
+#define pd_set_led(p, c)            call_fprt((p)->cmd_cb.led,    (c))
+#define pd_set_buzzer(p, c)         call_fprt((p)->cmd_cb.buzzer, (c))
+#define pd_set_text(p, c)           call_fprt((p)->cmd_cb.text,   (c))
+#define pd_set_comm_params(p, c)    call_fprt((p)->cmd_cb.comset, (c))
 
 enum osdp_phy_state_e {
 	PD_PHY_STATE_IDLE,
@@ -28,7 +28,7 @@ enum osdp_phy_state_e {
  * -1: error
  *  2: retry current command
  */
-int pd_decode_command(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int len)
+int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int len)
 {
 	int i, ret = -1, cmd_id, pos = 0;
 	union cmd_all cmd;
@@ -153,7 +153,7 @@ int pd_decode_command(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int l
 
 	if (ret != 0) {
 		reply->id = REPLY_NAK;
-		reply->data[0] = PD_NAK_RECORD;
+		reply->data[0] = OSDP_PD_NAK_RECORD;
 		return -1;
 	}
 
@@ -165,7 +165,7 @@ int pd_decode_command(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int l
  * +ve: length of command
  * -ve: error
  */
-int pd_build_reply(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int maxlen)
+int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int maxlen)
 {
 	int i, len = 0;
 
@@ -219,17 +219,17 @@ int pd_build_reply(struct osdp_pd *p, struct cmd *reply, uint8_t * buf, int maxl
 		break;
 	case REPLY_NAK:
 		buf[len++] = reply->id;
-		buf[len++] = (reply->len > sizeof(struct cmd)) ?
-					reply->data[0] : PD_NAK_RECORD;
+		buf[len++] = (reply->len > sizeof(struct osdp_data)) ?
+					reply->data[0] : OSDP_PD_NAK_RECORD;
 	default:
 		buf[len++] = REPLY_NAK;
-		buf[len++] = PD_NAK_SC_UNSUP;
+		buf[len++] = OSDP_PD_NAK_SC_UNSUP;
 		break;
 	}
 	return len;
 }
 
-int pd_send_reply(struct osdp_pd *p, struct cmd *reply)
+int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 {
 	int ret, len;
 	uint8_t buf[512];
@@ -262,7 +262,7 @@ int pd_send_reply(struct osdp_pd *p, struct cmd *reply)
  *  1: no data yet
  *  2: re-issue command
  */
-int pd_process_command(struct osdp_pd *p, struct cmd *reply)
+int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 {
 	int len;
 	uint8_t resp[512];
@@ -287,7 +287,7 @@ int pd_process_command(struct osdp_pd *p, struct cmd *reply)
 int pd_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
-	struct cmd *reply = (struct cmd *)pd->scratch;
+	struct osdp_data *reply = (struct osdp_data *)pd->scratch;
 
 	switch (pd->phy_state) {
 	case PD_PHY_STATE_IDLE:
@@ -342,7 +342,7 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
-	child_set_parent(cp, ctx);
+	node_set_parent(cp, ctx);
 	cp->num_pd = 1;
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd));
@@ -353,13 +353,7 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 	set_current_pd(ctx, 0);
 	pd = to_pd(ctx, 0);
 
-	pd->cmd_handler = calloc(1, sizeof(struct pd_cmd_handler));
-	if (pd->cmd_handler == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc pd_cmd_handler");
-		goto malloc_err;
-	}
-
-	child_set_parent(pd, ctx);
+	node_set_parent(pd, ctx);
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;
 	pd->flags = p->init_flags;
@@ -400,8 +394,6 @@ void osdp_pd_teardown(osdp_pd_t *ctx)
 	/* teardown PD */
 	pd = to_pd(ctx, 0);
 	if (pd != NULL) {
-		if (pd->cmd_handler != NULL)
-			free(pd->cmd_handler);
 		free(pd);
 	}
 
@@ -421,10 +413,37 @@ void osdp_pd_refresh(osdp_pd_t *ctx)
 	pd_phy_state_update(pd);
 }
 
-int osdp_pd_set_cmd_handlers(osdp_pd_t *ctx, struct pd_cmd_handler *h)
+void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p))
 {
 	struct osdp_pd *pd = to_current_pd(ctx);
 
-	memcpy(pd->cmd_handler, h, sizeof(struct pd_cmd_handler));
-	return 0;
+	pd->cmd_cb.led = cb;
+}
+
+void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p))
+{
+	struct osdp_pd *pd = to_current_pd(ctx);
+
+	pd->cmd_cb.buzzer = cb;
+}
+
+void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_text *p))
+{
+	struct osdp_pd *pd = to_current_pd(ctx);
+
+	pd->cmd_cb.text = cb;
+}
+
+void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_output *p))
+{
+	struct osdp_pd *pd = to_current_pd(ctx);
+
+	pd->cmd_cb.output = cb;
+}
+
+void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_comset *p))
+{
+	struct osdp_pd *pd = to_current_pd(ctx);
+
+	pd->cmd_cb.comset = cb;
 }

@@ -394,7 +394,7 @@ void osdp_uart_isr(struct device *dev)
 			return;
 		}
 
-		/* spip to the begining of next packet */
+		/* skip to the begining of next packet */
 		if (pd->rx_len == 0 && byte != 0xff) {
 			return;
 		}
@@ -411,8 +411,8 @@ int osdp_pd_setup(struct osdp_pd_info * p)
 	struct osdp_pd *pd = to_pd(ctx, 0);
 
 	set_current_pd(ctx, 0);
-	child_set_parent(cp, ctx);
-	child_set_parent(pd, ctx);
+	node_set_parent(cp, ctx);
+	node_set_parent(pd, ctx);
 
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;

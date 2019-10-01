@@ -109,54 +109,54 @@ struct pd_id {
 };
 
 typedef struct {
-    /**
-     * Can be one of 9600/38400/115200.
-     */
+	/**
+	 * Can be one of 9600/38400/115200.
+	 */
 	int baud_rate;
 
-    /**
-     * 7 bit PD address. the rest of the bits are ignored. The special address
-     * 0x7F is used for broadcast. So there can be 2^7-1 devices on a multi-
-     * drop channel.
-     */
+	/**
+	 * 7 bit PD address. the rest of the bits are ignored. The special address
+	 * 0x7F is used for broadcast. So there can be 2^7-1 devices on a multi-
+	 * drop channel.
+	 */
 	int address;
 
-    /**
-     * Used to modify the way the context is setup.
-     */
+	/**
+	 * Used to modify the way the context is setup.
+	 */
 	int init_flags;
 
-    /**
-     * Static info that the PD reports to the CP when it received a `CMD_ID`.
-     * This is used only in PD mode of operation.
-     */
+	/**
+	 * Static info that the PD reports to the CP when it received a `CMD_ID`.
+	 * This is used only in PD mode of operation.
+	 */
 	struct pd_id id;
 
-    /**
-     * This is a pointer to an array of structures containing the PD's
-     * capabilities. Use macro `OSDP_PD_CAP_SENTINEL` to terminate the array.
-     * This is used only PD mode of operation.
-     */
+	/**
+	 * This is a pointer to an array of structures containing the PD's
+	 * capabilities. Use macro `OSDP_PD_CAP_SENTINEL` to terminate the array.
+	 * This is used only PD mode of operation.
+	 */
 	struct pd_cap *cap;
 
-    /**
-     * send_func - Sends byte array into some channel
-     * @buf - byte array to be sent
-     * @len - number of bytes in `buf`
-     *
-     * Returns:
-     *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
-     */
+	/**
+	 * send_func - Sends byte array into some channel
+	 * @buf - byte array to be sent
+	 * @len - number of bytes in `buf`
+	 *
+	 * Returns:
+	 *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
+	 */
 	int (*send_func) (uint8_t * buf, int len);
 
-    /**
-     * recv_func - Copies received bytes into buffer
-     * @buf - byte array copy incoming data
-     * @len - sizeof `buf`. Can copy utmost `len` number of bytes into `buf`
-     *
-     * Returns:
-     *  +ve: number of bytes copied on to `bug`. Must be <= `len`
-     */
+	/**
+	 * recv_func - Copies received bytes into buffer
+	 * @buf - byte array copy incoming data
+	 * @len - sizeof `buf`. Can copy utmost `len` number of bytes into `buf`
+	 *
+	 * Returns:
+	 *  +ve: number of bytes copied on to `bug`. Must be <= `len`
+	 */
 	int (*recv_func) (uint8_t * buf, int len);
 
 } osdp_pd_info_t;
@@ -181,24 +181,22 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info);
 void osdp_cp_refresh(osdp_cp_t * ctx);
 void osdp_cp_teardown(osdp_cp_t * ctx);
 
-int osdp_cp_set_notifiers(osdp_cp_t * ctx, struct osdp_cp_notifiers *n);
-int osdp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p);
-int osdp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p);
-int osdp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p);
-int osdp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
+int osdp_cp_set_callback_key_press(osdp_cp_t * ctx, int (*cb) (int address, uint8_t key));
+int osdp_cp_set_callback_card_read(osdp_cp_t * ctx, int (*cb) (int address, int format, uint8_t * data, int len));
+
+int osdp_cp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p);
+int osdp_cp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p);
+int osdp_cp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p);
+int osdp_cp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
 
 /* --- PD Only --- */
 
-struct pd_cmd_handler {
-	int (*led) (struct osdp_cmd_led * p);
-	int (*buzzer) (struct osdp_cmd_buzzer * p);
-	int (*text) (struct osdp_cmd_text * p);
-	int (*output) (struct osdp_cmd_output * p);
-	int (*comset) (struct osdp_cmd_comset * p);
-};
-
-osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p);
+osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * info);
 void osdp_pd_teardown(osdp_pd_t * ctx);
-int osdp_pd_set_cmd_handlers(osdp_pd_t * ctx, struct pd_cmd_handler *h);
+void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p));
+void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p));
+void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_output *p));
+void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_text *p));
+void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_comset *p));
 
 #endif	/* _OSDP_H_ */

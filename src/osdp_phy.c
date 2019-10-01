@@ -20,31 +20,6 @@ struct osdp_packet_header {
 	uint8_t data[0];
 };
 
-const char *osdp_nak_reasons[PD_NAK_SENTINEL] = {
-	[PD_NAK_NONE] = "",
-	[PD_NAK_MSG_CHK] = "NAK: Message check character(s) error (bad cksum/crc)",
-	[PD_NAK_CMD_LEN] = "NAK: Command length error",
-	[PD_NAK_CMD_UNKNOWN] = "NAK: Unknown Command Code. Command not implemented by PD",
-	[PD_NAK_SEQ_NUM] = "NAK: Unexpected sequence number detected in the header",
-	[PD_NAK_SC_UNSUP] = "NAK: This PD does not support the security block that was received",
-	[PD_NAK_SC_COND] = "NAK: Communication security conditions not met",
-	[PD_NAK_BIO_TYPE] = "NAK: BIO_TYPE not supported",
-	[PD_NAK_BIO_FMT] = "NAK: BIO_FORMAT not supported",
-	[PD_NAK_RECORD] = "NAK: Unable to process command record",
-};
-
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
-{
-	for (; len > 0; len--) {
-		seed = (seed >> 8U) | (seed << 8U);
-		seed ^= *src++;
-		seed ^= (seed & 0xffU) >> 4U;
-		seed ^= seed << 12U;
-		seed ^= (seed & 0xffU) << 5U;
-	}
-	return seed;
-}
-
 uint8_t compute_checksum(uint8_t * msg, int length)
 {
 	uint8_t checksum = 0;
@@ -60,7 +35,20 @@ uint8_t compute_checksum(uint8_t * msg, int length)
 
 const char *get_nac_reason(int code)
 {
-	if (code < 0 || code >= PD_NAK_SENTINEL)
+	const char *osdp_nak_reasons[] = {
+		"",
+		"NAK: Message check character(s) error (bad cksum/crc)",
+		"NAK: Command length error",
+		"NAK: Unknown Command Code. Command not implemented by PD",
+		"NAK: Unexpected sequence number detected in the header",
+		"NAK: This PD does not support the security block that was received",
+		"NAK: Communication security conditions not met",
+		"NAK: BIO_TYPE not supported",
+		"NAK: BIO_FORMAT not supported",
+		"NAK: Unable to process command record",
+	};
+
+	if (code < 0 || code >= OSDP_PD_NAK_SENTINEL)
 		code = 0;
 
 	return osdp_nak_reasons[code];
@@ -197,6 +185,6 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen)
 
 void phy_state_reset(struct osdp_pd *pd)
 {
-	pd->state = 0;
+	pd->phy_state = 0;
 	pd->seq_number = -1;
 }

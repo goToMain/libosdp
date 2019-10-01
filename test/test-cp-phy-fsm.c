@@ -8,7 +8,7 @@
 #include "test.h"
 #include "osdp_cp_private.h"
 
-int cp_enqueue_command(struct osdp_pd *pd, struct cmd *c);
+int cp_enqueue_command(struct osdp_pd *pd, struct osdp_data *c);
 
 int phy_fsm_resp_offset = 0;
 
@@ -93,8 +93,8 @@ void run_cp_phy_fsm_tests(struct test *t)
 
 	printf("\nStarting CP fsm state tests\n");
 
-	struct cmd cmd_poll = {.id = CMD_POLL,.len = 2 };
-	struct cmd cmd_id = {.id = CMD_ID,.len = 2 };
+	struct osdp_data cmd_poll = {.id = CMD_POLL,.len = 2 };
+	struct osdp_data cmd_id = {.id = CMD_ID,.len = 2 };
 
 	if (test_cp_phy_fsm_setup(t)) {
 		printf("    -- error failed to setup cp_phy\n");

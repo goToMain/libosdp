@@ -12,7 +12,7 @@
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxlen)
+int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t * buf, int maxlen)
 {
 	union cmd_all *c;
 	int ret, i, len = 0;
@@ -36,7 +36,7 @@ int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxl
 		ret = 0;
 		break;
 	case CMD_OUT:
-		if (cmd->len != sizeof(struct cmd) + 4)
+		if (cmd->len != sizeof(struct osdp_data) + 4)
 			break;
 		c = (union cmd_all *)cmd->data;
 		buf[len++] = cmd->id;
@@ -47,7 +47,7 @@ int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxl
 		ret = 0;
 		break;
 	case CMD_LED:
-		if (cmd->len != sizeof(struct cmd) + 16)
+		if (cmd->len != sizeof(struct osdp_data) + 16)
 			break;
 		c = (union cmd_all *)cmd->data;
 		buf[len++] = cmd->id;
@@ -70,7 +70,7 @@ int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxl
 		ret = 0;
 		break;
 	case CMD_BUZ:
-		if (cmd->len != sizeof(struct cmd) + 5)
+		if (cmd->len != sizeof(struct osdp_data) + 5)
 			break;
 		c = (union cmd_all *)cmd->data;
 		buf[len++] = cmd->id;
@@ -82,7 +82,7 @@ int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxl
 		ret = 0;
 		break;
 	case CMD_TEXT:
-		if (cmd->len != sizeof(struct cmd) + 38)
+		if (cmd->len != sizeof(struct osdp_data) + 38)
 			break;
 		c = (union cmd_all *)cmd->data;
 		buf[len++] = cmd->id;
@@ -97,7 +97,7 @@ int cp_build_command(struct osdp_pd *p, struct cmd *cmd, uint8_t * buf, int maxl
 		ret = 0;
 		break;
 	case CMD_COMSET:
-		if (cmd->len != sizeof(struct cmd) + 5)
+		if (cmd->len != sizeof(struct osdp_data) + 5)
 			break;
 		c = (union cmd_all *)cmd->data;
 		buf[len++] = cmd->id;
@@ -276,7 +276,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 	return ret;
 }
 
-int cp_send_command(struct osdp_pd *p, struct cmd *cmd)
+int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 {
 	int ret, len;
 	uint8_t buf[512];
@@ -325,7 +325,7 @@ int cp_process_response(struct osdp_pd *p)
 	return cp_decode_response(p, resp, len);
 }
 
-int cp_enqueue_command(struct osdp_pd *p, struct cmd *c)
+int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c)
 {
 	int len, fs, start, end;
 	struct cmd_queue *q = p->queue;
@@ -403,7 +403,7 @@ int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int 
 int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
-	struct cmd *cmd = (struct cmd *)pd->scratch;
+	struct osdp_data *cmd = (struct osdp_data *)pd->scratch;
 
 	switch (pd->phy_state) {
 	case CP_PHY_STATE_IDLE:

@@ -11,10 +11,10 @@ int phy_build_packet_head(struct osdp_pd *pd, uint8_t * buf, int maxlen);
 int phy_build_packet_tail(struct osdp_pd *pd, uint8_t * buf, int len, int maxlen);
 int phy_decode_packet(struct osdp_pd *pd, uint8_t * buf, int len);
 
-int cp_build_command(struct osdp_pd *pd, struct cmd *cmd, uint8_t * buf, int blen);
+int cp_build_command(struct osdp_pd *pd, struct osdp_data *cmd, uint8_t * buf, int blen);
 int cp_decode_response(struct osdp_pd *pd, uint8_t * buf, int len);
 
-int cp_enqueue_command(struct osdp_pd *pd, struct cmd *c);
+int cp_enqueue_command(struct osdp_pd *pd, struct osdp_data *c);
 int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen);
 
 static int test_cp_build_packet(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
@@ -105,11 +105,11 @@ int test_cp_build_command(struct osdp * ctx)
 	uint8_t output[128];
 	uint8_t cmd_buf[64];
 	uint8_t expected[] = { 0x6a, 0x65, 0x00, 0x0a, 0x0a, 0x00 };
-	struct cmd *c = (struct cmd *)cmd_buf;
+	struct osdp_data *c = (struct osdp_data *)cmd_buf;
 	struct osdp_cmd_buzzer *buz = (struct osdp_cmd_buzzer *)&c->data;
 
 	c->id = CMD_BUZ;
-	c->len = sizeof(struct cmd) + sizeof(struct osdp_cmd_buzzer);
+	c->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_buzzer);
 	buz->on_count = 10;
 	buz->off_count = 10;
 	buz->reader = 101;
@@ -186,21 +186,21 @@ int test_cp_queue_command(struct osdp * ctx)
 
 	printf("Testing cp_queue_command() -- ");
 
-	if (cp_enqueue_command(p, (struct cmd *)cmd96)) {
+	if (cp_enqueue_command(p, (struct osdp_data *)cmd96)) {
 		printf("enqueue cmd96 error!\n");
 		return -1;
 	}
 	len = cp_dequeue_command(p, FALSE, buf, 128);
 	CHECK_ARRAY(buf, len, cmd96);
 
-	if (cp_enqueue_command(p, (struct cmd *)cmd32)) {
+	if (cp_enqueue_command(p, (struct osdp_data *)cmd32)) {
 		printf("enqueue cmd32 error!\n");
 		return -1;
 	}
 	len = cp_dequeue_command(p, FALSE, buf, 128);
 	CHECK_ARRAY(buf, len, cmd32);
 
-	if (cp_enqueue_command(p, (struct cmd *)cmd16)) {
+	if (cp_enqueue_command(p, (struct osdp_data *)cmd16)) {
 		printf("enqueue cmd16 error!\n");
 		return -1;
 	}

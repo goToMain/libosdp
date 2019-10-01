@@ -30,7 +30,7 @@
 #define to_cp(p)                     (((struct osdp *)(p))->cp)
 #define to_pd(p, i)                  (((struct osdp *)(p))->pd + i)
 #define to_ctx(p)                    ((struct osdp *)p->__parent)
-#define child_set_parent(c, p)       ((c)->__parent = (void *)(p))
+#define node_set_parent(c, p)       ((c)->__parent = (void *)(p))
 #define to_current_pd(p)             (to_cp(p)->current_pd)
 
 #define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))
@@ -114,7 +114,7 @@
 #define PD_FLAG_PD_MODE              0x80000000	/* device is setup as PD */
 typedef uint64_t millis_t;
 
-struct cmd {
+struct osdp_data {
 	uint8_t len;
 	uint8_t id;
 	uint8_t data[0];
@@ -132,6 +132,14 @@ struct cmd_queue {
 	int head;
 	int tail;
 	uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
+};
+
+struct osdp_pd_cmd_callback {
+	int (*led) (struct osdp_cmd_led *p);
+	int (*buzzer) (struct osdp_cmd_buzzer *p);
+	int (*text) (struct osdp_cmd_text *p);
+	int (*output) (struct osdp_cmd_output *p);
+	int (*comset) (struct osdp_cmd_comset *p);
 };
 
 struct osdp_pd {
@@ -155,7 +163,7 @@ struct osdp_pd {
 	struct cmd_queue *queue;
 
 	/* PD mode only data */
-	struct pd_cmd_handler *cmd_handler;
+	struct osdp_pd_cmd_callback cmd_cb;
 
 	/* callbacks */
 	int (*send_func) (uint8_t * buf, int len);
@@ -193,17 +201,17 @@ enum log_levels_e {
 };
 
 enum pd_nak_code_e {
-	PD_NAK_NONE,
-	PD_NAK_MSG_CHK,
-	PD_NAK_CMD_LEN,
-	PD_NAK_CMD_UNKNOWN,
-	PD_NAK_SEQ_NUM,
-	PD_NAK_SC_UNSUP,
-	PD_NAK_SC_COND,
-	PD_NAK_BIO_TYPE,
-	PD_NAK_BIO_FMT,
-	PD_NAK_RECORD,
-	PD_NAK_SENTINEL
+	OSDP_PD_NAK_NONE,
+	OSDP_PD_NAK_MSG_CHK,
+	OSDP_PD_NAK_CMD_LEN,
+	OSDP_PD_NAK_CMD_UNKNOWN,
+	OSDP_PD_NAK_SEQ_NUM,
+	OSDP_PD_NAK_SC_UNSUP,
+	OSDP_PD_NAK_SC_COND,
+	OSDP_PD_NAK_BIO_TYPE,
+	OSDP_PD_NAK_BIO_FMT,
+	OSDP_PD_NAK_RECORD,
+	OSDP_PD_NAK_SENTINEL
 };
 
 /* from phy.c */
@@ -216,6 +224,7 @@ void phy_state_reset(struct osdp_pd *pd);
 /* from common.c */
 millis_t millis_now();
 millis_t millis_since(millis_t last);
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len);
 void osdp_dump(const char *head, const uint8_t * data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);

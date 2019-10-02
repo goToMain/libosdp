@@ -53,7 +53,7 @@ int phy_build_packet_head(struct osdp_pd *p, u8_t * buf, int maxlen)
 	pd_mode = isset_flag(p, PD_FLAG_PD_MODE);
 	exp_len = sizeof(struct osdp_packet_header);
 	if (maxlen < exp_len) {
-		printk("pkt_buf len err - %d/%d", maxlen, exp_len);
+		printk("pkt_buf len err - %d/%d\n", maxlen, exp_len);
 		return -1;
 	}
 
@@ -99,18 +99,19 @@ int phy_check_packet(const u8_t * buf, int blen)
 	int pkt_len;
 	struct osdp_packet_header *pkt;
 
+	if (blen < sizeof(struct osdp_packet_header))
+		return 1;
+
 	pkt = (struct osdp_packet_header *)buf;
 
 	/* validate packet header */
-	if (pkt->mark != 0xFF || pkt->som != 0x53) {
+	if (pkt->mark != 0xFF || pkt->som != 0x53)
 		return -1;
-	}
+
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-	if (pkt_len != blen - 1) {
-		printk("packet length mismatch %d/%d", pkt_len,
-			 blen - 1);
+	if (pkt_len != blen - 1)
 		return 1;
-	}
+
 	return 0;
 }
 
@@ -125,12 +126,12 @@ int phy_decode_packet(struct osdp_pd *p, u8_t * buf, int blen)
 
 	/* validate packet header */
 	if (!pd_mode && !(pkt->pd_address & 0x80)) {
-		printk("reply without MSB set 0x%02x",
+		printk("reply without MSB set 0x%02x\n",
 			 pkt->pd_address);
 		return -1;
 	}
 	if ((pkt->pd_address & 0x7F) != (p->address & 0x7F)) {
-		printk("invalid pd address %d",
+		printk("invalid pd address %d\n",
 			 (pkt->pd_address & 0x7F));
 		return -1;
 	}
@@ -138,7 +139,7 @@ int phy_decode_packet(struct osdp_pd *p, u8_t * buf, int blen)
 	cur = pkt->control & PKT_CONTROL_SQN;
 	comp = phy_get_seq_number(p, pd_mode);
 	if (comp != cur && !isset_flag(p, PD_FLAG_SKIP_SEQ_CHECK)) {
-		printk("packet seq mismatch %d/%d", comp, cur);
+		printk("packet seq mismatch %d/%d\n", comp, cur);
 		return -1;
 	}
 	blen -= sizeof(struct osdp_packet_header);	/* consume header */
@@ -149,8 +150,7 @@ int phy_decode_packet(struct osdp_pd *p, u8_t * buf, int blen)
 		blen -= 2;	/* consume 2byte CRC */
 		comp = crc16_itu_t(0x1D0F, buf + 1, pkt_len - 2);
 		if (comp != cur) {
-			printk("invalid crc 0x%04x/0x%04x", comp,
-				 cur);
+			printk("invalid crc 0x%04x/0x%04x\n", comp, cur);
 			return -1;
 		}
 	} else {
@@ -158,7 +158,7 @@ int phy_decode_packet(struct osdp_pd *p, u8_t * buf, int blen)
 		blen -= 1;	/* consume 1byte checksum */
 		comp = compute_checksum(buf + 1, pkt_len - 1);
 		if (comp != cur) {
-			printk("invalid checksum 0x%02x/0x%02x",
+			printk("invalid checksum 0x%02x/0x%02x\n",
 				 comp, cur);
 			return -1;
 		}

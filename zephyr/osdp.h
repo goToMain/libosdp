@@ -141,6 +141,7 @@ struct osdp_pd_info {
 };
 
 int osdp_pd_setup(struct osdp_pd_info *p);
+void osdp_pd_refresh();
 void osdp_pd_set_callback_cmd_led(int (*cb) (struct osdp_cmd_led *p));
 void osdp_pd_set_callback_cmd_buzzer(int (*cb) (struct osdp_cmd_buzzer *p));
 void osdp_pd_set_callback_cmd_output(int (*cb) (struct osdp_cmd_output *p));

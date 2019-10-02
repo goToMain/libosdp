@@ -43,6 +43,8 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, u8_t * buf, in
 	cmd_id = buf[pos++];
 	len--;
 
+	printk("Proc cmd: 0x%02x\n", cmd_id);
+
 	switch (cmd_id) {
 	case CMD_POLL:
 		reply->id = REPLY_ACK;
@@ -254,18 +256,18 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	u8_t buf[512];
 
 	if ((len = phy_build_packet_head(p, buf, 512)) < 0) {
-		printk("failed to phy_build_packet_head");
+		printk("failed to phy_build_packet_head\n");
 		return -1;
 	}
 
 	if ((ret = pd_build_reply(p, reply, buf + len, 512 - len)) < 0) {
-		printk("failed to build command %d", reply->id);
+		printk("failed to build command %d\n", reply->id);
 		return -1;
 	}
 	len += ret;
 
 	if ((len = phy_build_packet_tail(p, buf, len, 512)) < 0) {
-		printk("failed to build command %d", reply->id);
+		printk("failed to build command %d\n", reply->id);
 		return -1;
 	}
 
@@ -287,8 +289,7 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 	k_spinlock_key_t key;
 	u8_t cmd_buf[OSDP_PD_RX_BUF_LENGTH];
 
-	len = p->rx_len;
-	ret = phy_check_packet(p->rx_data, len);
+	ret = phy_check_packet(p->rx_data, p->rx_len);
 
 	/* rx_data had invalid MARK or SOM. Reset the receive buf */
 	if (ret < 0) {
@@ -299,18 +300,18 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 	}
 
 	/* rx_len != pkt->len; wait for more data */
-	if (ret > 1)
+	if (ret > 0)
 		return 1;
 
 	/* copy and empty rx buffer */
-	memcpy(cmd_buf, p->rx_data, len);
 	key = k_spin_lock(&p->rx_lock);
+	len = p->rx_len;
+	memcpy(cmd_buf, p->rx_data, len);
 	p->rx_len = 0;
 	k_spin_unlock(&p->rx_lock, key);
 
 	if ((len = phy_decode_packet(p, cmd_buf, len)) < 0) {
-		printk("failed decode response");
-		return -1;
+		printk("failed decode response\n");
 	}
 
 	return pd_decode_command(p, reply, cmd_buf, len);
@@ -335,7 +336,7 @@ int pd_phy_state_update(struct osdp_pd *pd)
 		if (ret == 1)
 			break;
 		if (ret < 0) {
-			printk("command dequeue error");
+			printk("command dequeue error\n");
 			pd->phy_state = PD_PHY_STATE_ERR;
 			break;
 		}
@@ -361,45 +362,28 @@ int pd_phy_state_update(struct osdp_pd *pd)
 	return ret;
 }
 
-static int read_uart(struct device *uart, u8_t *buf, unsigned int size)
-{
-	int rx;
-
-	rx = uart_fifo_read(uart, buf, size);
-	if (rx < 0) {
-		/* Overrun issue. Stop the UART */
-		uart_irq_rx_disable(uart);
-
-		return -EIO;
-	}
-
-	return rx;
-}
-
 void osdp_uart_isr(struct device *dev)
 {
-	u8_t byte;
+	int rx;
 	struct osdp_pd *pd = g_osdp_context.pd;
 
 	k_spinlock_key_t key = k_spin_lock(&pd->rx_lock);
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 
-		if (!uart_irq_rx_ready(dev)) {
+		if (!uart_irq_rx_ready(dev))
 			continue;
-		}
 
 		/* Character(s) have been received */
 
-		if (read_uart(dev, &byte, 1) < 0) {
+		if (pd->rx_len > OSDP_PD_RX_BUF_LENGTH)
 			return;
-		}
 
-		/* skip to the begining of next packet */
-		if (pd->rx_len == 0 && byte != 0xff) {
-			return;
-		}
+		rx = uart_fifo_read(dev, pd->rx_data + pd->rx_len,
+				    OSDP_PD_RX_BUF_LENGTH - pd->rx_len);
+		if (rx  <  0)
+			continue;
 
-		pd->rx_data[pd->rx_len++] = byte;
+		pd->rx_len += rx;
 	}
 	k_spin_unlock(&pd->rx_lock, key);
 }
@@ -411,8 +395,8 @@ int osdp_pd_setup(struct osdp_pd_info * p)
 	struct osdp_pd *pd = to_pd(ctx, 0);
 
 	set_current_pd(ctx, 0);
-	node_set_parent(cp, ctx);
-	node_set_parent(pd, ctx);
+	child_set_parent(cp, ctx);
+	child_set_parent(pd, ctx);
 
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;
@@ -431,6 +415,8 @@ int osdp_pd_setup(struct osdp_pd_info * p)
 		pd->cap[fc].num_items = cap->num_items;
 		cap++;
 	}
+
+	set_flag(pd, PD_FLAG_PD_MODE);
 
 	/* OSDP UART init */
 	u8_t c;
@@ -482,17 +468,10 @@ void osdp_pd_set_callback_cmd_comset(int (*cb) (struct osdp_cmd_comset *p))
 	pd->cmd_cb.comset = cb;
 }
 
-int osdp_pd_refresh(struct device *dev)
+void osdp_pd_refresh()
 {
-	ARG_UNUSED(dev);
-
 	struct osdp_pd *pd = g_osdp_context.pd;
 
-	while (1) {
-		pd_phy_state_update(pd);
-
-		k_busy_wait(1000000);
-	}
+	pd_phy_state_update(pd);
 }
 
-SYS_INIT(osdp_pd_refresh, APPLICATION, 90);

@@ -30,7 +30,7 @@
 #define to_cp(p)                     (&((struct osdp *)(p))->cp)
 #define to_pd(p, i)                  (((struct osdp *)(p))->pd + i)
 #define to_ctx(p)                    ((struct osdp *)p->__parent)
-#define node_set_parent(c, p)       ((c)->__parent = (void *)(p))
+#define node_set_parent(c, p)        ((c)->__parent = (void *)(p))
 #define to_current_pd(p)             (to_cp(p)->current_pd)
 
 #define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))

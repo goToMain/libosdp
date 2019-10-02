@@ -229,24 +229,36 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, in
 	return len;
 }
 
+/**
+ * pd_send_reply - blocking send; doesn't handle partials
+ * Returns:
+ *   0 - success
+ *  -1 - failure
+ */
 int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 {
 	int ret, len;
-	uint8_t buf[512];
+	uint8_t buf[OSDP_PACKET_BUF_SIZE];
 
-	if ((len = phy_build_packet_head(p, buf, 512)) < 0) {
-		osdp_log(LOG_ERR, "failed to phy_build_packet_head");
+	/* init packet buf with header */
+	len = phy_build_packet_head(p, buf, OSDP_PACKET_BUF_SIZE);
+	if (len < 0) {
+		osdp_log(LOG_ERR, "failed at phy_build_packet_head");
 		return -1;
 	}
 
-	if ((ret = pd_build_reply(p, reply, buf + len, 512 - len)) < 0) {
-		osdp_log(LOG_ERR, "failed to build command %d", reply->id);
+	/* fill reply data */
+	ret = pd_build_reply(p, reply, buf + len, OSDP_PACKET_BUF_SIZE - len);
+	if (ret < 0) {
+		osdp_log(LOG_ERR, "failed to build reply body %d", reply->id);
 		return -1;
 	}
 	len += ret;
 
-	if ((len = phy_build_packet_tail(p, buf, len, 512)) < 0) {
-		osdp_log(LOG_ERR, "failed to build command %d", reply->id);
+	/* finalize packet */
+	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
+	if (len < 0) {
+		osdp_log(LOG_ERR, "failed to build reply %d", reply->id);
 		return -1;
 	}
 
@@ -256,6 +268,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 }
 
 /**
+ * pd_process_command - received buffer from serial stream handling partials
  * Returns:
  *  0: success
  * -1: error
@@ -264,19 +277,34 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
  */
 int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 {
-	int len;
-	uint8_t resp[512];
+	int ret;
 
-	len = p->recv_func(resp, 512);
-	if (len <= 0)
-		return 1;	// no data
+	ret = p->recv_func(p->phy_rx_buf + p->phy_rx_buf_len,
+			   OSDP_PACKET_BUF_SIZE - p->phy_rx_buf_len);
 
-	if ((len = phy_decode_packet(p, resp, len)) < 0) {
+	if (ret <= 0)	/* No data received */
+		return 1;
+	p->phy_rx_buf_len += ret;
+
+	ret = phy_check_packet(p->phy_rx_buf, p->phy_rx_buf_len);
+	if (ret < 0) {	/* rx_buf had invalid MARK or SOM. Reset buf_len */
+		p->phy_rx_buf_len = 0;
+		return 1;
+	}
+	if (ret > 1)	/* rx_buf_len != pkt->len; wait for more data */
+		return 1;
+
+	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
+	if (ret < 0) {
 		osdp_log(LOG_ERR, "failed decode response");
 		return -1;
 	}
+	p->phy_rx_buf_len = ret;
 
-	return pd_decode_command(p, reply, resp, len);
+	ret = pd_decode_command(p, reply, p->phy_rx_buf, p->phy_rx_buf_len);
+	p->phy_rx_buf_len = 0;
+
+	return ret;
 }
 
 /**
@@ -287,27 +315,27 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 int pd_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
-	struct osdp_data *reply = (struct osdp_data *)pd->scratch;
+	uint8_t phy_reply[OSDP_DATA_BUF_SIZE];
+	struct osdp_data *reply = (struct osdp_data *)phy_reply;
 
 	switch (pd->phy_state) {
 	case PD_PHY_STATE_IDLE:
 		ret = pd_process_command(pd, reply);
-		if (ret == 1)
+		if (ret == 1)	/* no data; wait */
 			break;
-		if (ret < 0) {
-			osdp_log(LOG_INFO, "command dequeue error");
+		if (ret < 0) {	/* error */
 			pd->phy_state = PD_PHY_STATE_ERR;
 			break;
 		}
 		ret = 1;
 		pd->phy_state = PD_PHY_STATE_SEND_REPLY;
-		break;
+		/* no break */
 	case PD_PHY_STATE_SEND_REPLY:
 		if ((ret = pd_send_reply(pd, reply)) == 0) {
 			pd->phy_state = PD_PHY_STATE_IDLE;
 			break;
 		}
-		if (ret == -1) {
+		if (ret == -1) {	/* send failed! */
 			pd->phy_state = PD_PHY_STATE_ERR;
 			break;
 		}

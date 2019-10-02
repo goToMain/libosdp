@@ -115,6 +115,26 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 	return len;
 }
 
+int phy_check_packet(const uint8_t * buf, int len)
+{
+	int pkt_len;
+	struct osdp_packet_header *pkt;
+
+	pkt = (struct osdp_packet_header *)buf;
+
+	/* validate packet header */
+	if (pkt->mark != 0xFF || pkt->som != 0x53) {
+		return -1;
+	}
+	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
+	if (pkt_len != len - 1) {
+		osdp_log(LOG_ERR, "packet length mismatch %d/%d", pkt_len,
+			 len - 1);
+		return 1;
+	}
+	return 0;
+}
+
 int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen)
 {
 	int pkt_len, pd_mode;
@@ -125,14 +145,6 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen)
 	pkt = (struct osdp_packet_header *)buf;
 
 	/* validate packet header */
-	if (pkt->mark != 0xFF) {
-		osdp_log(LOG_ERR, "invalid marking byte '0x%x'", pkt->mark);
-		return -1;
-	}
-	if (pkt->som != 0x53) {
-		osdp_log(LOG_ERR, "invalid mark SOM '%d'", pkt->som);
-		return -1;
-	}
 	if (!pd_mode && !(pkt->pd_address & 0x80)) {
 		osdp_log(LOG_ERR, "reply without MSB set 0x%02x",
 			 pkt->pd_address);
@@ -163,8 +175,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen)
 		blen -= 2;	/* consume 2byte CRC */
 		comp = crc16_itu_t(0x1D0F, buf + 1, pkt_len - 2);
 		if (comp != cur) {
-			osdp_log(LOG_ERR, "invalid crc 0x%04x/0x%04x", comp,
-				 cur);
+			osdp_log(LOG_ERR, "invalid crc 0x%04x/0x%04x", comp, cur);
 			return -1;
 		}
 	} else {

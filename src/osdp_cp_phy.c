@@ -276,23 +276,35 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 	return ret;
 }
 
+/**
+ * cp_send_command - blocking send; doesn't handle partials
+ * Returns:
+ *   0 - success
+ *  -1 - failure
+ */
 int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 {
 	int ret, len;
-	uint8_t buf[512];
+	uint8_t buf[OSDP_PACKET_BUF_SIZE];
 
-	if ((len = phy_build_packet_head(p, buf, 512)) < 0) {
-		osdp_log(LOG_ERR, "failed to phy_build_packet_head");
+	/* init packet buf with header */
+	len = phy_build_packet_head(p, buf, OSDP_PACKET_BUF_SIZE);
+	if (len < 0) {
+		osdp_log(LOG_ERR, "failed at phy_build_packet_head");
 		return -1;
 	}
 
-	if ((ret = cp_build_command(p, cmd, buf + len, 512 - len)) < 0) {
+	/* fill command data */
+	ret = cp_build_command(p, cmd, buf + len, OSDP_PACKET_BUF_SIZE - len);
+	if (ret < 0) {
 		osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
 		return -1;
 	}
 	len += ret;
 
-	if ((len = phy_build_packet_tail(p, buf, len, 512)) < 0) {
+	/* finalize packet */
+	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
+	if (len < 0) {
 		osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
 		return -1;
 	}
@@ -303,26 +315,44 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 }
 
 /**
+ * cp_process_reply - received buffer from serial stream handling partials
  * Returns:
  *  0: success
  * -1: error
  *  1: no data yet
  *  2: re-issue command
  */
-int cp_process_response(struct osdp_pd *p)
+int cp_process_reply(struct osdp_pd *p)
 {
-	int len;
-	uint8_t resp[512];
+	int ret;
 
-	len = p->recv_func(resp, 512);
-	if (len <= 0)
-		return 1;	// no data
+	ret = p->recv_func(p->phy_rx_buf + p->phy_rx_buf_len,
+			   OSDP_PACKET_BUF_SIZE - p->phy_rx_buf_len);
+	if (ret <= 0)	/* No data received */
+		return 1;
+	p->phy_rx_buf_len += ret;
 
-	if ((len = phy_decode_packet(p, resp, len)) < 0) {
+	ret = phy_check_packet(p->phy_rx_buf, p->phy_rx_buf_len);
+	if (ret < 0) {	/* rx_buf had invalid MARK or SOM. Reset buf_len */
+		p->phy_rx_buf_len = 0;
+		return 1;
+	}
+	if (ret > 1)	/* rx_buf_len != pkt->len; wait for more data */
+		return 1;
+
+	/* Valid OSDP packet in buffer */
+
+	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
+	if (ret < 0) {
 		osdp_log(LOG_ERR, "failed decode response");
 		return -1;
 	}
-	return cp_decode_response(p, resp, len);
+	p->phy_rx_buf_len = ret;
+
+	ret = cp_decode_response(p, p->phy_rx_buf, p->phy_rx_buf_len);
+	p->phy_rx_buf_len = 0; /* reset buf_len for next use */
+
+	return ret;
 }
 
 int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c)
@@ -359,6 +389,11 @@ int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c)
 
 	q->head = end;
 	return 0;
+}
+
+void cp_flush_command_queue(struct osdp_pd *pd)
+{
+	pd->queue->head = pd->queue->head = 0;
 }
 
 int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen)
@@ -403,17 +438,17 @@ int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int 
 int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
-	struct osdp_data *cmd = (struct osdp_data *)pd->scratch;
+	uint8_t phy_cmd[OSDP_DATA_BUF_SIZE];
+	struct osdp_data *cmd = (struct osdp_data *)phy_cmd;
 
 	switch (pd->phy_state) {
 	case CP_PHY_STATE_IDLE:
-		ret =
-		    cp_dequeue_command(pd, FALSE, pd->scratch,
-				       OSDP_PD_SCRATCH_SIZE);
+		ret = cp_dequeue_command(pd, FALSE, phy_cmd, OSDP_DATA_BUF_SIZE);
 		if (ret == 0)
 			break;
 		if (ret < 0) {
 			osdp_log(LOG_INFO, "command dequeue error");
+			cp_flush_command_queue(pd);
 			pd->phy_state = CP_PHY_STATE_ERR;
 			break;
 		}
@@ -426,29 +461,37 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			ret = -1;
 			break;
 		}
-		pd->phy_state = CP_PHY_STATE_RESP_WAIT;
+		pd->phy_state = CP_PHY_STATE_REPLY_WAIT;
 		pd->phy_tstamp = millis_now();
 		break;
-	case CP_PHY_STATE_RESP_WAIT:
-		if ((ret = cp_process_response(pd)) == 0) {
+	case CP_PHY_STATE_REPLY_WAIT:
+		if ((ret = cp_process_reply(pd)) == 0) {
 			pd->phy_state = CP_PHY_STATE_IDLE;
 			ret = 2;
 			break;
 		}
-		if (ret == -1) {
-			pd->phy_state = CP_PHY_STATE_ERR;
-			break;
-		}
 		if (ret == 2) {
 			osdp_log(LOG_INFO, "PD busy; retry last command");
-			pd->phy_state = CP_PHY_STATE_SEND_CMD;
+			pd->phy_tstamp = millis_now();
+			pd->phy_state = CP_PHY_STATE_WAIT;
+			break;
+		}
+		if (ret == -1) {
+			pd->phy_state = CP_PHY_STATE_ERR;
+			ret = -1;
 			break;
 		}
 		if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			osdp_log(LOG_INFO, "read response timeout");
 			pd->phy_state = CP_PHY_STATE_ERR;
-			ret = 1;
+			ret = -1;
 		}
+		break;
+	case CP_PHY_STATE_WAIT:
+		ret = 1;
+		if (millis_since(pd->phy_tstamp) < OSDP_CP_RETRY_WAIT_MS)
+			break;
+		pd->phy_state = CP_PHY_STATE_SEND_CMD;
 		break;
 	case CP_PHY_STATE_ERR:
 		ret = -1;

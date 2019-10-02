@@ -10,35 +10,36 @@
 #include <osdp.h>
 
 #ifndef NULL
-#define NULL                         ((void *)0)
+#define NULL				((void *)0)
 #endif
 
-#define TRUE                         (1)
-#define FALSE                        (0)
+#define TRUE				(1)
+#define FALSE				(0)
+#define OSDP_DATA_BUF_SIZE		(64)
+#define OSDP_PACKET_BUF_SIZE		(512)
 
-#define isset_flag(p, f)             (((p)->flags & (f)) == (f))
-#define set_flag(p, f)               ((p)->flags |= (f))
-#define clear_flag(p, f)             ((p)->flags &= ~(f))
+#define isset_flag(p, f)		(((p)->flags & (f)) == (f))
+#define set_flag(p, f)			((p)->flags |= (f))
+#define clear_flag(p, f)		((p)->flags &= ~(f))
 
-#define byte_0(x)                    (uint8_t)((x)&0xFF)
-#define byte_1(x)                    (uint8_t)(((x)>> 8)&0xFF)
-#define byte_2(x)                    (uint8_t)(((x)>>16)&0xFF)
-#define byte_3(x)                    (uint8_t)(((x)>>24)&0xFF)
+#define byte_0(x)			(uint8_t)((x)&0xFF)
+#define byte_1(x)			(uint8_t)(((x)>> 8)&0xFF)
+#define byte_2(x)			(uint8_t)(((x)>>16)&0xFF)
+#define byte_3(x)			(uint8_t)(((x)>>24)&0xFF)
 
 /* casting helpers */
-#define to_osdp(p)                   ((struct osdp *)p)
-#define to_cp(p)                     (((struct osdp *)(p))->cp)
-#define to_pd(p, i)                  (((struct osdp *)(p))->pd + i)
-#define to_ctx(p)                    ((struct osdp *)p->__parent)
-#define node_set_parent(c, p)       ((c)->__parent = (void *)(p))
-#define to_current_pd(p)             (to_cp(p)->current_pd)
+#define to_osdp(p)			((struct osdp *)p)
+#define to_cp(p)			(((struct osdp *)(p))->cp)
+#define to_pd(p, i)			(((struct osdp *)(p))->pd + i)
+#define to_ctx(p)			((struct osdp *)p->__parent)
+#define node_set_parent(c, p)		((c)->__parent = (void *)(p))
+#define to_current_pd(p)		(to_cp(p)->current_pd)
 
-#define sizeof_array(x)              (sizeof(x)/sizeof(x[0]))
-
-#define set_current_pd(p, i)                                \
-    do {                                                    \
-        to_cp(p)->current_pd = to_pd(p, i);                 \
-        to_cp(p)->pd_offset = i;                            \
+#define sizeof_array(x)			(sizeof(x)/sizeof(x[0]))
+#define set_current_pd(p, i)					\
+    do {							\
+        to_cp(p)->current_pd = to_pd(p, i);			\
+        to_cp(p)->pd_offset = i;				\
     } while (0)
 
 /* OSDP reserved commands */
@@ -156,16 +157,15 @@ struct osdp_pd {
 	int flags;
 	millis_t tstamp;
 	int phy_state;
-	uint8_t scratch[OSDP_PD_SCRATCH_SIZE];
+	uint8_t phy_rx_buf[OSDP_PACKET_BUF_SIZE];
+	int phy_rx_buf_len;
 	millis_t phy_tstamp;
 
 	/* CP mode only data */
 	struct cmd_queue *queue;
 
-	/* PD mode only data */
-	struct osdp_pd_cmd_callback cmd_cb;
-
 	/* callbacks */
+	struct osdp_pd_cmd_callback cmd_cb;
 	int (*send_func) (uint8_t * buf, int len);
 	int (*recv_func) (uint8_t * buf, int len);
 };
@@ -215,6 +215,7 @@ enum pd_nak_code_e {
 };
 
 /* from phy.c */
+int phy_check_packet(const uint8_t * buf, int len);
 int phy_build_packet_head(struct osdp_pd *p, uint8_t * buf, int maxlen);
 int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen);
 int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen);

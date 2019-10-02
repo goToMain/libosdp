@@ -126,10 +126,9 @@ void run_cp_phy_fsm_tests(struct test *t)
 	    p->id.version != 0xc1 ||
 	    p->id.serial_number != 0xd4d3d2d1 ||
 	    p->id.firmware_version != 0x00e1e2e3) {
-		printf
-		    ("    -- error ID mismatch! 0x%04x 0x%02x 0x%02x 0x04%x 0x04%x\n",
-		     p->id.vendor_code, p->id.model, p->id.version,
-		     p->id.serial_number, p->id.firmware_version);
+		printf( "    -- error ID mismatch! 0x%04x 0x%02x"
+			"0x%02x 0x%04x 0x%04x\n", p->id.vendor_code, p->id.model,
+			p->id.version, p->id.serial_number, p->id.firmware_version);
 		result = FALSE;
 	}
 

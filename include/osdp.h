@@ -178,6 +178,7 @@ struct osdp_cp_notifiers {
 };
 
 osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info);
+void osdp_set_log_level(int log_level);
 void osdp_cp_refresh(osdp_cp_t * ctx);
 void osdp_cp_teardown(osdp_cp_t * ctx);
 

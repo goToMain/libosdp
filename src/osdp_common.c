@@ -13,6 +13,7 @@
 #include <sys/time.h>
 
 #include "osdp_common.h"
+#include "aes.h"
 
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 
@@ -93,4 +94,41 @@ millis_t millis_now()
 millis_t millis_since(millis_t last)
 {
 	return millis_now() - last;
+}
+
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
+{
+        struct AES_ctx aes_ctx;
+
+        if (iv != NULL) {
+                AES_init_ctx_iv(&aes_ctx, key, iv);
+                AES_CBC_encrypt_buffer(&aes_ctx, data, len);
+        } else {
+                // encrypt one block with ECB mode.
+                AES_init_ctx(&aes_ctx, key);
+                AES_ECB_encrypt(&aes_ctx, data);
+        }
+}
+
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
+{
+        struct AES_ctx aes_ctx;
+
+        if (iv != NULL) {
+                AES_init_ctx_iv(&aes_ctx, key, iv);
+                AES_CBC_decrypt_buffer(&aes_ctx, data, len);
+        } else {
+                AES_init_ctx(&aes_ctx, key);
+                AES_ECB_decrypt(&aes_ctx, data);
+        }
+}
+
+void osdp_fill_random(uint8_t *buf, int len)
+{
+        int i, rnd;
+
+        for (i = 0; i < len; i++) {
+                rnd = rand();
+                buf[i] = (uint8_t)(((float)rnd) / RAND_MAX * 256);
+        }
 }

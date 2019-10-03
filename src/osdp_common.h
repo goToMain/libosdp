@@ -105,14 +105,16 @@
 #define CP_FLAG_INIT_DONE            0x00000001	/* set after data is malloc-ed and initialized */
 
 /* PD Flags */
-#define PD_FLAG_SC_CAPABLE           0x00000001	/* PD secure channel capable */
-#define PD_FLAG_TAMPER               0x00000002	/* local tamper status */
-#define PD_FLAG_POWER                0x00000004	/* local power status */
-#define PD_FLAG_R_TAMPER             0x00000008	/* remote tamper status */
-#define PD_FLAG_COMSET_INPROG        0x00000010	/* set when comset is enabled */
-#define PD_FLAG_AWAIT_RESP           0x00000020	/* set after command is sent */
-#define PD_FLAG_SKIP_SEQ_CHECK       0x00000040	/* disable seq checks (debug) */
-#define PD_FLAG_PD_MODE              0x80000000	/* device is setup as PD */
+#define PD_FLAG_SC_CAPABLE		0x00000001	/* PD secure channel capable */
+#define PD_FLAG_TAMPER			0x00000002	/* local tamper status */
+#define PD_FLAG_POWER			0x00000004	/* local power status */
+#define PD_FLAG_R_TAMPER		0x00000008	/* remote tamper status */
+#define PD_FLAG_COMSET_INPROG		0x00000010	/* set when comset is enabled */
+#define PD_FLAG_AWAIT_RESP		0x00000020	/* set after command is sent */
+#define PD_FLAG_SKIP_SEQ_CHECK		0x00000040	/* disable seq checks (debug) */
+#define PD_FLAG_SC_USE_SCBKD		0x00000080	/* in this SC attempt, use SCBKD */
+#define PD_FLAG_PD_MODE			0x80000000	/* device is setup as PD */
+
 typedef uint64_t millis_t;
 
 struct osdp_data {
@@ -143,6 +145,20 @@ struct osdp_pd_cmd_callback {
 	int (*comset) (struct osdp_cmd_comset *p);
 };
 
+struct osdp_secure_channel {
+        uint8_t scbk[16];
+        uint8_t s_enc[16];
+        uint8_t s_mac1[16];
+        uint8_t s_mac2[16];
+        uint8_t r_mac[16];
+	uint8_t c_mac[16];
+        uint8_t cp_random[8];
+        uint8_t pd_random[8];
+        uint8_t pd_client_uid[8];
+        uint8_t cp_cryptogram[16];
+        uint8_t pd_cryptogram[16];
+};
+
 struct osdp_pd {
 	/* OSDP specified data */
 	void *__parent;
@@ -160,6 +176,8 @@ struct osdp_pd {
 	uint8_t phy_rx_buf[OSDP_PACKET_BUF_SIZE];
 	int phy_rx_buf_len;
 	millis_t phy_tstamp;
+
+	struct osdp_secure_channel sc;
 
 	/* CP mode only data */
 	struct cmd_queue *queue;
@@ -184,6 +202,8 @@ struct osdp {
 	int magic;
 	int flags;
 	struct osdp_cp_notifiers notifier;
+
+	uint8_t sc_master_key[16];
 
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
@@ -229,5 +249,8 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len);
 void osdp_dump(const char *head, const uint8_t * data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_fill_random(uint8_t *buf, int len);
 
 #endif	/* _OSDP_COMMON_H_ */

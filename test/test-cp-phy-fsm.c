@@ -118,7 +118,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 		ret = cp_phy_state_update(p);
 		if (ret != 1 && ret != 2)
 			break;
-		/* continue when in command and between commands */
+		/* continue when in command and between commands continue */
 	}
 
 	if (p->id.vendor_code != 0x00a3a2a1 ||

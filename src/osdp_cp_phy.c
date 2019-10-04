@@ -12,10 +12,12 @@
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t * buf, int maxlen)
+int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt, int maxlen)
 {
 	union cmd_all *c;
 	int ret, i, len = 0;
+	uint8_t *buf = phy_packet_get_data(p, pkt);
+	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
 	ret = -1;
 
@@ -108,18 +110,31 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t * buf, in
 		buf[len++] = byte_3(c->comset.baud);
 		ret = 0;
 		break;
-	case CMD_SCDONE:
-	case CMD_XWR:
-	case CMD_SPE:
-	case CMD_CONT:
-	case CMD_RMODE:
-	case CMD_XMIT:
-		osdp_log(LOG_ERR, "command 0x%02x is obsolete", cmd->id);
+	case CMD_CHLNG:
+		smb[1] = SCS_11;  /* type */
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		buf[len++] = cmd->id;
+		osdp_fill_random(p->sc.cp_random, 8);
+		for (i=0; i<8; i++)
+			buf[len++] = p->sc.cp_random[i];
+		ret = 0;
+		break;
+	case CMD_SCRYPT:
+		smb[1] = SCS_13;  /* type */
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		buf[len++] = cmd->id;
+		osdp_compute_cp_cryptogram(p);
+		for (i=0; i<16; i++)
+			buf[len++] = p->sc.cp_cryptogram[i];
+		ret = 0;
 		break;
 	default:
 		osdp_log(LOG_ERR, "command 0x%02x isn't supported", cmd->id);
 		break;
 	}
+
+	if (smb && isset_flag(p, PD_FLAG_SC_ACTIVE))
+		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 
 	if (ret < 0) {
 		osdp_log(LOG_WARNING, "cmd 0x%02x format error! -- %d", cmd->id,
@@ -136,14 +151,14 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t * buf, in
  * -1: error
  *  2: retry current command
  */
-int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
+int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 {
+	uint32_t temp32;
 	struct osdp *ctx = to_ctx(p);
 	int i, ret = -1, reply_id, pos = 0, t1, t2;
-	uint32_t temp32;
 
 	reply_id = buf[pos++];
-	len--;			/* consume reply id from the head */
+	len--;		/* consume reply id from the head */
 
 	osdp_log(LOG_DEBUG, "Processing resp 0x%02x with %d data bytes",
 		 reply_id, len);
@@ -195,6 +210,10 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 			p->cap[func_code].compliance_level = buf[pos++];
 			p->cap[func_code].num_items = buf[pos++];
 		}
+		if (p->cap[CAP_COMMUNICATION_SECURITY].compliance_level & 0x01)
+			set_flag(p, PD_FLAG_SC_CAPABLE);
+		else
+			clear_flag(p, PD_FLAG_SC_CAPABLE);
 		ret = 0;
 		break;
 	case REPLY_LSTATR:
@@ -218,7 +237,25 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 		ret = 0;
 		break;
 	case REPLY_CCRYPT:
+		for (i=0; i<8; i++)
+			p->sc.pd_client_uid[i] = buf[pos++];
+		for (i=0; i<8; i++)
+			p->sc.pd_random[i] = buf[pos++];
+		for (i=0; i<16; i++)
+			p->sc.pd_cryptogram[i] = buf[pos++];
+		osdp_compute_session_keys(to_ctx(p));
+		if (osdp_verify_pd_cryptogram(p) != 0)
+			break;
+		ret = 0;
+		break;
 	case REPLY_RMAC_I:
+		if (len != 16)
+			break;
+		for (i=0; i<16; i++)
+			p->sc.r_mac[i] = buf[pos++];
+		set_flag(p, PD_FLAG_SC_ACTIVE);
+		ret = 0;
+		break;
 	case REPLY_KEYPPAD:
 		pos++;	/* skip one byte */
 		t1 = buf[pos++]; /* key length */
@@ -254,21 +291,6 @@ int cp_decode_response(struct osdp_pd *p, uint8_t * buf, int len)
 		/* PD busy; signal upper layer to retry command */
 		ret = 2;
 		break;
-	case REPLY_ISTATR:
-	case REPLY_OSTATR:
-	case REPLY_BIOREADR:
-	case REPLY_BIOMATCHR:
-	case REPLY_MFGREP:
-	case REPLY_XRD:
-		osdp_log(LOG_ERR, "unsupported reply: 0x%02x", reply_id);
-		ret = 0;
-		break;
-	case REPLY_SCREP:
-	case REPLY_PRES:
-	case REPLY_SPER:
-		osdp_log(LOG_ERR, "deprecated reply: 0x%02x", reply_id);
-		ret = 0;
-		break;
 	default:
 		osdp_log(LOG_DEBUG, "unexpected reply: 0x%02x", reply_id);
 		break;
@@ -287,15 +309,15 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	int ret, len;
 	uint8_t buf[OSDP_PACKET_BUF_SIZE];
 
+	len = phy_build_packet_head(p, cmd->id, buf, OSDP_PACKET_BUF_SIZE);
 	/* init packet buf with header */
-	len = phy_build_packet_head(p, buf, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
 		osdp_log(LOG_ERR, "failed at phy_build_packet_head");
 		return -1;
 	}
 
 	/* fill command data */
-	ret = cp_build_command(p, cmd, buf + len, OSDP_PACKET_BUF_SIZE - len);
+	ret = cp_build_command(p, cmd, buf, OSDP_PACKET_BUF_SIZE);
 	if (ret < 0) {
 		osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
 		return -1;

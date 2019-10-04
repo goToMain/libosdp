@@ -25,34 +25,34 @@ void osdp_compute_scbk_raw(uint8_t *cuid, uint8_t *mkey, uint8_t *scbk)
 	osdp_encrypt(mkey, NULL, scbk, 16);
 }
 
-void osdp_compute_scbk(struct osdp *ctx)
+void osdp_compute_session_keys(struct osdp *ctx)
 {
-	uint8_t cuid[16];
+	int i;
 	struct osdp_pd *p = to_current_pd(ctx);
 
 	if (isset_flag(p, PD_FLAG_SC_USE_SCBKD))
 		memcpy(p->sc.scbk, osdp_scbk_default, 16);
 	else
-		osdp_compute_scbk_raw(cuid, ctx->sc_master_key, p->sc.scbk);
-}
+		osdp_compute_scbk_raw(p->sc.pd_client_uid,
+				      ctx->sc_master_key, p->sc.scbk);
 
-void osdp_compute_session_keys(struct osdp_pd *p)
-{
-	int i;
-	uint8_t s_enc[16]  = { 0x01, 0x82 };
-	uint8_t s_mac1[16] = { 0x01, 0x01 };
-	uint8_t s_mac2[16] = { 0x01, 0x02 };
+	memset(p->sc.s_enc, 0, 16);
+	memset(p->sc.s_mac1, 0, 16);
+	memset(p->sc.s_mac2, 0, 16);
 
-	for (i = 2; i < 8; i++)
-		s_enc[i] = s_mac1[i] = s_mac2[i] = p->sc.cp_random[i - 2];
+	p->sc.s_enc[0]  = 0x01;  p->sc.s_enc[1]  = 0x82;
+	p->sc.s_mac1[0] = 0x01;  p->sc.s_mac1[1] = 0x01;
+	p->sc.s_mac2[0] = 0x01;  p->sc.s_mac2[1] = 0x02;
 
-	osdp_encrypt(p->sc.scbk, NULL, s_enc,  16);
-	osdp_encrypt(p->sc.scbk, NULL, s_mac1, 16);
-	osdp_encrypt(p->sc.scbk, NULL, s_mac2, 16);
+	for (i = 2; i < 8; i++) {
+		p->sc.s_enc[i]  = p->sc.cp_random[i - 2];
+		p->sc.s_mac1[i] = p->sc.cp_random[i - 2];
+		p->sc.s_mac2[i] = p->sc.cp_random[i - 2];
+	}
 
-	memcpy(p->sc.s_enc,  s_enc,  16);
-	memcpy(p->sc.s_mac1, s_mac1, 16);
-	memcpy(p->sc.s_mac2, s_mac2, 16);
+	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_enc,  16);
+	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac1, 16);
+	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac2, 16);
 }
 
 void osdp_compute_cp_cryptogram(struct osdp_pd *p)

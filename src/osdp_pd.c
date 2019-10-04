@@ -241,7 +241,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	uint8_t buf[OSDP_PACKET_BUF_SIZE];
 
 	/* init packet buf with header */
-	len = phy_build_packet_head(p, buf, OSDP_PACKET_BUF_SIZE);
+	len = phy_build_packet_head(p, 0, buf, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
 		osdp_log(LOG_ERR, "failed at phy_build_packet_head");
 		return -1;

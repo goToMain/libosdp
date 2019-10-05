@@ -250,7 +250,7 @@ enum pd_nak_code_e {
 int phy_check_packet(const uint8_t * buf, int len);
 int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen);
 int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen);
-int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int blen);
+int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len);
 const char *get_nac_reason(int code);
 void phy_state_reset(struct osdp_pd *pd);
 uint8_t *phy_packet_get_data(struct osdp_pd *p, const uint8_t *buf);

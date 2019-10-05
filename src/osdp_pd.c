@@ -59,21 +59,21 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		break;
 	case CMD_ID:
 		pos++;		// Skip reply type info.
-		ret = 0;
 		reply->id = REPLY_PDID;
+		ret = 0;
 		break;
 	case CMD_CAP:
 		pos++;		// Skip reply type info.
-		ret = 0;
 		reply->id = REPLY_PDCAP;
+		ret = 0;
 		break;
 	case CMD_OUT:
 		if (len != 4)
 			break;
-		cmd.output.output_no = buf[pos++];
+		cmd.output.output_no    = buf[pos++];
 		cmd.output.control_code = buf[pos++];
-		cmd.output.tmr_count = buf[pos++];
-		cmd.output.tmr_count |= buf[pos++] << 8;
+		cmd.output.tmr_count    = buf[pos++];
+		cmd.output.tmr_count   |= buf[pos++] << 8;
 		if (pd_set_output(p, &cmd.output) != 0)
 			break;
 		reply->id = REPLY_OSTATR;
@@ -86,18 +86,18 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		cmd.led.number = buf[pos++];
 
 		cmd.led.temporary.control_code = buf[pos++];
-		cmd.led.temporary.on_count = buf[pos++];
-		cmd.led.temporary.off_count = buf[pos++];
-		cmd.led.temporary.on_color = buf[pos++];
-		cmd.led.temporary.off_color = buf[pos++];
-		cmd.led.temporary.timer = buf[pos++];
-		cmd.led.temporary.timer |= buf[pos++] << 8;
+		cmd.led.temporary.on_count     = buf[pos++];
+		cmd.led.temporary.off_count    = buf[pos++];
+		cmd.led.temporary.on_color     = buf[pos++];
+		cmd.led.temporary.off_color    = buf[pos++];
+		cmd.led.temporary.timer        = buf[pos++];
+		cmd.led.temporary.timer       |= buf[pos++] << 8;
 
 		cmd.led.permanent.control_code = buf[pos++];
-		cmd.led.permanent.on_count = buf[pos++];
-		cmd.led.permanent.off_count = buf[pos++];
-		cmd.led.permanent.on_color = buf[pos++];
-		cmd.led.permanent.off_color = buf[pos++];
+		cmd.led.permanent.on_count     = buf[pos++];
+		cmd.led.permanent.off_count    = buf[pos++];
+		cmd.led.permanent.on_color     = buf[pos++];
+		cmd.led.permanent.off_color    = buf[pos++];
 		if (pd_set_led(p, &cmd.led) < 0)
 			break;
 		reply->id = REPLY_ACK;
@@ -105,9 +105,9 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	case CMD_BUZ:
 		if (len != 5)
 			break;
-		cmd.buzzer.reader = buf[pos++];
+		cmd.buzzer.reader    = buf[pos++];
 		cmd.buzzer.tone_code = buf[pos++];
-		cmd.buzzer.on_count = buf[pos++];
+		cmd.buzzer.on_count  = buf[pos++];
 		cmd.buzzer.off_count = buf[pos++];
 		cmd.buzzer.rep_count = buf[pos++];
 		if (pd_set_buzzer(p, &cmd.buzzer) < 0)
@@ -118,9 +118,9 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	case CMD_TEXT:
 		if (len < 7)
 			break;
-		cmd.text.reader = buf[pos++];
-		cmd.text.cmd = buf[pos++];
-		cmd.text.temp_time = buf[pos++];
+		cmd.text.reader     = buf[pos++];
+		cmd.text.cmd        = buf[pos++];
+		cmd.text.temp_time  = buf[pos++];
 		cmd.text.offset_row = buf[pos++];
 		cmd.text.offset_col = buf[pos++];
 		cmd.text.offset_col = buf[pos++];
@@ -137,14 +137,30 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	case CMD_COMSET:
 		if (len != 5)
 			break;
-		cmd.comset.addr = buf[pos++];
-		cmd.comset.baud = buf[pos++];
+		cmd.comset.addr  = buf[pos++];
+		cmd.comset.baud  = buf[pos++];
 		cmd.comset.baud |= buf[pos++] << 8;
 		cmd.comset.baud |= buf[pos++] << 16;
 		cmd.comset.baud |= buf[pos++] << 24;
 		if (pd_set_comm_params(p, &cmd.comset) < 0)
 			break;
 		reply->id = REPLY_COM;
+		ret = 0;
+		break;
+	case CMD_CHLNG:
+		if (len != 8)
+			break;
+		for (i=0; i<8; i++)
+			p->sc.cp_random[i] = buf[pos++];
+		reply->id = REPLY_CCRYPT;
+		ret = 0;
+		break;
+	case CMD_SCRYPT:
+		if (len != 16)
+			break;
+		for (i=0; i<16; i++)
+			p->sc.cp_cryptogram[i] = buf[pos++];
+		reply->id = REPLY_RMAC_I;
 		ret = 0;
 		break;
 	default:
@@ -165,9 +181,12 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
  * +ve: length of command
  * -ve: error
  */
-int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int maxlen)
+int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 {
 	int i, len = 0;
+
+	uint8_t *buf = phy_packet_get_data(p, pkt);
+	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
 	switch (reply->id) {
 	case REPLY_ACK:
@@ -221,11 +240,42 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, in
 		buf[len++] = reply->id;
 		buf[len++] = (reply->len > sizeof(struct osdp_data)) ?
 					reply->data[0] : OSDP_PD_NAK_RECORD;
-	default:
-		buf[len++] = REPLY_NAK;
-		buf[len++] = OSDP_PD_NAK_SC_UNSUP;
+	case REPLY_CCRYPT:
+		if (smb == NULL)
+			break;
+		osdp_fill_random(p->sc.pd_random, 8);
+		osdp_compute_session_keys(to_ctx(p));
+		osdp_compute_pd_cryptogram(p);
+		buf[len++] = REPLY_CCRYPT;
+		for (i = 0; i < 8; i++)
+			buf[len++] = p->sc.pd_client_uid[i];
+		for (i = 0; i < 8; i++)
+			buf[len++] = p->sc.pd_random[i];
+		for (i = 0; i < 16; i++)
+			buf[len++] = p->sc.pd_cryptogram[i];
+		smb[1] = SCS_12;
+		break;
+	case REPLY_RMAC_I:
+		if (smb == NULL)
+			break;
+		osdp_compute_rmac_i(p);
+		buf[len++] = REPLY_RMAC_I;
+		for (i = 0; i < 16; i++)
+			buf[len++] = p->sc.r_mac[i];
+		smb[1] = SCS_14;
+		if (osdp_verify_cp_cryptogram(p) == 0)
+			smb[2] = 0x01;
+		else
+			smb[2] = 0x00;
+		isset_flag(p, PD_FLAG_SC_ACTIVE);
 		break;
 	}
+
+	if (len == 0) {
+		buf[len++] = REPLY_NAK;
+		buf[len++] = OSDP_PD_NAK_SC_UNSUP;
+	}
+
 	return len;
 }
 
@@ -248,8 +298,8 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	}
 
 	/* fill reply data */
-	ret = pd_build_reply(p, reply, buf + len, OSDP_PACKET_BUF_SIZE - len);
-	if (ret < 0) {
+	ret = pd_build_reply(p, reply, buf);
+	if (ret <= 0) {
 		osdp_log(LOG_ERR, "failed to build reply body %d", reply->id);
 		return -1;
 	}

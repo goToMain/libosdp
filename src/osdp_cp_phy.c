@@ -12,7 +12,7 @@
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt, int maxlen)
+int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 {
 	union cmd_all *c;
 	int ret, i, len = 0;
@@ -179,19 +179,19 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 				 pos);
 			break;
 		}
-		p->id.vendor_code = buf[pos++];
+		p->id.vendor_code  = buf[pos++];
 		p->id.vendor_code |= buf[pos++] << 8;
 		p->id.vendor_code |= buf[pos++] << 16;
 
 		p->id.model = buf[pos++];
 		p->id.version = buf[pos++];
 
-		p->id.serial_number = buf[pos++];
+		p->id.serial_number  = buf[pos++];
 		p->id.serial_number |= buf[pos++] << 8;
 		p->id.serial_number |= buf[pos++] << 16;
 		p->id.serial_number |= buf[pos++] << 24;
 
-		p->id.firmware_version = buf[pos++] << 16;
+		p->id.firmware_version  = buf[pos++] << 16;
 		p->id.firmware_version |= buf[pos++] << 8;
 		p->id.firmware_version |= buf[pos++];
 		ret = 0;
@@ -206,10 +206,11 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 			int func_code = buf[pos++];
 			if (func_code > CAP_SENTINEL)
 				break;
-			p->cap[func_code].function_code = func_code;
+			p->cap[func_code].function_code    = func_code;
 			p->cap[func_code].compliance_level = buf[pos++];
-			p->cap[func_code].num_items = buf[pos++];
+			p->cap[func_code].num_items        = buf[pos++];
 		}
+		/* post-capabilities hooks */
 		if (p->cap[CAP_COMMUNICATION_SECURITY].compliance_level & 0x01)
 			set_flag(p, PD_FLAG_SC_CAPABLE);
 		else
@@ -227,7 +228,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		break;
 	case REPLY_COM:
 		t1 = buf[pos++];
-		temp32 = buf[pos++];
+		temp32  = buf[pos++];
 		temp32 |= buf[pos++] << 8;
 		temp32 |= buf[pos++] << 16;
 		temp32 |= buf[pos++] << 24;
@@ -317,7 +318,7 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	}
 
 	/* fill command data */
-	ret = cp_build_command(p, cmd, buf, OSDP_PACKET_BUF_SIZE);
+	ret = cp_build_command(p, cmd, buf);
 	if (ret < 0) {
 		osdp_log(LOG_ERR, "failed to build command %d", cmd->id);
 		return -1;

@@ -11,7 +11,7 @@ int phy_build_packet_head(struct osdp_pd *pd, int id, uint8_t * buf, int maxlen)
 int phy_build_packet_tail(struct osdp_pd *pd, uint8_t * buf, int len, int maxlen);
 int phy_decode_packet(struct osdp_pd *pd, uint8_t * buf, int len);
 
-int cp_build_command(struct osdp_pd *pd, struct osdp_data *cmd, uint8_t * buf, int blen);
+int cp_build_command(struct osdp_pd *pd, struct osdp_data *cmd, uint8_t * buf);
 int cp_decode_response(struct osdp_pd *pd, uint8_t * buf, int len);
 
 int cp_enqueue_command(struct osdp_pd *pd, struct osdp_data *c);

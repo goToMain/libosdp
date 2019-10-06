@@ -11,6 +11,7 @@
 #include "osdp_cp_private.h"
 
 int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c);
+int cp_state_update(struct osdp_pd *pd);
 
 int test_fsm_resp = 0;
 

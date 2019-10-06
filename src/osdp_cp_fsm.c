@@ -81,6 +81,24 @@ int cp_state_update(struct osdp_pd *pd)
 	case CP_STATE_CAPDET:
 		if (cp_cmd_dispatcher(pd, CMD_CAP) != 0)
 			break;
+		if (isset_flag(pd, PD_FLAG_SC_CAPABLE)) {
+			cp_set_state(pd, CP_STATE_SC_INIT);
+			break;
+		}
+		cp_set_state(pd, CP_STATE_ONLINE);
+		break;
+	case CP_STATE_SC_INIT:
+		osdp_sc_init(pd);
+		cp_set_state(pd, CP_STATE_SC_CHLNG);
+		/* no break */
+	case CP_STATE_SC_CHLNG:
+		if (cp_cmd_dispatcher(pd, CMD_CHLNG) != 0)
+			break;
+		cp_set_state(pd, CP_STATE_SC_CCRYPT);
+		/* no break */
+	case CP_STATE_SC_CCRYPT:
+		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0)
+			break;
 		cp_set_state(pd, CP_STATE_ONLINE);
 		break;
 	default:

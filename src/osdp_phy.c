@@ -124,9 +124,11 @@ int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen)
 	if (isset_flag(p, PD_FLAG_SC_ACTIVE)) {
 		pkt->control |= PKT_CONTROL_SCB;
 		pkt->data[0] = sb_len = 2;
+		pkt->data[1] = SCS_15;
 	} else if (phy_in_sc_handshake(pd_mode, id)) {
 		pkt->control |= PKT_CONTROL_SCB;
 		pkt->data[0] = sb_len = 3;
+		pkt->data[1] = SCS_15;
 	}
 
 	return sizeof(struct osdp_packet_header) + sb_len;
@@ -145,7 +147,11 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 
 	is_cmd = !isset_flag(p, PD_FLAG_PD_MODE);
 	pkt = (struct osdp_packet_header *)buf;
-	if (pkt->control & PKT_CONTROL_SCB) {
+
+	if (isset_flag(p, PD_FLAG_SC_ACTIVE) &&
+		pkt->control & PKT_CONTROL_SCB &&
+		pkt->data[1] > SCS_15)
+	{
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
 			 * Only the data portion of message (after id byte)
@@ -264,10 +270,24 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 
 	data = pkt->data;
 
-	if (isset_flag(p, PD_FLAG_SC_ACTIVE)) {
-		if (pkt->control & PKT_CONTROL_SCB)
+	if (pkt->control & PKT_CONTROL_SCB) {
+		if (pkt->data[1] < SCS_11 || pkt->data[1] > SCS_18) {
+			osdp_log(LOG_ERR, "PHY_DP: invalid SB Type");
 			return -1;
+		}
+		data = pkt->data + pkt->data[0];
+		len -= pkt->data[0]; /* consume security block */
+	} else {
+		if (isset_flag(p, PD_FLAG_SC_ACTIVE)) {
+			osdp_log(LOG_ERR, "PHY_DP: got plain text in SC");
+			return -1;
+		}
+	}
 
+	if (isset_flag(p, PD_FLAG_SC_ACTIVE) &&
+		pkt->control & PKT_CONTROL_SCB &&
+		pkt->data[1] > SCS_15)
+	{
 		/* validate MAC */
 		is_cmd = isset_flag(p, PD_FLAG_PD_MODE);
 		osdp_compute_mac(p, is_cmd, buf + 1, len - 4);
@@ -277,9 +297,6 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			return -1;
 		}
 		len -= 4; /* consume MAC */
-
-		data = pkt->data + pkt->data[0];
-		len -= pkt->data[0]; /* consume security block */
 
 		/* decrypt data block */
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
@@ -301,6 +318,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			len += 1; /* put back ID byte */
 		}
 	}
+
 	memcpy(buf, data, len);
 	return len;
 }

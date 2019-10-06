@@ -36,6 +36,8 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	cmd_id = buf[pos++];
 	len--;
 
+	osdp_log(LOG_DEBUG, "PD: processing command: 0x%02x", cmd_id);
+
 	switch (cmd_id) {
 	case CMD_POLL:
 		reply->id = REPLY_ACK;
@@ -188,6 +190,8 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
+	osdp_log(LOG_DEBUG, "PD: build reply: 0x%02x", reply->id);
+
 	switch (reply->id) {
 	case REPLY_ACK:
 		buf[len++] = reply->id;
@@ -267,9 +271,12 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 			smb[2] = 0x01;
 		else
 			smb[2] = 0x00;
-		isset_flag(p, PD_FLAG_SC_ACTIVE);
+		set_flag(p, PD_FLAG_SC_ACTIVE);
 		break;
 	}
+
+	if (smb && (smb[1] > SCS_14) && isset_flag(p, PD_FLAG_SC_ACTIVE))
+		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 
 	if (len == 0) {
 		buf[len++] = REPLY_NAK;
@@ -291,7 +298,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	uint8_t buf[OSDP_PACKET_BUF_SIZE];
 
 	/* init packet buf with header */
-	len = phy_build_packet_head(p, 0, buf, OSDP_PACKET_BUF_SIZE);
+	len = phy_build_packet_head(p, reply->id, buf, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
 		osdp_log(LOG_ERR, "failed at phy_build_packet_head");
 		return -1;
@@ -346,12 +353,11 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	if (ret < 0) {
-		osdp_log(LOG_ERR, "failed decode response");
+		osdp_log(LOG_ERR, "failed to decode response");
 		return -1;
 	}
-	p->phy_rx_buf_len = ret;
 
-	ret = pd_decode_command(p, reply, p->phy_rx_buf, p->phy_rx_buf_len);
+	ret = pd_decode_command(p, reply, p->phy_rx_buf, ret);
 	p->phy_rx_buf_len = 0;
 
 	return ret;
@@ -439,9 +445,8 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 	pd->send_func = p->send_func;
 	pd->recv_func = p->recv_func;
 	memcpy(&pd->id, &p->id, sizeof(struct pd_id));
-	cap = pd->cap;
-	while (cap && cap->function_code > 0) {
-		fc = pd->cap->function_code;
+	cap = p->cap;
+	while (cap && ((fc = cap->function_code) > 0)) {
 		if (fc >= CAP_SENTINEL)
 			break;
 		pd->cap[fc].function_code = cap->function_code;

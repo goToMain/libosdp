@@ -15,11 +15,11 @@
 int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 {
 	union cmd_all *c;
-	int ret, i, len = 0;
+	int ret = -1, i, len = 0;
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
-	ret = -1;
+	osdp_log(LOG_DEBUG, "Building command 0x%02x",cmd->id);
 
 	switch (cmd->id) {
 	case CMD_POLL:
@@ -111,8 +111,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_CHLNG:
+		if (smb == NULL)
+			break;
 		smb[1] = SCS_11;  /* type */
-		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
 		buf[len++] = cmd->id;
 		osdp_fill_random(p->sc.cp_random, 8);
 		for (i=0; i<8; i++)
@@ -120,8 +122,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_SCRYPT:
+		if (smb == NULL)
+			break;
 		smb[1] = SCS_13;  /* type */
-		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
 		buf[len++] = cmd->id;
 		osdp_compute_cp_cryptogram(p);
 		for (i=0; i<16; i++)

@@ -27,6 +27,7 @@ int test_mixed_cp_fsm_send(uint8_t * buf, int len)
 {
 	memcpy(test_mixed_cp_to_pd_buf, buf, len);
 	test_mixed_cp_to_pd_buf_length = len;
+	// osdp_dump("CP Send", buf, len);
 	return len;
 }
 
@@ -34,11 +35,11 @@ int test_mixed_cp_fsm_receive(uint8_t * buf, int len)
 {
 	int ret = test_mixed_pd_to_cp_buf_length;
 
-	if (test_mixed_pd_to_cp_buf_length) {
-		memcpy(buf, test_mixed_pd_to_cp_buf,
-		       test_mixed_pd_to_cp_buf_length);
+	if (ret) {
+		memcpy(buf, test_mixed_pd_to_cp_buf, ret);
 		test_mixed_pd_to_cp_buf_length = 0;
 	}
+	// osdp_dump("PD Recv", buf, ret);
 
 	return ret;
 }
@@ -81,9 +82,14 @@ int test_mixed_fsm_setup(struct test *t)
 
 	struct pd_cap cap[] = {
 		{
-		 .function_code = CAP_READER_LED_CONTROL,
-		 .compliance_level = 1,
-		 .num_items = 1},
+			.function_code = CAP_READER_LED_CONTROL,
+			.compliance_level = 1,
+			.num_items = 1
+		}, {
+			.function_code = CAP_COMMUNICATION_SECURITY,
+			.compliance_level = 1,
+			.num_items = 1
+		},
 		OSDP_PD_CAP_SENTINEL
 	};
 	osdp_pd_info_t info_pd = {
@@ -138,9 +144,13 @@ void run_mixed_fsm_tests(struct test *t)
 		cp_state_update(to_current_pd(p->cp_ctx));
 		pd_phy_state_update(to_current_pd(p->pd_ctx));
 
-		if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE ||
-		    to_current_pd(p->pd_ctx)->phy_state == 2) {
-			printf("    -- phy state error!\n");
+		if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE) {
+			printf("    -- CP went offline!\n");
+			result = FALSE;
+			break;
+		}
+		if (to_current_pd(p->pd_ctx)->phy_state == 2) {
+			printf("    -- PD phy state error!\n");
 			result = FALSE;
 			break;
 		}

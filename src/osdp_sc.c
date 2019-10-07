@@ -33,7 +33,7 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	if (isset_flag(p, PD_FLAG_SC_USE_SCBKD)) {
 		memcpy(p->sc.scbk, osdp_scbk_default, 16);
 	} else {
-		memcpy(ctx->sc_master_key, p->sc.pd_client_uid, 8);
+		memcpy(p->sc.scbk, p->sc.pd_client_uid, 8);
 		for (i = 8; i < 16; i++)
 			p->sc.scbk[i] = ~p->sc.scbk[i - 8];
 		osdp_encrypt(ctx->sc_master_key, NULL, p->sc.scbk, 16);

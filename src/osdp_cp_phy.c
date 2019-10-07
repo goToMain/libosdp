@@ -249,8 +249,10 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		for (i=0; i<16; i++)
 			p->sc.pd_cryptogram[i] = buf[pos++];
 		osdp_compute_session_keys(to_ctx(p));
-		if (osdp_verify_pd_cryptogram(p) != 0)
+		if (osdp_verify_pd_cryptogram(p) != 0) {
+			osdp_log(LOG_ERR, "CP failed to verify PD cryptogram");
 			break;
+		}
 		ret = 0;
 		break;
 	case REPLY_RMAC_I:

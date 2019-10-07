@@ -125,6 +125,7 @@
 #define PD_FLAG_SKIP_SEQ_CHECK		0x00000040	/* disable seq checks (debug) */
 #define PD_FLAG_SC_USE_SCBKD		0x00000080	/* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE		0x00000100	/* secure channel is active */
+#define PD_FLAG_INSTALL_MODE		0x40000000	/* PD is in install mode */
 #define PD_FLAG_PD_MODE			0x80000000	/* device is setup as PD */
 
 typedef uint64_t millis_t;

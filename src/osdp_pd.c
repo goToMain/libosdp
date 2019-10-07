@@ -258,6 +258,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		for (i = 0; i < 16; i++)
 			buf[len++] = p->sc.pd_cryptogram[i];
 		smb[1] = SCS_12;
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
 		break;
 	case REPLY_RMAC_I:
 		if (smb == NULL)
@@ -272,6 +273,8 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		else
 			smb[2] = 0x00;
 		set_flag(p, PD_FLAG_SC_ACTIVE);
+		clear_flag(p, PD_FLAG_SC_USE_SCBKD);
+		clear_flag(p, PD_FLAG_INSTALL_MODE);
 		break;
 	}
 

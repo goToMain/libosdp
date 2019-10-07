@@ -15,7 +15,7 @@ static const uint8_t osdp_scbk_default[16] = {
     0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
-void osdp_compute_scbk_raw(uint8_t *cuid, uint8_t *mkey, uint8_t *scbk)
+void osdp_compute_scbk(uint8_t *cuid, uint8_t *mkey, uint8_t *scbk)
 {
 	int i;
 
@@ -30,11 +30,14 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	int i;
 	struct osdp_pd *p = to_current_pd(ctx);
 
-	if (isset_flag(p, PD_FLAG_SC_USE_SCBKD))
+	if (isset_flag(p, PD_FLAG_SC_USE_SCBKD)) {
 		memcpy(p->sc.scbk, osdp_scbk_default, 16);
-	else
-		osdp_compute_scbk_raw(p->sc.pd_client_uid,
-				      ctx->sc_master_key, p->sc.scbk);
+	} else {
+		memcpy(ctx->sc_master_key, p->sc.pd_client_uid, 8);
+		for (i = 8; i < 16; i++)
+			p->sc.scbk[i] = ~p->sc.scbk[i - 8];
+		osdp_encrypt(ctx->sc_master_key, NULL, p->sc.scbk, 16);
+	}
 
 	memset(p->sc.s_enc, 0, 16);
 	memset(p->sc.s_mac1, 0, 16);

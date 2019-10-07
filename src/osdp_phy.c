@@ -275,6 +275,17 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			osdp_log(LOG_ERR, "PHY_DP: invalid SB Type");
 			return -1;
 		}
+		if (pkt->data[1] < SCS_11 || pkt->data[1] < SCS_13) {
+			/**
+			 * CP signals PD to use SCBKD by setting SB data byte
+			 * to 1. In CP, PD_FLAG_SC_USE_SCBKD comes from FSM; on
+			 * PD we extract it from the command itself. But this
+			 * usage of SCBKD is allowed only when the PD is in
+			 * install mode (indicated by PD_FLAG_INSTALL_MODE).
+			 */
+			if (isset_flag(p, PD_FLAG_INSTALL_MODE) && pkt->data[2])
+				set_flag(p, PD_FLAG_SC_USE_SCBKD);
+		}
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */
 	} else {

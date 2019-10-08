@@ -101,10 +101,11 @@ void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
         struct AES_ctx aes_ctx;
 
         if (iv != NULL) {
+		/* encrypt multiple block with AES in CBC mode */
                 AES_init_ctx_iv(&aes_ctx, key, iv);
                 AES_CBC_encrypt_buffer(&aes_ctx, data, len);
         } else {
-                // encrypt one block with ECB mode.
+                /* encrypt one block with AES in ECB mode */
                 AES_init_ctx(&aes_ctx, key);
                 AES_ECB_encrypt(&aes_ctx, data);
         }

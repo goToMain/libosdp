@@ -275,7 +275,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			osdp_log(LOG_ERR, "PHY_DP: invalid SB Type");
 			return -1;
 		}
-		if (pkt->data[1] < SCS_11 || pkt->data[1] < SCS_13) {
+		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
 			/**
 			 * CP signals PD to use SCBKD by setting SB data byte
 			 * to 1. In CP, PD_FLAG_SC_USE_SCBKD comes from FSM; on
@@ -330,7 +330,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 		}
 	}
 
-	memcpy(buf, data, len);
+	memmove(buf, data, len);
 	return len;
 }
 

@@ -98,38 +98,38 @@ millis_t millis_since(millis_t last)
 
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 {
-        struct AES_ctx aes_ctx;
+	struct AES_ctx aes_ctx;
 
-        if (iv != NULL) {
+	if (iv != NULL) {
 		/* encrypt multiple block with AES in CBC mode */
-                AES_init_ctx_iv(&aes_ctx, key, iv);
-                AES_CBC_encrypt_buffer(&aes_ctx, data, len);
-        } else {
-                /* encrypt one block with AES in ECB mode */
-                AES_init_ctx(&aes_ctx, key);
-                AES_ECB_encrypt(&aes_ctx, data);
-        }
+		AES_init_ctx_iv(&aes_ctx, key, iv);
+		AES_CBC_encrypt_buffer(&aes_ctx, data, len);
+	} else {
+		/* encrypt one block with AES in ECB mode */
+		AES_init_ctx(&aes_ctx, key);
+		AES_ECB_encrypt(&aes_ctx, data);
+	}
 }
 
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 {
-        struct AES_ctx aes_ctx;
+	struct AES_ctx aes_ctx;
 
-        if (iv != NULL) {
-                AES_init_ctx_iv(&aes_ctx, key, iv);
-                AES_CBC_decrypt_buffer(&aes_ctx, data, len);
-        } else {
-                AES_init_ctx(&aes_ctx, key);
-                AES_ECB_decrypt(&aes_ctx, data);
-        }
+	if (iv != NULL) {
+		AES_init_ctx_iv(&aes_ctx, key, iv);
+		AES_CBC_decrypt_buffer(&aes_ctx, data, len);
+	} else {
+		AES_init_ctx(&aes_ctx, key);
+		AES_ECB_decrypt(&aes_ctx, data);
+	}
 }
 
 void osdp_fill_random(uint8_t *buf, int len)
 {
-        int i, rnd;
+	int i, rnd;
 
-        for (i = 0; i < len; i++) {
-                rnd = rand();
-                buf[i] = (uint8_t)(((float)rnd) / RAND_MAX * 256);
-        }
+	for (i = 0; i < len; i++) {
+		rnd = rand();
+		buf[i] = (uint8_t)(((float)rnd) / RAND_MAX * 256);
+	}
 }

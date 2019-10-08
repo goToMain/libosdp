@@ -9,12 +9,12 @@
 
 #include "osdp_common.h"
 
-#define call_fprt(fp, ...)          ({int r=-1; if(fp != NULL) r = fp(__VA_ARGS__); r;})
-#define pd_set_output(p, c)         call_fprt((p)->cmd_cb.output, (c))
-#define pd_set_led(p, c)            call_fprt((p)->cmd_cb.led,    (c))
-#define pd_set_buzzer(p, c)         call_fprt((p)->cmd_cb.buzzer, (c))
-#define pd_set_text(p, c)           call_fprt((p)->cmd_cb.text,   (c))
-#define pd_set_comm_params(p, c)    call_fprt((p)->cmd_cb.comset, (c))
+#define call_fprt(fp, ...)		({int r=-1; if(fp != NULL) r = fp(__VA_ARGS__); r;})
+#define pd_set_output(p, c)		call_fprt((p)->cmd_cb.output, (c))
+#define pd_set_led(p, c)		call_fprt((p)->cmd_cb.led,    (c))
+#define pd_set_buzzer(p, c)		call_fprt((p)->cmd_cb.buzzer, (c))
+#define pd_set_text(p, c)		call_fprt((p)->cmd_cb.text,   (c))
+#define pd_set_comm_params(p, c)	call_fprt((p)->cmd_cb.comset, (c))
 
 enum osdp_phy_state_e {
 	PD_PHY_STATE_IDLE,

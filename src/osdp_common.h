@@ -37,10 +37,10 @@
 
 #define sizeof_array(x)			(sizeof(x)/sizeof(x[0]))
 #define set_current_pd(p, i)					\
-    do {							\
-        to_cp(p)->current_pd = to_pd(p, i);			\
-        to_cp(p)->pd_offset = i;				\
-    } while (0)
+	do {							\
+		to_cp(p)->current_pd = to_pd(p, i);		\
+		to_cp(p)->pd_offset = i;			\
+	} while (0)
 
 /* OSDP reserved commands */
 #define CMD_POLL		0x60

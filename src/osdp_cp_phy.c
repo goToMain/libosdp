@@ -424,7 +424,8 @@ int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c)
 
 void cp_flush_command_queue(struct osdp_pd *pd)
 {
-	pd->queue->head = pd->queue->head = 0;
+	pd->queue->head = 0;
+	pd->queue->head = 0;
 }
 
 int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen)

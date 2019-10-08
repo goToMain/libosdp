@@ -225,12 +225,14 @@ void osdp_sc_init(struct osdp_pd *p)
 	memset(p->sc.cp_cryptogram, 0, 16);
 	memset(p->sc.pd_cryptogram, 0, 16);
 
-	p->sc.pd_client_uid[0] = byte_0(p->id.vendor_code);
-	p->sc.pd_client_uid[1] = byte_1(p->id.vendor_code);
-	p->sc.pd_client_uid[2] = byte_0(p->id.model);
-	p->sc.pd_client_uid[3] = byte_1(p->id.version);
-	p->sc.pd_client_uid[4] = byte_0(p->id.serial_number);
-	p->sc.pd_client_uid[5] = byte_1(p->id.serial_number);
-	p->sc.pd_client_uid[6] = byte_2(p->id.serial_number);
-	p->sc.pd_client_uid[7] = byte_3(p->id.serial_number);
+	if (isset_flag(p, PD_FLAG_PD_MODE)) {
+		p->sc.pd_client_uid[0] = byte_0(p->id.vendor_code);
+		p->sc.pd_client_uid[1] = byte_1(p->id.vendor_code);
+		p->sc.pd_client_uid[2] = byte_0(p->id.model);
+		p->sc.pd_client_uid[3] = byte_1(p->id.version);
+		p->sc.pd_client_uid[4] = byte_0(p->id.serial_number);
+		p->sc.pd_client_uid[5] = byte_1(p->id.serial_number);
+		p->sc.pd_client_uid[6] = byte_2(p->id.serial_number);
+		p->sc.pd_client_uid[7] = byte_3(p->id.serial_number);
+	}
 }

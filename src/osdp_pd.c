@@ -152,6 +152,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	case CMD_CHLNG:
 		if (len != 8)
 			break;
+		osdp_sc_init(p);
 		for (i=0; i<8; i++)
 			p->sc.cp_random[i] = buf[pos++];
 		reply->id = REPLY_CCRYPT;

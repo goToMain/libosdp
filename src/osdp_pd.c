@@ -303,14 +303,14 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	/* init packet buf with header */
 	len = phy_build_packet_head(p, reply->id, buf, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		osdp_log(LOG_ERR, "failed at phy_build_packet_head");
+		osdp_log(LOG_ERR, "PD: failed at phy_build_packet_head");
 		return -1;
 	}
 
 	/* fill reply data */
 	ret = pd_build_reply(p, reply, buf);
 	if (ret <= 0) {
-		osdp_log(LOG_ERR, "failed to build reply body %d", reply->id);
+		osdp_log(LOG_ERR, "PD: failed at pd_build_reply %d", reply->id);
 		return -1;
 	}
 	len += ret;
@@ -318,7 +318,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	/* finalize packet */
 	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		osdp_log(LOG_ERR, "failed to build reply %d", reply->id);
+		osdp_log(LOG_ERR, "PD: failed to build reply %d", reply->id);
 		return -1;
 	}
 
@@ -356,7 +356,7 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	if (ret < 0) {
-		osdp_log(LOG_ERR, "failed to decode response");
+		osdp_log(LOG_ERR, "PD: failed to decode response");
 		return -1;
 	}
 
@@ -418,14 +418,14 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc struct osdp");
+		osdp_log(LOG_ERR, "PD: Failed to alloc struct osdp");
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc struct osdp_cp");
+		osdp_log(LOG_ERR, "PD: Failed to alloc struct osdp_cp");
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
@@ -434,7 +434,7 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd));
 	if (ctx->pd == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc struct osdp_pd");
+		osdp_log(LOG_ERR, "PD: Failed to alloc struct osdp_pd");
 		goto malloc_err;
 	}
 	set_current_pd(ctx, 0);

@@ -110,23 +110,23 @@
 #define SCS_18			0x18
 
 /* Global flags */
-#define FLAG_CP_MODE                 0x00000001	/* Set when initialized as CP */
+#define FLAG_CP_MODE		0x00000001 /* Set when initialized as CP */
 
 /* CP flags */
-#define CP_FLAG_INIT_DONE            0x00000001	/* set after data is malloc-ed and initialized */
+#define CP_FLAG_INIT_DONE	0x00000001 /* set after data is malloc-ed and initialized */
 
 /* PD Flags */
-#define PD_FLAG_SC_CAPABLE		0x00000001	/* PD secure channel capable */
-#define PD_FLAG_TAMPER			0x00000002	/* local tamper status */
-#define PD_FLAG_POWER			0x00000004	/* local power status */
-#define PD_FLAG_R_TAMPER		0x00000008	/* remote tamper status */
-#define PD_FLAG_COMSET_INPROG		0x00000010	/* set when comset is enabled */
-#define PD_FLAG_AWAIT_RESP		0x00000020	/* set after command is sent */
-#define PD_FLAG_SKIP_SEQ_CHECK		0x00000040	/* disable seq checks (debug) */
-#define PD_FLAG_SC_USE_SCBKD		0x00000080	/* in this SC attempt, use SCBKD */
-#define PD_FLAG_SC_ACTIVE		0x00000100	/* secure channel is active */
-#define PD_FLAG_INSTALL_MODE		0x40000000	/* PD is in install mode */
-#define PD_FLAG_PD_MODE			0x80000000	/* device is setup as PD */
+#define PD_FLAG_SC_CAPABLE	0x00000001 /* PD secure channel capable */
+#define PD_FLAG_TAMPER		0x00000002 /* local tamper status */
+#define PD_FLAG_POWER		0x00000004 /* local power status */
+#define PD_FLAG_R_TAMPER	0x00000008 /* remote tamper status */
+#define PD_FLAG_COMSET_INPROG	0x00000010 /* set when comset is enabled */
+#define PD_FLAG_AWAIT_RESP	0x00000020 /* set after command is sent */
+#define PD_FLAG_SKIP_SEQ_CHECK	0x00000040 /* disable seq checks (debug) */
+#define PD_FLAG_SC_USE_SCBKD	0x00000080 /* in this SC attempt, use SCBKD */
+#define PD_FLAG_SC_ACTIVE	0x00000100 /* secure channel is active */
+#define PD_FLAG_INSTALL_MODE	0x40000000 /* PD is in install mode */
+#define PD_FLAG_PD_MODE		0x80000000 /* device is setup as PD */
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
@@ -283,7 +283,7 @@ void osdp_sc_init(struct osdp_pd *p);
 /* from osdp_common.c */
 millis_t millis_now();
 millis_t millis_since(millis_t last);
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len);
+uint8_t compute_crc16(const uint8_t *buf, size_t len);
 void osdp_dump(const char *head, const uint8_t * data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);

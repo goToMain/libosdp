@@ -192,7 +192,7 @@ int osdp_cp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
 
 /* --- PD Only --- */
 
-osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * info);
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * info);
 void osdp_pd_teardown(osdp_pd_t * ctx);
 void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p));
 void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p));

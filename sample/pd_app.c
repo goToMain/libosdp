@@ -54,7 +54,7 @@ int main()
 		.cap = cap,
 	};
 
-	ctx = osdp_pd_setup(1, &info_pd);
+	ctx = osdp_pd_setup(&info_pd);
 	if (ctx == NULL) {
 		printf("pd init failed!\n");
 		return -1;

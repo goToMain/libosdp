@@ -107,7 +107,7 @@ int test_mixed_fsm_setup(struct test *t)
 		       },
 		.cap = cap,
 	};
-	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(1, &info_pd);
+	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd);
 	if (test_data.pd_ctx == NULL) {
 		printf("   pd init failed!\n");
 		osdp_cp_teardown((osdp_cp_t *) test_data.cp_ctx);

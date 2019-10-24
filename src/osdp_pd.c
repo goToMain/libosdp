@@ -411,7 +411,7 @@ int pd_phy_state_update(struct osdp_pd *pd)
 	return ret;
 }
 
-osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p)
 {
 	int fc;
 	struct osdp_pd *pd;

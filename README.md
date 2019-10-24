@@ -18,9 +18,9 @@ a better idea.
 ## Salient Features of LibOSDP
 
 - Supports secure channel communication (AES-128).
-- LibOSDP can be used to setup a PD or CP.
-- Exposed a well defined contract though `include/osdp.h`.
-- No runtime memory allocation. All memory is allocated at init-time.
+- Can be used to setup a PD or CP mode of operation.
+- Exposes a well defined contract though `include/osdp.h`.
+- No run-time memory allocation. All memory is allocated at init-time.
 - Well designed source code architecure.
 
 ## Supported Commands and Replies

@@ -3,16 +3,11 @@ List of pending tasks
 
 CP Mode:
 
-[*] Add support for Secure Channel
 [*] Implement worker threads for PD(s) in a given CP
 [*] Transparent mode support
 
 PD Mode:
 
-[*] Come up with an architecture for exposing PD features as API
-[*] Come up with an architecture PD capabilities management
-[*] Implement top-level state machine
-[*] Add support for Secure Channel
 [*] Transparent mode support
 
 Documentation:
@@ -21,7 +16,6 @@ Documentation:
 [*] Integration guide for cp and pd mode
 [*] PD/CP API documentation in wiki
 [*] Supported commands/replies and their limitations
-[*] Secure channel setup process
 [*] Master key-set process; a note on install mode
 
 Tests/Emulations:

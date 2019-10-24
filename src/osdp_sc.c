@@ -7,6 +7,7 @@
 #include <string.h>
 #include "osdp_common.h"
 
+#define TAG "SC: "
 #define get_pad_len(x) ((x + 16 - 1) & (~(16 - 1)))
 
 /* Default key as specified in OSDP protocol specification */
@@ -57,8 +58,8 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac1, 16);
 	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac2, 16);
 
-#if 1
-    osdp_log(LOG_DEBUG, "Session Keys");
+#if 0
+    LOG_D(TAG "Session Keys");
     osdp_dump("SCBK", p->sc.scbk, 16);
     osdp_dump("M-KEY", ctx->sc_master_key, 16);
     osdp_dump("S-ENC", p->sc.s_enc, 16);
@@ -128,7 +129,7 @@ int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
 	struct osdp_pd *p = to_current_pd(ctx);
 
 	if (length % 16 != 0) {
-		osdp_log(LOG_ERR, "decrypt_pkt invalid len:%d", length);
+		LOG_E(TAG "decrypt_pkt invalid len:%d", length);
 		return -1;
 	}
 
@@ -138,7 +139,7 @@ int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
 	osdp_decrypt(p->sc.s_enc, iv, data, length);
 
 #if 0
-    osdp_log(LOG_DEBUG, "Decrypt Data");
+    LOG_D(TAG "Decrypt Data");
     osdp_dump("C-MAC", p->sc.c_mac, 16);
     osdp_dump("Key: S-ENC", p->sc.s_enc, 16);
     osdp_dump("IV: ~C-MAC", iv, 16);
@@ -149,7 +150,7 @@ int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
 		length--;
 
 	if (data[length - 1] != 0x80) {
-		osdp_log(LOG_ERR, "decrypt_pkt un_pad len:%d", length);
+		LOG_E(TAG "decrypt_pkt un_pad len:%d", length);
 		return -1;
 	}
 	data[length - 1] = 0;
@@ -171,7 +172,7 @@ int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length)
 	osdp_encrypt(p->sc.s_enc, iv, data, pad_len);
 
 #if 0
-    osdp_log(LOG_DEBUG, "Encrypt Data");
+    LOG_D(TAG "Encrypt Data");
     osdp_dump("R-MAC", p->sc.r_mac, 16);
     osdp_dump("Key: S-ENC", p->sc.s_enc, 16);
     osdp_dump("IV: ~R-MAC", iv, 16);

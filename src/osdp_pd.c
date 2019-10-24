@@ -9,6 +9,8 @@
 
 #include "osdp_common.h"
 
+#define TAG "PD: "
+
 #define call_fprt(fp, ...)		({int r=-1; if(fp != NULL) r = fp(__VA_ARGS__); r;})
 #define pd_set_output(p, c)		call_fprt((p)->cmd_cb.output, (c))
 #define pd_set_led(p, c)		call_fprt((p)->cmd_cb.led,    (c))
@@ -36,7 +38,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	cmd_id = buf[pos++];
 	len--;
 
-	osdp_log(LOG_DEBUG, "PD: processing command: 0x%02x", cmd_id);
+	LOG_D(TAG "processing command: 0x%02x", cmd_id);
 
 	switch (cmd_id) {
 	case CMD_POLL:
@@ -191,7 +193,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
-	osdp_log(LOG_DEBUG, "PD: build reply: 0x%02x", reply->id);
+	LOG_D(TAG "build reply: 0x%02x", reply->id);
 
 	switch (reply->id) {
 	case REPLY_ACK:
@@ -304,14 +306,14 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	/* init packet buf with header */
 	len = phy_build_packet_head(p, reply->id, buf, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		osdp_log(LOG_ERR, "PD: failed at phy_build_packet_head");
+		LOG_E(TAG "failed at phy_build_packet_head");
 		return -1;
 	}
 
 	/* fill reply data */
 	ret = pd_build_reply(p, reply, buf);
 	if (ret <= 0) {
-		osdp_log(LOG_ERR, "PD: failed at pd_build_reply %d", reply->id);
+		LOG_E(TAG "failed at pd_build_reply %d", reply->id);
 		return -1;
 	}
 	len += ret;
@@ -319,7 +321,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	/* finalize packet */
 	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		osdp_log(LOG_ERR, "PD: failed to build reply %d", reply->id);
+		LOG_E(TAG "failed to build reply %d", reply->id);
 		return -1;
 	}
 
@@ -357,7 +359,7 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	if (ret < 0) {
-		osdp_log(LOG_ERR, "PD: failed to decode response");
+		LOG_E(TAG "failed to decode response");
 		return -1;
 	}
 
@@ -419,14 +421,14 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		osdp_log(LOG_ERR, "PD: Failed to alloc struct osdp");
+		LOG_E(TAG "failed to alloc struct osdp");
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
-		osdp_log(LOG_ERR, "PD: Failed to alloc struct osdp_cp");
+		LOG_E(TAG "failed to alloc struct osdp_cp");
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
@@ -435,7 +437,7 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd));
 	if (ctx->pd == NULL) {
-		osdp_log(LOG_ERR, "PD: Failed to alloc struct osdp_pd");
+		LOG_E(TAG "failed to alloc struct osdp_pd");
 		goto malloc_err;
 	}
 	set_current_pd(ctx, 0);
@@ -462,7 +464,7 @@ osdp_pd_t *osdp_pd_setup(int num_pd, osdp_pd_info_t * p)
 	set_flag(pd, PD_FLAG_PD_MODE);	/* used to understand operational mode */
 
 	osdp_set_log_level(LOG_WARNING);
-	osdp_log(LOG_INFO, "pd setup complete");
+	LOG_I(TAG "setup complete");
 	return (osdp_pd_t *) ctx;
 
  malloc_err:

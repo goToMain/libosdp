@@ -9,6 +9,8 @@
 
 #include "osdp_cp_private.h"
 
+#define TAG "CP: "
+
 #define cp_set_offline(p)					\
 	do {							\
 		p->state = CP_STATE_OFFLINE;			\
@@ -40,7 +42,7 @@ int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 	c.id = cmd;
 	c.len = sizeof(struct osdp_data);
 	if (cp_enqueue_command(p, &c) != 0) {
-		osdp_log(LOG_WARNING, "command_enqueue error!");
+		LOG_W(TAG "command_enqueue error!");
 	}
 	set_flag(p, PD_FLAG_AWAIT_RESP);
 	return 1;
@@ -123,14 +125,14 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info)
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc struct osdp");
+		LOG_E(TAG "failed to alloc struct osdp");
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc struct osdp_cp");
+		LOG_E(TAG "failed to alloc struct osdp_cp");
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
@@ -139,7 +141,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info)
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
-		osdp_log(LOG_ERR, "Failed to alloc struct osdp_pd[]");
+		LOG_E(TAG "failed to alloc struct osdp_pd[]");
 		goto malloc_err;
 	}
 
@@ -148,7 +150,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info)
 		pd = to_pd(ctx, i);
 		ctx->pd->queue = calloc(1, sizeof(struct cmd_queue));
 		if (ctx->pd->queue == NULL) {
-			osdp_log(LOG_ERR, "Failed to alloc pd->cmd_queue");
+			LOG_E(TAG "failed to alloc pd->cmd_queue");
 			goto malloc_err;
 		}
 		node_set_parent(pd, ctx);
@@ -160,7 +162,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info)
 		pd->recv_func = p->recv_func;
 	}
 	set_current_pd(ctx, 0);
-	osdp_log(LOG_INFO, "cp setup complete");
+	LOG_I(TAG "setup complete");
 	return (osdp_cp_t *) ctx;
 
  malloc_err:
@@ -231,7 +233,7 @@ int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_output));
 
 	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		osdp_log(LOG_WARNING, "CMD_OUT enqueue error!");
+		LOG_W(TAG "CMD_OUT enqueue error!");
 		return -1;
 	}
 	return 0;
@@ -247,7 +249,7 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_led));
 
 	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		osdp_log(LOG_WARNING, "CMD_OUT enqueue error!");
+		LOG_W(TAG "CMD_OUT enqueue error!");
 		return -1;
 	}
 	return 0;
@@ -263,7 +265,7 @@ int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_buzzer));
 
 	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		osdp_log(LOG_WARNING, "CMD_BUZ enqueue error!");
+		LOG_W(TAG "CMD_BUZ enqueue error!");
 		return -1;
 	}
 	return 0;
@@ -279,7 +281,7 @@ int osdp_cp_set_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_text));
 
 	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		osdp_log(LOG_WARNING, "CMD_BUZ enqueue error!");
+		LOG_W(TAG "CMD_BUZ enqueue error!");
 		return -1;
 	}
 	return 0;
@@ -295,7 +297,7 @@ int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_comset));
 
 	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		osdp_log(LOG_WARNING, "CMD_BUZ enqueue error!");
+		LOG_W(TAG "CMD_BUZ enqueue error!");
 		return -1;
 	}
 	return 0;

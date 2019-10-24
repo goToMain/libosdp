@@ -23,20 +23,20 @@ static int test_cp_build_packet(struct osdp_pd *p, uint8_t * buf, int len, int m
 	uint8_t cmd_buf[128];
 
 	if (len > 128) {
-		osdp_log(LOG_NOTICE, "cmd_buf len err - %d/%d", len, 128);
+		printf("cmd_buf len err - %d/%d\n", len, 128);
 		return -1;
 	}
 	cmd_len = len;
 	memcpy(cmd_buf, buf, len);
 
 	if ((len = phy_build_packet_head(p, 0, buf, maxlen)) < 0) {
-		osdp_log(LOG_ERR, "failed to phy_build_packet_head");
+		printf("failed to phy_build_packet_head\n");
 		return -1;
 	}
 	memcpy(buf + len, cmd_buf, cmd_len);
 	len += cmd_len;
 	if ((len = phy_build_packet_tail(p, buf, len, maxlen)) < 0) {
-		osdp_log(LOG_ERR, "failed to build command");
+		printf("failed to build command\n");
 		return -1;
 	}
 	return len;

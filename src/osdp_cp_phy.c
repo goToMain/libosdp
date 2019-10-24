@@ -7,6 +7,8 @@
 #include <string.h>
 #include "osdp_cp_private.h"
 
+#define TAG "CP: PHY: "
+
 /**
  * Returns:
  * +ve: length of command
@@ -19,7 +21,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
-	osdp_log(LOG_DEBUG, "CP: Building command 0x%02x",cmd->id);
+	LOG_D(TAG "CP: Building command 0x%02x",cmd->id);
 
 	switch (cmd->id) {
 	case CMD_POLL:
@@ -133,7 +135,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	default:
-		osdp_log(LOG_ERR, "CP: command 0x%02x isn't supported", cmd->id);
+		LOG_E(TAG "CP: command 0x%02x isn't supported", cmd->id);
 		break;
 	}
 
@@ -141,8 +143,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 
 	if (ret < 0) {
-		osdp_log(LOG_WARNING, "CP: cmd 0x%02x format error! -- %d",
-			 cmd->id, ret);
+		LOG_W(TAG "CP: cmd 0x%02x format error! -- %d", cmd->id, ret);
 		return ret;
 	}
 
@@ -164,7 +165,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 	reply_id = buf[pos++];
 	len--;		/* consume reply id from the head */
 
-	osdp_log(LOG_DEBUG, "CP: Processing resp 0x%02x with %d data bytes",
+	LOG_D("Processing resp 0x%02x with %d data bytes",
 		 reply_id, len);
 
 	switch (reply_id) {
@@ -173,13 +174,13 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		break;
 	case REPLY_NAK:
 		if (buf[pos]) {
-			osdp_log(LOG_ERR, get_nac_reason(buf[pos]));
+			LOG_E(TAG "NAK: %s", get_nac_reason(buf[pos]));
 		}
 		ret = 0;
 		break;
 	case REPLY_PDID:
 		if (len != 12) {
-			osdp_log(LOG_DEBUG, "CP: PDID format error, %d/%d",
+			LOG_D(TAG "CP: PDID format error, %d/%d",
 				 len, pos);
 			break;
 		}
@@ -202,8 +203,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		break;
 	case REPLY_PDCAP:
 		if (len % 3 != 0) {
-			osdp_log(LOG_DEBUG, "CP: PDCAP format error, %d/%d",
-				 len, pos);
+			LOG_D(TAG "CP: PDCAP format error, %d/%d", len, pos);
 			break;
 		}
 		while (pos < len) {
@@ -236,8 +236,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		temp32 |= buf[pos++] << 8;
 		temp32 |= buf[pos++] << 16;
 		temp32 |= buf[pos++] << 24;
-		osdp_log(LOG_CRIT, "COMSET responded with ID:%d baud:%d",
-			 t1, temp32);
+		LOG_C(TAG "COMSET responded with ID:%d baud:%d", t1, temp32);
 		p->baud_rate = temp32;
 		set_flag(p, PD_FLAG_COMSET_INPROG);
 		ret = 0;
@@ -251,7 +250,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 			p->sc.pd_cryptogram[i] = buf[pos++];
 		osdp_compute_session_keys(to_ctx(p));
 		if (osdp_verify_pd_cryptogram(p) != 0) {
-			osdp_log(LOG_ERR, "CP: CP failed to verify PD_crypt");
+			LOG_E(TAG "CP: CP failed to verify PD_crypt");
 			break;
 		}
 		ret = 0;
@@ -300,7 +299,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		ret = 2;
 		break;
 	default:
-		osdp_log(LOG_DEBUG, "CP: unexpected reply: 0x%02x", reply_id);
+		LOG_D(TAG "CP: unexpected reply: 0x%02x", reply_id);
 		break;
 	}
 
@@ -321,14 +320,14 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	len = phy_build_packet_head(p, cmd->id, buf, OSDP_PACKET_BUF_SIZE);
 	/* init packet buf with header */
 	if (len < 0) {
-		osdp_log(LOG_ERR, "CP: failed at phy_build_packet_head");
+		LOG_E(TAG "CP: failed at phy_build_packet_head");
 		return -1;
 	}
 
 	/* fill command data */
 	ret = cp_build_command(p, cmd, buf);
 	if (ret < 0) {
-		osdp_log(LOG_ERR, "CP: failed to build command %d", cmd->id);
+		LOG_E(TAG "CP: failed to build command %d", cmd->id);
 		return -1;
 	}
 	len += ret;
@@ -336,7 +335,7 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	/* finalize packet */
 	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		osdp_log(LOG_ERR, "CP: failed to build command %d", cmd->id);
+		LOG_E(TAG "CP: failed to build command %d", cmd->id);
 		return -1;
 	}
 
@@ -375,7 +374,7 @@ int cp_process_reply(struct osdp_pd *p)
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	if (ret < 0) {
-		osdp_log(LOG_ERR, "CP: failed decode response");
+		LOG_E(TAG "CP: failed decode response");
 		return -1;
 	}
 	p->phy_rx_buf_len = ret;
@@ -479,7 +478,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		if (ret == 0)
 			break;
 		if (ret < 0) {
-			osdp_log(LOG_INFO, "command dequeue error");
+			LOG_I(TAG "command dequeue error");
 			cp_flush_command_queue(pd);
 			pd->phy_state = CP_PHY_STATE_ERR;
 			break;
@@ -488,7 +487,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		/* no break */
 	case CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd, cmd)) < 0) {
-			osdp_log(LOG_INFO, "command dispatch error");
+			LOG_I(TAG "command dispatch error");
 			pd->phy_state = CP_PHY_STATE_ERR;
 			ret = -1;
 			break;
@@ -503,7 +502,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (ret == 2) {
-			osdp_log(LOG_INFO, "PD busy; retry last command");
+			LOG_I(TAG "PD busy; retry last command");
 			pd->phy_tstamp = millis_now();
 			pd->phy_state = CP_PHY_STATE_WAIT;
 			break;
@@ -514,7 +513,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			osdp_log(LOG_INFO, "read response timeout");
+			LOG_I(TAG "read response timeout");
 			pd->phy_state = CP_PHY_STATE_ERR;
 			ret = -1;
 		}

@@ -128,6 +128,16 @@
 #define PD_FLAG_INSTALL_MODE		0x40000000	/* PD is in install mode */
 #define PD_FLAG_PD_MODE			0x80000000	/* device is setup as PD */
 
+/* logging short hands */
+#define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
+#define LOG_A(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
+#define LOG_C(...)	(osdp_log(LOG_CRIT, __VA_ARGS__))
+#define LOG_E(...)	(osdp_log(LOG_ERR, __VA_ARGS__))
+#define LOG_I(...)	(osdp_log(LOG_INFO, __VA_ARGS__))
+#define LOG_W(...)	(osdp_log(LOG_WARNING, __VA_ARGS__))
+#define LOG_N(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
+#define LOG_D(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
+
 typedef uint64_t millis_t;
 
 struct osdp_data {

@@ -91,7 +91,7 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
 
 uint16_t compute_crc16(const uint8_t *buf, size_t len)
 {
-	return crc16_itu_t(0x1D0F, buf + 1, len - 1);
+	return crc16_itu_t(0x1D0F, buf, len);
 }
 
 millis_t millis_now()

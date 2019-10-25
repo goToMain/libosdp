@@ -283,7 +283,7 @@ void osdp_sc_init(struct osdp_pd *p);
 /* from osdp_common.c */
 millis_t millis_now();
 millis_t millis_since(millis_t last);
-uint8_t compute_crc16(const uint8_t *buf, size_t len);
+uint16_t compute_crc16(const uint8_t *buf, size_t len);
 void osdp_dump(const char *head, const uint8_t * data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_set_log_level(int log_level);

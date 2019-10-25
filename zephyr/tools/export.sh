@@ -20,3 +20,4 @@ cp -rf $REPO_ROOT/src $ZEPHYR_BASE/drivers/osdp
 cp  -f $REPO_ROOT/zephyr/CMakeLists.txt $ZEPHYR_BASE/drivers/osdp
 cp  -f $REPO_ROOT/zephyr/Kconfig $ZEPHYR_BASE/drivers/osdp
 cp  -f $REPO_ROOT/zephyr/osdp_zephyr.c $ZEPHYR_BASE/drivers/osdp
+cp  -f $REPO_ROOT/include/osdp.h $ZEPHYR_BASE/include/drivers/osdp.h

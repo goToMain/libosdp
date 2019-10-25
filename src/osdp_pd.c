@@ -411,13 +411,28 @@ int pd_phy_state_update(struct osdp_pd *pd)
 	return ret;
 }
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p)
+void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
+			    struct pd_id *id)
 {
 	int fc;
+
+	while (cap && ((fc = cap->function_code) > 0)) {
+		if (fc >= CAP_SENTINEL)
+			break;
+		pd->cap[fc].function_code = cap->function_code;
+		pd->cap[fc].compliance_level = cap->compliance_level;
+		pd->cap[fc].num_items = cap->num_items;
+		cap++;
+	}
+
+	memcpy(&pd->id, id, sizeof(struct pd_id));
+}
+
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p)
+{
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
 	struct osdp *ctx;
-	struct pd_cap *cap;
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
@@ -450,16 +465,8 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p)
 	pd->seq_number = -1;
 	pd->send_func = p->send_func;
 	pd->recv_func = p->recv_func;
-	memcpy(&pd->id, &p->id, sizeof(struct pd_id));
-	cap = p->cap;
-	while (cap && ((fc = cap->function_code) > 0)) {
-		if (fc >= CAP_SENTINEL)
-			break;
-		pd->cap[fc].function_code = cap->function_code;
-		pd->cap[fc].compliance_level = cap->compliance_level;
-		pd->cap[fc].num_items = cap->num_items;
-		cap++;
-	}
+
+	osdp_pd_set_attributes(pd, p->cap, &p->id);
 
 	set_flag(pd, PD_FLAG_PD_MODE);	/* used to understand operational mode */
 

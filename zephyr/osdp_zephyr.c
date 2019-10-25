@@ -1,4 +1,5 @@
 #include <kernel.h>
+#include <init.h>
 #include <device.h>
 #include <drivers/uart.h>
 
@@ -61,37 +62,18 @@ int osdp_uart_send(struct osdp_pd *p, u8_t *buf, int len)
 	return sent;
 }
 
-struct osdp_pd *osdp_zephyr_init()
+struct osdp_pd *osdp_init()
 {
 	struct osdp_pd *ctx;
-	struct pd_cap cap[] = {
-		{
-			.function_code = CAP_READER_LED_CONTROL,
-			.compliance_level = 1,
-			.num_items = 1
-		},
-		{
-			.function_code = CAP_READER_AUDIBLE_OUTPUT,
-			.compliance_level = 1,
-			.num_items = 1
-		},
-		OSDP_PD_CAP_SENTINEL
-	};
 
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
 		.init_flags = 0,
-		.send_func = sample_pd_send_func,
-		.recv_func = sample_pd_recv_func,
-		.id = {
-			.version = 1,
-			.model = 153,
-			.vendor_code = 31337,
-			.serial_number = 0x01020304,
-			.firmware_version = 0x0A0B0C0D,
-		},
-		.cap = cap,
+		.send_func = osdp_uart_send,
+		.recv_func = osdp_uart_reveive,
+		.id = NULL,  /* set from app */
+		.cap = NULL, /* set from app */
 	};
 
 	ctx = osdp_pd_setup(&info_pd);
@@ -100,3 +82,6 @@ struct osdp_pd *osdp_zephyr_init()
 		return -1;
 	}
 }
+
+/* UART console initializes after the UART device itself */
+SYS_INIT(osdp_init, POST_KERNEL, 10);

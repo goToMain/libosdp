@@ -76,6 +76,27 @@ void osdp_compute_cp_cryptogram(struct osdp_pd *p)
 	osdp_encrypt(p->sc.s_enc, NULL, p->sc.cp_cryptogram, 16);
 }
 
+/**
+ * Like memcmp; but operates at constant time.
+ *
+ * Returns:
+ *    0: if memory pointed to by s1 and and s2 are identical.
+ *  +ve: if the they are different.
+ */
+int ct_compare(const void *s1, const void *s2, size_t len)
+{
+	int i, ret = 0;
+	const uint8_t *_s1 = s1;
+	const uint8_t *_s2 = s2;
+
+	for (i=0; i<len; i++) {
+		if (_s1[i] != _s2[i])
+			ret++;
+	}
+
+	return ret;
+}
+
 int osdp_verify_cp_cryptogram(struct osdp_pd *p)
 {
 	uint8_t cp_crypto[16];
@@ -85,7 +106,7 @@ int osdp_verify_cp_cryptogram(struct osdp_pd *p)
 	memcpy(cp_crypto + 8, p->sc.cp_random, 8);
 	osdp_encrypt(p->sc.s_enc, NULL, cp_crypto, 16);
 
-	if (memcmp(p->sc.cp_cryptogram, cp_crypto, 16) != 0)
+	if (ct_compare(p->sc.cp_cryptogram, cp_crypto, 16) != 0)
 		return -1;
 
 	return 0;
@@ -108,7 +129,7 @@ int osdp_verify_pd_cryptogram(struct osdp_pd *p)
 	memcpy(pd_crypto + 8, p->sc.pd_random, 8);
 	osdp_encrypt(p->sc.s_enc, NULL, pd_crypto, 16);
 
-	if (memcmp(p->sc.pd_cryptogram, pd_crypto, 16) != 0)
+	if (ct_compare(p->sc.pd_cryptogram, pd_crypto, 16) != 0)
 		return -1;
 
 	return 0;
@@ -149,10 +170,9 @@ int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
 	while (data[length - 1] == 0x00)
 		length--;
 
-	if (data[length - 1] != 0x80) {
-		LOG_E(TAG "decrypt_pkt un_pad len:%d", length);
+	if (data[length - 1] != 0x80)
 		return -1;
-	}
+
 	data[length - 1] = 0;
 	return length - 1;
 }

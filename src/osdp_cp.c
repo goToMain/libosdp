@@ -225,7 +225,7 @@ int osdp_cp_set_callback_card_read(osdp_cp_t * ctx,
 
 int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
-	uint8_t cmd_buf[64];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_OUT;
@@ -241,7 +241,7 @@ int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 
 int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
-	uint8_t cmd_buf[64];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_OUT;
@@ -257,7 +257,7 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 
 int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
-	uint8_t cmd_buf[64];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_BUZ;
@@ -273,7 +273,7 @@ int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 
 int osdp_cp_set_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
-	uint8_t cmd_buf[64];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_TEXT;
@@ -289,7 +289,7 @@ int osdp_cp_set_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 
 int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
-	uint8_t cmd_buf[64];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_COMSET;

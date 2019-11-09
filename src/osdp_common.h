@@ -143,7 +143,7 @@ typedef uint64_t millis_t;
 struct osdp_data {
 	uint8_t len;
 	uint8_t id;
-	uint8_t data[0];
+	uint8_t data[];
 };
 
 union cmd_all {

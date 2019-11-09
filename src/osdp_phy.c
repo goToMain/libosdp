@@ -20,7 +20,7 @@ struct osdp_packet_header {
 	uint8_t len_lsb;
 	uint8_t len_msb;
 	uint8_t control;
-	uint8_t data[0];
+	uint8_t data[];
 };
 
 uint8_t compute_checksum(uint8_t * msg, int length)

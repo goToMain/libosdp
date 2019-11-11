@@ -17,7 +17,7 @@ int uart_num = -1;
 int uart_write(uint8_t *buf, int len)
 {
 	int i;
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		while (RS232_SendByte(uart_num, buf[i]));
 	}
 	return len;

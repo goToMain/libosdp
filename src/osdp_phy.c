@@ -176,7 +176,7 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 		/* compute and extend the buf with 4 MAC bytes */
 		osdp_compute_mac(p, is_cmd, buf + 1, len - 1);
 		data = is_cmd ? p->sc.c_mac : p->sc.r_mac;
-		for (i=0; i<4; i++)
+		for (i = 0; i < 4; i++)
 			buf[len + i] = data[i];
 		len += 4;
 	} else {

@@ -480,7 +480,7 @@ int RS232_GetPortnr(const char *devname)
 {
   int i;
 
-  for(i=0; i<RS232_PORTNR; i++)
+  for(i = 0; i < RS232_PORTNR; i++)
   {
     if(!strcmp(comports[i], devname))
     {

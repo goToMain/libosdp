@@ -89,7 +89,7 @@ int ct_compare(const void *s1, const void *s2, size_t len)
 	const uint8_t *_s1 = s1;
 	const uint8_t *_s2 = s2;
 
-	for (i=0; i<len; i++) {
+	for (i = 0; i < len; i++) {
 		if (_s1[i] != _s2[i])
 			ret++;
 	}

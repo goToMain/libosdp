@@ -5,7 +5,6 @@
  */
 
 #include "test.h"
-#include "osdp_cp_private.h"
 
 int phy_build_packet_head(struct osdp_pd *pd, int id, uint8_t * buf, int maxlen);
 int phy_build_packet_tail(struct osdp_pd *pd, uint8_t * buf, int len, int maxlen);

@@ -36,7 +36,6 @@ list(APPEND LIB_OSDP_SRC
 	"src/osdp_phy.c"
 	"src/osdp_sc.c"
 	"src/osdp_aes.c"
-	"src/osdp_cp_phy.c"
 	"src/osdp_cp.c"
 	"src/osdp_pd.c"
 )

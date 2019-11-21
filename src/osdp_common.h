@@ -257,6 +257,18 @@ enum pd_nak_code_e {
 	OSDP_PD_NAK_SENTINEL
 };
 
+enum cp_fsm_state_e {
+	CP_STATE_INIT,
+	CP_STATE_IDREQ,
+	CP_STATE_CAPDET,
+	CP_STATE_SC_INIT,
+	CP_STATE_SC_CHLNG,
+	CP_STATE_SC_CCRYPT,
+	CP_STATE_ONLINE,
+	CP_STATE_OFFLINE,
+	CP_STATE_SENTINEL
+};
+
 /* from osdp_phy.c */
 int phy_check_packet(const uint8_t * buf, int len);
 int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen);

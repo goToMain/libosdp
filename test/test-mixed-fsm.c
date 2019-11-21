@@ -8,7 +8,6 @@
 
 #include <osdp.h>
 #include "test.h"
-#include "osdp_cp_private.h"
 
 int pd_phy_state_update(struct osdp_pd *pd);
 int cp_state_update(struct osdp_pd *pd);

@@ -5,14 +5,23 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-## Project
 project(libosdp)
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)
 
+# Custom command produces build_meta_data.c, and a dummy output that's
+# not actually produced, in order to force Version.cmake to always be
+# re-run before the build
+ADD_CUSTOM_COMMAND(
+	OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build_meta_data.c
+		${CMAKE_CURRENT_BINARY_DIR}/_build_meta_data.c
+	COMMAND ${CMAKE_COMMAND} -P
+		${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildMetaData.cmake
+	COMMENT "Generating build meta data.."
+)
+
 ## Includes
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
 
 ## Global settings
@@ -22,6 +31,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 ## build libosdp.a
 set(LIB_OSDP osdp)
 list(APPEND LIB_OSDP_SRC
+	"${CMAKE_BINARY_DIR}/build_meta_data.c"
 	"src/osdp_common.c"
 	"src/osdp_phy.c"
 	"src/osdp_sc.c"
@@ -42,8 +52,12 @@ list(APPEND LIB_OSDP_TEST_SRC
 	"test/test-cp-fsm.c"
 	"test/test-mixed-fsm.c"
 )
-add_executable(${LIB_OSDP_TEST} ${LIB_OSDP_TEST_SRC})
-target_link_libraries(${LIB_OSDP_TEST} osdp)
+add_executable(${LIB_OSDP_TEST} EXCLUDE_FROM_ALL ${LIB_OSDP_TEST_SRC})
+target_link_libraries(${LIB_OSDP_TEST} ${LIB_OSDP})
+add_custom_target(check
+	COMMAND ${CMAKE_BINARY_DIR}/${LIB_OSDP_TEST}
+	DEPENDS ${LIB_OSDP_TEST}
+)
 
 ## Sample CP
 set(LIB_OSDP_SAMPLE_CP osdp-cp-sample)

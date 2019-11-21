@@ -25,4 +25,4 @@ script:
     - mkdir build && cd build
     - cmake ..
     - make
-    - ./osdp-test
+    - make check

@@ -17,6 +17,7 @@
 #define FALSE				(0)
 #define OSDP_DATA_BUF_SIZE		(64)
 #define OSDP_PACKET_BUF_SIZE		(512)
+#define ARG_UNUSED(x)			(void)(x)
 
 #define isset_flag(p, f)		(((p)->flags & (f)) == (f))
 #define set_flag(p, f)			((p)->flags |= (f))
@@ -288,7 +289,7 @@ void osdp_compute_pd_cryptogram(struct osdp_pd *p);
 int osdp_verify_pd_cryptogram(struct osdp_pd *p);
 void osdp_compute_rmac_i(struct osdp_pd *p);
 int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length);
-int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length);
+int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length, int dry);
 int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len);
 void osdp_sc_init(struct osdp_pd *p);
 

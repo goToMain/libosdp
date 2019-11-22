@@ -43,7 +43,7 @@ else()
     )
     string(STRIP "${GIT_TAG_VERSION}" GIT_TAG_VERSION)
     string(REGEX
-        REPLACE "v?(([0-9]+)\\.([0-9]+)(\\.([0-9]+))?)" "\\1"
+        REPLACE "^v?(([0-9]+)\\.([0-9]+)(\\.([0-9]+))?).*$" "\\1"
         VERSION_STRING ${GIT_TAG_VERSION}
     )
 endif()

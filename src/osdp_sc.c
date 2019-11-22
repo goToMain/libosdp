@@ -85,7 +85,7 @@ void osdp_compute_cp_cryptogram(struct osdp_pd *p)
  */
 int ct_compare(const void *s1, const void *s2, size_t len)
 {
-	int i, ret = 0;
+	size_t i, ret = 0;
 	const uint8_t *_s1 = s1;
 	const uint8_t *_s2 = s2;
 
@@ -177,20 +177,30 @@ int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
 	return length - 1;
 }
 
-int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length)
+int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length, int dry)
 {
 	int i, pad_len;
 	uint8_t iv[16];
 
-	pad_len = get_pad_len(length);
-	data[length] = 0x80; /* end marker */
-	memset(data + length + 1, 0, pad_len - length - 1);
+	pad_len = length;
+
+	/* check if padding is needed */
+	if (length % 16 != 0) {
+		pad_len = get_pad_len(length);
+	}
+
+	if (dry)
+		return pad_len;
+
+	if (pad_len != length) {
+		data[length] = 0x80; /* end marker */
+		memset(data + length + 1, 0, pad_len - length - 1);
+	}
 
 	for (i = 0; i < 16; i++)
 		iv[i] = ~(p->sc.r_mac[i]);
 
 	osdp_encrypt(p->sc.s_enc, iv, data, pad_len);
-
 #if 0
     LOG_D(TAG "Encrypt Data");
     osdp_dump("R-MAC", p->sc.r_mac, 16);
@@ -198,7 +208,6 @@ int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length)
     osdp_dump("IV: ~R-MAC", iv, 16);
     osdp_dump("Encrypt Data", data, pad_len);
 #endif
-
 	return pad_len;
 }
 

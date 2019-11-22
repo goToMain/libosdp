@@ -46,6 +46,9 @@ int test_cp_phy_fsm_receive(uint8_t * buf, int len)
 		0xa3, 0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2,
 		0xe3, 0x99, 0xa2
 	};
+
+	ARG_UNUSED(len);
+
 	switch (phy_fsm_resp_offset) {
 	case 0:
 		memcpy(buf, resp_ack, sizeof(resp_ack));

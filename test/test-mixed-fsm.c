@@ -35,6 +35,8 @@ int test_mixed_cp_fsm_receive(uint8_t * buf, int len)
 {
 	int ret = test_mixed_pd_to_cp_buf_length;
 
+	ARG_UNUSED(len);
+
 	if (ret) {
 		memcpy(buf, test_mixed_pd_to_cp_buf, ret);
 		test_mixed_pd_to_cp_buf_length = 0;
@@ -53,6 +55,8 @@ int test_mixed_pd_fsm_send(uint8_t * buf, int len)
 int test_mixed_pd_fsm_receive(uint8_t * buf, int len)
 {
 	int ret = test_mixed_cp_to_pd_buf_length;
+
+	ARG_UNUSED(len);
 
 	if (test_mixed_cp_to_pd_buf_length) {
 		memcpy(buf, test_mixed_cp_to_pd_buf,

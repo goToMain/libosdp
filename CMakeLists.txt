@@ -9,6 +9,10 @@ project(libosdp)
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)
 
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+
 # Custom command produces build_meta_data.c, and a dummy output that's
 # not actually produced, in order to force Version.cmake to always be
 # re-run before the build
@@ -26,6 +30,9 @@ include(AddCCompilerFlag)
 
 ## Global settings
 add_c_compiler_flag(-Wall)
+add_c_compiler_flag(-Wextra)
+add_c_compiler_flag(-s RELEASE)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ## build libosdp.a

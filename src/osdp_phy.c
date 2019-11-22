@@ -73,6 +73,7 @@ uint8_t *phy_packet_get_data(struct osdp_pd *p, const uint8_t *buf)
 	int sb_len = 0;
 	struct osdp_packet_header *pkt;
 
+	ARG_UNUSED(p);
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->control & PKT_CONTROL_SCB)
 		sb_len = pkt->data[0];
@@ -84,6 +85,7 @@ uint8_t *phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf)
 {
 	struct osdp_packet_header *pkt;
 
+	ARG_UNUSED(p);
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->control & PKT_CONTROL_SCB)
 		return pkt->data;
@@ -164,12 +166,20 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 			data = pkt->data + 2 + 1;
 			data_len = len - 6 - 2 - 1;
 			len -= data_len;
-			if (len <= 0)
+			/**
+			 * check if the passed buffer can hold the encrypted
+			 * data where length may be rounded up to the nearest
+			 * 16 byte block bondary.
+			 */
+			if ((len + osdp_encrypt_data(p, data,
+						     data_len, 1)) > maxlen)
 				return -1;
-			data_len = osdp_encrypt_data(p, data, data_len);
+			data_len = osdp_encrypt_data(p, data, data_len, 0);
 			len += data_len;
 		}
 		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
+		if (len + 4 > maxlen)
+			return -1;
 		pkt->len_lsb = byte_0(len - 1 + 2 + 4);
 		pkt->len_lsb = byte_0(len - 1 + 2 + 4);
 
@@ -184,8 +194,9 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 		pkt->len_lsb = byte_0(len - 1 + 2);
 		pkt->len_msb = byte_1(len - 1 + 2);
 	}
-
 	/* fill crc16 */
+	if (len + 2 > maxlen)
+		return -1;
 	crc16 = compute_crc16(buf + 1, len - 1);	/* excluding mark byte */
 	buf[len + 0] = byte_0(crc16);
 	buf[len + 1] = byte_1(crc16);

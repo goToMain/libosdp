@@ -45,6 +45,8 @@ int test_cp_fsm_receive(uint8_t * buf, int len)
 		0xff, 0x53, 0xe5, 0x08, 0x00, 0x06, 0x40, 0xb0, 0xf0
 	};
 
+	ARG_UNUSED(len);
+
 	switch (test_fsm_resp) {
 	case 1:
 		memcpy(buf, resp_ack, sizeof(resp_ack));

@@ -41,6 +41,9 @@ int main(int argc, char *argv[])
 {
 	struct test t;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	test_start(&t);
 
 	run_cp_phy_tests(&t);

@@ -56,7 +56,7 @@ endif()
 if ("${GIT_BRANCH}" STREQUAL "")
     set(GIT_BRANCH "NONE")
 endif()
-if ("${GIT_STRING}" STREQUAL "")
+if ("${VERSION_STRING}" STREQUAL "")
     set(VERSION_STRING "0.0.0")
 endif()
 

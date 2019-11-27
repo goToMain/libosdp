@@ -1,7 +1,7 @@
 #
 #  Copyright (c) 2019 Siddharth Chandrasekaran
 #
-#  SPDX-License-Identifier: MIT
+#  SPDX-License-Identifier: Apache-2.0
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)

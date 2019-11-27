@@ -5,13 +5,7 @@ execute_process(COMMAND
 )
 string(STRIP "${GIT_REV}" GIT_REV)
 
-if ("${GIT_REV}" STREQUAL "")
-    set(GIT_REV "N/A")
-    set(GIT_DIFF "")
-    set(GIT_TAG "N/A")
-    set(GIT_BRANCH "N/A")
-    set(VERSION_STRING "0.0.0")
-else()
+if (NOT "${GIT_REV}" STREQUAL "")
     # GIT_REV
     string(SUBSTRING "${GIT_REV}" 1 7 GIT_REV)
 
@@ -42,10 +36,28 @@ else()
         OUTPUT_VARIABLE GIT_TAG_VERSION ERROR_QUIET
     )
     string(STRIP "${GIT_TAG_VERSION}" GIT_TAG_VERSION)
-    string(REGEX
-        REPLACE "^v?(([0-9]+)\\.([0-9]+)(\\.([0-9]+))?).*$" "\\1"
-        VERSION_STRING ${GIT_TAG_VERSION}
-    )
+    if (NOT ${GIT_TAG_VERSION} STREQUAL "")
+        string(REGEX
+            REPLACE "^v?(([0-9]+)\\.([0-9]+)(\\.([0-9]+))?).*$" "\\1"
+            VERSION_STRING ${GIT_TAG_VERSION}
+        )
+    endif()
+endif()
+
+if ("${GIT_REV}" STREQUAL "")
+    set(GIT_REV "000000")
+endif()
+if ("${GIT_DIFF}" STREQUAL "")
+    set(GIT_DIFF "?")
+endif()
+if ("${GIT_TAG}" STREQUAL "")
+    set(GIT_TAG "NONE")
+endif()
+if ("${GIT_BRANCH}" STREQUAL "")
+    set(GIT_BRANCH "NONE")
+endif()
+if ("${GIT_STRING}" STREQUAL "")
+    set(VERSION_STRING "0.0.0")
 endif()
 
 string(CONCAT BUILD_META_C

@@ -27,6 +27,7 @@ ADD_CUSTOM_COMMAND(
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
+include(BuildMetaData)
 
 ## Global settings
 add_c_compiler_flag(-Wall)

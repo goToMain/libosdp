@@ -36,8 +36,9 @@ add_c_compiler_flag(-s RELEASE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-## build libosdp.a
+## build libosdp
 set(LIB_OSDP osdp)
+set(LIB_OSDP_STATIC osdpstatic)
 list(APPEND LIB_OSDP_SRC
 	"${CMAKE_BINARY_DIR}/build_meta_data.c"
 	"src/osdp_common.c"
@@ -47,7 +48,8 @@ list(APPEND LIB_OSDP_SRC
 	"src/osdp_cp.c"
 	"src/osdp_pd.c"
 )
-ADD_LIBRARY(${LIB_OSDP} STATIC ${LIB_OSDP_SRC})
+ADD_LIBRARY(${LIB_OSDP} SHARED ${LIB_OSDP_SRC})
+ADD_LIBRARY(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
 
 ## tests
 set(LIB_OSDP_TEST osdp-test)
@@ -60,7 +62,7 @@ list(APPEND LIB_OSDP_TEST_SRC
 	"test/test-mixed-fsm.c"
 )
 add_executable(${LIB_OSDP_TEST} EXCLUDE_FROM_ALL ${LIB_OSDP_TEST_SRC})
-target_link_libraries(${LIB_OSDP_TEST} ${LIB_OSDP})
+target_link_libraries(${LIB_OSDP_TEST} osdp)
 add_custom_target(check
 	COMMAND ${CMAKE_BINARY_DIR}/${LIB_OSDP_TEST}
 	DEPENDS ${LIB_OSDP_TEST}
@@ -79,4 +81,5 @@ target_link_libraries(${LIB_OSDP_SAMPLE_CP} osdp)
 ## Install
 set(CMAKE_INSTALL_DIR $ENV{INSTALL_PREFIX})
 install(TARGETS ${LIB_OSDP} DESTINATION ${CMAKE_INSTALL_DIR}/lib)
+install(TARGETS ${LIB_OSDP_STATIC} DESTINATION ${CMAKE_INSTALL_DIR}/lib)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/osdp.h DESTINATION ${CMAKE_INSTALL_DIR}/include)

@@ -85,6 +85,19 @@ list(APPEND LIB_OSDP_SAMPLE_CP_SRC
 )
 add_executable(${LIB_OSDP_SAMPLE_CP} ${LIB_OSDP_SAMPLE_CP_SRC})
 target_link_libraries(${LIB_OSDP_SAMPLE_CP} osdp)
+set_target_properties(${LIB_OSDP_SAMPLE_CP} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+## osdpctl
+find_library(READLINE_LIBRARY NAMES readline)
+set(BIN_OSDPCTL osdpctl)
+list(APPEND BIN_OSDPCTL_SRC
+	"osdpctl/rs232.c"
+	"osdpctl/uart.c"
+	"osdpctl/arg-parser.c"
+	"osdpctl/osdpctl.c"
+)
+add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
+target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} osdp)
 
 ## Install
 set(CMAKE_INSTALL_DIR $ENV{INSTALL_PREFIX})

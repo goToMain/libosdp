@@ -368,6 +368,10 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 		return -1;
 	}
 
+#ifdef OSDP_PACKET_TRACE
+	osdp_dump("CP_SEND:", buf, len);
+#endif
+
 	ret = p->send_func(buf, len);
 
 	return (ret == len) ? 0 : -1;
@@ -400,6 +404,10 @@ int cp_process_reply(struct osdp_pd *p)
 		return 1;
 
 	/* Valid OSDP packet in buffer */
+
+#ifdef OSDP_PACKET_TRACE
+	osdp_dump("CP_RECV:", p->phy_rx_buf, p->phy_rx_buf_len);
+#endif
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	if (ret < 0) {

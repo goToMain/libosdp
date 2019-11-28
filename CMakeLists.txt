@@ -24,6 +24,14 @@ ADD_CUSTOM_COMMAND(
 	COMMENT "Generating build meta data.."
 )
 
+## Options
+
+option(CONFIG_OSDP_PACKET_TRACE "Diagnostics: enable OSDP raw packet trace" OFF)
+
+if (CONFIG_OSDP_PACKET_TRACE)
+	add_definitions(-DOSDP_PACKET_TRACE)
+endif()
+
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)

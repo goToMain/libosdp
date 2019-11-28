@@ -15,10 +15,6 @@
 #include "osdp_common.h"
 #include "osdp_aes.h"
 
-#ifdef BUILD_ZEPHYR
-#include <sys/crc.h>
-#endif
-
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 
 void osdp_set_log_level(int log_level)
@@ -75,7 +71,6 @@ void osdp_dump(const char *head, const uint8_t * data, int len)
 	printf("\n");
 }
 
-#ifndef BUILD_ZEPHYR
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
 {
 	for (; len > 0; len--) {
@@ -87,7 +82,6 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
 	}
 	return seed;
 }
-#endif
 
 uint16_t compute_crc16(const uint8_t *buf, size_t len)
 {

@@ -27,7 +27,7 @@ int test_mixed_cp_fsm_send(uint8_t * buf, int len)
 {
 	memcpy(test_mixed_cp_to_pd_buf, buf, len);
 	test_mixed_cp_to_pd_buf_length = len;
-	osdp_dump("CP Send", buf, len);
+	//osdp_dump("CP Send", buf, len);
 	return len;
 }
 
@@ -41,7 +41,7 @@ int test_mixed_cp_fsm_receive(uint8_t * buf, int len)
 		memcpy(buf, test_mixed_pd_to_cp_buf, ret);
 		test_mixed_pd_to_cp_buf_length = 0;
 	}
-	osdp_dump("PD Recv", buf, ret);
+	//osdp_dump("PD Recv", buf, ret);
 	return ret;
 }
 
@@ -121,7 +121,7 @@ int test_mixed_fsm_setup(struct test *t)
 		osdp_cp_teardown((osdp_cp_t *) test_data.cp_ctx);
 		return -1;
 	}
-	osdp_set_log_level(LOG_DEBUG);
+	//osdp_set_log_level(LOG_DEBUG);
 	t->mock_data = (void *)&test_data;
 	return 0;
 }

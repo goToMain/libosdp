@@ -167,7 +167,7 @@ int test_cp_phy_setup(struct test *t)
 	osdp_pd_info_t info = {
 		.address = 101,
 		.baud_rate = 9600,
-		.init_flags = 0,
+		.flags = 0,
 		.send_func = NULL,
 		.recv_func = NULL
 	};

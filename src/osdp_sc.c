@@ -22,12 +22,19 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	struct osdp_pd *p = to_current_pd(ctx);
 
 	if (isset_flag(p, PD_FLAG_SC_USE_SCBKD)) {
+		LOG_W(TAG "Using SCBKD");
 		memcpy(p->sc.scbk, osdp_scbk_default, 16);
 	} else {
-		memcpy(p->sc.scbk, p->sc.pd_client_uid, 8);
-		for (i = 8; i < 16; i++)
-			p->sc.scbk[i] = ~p->sc.scbk[i - 8];
-		osdp_encrypt(ctx->sc_master_key, NULL, p->sc.scbk, 16);
+		/**
+		 * Compute SCBK only in CP mode. PD mode, expect to already have
+		 * the SCBK (sent from application layer).
+		 */
+		if (isset_flag(p, PD_FLAG_PD_MODE) == 0) {
+			memcpy(p->sc.scbk, p->sc.pd_client_uid, 8);
+			for (i = 8; i < 16; i++)
+				p->sc.scbk[i] = ~p->sc.scbk[i - 8];
+			osdp_encrypt(ctx->sc_master_key, NULL, p->sc.scbk, 16);
+		}
 	}
 
 	memset(p->sc.s_enc, 0, 16);

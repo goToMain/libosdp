@@ -41,7 +41,7 @@ int main()
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
-		.init_flags = 0,
+		.flags = 0,
 		.send_func = sample_pd_send_func,
 		.recv_func = sample_pd_recv_func,
 		.id = {

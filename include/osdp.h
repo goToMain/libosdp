@@ -94,6 +94,13 @@ struct osdp_cmd_comset {
 	uint32_t baud;
 };
 
+/* CMD_KEYSET */
+struct osdp_cmd_keyset {
+	uint8_t key_type;
+	uint8_t len;
+	uint8_t data[32];
+};
+
 struct pd_cap {
 	uint8_t function_code;	/* enum osdp_pd_cap_function_code_e */
 	uint8_t compliance_level;
@@ -124,7 +131,7 @@ typedef struct {
 	/**
 	 * Used to modify the way the context is setup.
 	 */
-	int init_flags;
+	int flags;
 
 	/**
 	 * Static info that the PD reports to the CP when it received a `CMD_ID`.
@@ -189,16 +196,18 @@ int osdp_cp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p);
 int osdp_cp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p);
 int osdp_cp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p);
 int osdp_cp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
+int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p);
 
 /* --- PD Only --- */
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *master_key);
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 void osdp_pd_teardown(osdp_pd_t * ctx);
 void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p));
 void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p));
 void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_output *p));
 void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_text *p));
 void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_comset *p));
+void osdp_pd_set_callback_cmd_keyset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_keyset *p));
 
 /* --- Diagnostics --- */
 

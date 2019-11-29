@@ -141,6 +141,15 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		buf[len++] = byte_3(c->comset.baud);
 		ret = 0;
 		break;
+	case CMD_KEYSET:
+		if (cmd->len != sizeof(struct osdp_data) + 18)
+			break;
+		c = (union cmd_all *)cmd->data;
+		buf[len++] = c->keyset.key_type;
+		buf[len++] = c->keyset.len;
+		for (i=0; i<c->keyset.len; i++)
+			buf[len++] = c->keyset.data[i];
+		break;
 	case CMD_CHLNG:
 		if (smb == NULL)
 			break;
@@ -464,6 +473,17 @@ void cp_flush_command_queue(struct osdp_pd *pd)
 	pd->queue->head = 0;
 }
 
+void cp_flush_all_cmd_queues(struct osdp *ctx)
+{
+	int i;
+	struct osdp_pd *pd;
+
+	for (i = 0; i < ctx->cp->num_pd; i++) {
+		pd = to_pd(ctx, i);
+		cp_flush_command_queue(pd);
+	}
+}
+
 int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen)
 {
 	int start, end, len;
@@ -597,7 +617,7 @@ int cp_state_update(struct osdp_pd *pd)
 		return -1 * phy_state;
 
 	/* phy state error -- cleanup */
-	if (phy_state < 0) {
+	if (phy_state < 0 && (pd->state != CP_STATE_SC_CHLNG)) {
 		cp_set_offline(pd);
 	}
 
@@ -638,11 +658,21 @@ int cp_state_update(struct osdp_pd *pd)
 	case CP_STATE_SC_CHLNG:
 		if (cp_cmd_dispatcher(pd, CMD_CHLNG) != 0)
 			break;
-		cp_set_state(pd, CP_STATE_SC_CCRYPT);
+		if (phy_state < 0) {
+			set_flag(pd, PD_FLAG_SC_USE_SCBKD);
+			cp_set_state(pd, CP_STATE_SC_INIT);
+			pd->phy_state = 0; /* soft reset phy state */
+			LOG_W(TAG "SC Failed with SCBK; reting with SCBK-D");
+			break;
+		}
+		cp_set_state(pd, CP_STATE_SC_SCRYPT);
 		/* no break */
-	case CP_STATE_SC_CCRYPT:
+	case CP_STATE_SC_SCRYPT:
 		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0)
 			break;
+		if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD)) {
+			LOG_W(TAG "SC ACtive with SCBK-D");
+		}
 		cp_set_state(pd, CP_STATE_ONLINE);
 		break;
 	default:
@@ -697,7 +727,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info, uint8_t *master_key)
 		node_set_parent(pd, ctx);
 		pd->baud_rate = p->baud_rate;
 		pd->address = p->address;
-		pd->flags = p->init_flags;
+		pd->flags = p->flags;
 		pd->seq_number = -1;
 		pd->send_func = p->send_func;
 		pd->recv_func = p->recv_func;
@@ -840,6 +870,42 @@ int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
 		LOG_W(TAG "CMD_BUZ enqueue error!");
 		return -1;
+	}
+	return 0;
+}
+
+int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p)
+{
+	int i;
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+	struct osdp_cp *cp = to_osdp(ctx)->cp;
+	struct osdp_pd *pd;
+
+	for (i = 0; i < cp->num_pd; i++) {
+		pd = to_pd(ctx, i);
+		if (pd->state != CP_STATE_ONLINE ||
+		    isset_flag(pd, PD_FLAG_SC_ACTIVE) == 0)
+			break;
+	}
+	if (i < cp->num_pd) {
+		LOG_W(TAG "CMD_KEYSET can be sent only when all PDs are "
+		          "ONLINE and SC_ACTIVE.");
+		return 1;
+	}
+
+	cmd->id = CMD_KEYSET;
+	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_keyset);
+	memcpy(cmd->data, p, sizeof(struct osdp_cmd_keyset));
+
+	for (i = 0; i < cp->num_pd; i++) {
+		pd = to_pd(ctx, i);
+		if (cp_enqueue_command(pd, cmd) != 0) {
+			LOG_EM(TAG "CMD_KEYSET enqueue error! Flushing all "
+			           "commands in queue for all PDs.");
+			cp_flush_all_cmd_queues(to_osdp(ctx));
+			return -1;
+		}
 	}
 	return 0;
 }

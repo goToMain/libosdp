@@ -17,6 +17,7 @@
 #define pd_set_buzzer(p, c)		call_fprt((p)->cmd_cb.buzzer, (c))
 #define pd_set_text(p, c)		call_fprt((p)->cmd_cb.text,   (c))
 #define pd_set_comm_params(p, c)	call_fprt((p)->cmd_cb.comset, (c))
+#define pd_notify_keyset(p, c)		call_fprt((p)->cmd_cb.keyset, (c))
 
 enum osdp_phy_state_e {
 	PD_PHY_STATE_IDLE,
@@ -27,7 +28,6 @@ enum osdp_phy_state_e {
 /**
  * Returns:
  *  0: success
- * -1: error
  *  2: retry current command
  */
 int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int len)
@@ -35,6 +35,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	int i, ret = -1, cmd_id, pos = 0;
 	union cmd_all cmd;
 
+	reply->id = 0;
 	cmd_id = buf[pos++];
 	len--;
 
@@ -151,7 +152,35 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		reply->id = REPLY_COM;
 		ret = 0;
 		break;
+	case CMD_KEYSET:
+		if (len != 18)
+			break;
+		/**
+		 * For CMD_KEYSET to be accepted, PD must be
+		 * ONLINE and SC_ACTIVE.
+		 */
+		if (isset_flag(p, PD_FLAG_SC_ACTIVE) == 0) {
+			reply->id = REPLY_NAK;
+			reply->data[0] = OSDP_PD_NAK_SC_COND;
+			break;
+		}
+		cmd.keyset.key_type = buf[pos++];
+		cmd.keyset.len = buf[pos++];
+		/* only key_type == SCBK and key_len == 16 is supported */
+		if (cmd.keyset.key_type != 1 || cmd.keyset.len != 16)
+			break;
+		memcpy(cmd.keyset.data, buf, 16);
+		memcpy(p->sc.scbk, buf, 16);
+		pd_notify_keyset(p, &cmd.keyset);
+		reply->id = REPLY_ACK;
+		ret = 0;
+		break;
 	case CMD_CHLNG:
+		if (p->cap[CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
+			reply->id = REPLY_NAK;
+			reply->data[0] = OSDP_PD_NAK_SC_UNSUP;
+			break;
+		}
 		if (len != 8)
 			break;
 		osdp_sc_init(p);
@@ -172,10 +201,9 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		break;
 	}
 
-	if (ret != 0) {
+	if (ret != 0 && reply->id == 0) {
 		reply->id = REPLY_NAK;
 		reply->data[0] = OSDP_PD_NAK_RECORD;
-		return -1;
 	}
 
 	return 0;
@@ -438,7 +466,7 @@ void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
 	memcpy(&pd->id, id, sizeof(struct pd_id));
 }
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *master_key)
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 {
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
@@ -450,8 +478,6 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *master_key)
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
-	if (master_key)
-		memcpy(ctx->sc_master_key, master_key, 16);
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
@@ -473,10 +499,15 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *master_key)
 	node_set_parent(pd, ctx);
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;
-	pd->flags = p->init_flags;
+	pd->flags = p->flags;
 	pd->seq_number = -1;
 	pd->send_func = p->send_func;
 	pd->recv_func = p->recv_func;
+
+	if (scbk == NULL || isset_flag(pd, PD_FLAG_INSTALL_MODE))
+		set_flag(pd, PD_FLAG_SC_USE_SCBKD);
+	else
+		memcpy(pd->sc.scbk, scbk, 16);
 
 	osdp_pd_set_attributes(pd, p->cap, &p->id);
 
@@ -554,4 +585,11 @@ void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.comset = cb;
+}
+
+void osdp_pd_set_callback_cmd_keyset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_keyset *p))
+{
+	struct osdp_pd *pd = to_current_pd(ctx);
+
+	pd->cmd_cb.keyset = cb;
 }

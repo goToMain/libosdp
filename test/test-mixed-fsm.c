@@ -78,7 +78,7 @@ int test_mixed_fsm_setup(struct test *t)
 	osdp_pd_info_t info_cp = {
 		.address = 101,
 		.baud_rate = 9600,
-		.init_flags = 0,
+		.flags = 0,
 		.send_func = test_mixed_cp_fsm_send,
 		.recv_func = test_mixed_cp_fsm_receive
 	};
@@ -103,7 +103,7 @@ int test_mixed_fsm_setup(struct test *t)
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
-		.init_flags = 0,
+		.flags = 0,
 		.send_func = test_mixed_pd_fsm_send,
 		.recv_func = test_mixed_pd_fsm_receive,
 		.id = {
@@ -115,13 +115,13 @@ int test_mixed_fsm_setup(struct test *t)
 		       },
 		.cap = cap,
 	};
-	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, master_key);
+	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
 	if (test_data.pd_ctx == NULL) {
 		printf("   pd init failed!\n");
 		osdp_cp_teardown((osdp_cp_t *) test_data.cp_ctx);
 		return -1;
 	}
-	//osdp_set_log_level(LOG_DEBUG);
+	osdp_set_log_level(LOG_DEBUG);
 	t->mock_data = (void *)&test_data;
 	return 0;
 }

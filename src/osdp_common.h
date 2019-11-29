@@ -153,6 +153,7 @@ union cmd_all {
 	struct osdp_cmd_text text;
 	struct osdp_cmd_output output;
 	struct osdp_cmd_comset comset;
+	struct osdp_cmd_keyset keyset;
 };
 
 struct cmd_queue {
@@ -167,6 +168,7 @@ struct osdp_pd_cmd_callback {
 	int (*text) (struct osdp_cmd_text *p);
 	int (*output) (struct osdp_cmd_output *p);
 	int (*comset) (struct osdp_cmd_comset *p);
+	int (*keyset) (struct osdp_cmd_keyset *p);
 };
 
 struct osdp_secure_channel {
@@ -264,7 +266,7 @@ enum cp_fsm_state_e {
 	CP_STATE_CAPDET,
 	CP_STATE_SC_INIT,
 	CP_STATE_SC_CHLNG,
-	CP_STATE_SC_CCRYPT,
+	CP_STATE_SC_SCRYPT,
 	CP_STATE_ONLINE,
 	CP_STATE_OFFLINE,
 	CP_STATE_SENTINEL

@@ -68,7 +68,7 @@ int test_cp_phy_fsm_setup(struct test *t)
 	osdp_pd_info_t info = {
 		.address = 101,
 		.baud_rate = 9600,
-		.init_flags = 0,
+		.flags = 0,
 		.send_func = test_cp_phy_fsm_send,
 		.recv_func = test_cp_phy_fsm_receive
 	};

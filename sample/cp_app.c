@@ -15,7 +15,7 @@ int main()
 		{
 			.address = 101,
 			.baud_rate = 115200,
-			.init_flags = 0,
+			.flags = 0,
 			.send_func = uart_write,
 			.recv_func = uart_read
 		},

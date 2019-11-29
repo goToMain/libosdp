@@ -138,3 +138,32 @@ void osdp_fill_random(uint8_t *buf, int len)
 		buf[i] = (uint8_t)(((float)rnd) / RAND_MAX * 256);
 	}
 }
+
+/**
+ * Defined in <build-dir>/build_meta_data.c; see cmake/BuildMetaData.cmake for
+ * more details on how this is obtained.
+ */
+extern const char *VERSION;
+extern const char *GIT_TAG;
+extern const char *GIT_REV;
+extern const char *GIT_BRANCH;
+
+const char * osdp_get_version()
+{
+	return VERSION;
+}
+
+const char *osdp_get_git_tag()
+{
+	return GIT_TAG;
+}
+
+const char *osdp_get_git_rev()
+{
+	return GIT_REV;
+}
+
+const char *osdp_get_git_branch()
+{
+	return GIT_BRANCH;
+}

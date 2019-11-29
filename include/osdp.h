@@ -200,4 +200,11 @@ void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_text *p));
 void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_comset *p));
 
+/* --- Diagnostics --- */
+
+const char *osdp_get_version();
+const char *osdp_get_git_tag();
+const char *osdp_get_git_rev();
+const char *osdp_get_git_branch();
+
 #endif	/* _OSDP_H_ */

@@ -16,16 +16,6 @@ static const uint8_t osdp_scbk_default[16] = {
     0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
-void osdp_compute_scbk(uint8_t *cuid, uint8_t *mkey, uint8_t *scbk)
-{
-	int i;
-
-	memcpy(scbk, cuid, 8);
-	for (i = 8; i < 16; i++)
-		scbk[i] = ~scbk[i - 8];
-	osdp_encrypt(mkey, NULL, scbk, 16);
-}
-
 void osdp_compute_session_keys(struct osdp *ctx)
 {
 	int i;

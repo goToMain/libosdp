@@ -609,15 +609,18 @@ int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 
 int cp_state_update(struct osdp_pd *pd)
 {
-	int phy_state;
+	int phy_state, soft_fail;
 
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == 1 ||	/* commands are being executed */
 	    phy_state == 2)	/* in-between commands */
 		return -1 * phy_state;
 
+	/* Certain states can fail without causing PD offline */
+	soft_fail = (pd->state == CP_STATE_SC_CHLNG);
+
 	/* phy state error -- cleanup */
-	if (phy_state < 0 && (pd->state != CP_STATE_SC_CHLNG)) {
+	if (phy_state < 0 && soft_fail == 0) {
 		cp_set_offline(pd);
 	}
 

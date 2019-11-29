@@ -67,6 +67,11 @@ int test_mixed_pd_fsm_receive(uint8_t * buf, int len)
 	return ret;
 }
 
+uint8_t master_key[16] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+};
+
 int test_mixed_fsm_setup(struct test *t)
 {
 	/* mock application data */
@@ -77,7 +82,7 @@ int test_mixed_fsm_setup(struct test *t)
 		.send_func = test_mixed_cp_fsm_send,
 		.recv_func = test_mixed_cp_fsm_receive
 	};
-	test_data.cp_ctx = (struct osdp *) osdp_cp_setup(1, &info_cp);
+	test_data.cp_ctx = (struct osdp *) osdp_cp_setup(1, &info_cp, master_key);
 	if (test_data.cp_ctx == NULL) {
 		printf("   cp init failed!\n");
 		return -1;
@@ -110,7 +115,7 @@ int test_mixed_fsm_setup(struct test *t)
 		       },
 		.cap = cap,
 	};
-	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd);
+	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, master_key);
 	if (test_data.pd_ctx == NULL) {
 		printf("   pd init failed!\n");
 		osdp_cp_teardown((osdp_cp_t *) test_data.cp_ctx);

@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 		},
 	};
 
-	osdp_cp_t *ctx = osdp_cp_setup(1, info);
+	osdp_cp_t *ctx = osdp_cp_setup(1, info, osdpctl_opts.master_key);
 	if (ctx == NULL) {
 		printf("cp init failed!\n");
 		return -1;

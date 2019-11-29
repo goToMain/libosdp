@@ -72,7 +72,7 @@ int test_cp_phy_fsm_setup(struct test *t)
 		.send_func = test_cp_phy_fsm_send,
 		.recv_func = test_cp_phy_fsm_receive
 	};
-	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info);
+	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;

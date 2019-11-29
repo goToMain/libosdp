@@ -24,7 +24,7 @@ int main()
 	if(uart_init("/dev/ttyUSB1", 115200) < 0)
 		return -1;
 
-	osdp_cp_t *ctx = osdp_cp_setup(1, info);
+	osdp_cp_t *ctx = osdp_cp_setup(1, info, NULL);
 	osdp_set_log_level(7);
 
 	if (ctx == NULL)

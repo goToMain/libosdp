@@ -177,7 +177,7 @@ struct osdp_cp_notifiers {
 	int (*cardread) (int address, int format, uint8_t * data, int len);
 };
 
-osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info);
+osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 void osdp_set_log_level(int log_level);
 void osdp_cp_refresh(osdp_cp_t * ctx);
 void osdp_cp_teardown(osdp_cp_t * ctx);
@@ -192,7 +192,7 @@ int osdp_cp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
 
 /* --- PD Only --- */
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * info);
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *master_key);
 void osdp_pd_teardown(osdp_pd_t * ctx);
 void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p));
 void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p));

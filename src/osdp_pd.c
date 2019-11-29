@@ -438,7 +438,7 @@ void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
 	memcpy(&pd->id, id, sizeof(struct pd_id));
 }
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p)
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *master_key)
 {
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
@@ -450,6 +450,8 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p)
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
+	if (master_key)
+		memcpy(ctx->sc_master_key, master_key, 16);
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {

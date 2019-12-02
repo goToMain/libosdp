@@ -86,7 +86,6 @@ target_link_libraries(${LIB_OSDP_SAMPLE_CP} osdp)
 set_target_properties(${LIB_OSDP_SAMPLE_CP} PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 ## osdpctl
-find_library(READLINE_LIBRARY NAMES readline)
 set(BIN_OSDPCTL osdpctl)
 list(APPEND BIN_OSDPCTL_SRC
 	"osdpctl/rs232.c"

@@ -541,7 +541,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		ret = 1;
-		/* no break */
+		/* fall-thru */
 	case CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd, cmd)) < 0) {
 			LOG_I(TAG "command dispatch error");
@@ -639,12 +639,12 @@ int cp_state_update(struct osdp_pd *pd)
 		break;
 	case CP_STATE_INIT:
 		cp_set_state(pd, CP_STATE_IDREQ);
-		/* no break */
+		/* FALLTHRU */
 	case CP_STATE_IDREQ:
 		if (cp_cmd_dispatcher(pd, CMD_ID) != 0)
 			break;
 		cp_set_state(pd, CP_STATE_CAPDET);
-		/* no break */
+		/* FALLTHRU */
 	case CP_STATE_CAPDET:
 		if (cp_cmd_dispatcher(pd, CMD_CAP) != 0)
 			break;
@@ -657,7 +657,7 @@ int cp_state_update(struct osdp_pd *pd)
 	case CP_STATE_SC_INIT:
 		osdp_sc_init(pd);
 		cp_set_state(pd, CP_STATE_SC_CHLNG);
-		/* no break */
+		/* FALLTHRU */
 	case CP_STATE_SC_CHLNG:
 		if (cp_cmd_dispatcher(pd, CMD_CHLNG) != 0)
 			break;
@@ -669,7 +669,7 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		}
 		cp_set_state(pd, CP_STATE_SC_SCRYPT);
-		/* no break */
+		/* FALLTHRU */
 	case CP_STATE_SC_SCRYPT:
 		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0)
 			break;

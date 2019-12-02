@@ -107,6 +107,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 			break;
 		reply->id = REPLY_ACK;
 		ret = 0;
+		break;
 	case CMD_BUZ:
 		if (len != 5)
 			break;
@@ -275,6 +276,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		buf[len++] = reply->id;
 		buf[len++] = (reply->len > sizeof(struct osdp_data)) ?
 					reply->data[0] : OSDP_PD_NAK_RECORD;
+		break;
 	case REPLY_CCRYPT:
 		if (smb == NULL)
 			break;
@@ -429,7 +431,7 @@ int pd_phy_state_update(struct osdp_pd *pd)
 		}
 		ret = 1;
 		pd->phy_state = PD_PHY_STATE_SEND_REPLY;
-		/* no break */
+		/* FALLTHRU */
 	case PD_PHY_STATE_SEND_REPLY:
 		if ((ret = pd_send_reply(pd, reply)) == 0) {
 			pd->phy_state = PD_PHY_STATE_IDLE;

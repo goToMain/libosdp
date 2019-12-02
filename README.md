@@ -84,8 +84,49 @@ add_dependencies(${OSDP_APP} ext_libosdp)
 target_link_libraries(${OSDP_APP} osdp)
 ```
 
+## Cross Compiling:
+
+libosdp can be cross compiled with your cross compiler if cmake is invoked with
+the argument `-DCMAKE_TOOLCHAIN_FILE=/path/to/toolchain-file.cmake`.
+
+If your toolchain is installed in `/opt/toolchain/armv8l-linux-gnueabihf/` and
+the sysroot is present in `/opt/toolchain/armv8l-linux-gnueabihf/sysroot`, the
+`toolchain-file.cmake` file should look like this:
+
+```cmake
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR arm)
+
+# specify the cross compiler and sysroot
+set(TOOLCHAIN_INST_PATH /opt/toolchain/armv8l-linux-gnueabihf)
+set(CMAKE_C_COMPILER    ${TOOLCHAIN_INST_PATH}/bin/armv8l-linux-gnueabihf-gcc)
+set(CMAKE_CXX_COMPILER  ${TOOLCHAIN_INST_PATH}/bin/armv8l-linux-gnueabihf-g++)
+SET(CMAKE_SYSROOT       ${TOOLCHAIN_INST_PATH}/sysroot)
+
+# don't search for programs in the build host directories
+SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+
+# search for libraries and headers in the target directories only
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+```
+
+For convenience, the `toolchain-file.cmake` file can be placed in a common path
+(probabaly where the toolchain is installed) and referenced from our build
+directory.
+
+```sh
+mkdir build && cd build
+cmake -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain/armv8l-linux-gnueabihf/toolchain-file.cmake ..
+make
+```
+
+## Contributions and bugs
+
 This repository is a work in progress; read the `TODO` file for list of pending
-tasks. Patches in those areas are welcome; open an issue if you find a bug.
+tasks. Patches in those areas are welcome; open an issue in the github page of
+this project (https://github.com/cbsiddharth/libosdp) if you face any issues.
 
 [1]: https://travis-ci.org/cbsiddharth/libosdp.svg?branch=master
 [2]: https://travis-ci.org/cbsiddharth/libosdp

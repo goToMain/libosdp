@@ -86,8 +86,9 @@ target_link_libraries(${OSDP_APP} osdp)
 
 ## Cross Compiling:
 
-libosdp can be cross compiled with your cross compiler if cmake is invoked with
-the argument `-DCMAKE_TOOLCHAIN_FILE=/path/to/toolchain-file.cmake`.
+libosdp can be compiled with your cross compiler by passing a toolchain file to
+cmake. This can be done by invoking cmake with the command line argument
+`-DCMAKE_TOOLCHAIN_FILE=/path/to/toolchain-file.cmake`.
 
 If your toolchain is installed in `/opt/toolchain/armv8l-linux-gnueabihf/` and
 the sysroot is present in `/opt/toolchain/armv8l-linux-gnueabihf/sysroot`, the
@@ -101,14 +102,14 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 set(TOOLCHAIN_INST_PATH /opt/toolchain/armv8l-linux-gnueabihf)
 set(CMAKE_C_COMPILER    ${TOOLCHAIN_INST_PATH}/bin/armv8l-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER  ${TOOLCHAIN_INST_PATH}/bin/armv8l-linux-gnueabihf-g++)
-SET(CMAKE_SYSROOT       ${TOOLCHAIN_INST_PATH}/sysroot)
+set(CMAKE_SYSROOT       ${TOOLCHAIN_INST_PATH}/sysroot)
 
 # don't search for programs in the build host directories
-SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 
 # search for libraries and headers in the target directories only
-SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 ```
 

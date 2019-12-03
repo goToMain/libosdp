@@ -18,6 +18,7 @@ struct osdpctl_opts_s {
 	int baud_rate;
 	char device[64];
 	char mode[16];
+	uint8_t master_key[16];
 	char config_file[128];
 	int help;
 };

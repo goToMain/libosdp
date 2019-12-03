@@ -7,7 +7,16 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <osdp.h>
-#include "uart.h"
+
+int sample_cp_send_func(uint8_t *buf, int len)
+{
+	return len;
+}
+
+int sample_cp_recv_func(uint8_t *buf, int len)
+{
+	return 0;
+}
 
 int main()
 {
@@ -16,13 +25,10 @@ int main()
 			.address = 101,
 			.baud_rate = 115200,
 			.flags = 0,
-			.send_func = uart_write,
-			.recv_func = uart_read
+			.send_func = sample_cp_send_func,
+			.recv_func = sample_cp_recv_func
 		},
 	};
-
-	if(uart_init("/dev/ttyUSB1", 115200) < 0)
-		return -1;
 
 	osdp_cp_t *ctx = osdp_cp_setup(1, info, NULL);
 	osdp_set_log_level(7);

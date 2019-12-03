@@ -74,17 +74,6 @@ add_custom_target(check
 	DEPENDS ${LIB_OSDP_TEST}
 )
 
-## Sample CP
-set(LIB_OSDP_SAMPLE_CP osdp-cp-sample)
-list(APPEND LIB_OSDP_SAMPLE_CP_SRC
-	"sample/rs232.c"
-	"sample/uart.c"
-	"sample/cp_app.c"
-)
-add_executable(${LIB_OSDP_SAMPLE_CP} ${LIB_OSDP_SAMPLE_CP_SRC})
-target_link_libraries(${LIB_OSDP_SAMPLE_CP} osdp)
-set_target_properties(${LIB_OSDP_SAMPLE_CP} PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
 ## osdpctl
 set(BIN_OSDPCTL osdpctl)
 list(APPEND BIN_OSDPCTL_SRC

@@ -3,7 +3,7 @@
 #include <getopt.h>
 #include <string.h>
 
-#include "arg-parser.h"
+#include "arg_parser.h"
 
 #define is_lower_alpha(x) (x >= 97 && x <= 122)
 
@@ -18,17 +18,22 @@ void ap_init(const char *app_name, const char *app_desc)
 
 void ap_print_help(struct ap_option *ap_opts)
 {
-	int i, l;
+	int i, l, count;
 	char tmp1[64], tmp2[64];
-	struct ap_option *ap_opt = ap_opts;
+	struct ap_option *ap_opt;
 
 	if (ap_app_name)
-		printf("%s - %s\n\n", ap_app_name, ap_app_desc);
+		printf("%s - %s\n", ap_app_name, ap_app_desc);
 
-	printf("Arguments:\n");
-	while (ap_opt != NULL) {
-		if (ap_opt->short_name == '\0')
-			break;
+	printf("\nArguments:\n");
+
+	ap_opt = ap_opts;
+	while (ap_opt != NULL && ap_opt->short_name != '\0') {
+		if (ap_opt->short_name == -1) {
+			ap_opt++;
+			continue;
+		}
+
 		if (ap_opt->flags & AP_TYPE_BOOL) {
 			printf("  -%c, --%-28s \t%s\n",
 			       ap_opt->short_name, ap_opt->long_name,
@@ -47,7 +52,20 @@ void ap_print_help(struct ap_option *ap_opts)
 		}
 		ap_opt++;
 	}
-	printf("  -h, --%-28s \tPrint this help message\n", "help");
+	printf("  -h, %-30s \tPrint this help message\n", "--help");
+
+	count = 0;
+	ap_opt = ap_opts;
+	while (ap_opt != NULL && ap_opt->short_name != '\0') {
+		if (ap_opt->short_name != -1) {
+			ap_opt++;
+			continue;
+		}
+		if (count == 0)
+			printf("\nCommands:\n");
+		printf("  %-33s \t%s", ap_opt->long_name, ap_opt->help);
+		ap_opt++; count++;
+	}
 }
 
 int hex_string_to_array(const char *hex_string, unsigned char *arr, int maxlen)
@@ -78,43 +96,51 @@ int ap_parse(int ac, char **av, struct ap_option *ap_opts, void *data)
 	char ostr[128];
 	struct option *opts, *opt;
 	struct ap_option *ap_opt;
-	int i, c, r, len, opt_idx=0, olen=0, *ival;
+	int i, j, c, r, opts_len = 0, opt_idx = 0, olen = 0, *ival;
 
-	len = 0;
-	while (ap_opts[len++].short_name != '\0');
-	if (len == 0) {
-		printf("Invalid ap_opts\n");
-		exit(-1);
+	i = 0;
+	while (ap_opts[i].short_name != '\0') {
+		if (ap_opts[i].short_name != -1)
+			opts_len++;
+		i++;
 	}
 
-	opts = malloc(sizeof (struct option) * len + 1);
+	opts = malloc(sizeof (struct option) * opts_len + 1);
 	if (opts == NULL) {
 		printf("AP Alloc error\n");
 		exit(-1);
 	}
 
-	for (i = 0; i < len; i++) {
+	i = 0; j = 0;
+	while (ap_opts[i].short_name != '\0') {
+		if (ap_opts[i].short_name == -1) {
+			i++;
+			continue;
+		}
 		ap_opt = ap_opts + i;
-		opt = opts + i;
+		opt = opts + j;
 		opt->name = ap_opts->long_name;
 		if (ap_opt->flags & AP_TYPE_BOOL) {
 			opt->has_arg = no_argument;
-			olen += sprintf(ostr + olen, "%c", ap_opt->short_name);
+			olen += snprintf(ostr + olen, 128 - olen,
+			                 "%c", ap_opt->short_name);
 		} else {
 			opt->has_arg = required_argument;
-			olen += sprintf(ostr + olen, "%c:", ap_opt->short_name);
+			olen += snprintf(ostr + olen, 128 - olen,
+			                 "%c:", ap_opt->short_name);
 		}
 		opt->flag = 0;
 		opt->val = ap_opt->short_name;
+		i++; j++;
 	}
 
 	opt = opts + i;
 	opt->name = "help";
 	opt->val = 'h';
-	sprintf(ostr + olen, "h");
+	olen += snprintf(ostr + olen, 128 - olen, "h");
 
 	while ((c = getopt_long(ac, av, ostr, opts, &opt_idx)) >= 0) {
-		for (i = 0; i < len; i++) {
+		for (i = 0; i < opts_len; i++) {
 			if (c == ap_opts[i].short_name)
 				break;
 		}
@@ -122,7 +148,7 @@ int ap_parse(int ac, char **av, struct ap_option *ap_opts, void *data)
 			ap_print_help(ap_opts);
 			exit(0);
 		}
-		if (i >= len) {
+		if (i >= opts_len) {
 			ap_print_help(ap_opts);
 			exit(-1);
 		}
@@ -162,16 +188,31 @@ int ap_parse(int ac, char **av, struct ap_option *ap_opts, void *data)
 		ap_opts[i].flags |= AP_OPT_SEEN;
 	}
 
-	for (i = 0; i < len; i++) {
-		if (ap_opts[i].flags & AP_OPT_REQUIRED &&
-		    (ap_opts[i].flags & AP_OPT_SEEN) == 0U) {
-			printf("Mandatory arg '%c' not provided\n",
-				ap_opts[i].short_name);
-			ap_print_help(ap_opts);
-			exit(-1);
+	free(opts);
+
+	i = 0;
+	while (ap_opts[i].short_name != '\0') {
+		if (ap_opts[i].short_name != -1) {
+			if (ap_opts[i].flags & AP_OPT_REQUIRED &&
+			    (ap_opts[i].flags & AP_OPT_SEEN) == 0U) {
+				printf("Mandatory arg '%c' not provided\n",
+					ap_opts[i].short_name);
+				ap_print_help(ap_opts);
+				exit(-1);
+			}
 		}
+		i++;
 	}
 
-	free(opts);
+	i = 0;
+	while (ap_opts[i].short_name != '\0') {
+		if (ap_opts[i].short_name == -1) {
+			if (strcmp(ap_opts[i].long_name, av[optind]) == 0)
+				ap_opts[i].handler(ac - optind - 1,
+				                   av + optind + 1);
+		}
+		i++;
+	}
+
 	return 0;
 }

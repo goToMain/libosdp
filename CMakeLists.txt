@@ -77,14 +77,14 @@ add_custom_target(check
 ## osdpctl
 set(BIN_OSDPCTL osdpctl)
 list(APPEND BIN_OSDPCTL_SRC
+	"osdpctl/arg_parser.c"
+	"osdpctl/ini.c"
 	"osdpctl/rs232.c"
 	"osdpctl/uart.c"
-	"osdpctl/arg-parser.c"
 	"osdpctl/osdpctl.c"
 )
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
 target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} osdp)
-set_target_properties(${BIN_OSDPCTL} PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 ## Install
 set(CMAKE_INSTALL_DIR $ENV{INSTALL_PREFIX})

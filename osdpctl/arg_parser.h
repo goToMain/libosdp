@@ -28,7 +28,7 @@ struct ap_option {
 	const char *help;
 };
 
-#define AP_STORE_INT(s, m
+#define AP_STORE_INT(s, m) 	AP_TYPE_INT,  (size_t)&(((s *)0)->m), (sizeof(int))
 #define AP_STORE_STR(s, m, l)	AP_TYPE_STR,  (size_t)&(((s *)0)->m), (l)
 #define AP_STORE_BOOL(s, m)	AP_TYPE_BOOL, (size_t)&(((s *)0)->m), (sizeof(int))
 #define AP_STORE_HEX(s, m, l)	AP_TYPE_HEX,  (size_t)&(((s *)0)->m), (l)

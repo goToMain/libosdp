@@ -25,8 +25,8 @@ ADD_CUSTOM_COMMAND(
 )
 
 ## Options
-option(CONFIG_OSDP_BUILD_STATIC "Build: Build static archive for libosdp" OFF)
-option(CONFIG_OSDP_PACKET_TRACE "Diagnostics: enable OSDP raw packet trace" OFF)
+option(CONFIG_OSDP_BUILD_STATIC "Build static archive (in addition to shared library)" OFF)
+option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

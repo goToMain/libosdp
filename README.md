@@ -48,9 +48,21 @@ make check
 make DESTDIR=/your/install/path install
 ```
 
-## Add libosdp to your cmake project
+## Compile-time configuration options
 
-If you are familer with cmake, then adding libosdp to your project is super
+LibOSDP can can be configured to enable/disable certain featured by passing the
+`-DCONFIG_XXX=ON/OFF` flag to cmake. Following table lists all such config
+switches.  For instance, if you want to also build static library, you can pass
+the flag `-DCONFIG_OSDP_BUILD_STATIC=ON` to cmake.
+
+| OPTION                           | Default | Description                                            |
+|:---------------------------------|:-------:|:-------------------------------------------------------|
+| CONFIG_OSDP_BUILD_STATIC         |   OFF   | Build static archive (in addition to shared library)   |
+| CONFIG_OSDP_PACKET_TRACE         |   OFF   | Enable raw packet trace for diagnostics                |
+
+## Add LibOSDP to your cmake project
+
+If you are familiar with cmake, then adding LibOSDP to your project is super
 simple. First off, add the following to your CMakeLists.txt
 
 ```cmake
@@ -86,7 +98,7 @@ target_link_libraries(${OSDP_APP} osdp)
 
 ## Cross Compiling:
 
-libosdp can be compiled with your cross compiler by passing a toolchain file to
+LibOSDP can be compiled with your cross compiler by passing a toolchain file to
 cmake. This can be done by invoking cmake with the command line argument
 `-DCMAKE_TOOLCHAIN_FILE=/path/to/toolchain-file.cmake`.
 
@@ -114,7 +126,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 ```
 
 For convenience, the `toolchain-file.cmake` file can be placed in a common path
-(probabaly where the toolchain is installed) and referenced from our build
+(probably where the toolchain is installed) and referenced from our build
 directory.
 
 ```sh

@@ -70,7 +70,7 @@ int config_parse_key_channel_speed(const char *val, void *data)
 		printf("Invalid baudrate %d\n", baud);
 		return INI_FAILURE;
 	}
-	p->baud_rate = baud;
+	p->channel_speed = baud;
 
 	return INI_SUCCESS;
 }
@@ -126,6 +126,54 @@ int config_parse_key_address(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
+int config_parse_key_vendor_code(const char *val, void *data)
+{
+	struct config_s *p = data;
+	int i = atoi(val);
+
+	if (i == 0)
+		return INI_FAILURE;
+	p->vendor_code = i;
+
+	return INI_SUCCESS;
+}
+
+int config_parse_key_model(const char *val, void *data)
+{
+	struct config_s *p = data;
+	int i = atoi(val);
+
+	if (i == 0)
+		return INI_FAILURE;
+	p->model = i;
+
+	return INI_SUCCESS;
+}
+
+int config_parse_key_version(const char *val, void *data)
+{
+	struct config_s *p = data;
+	int i = atoi(val);
+
+	if (i == 0)
+		return INI_FAILURE;
+	p->version = i;
+
+	return INI_SUCCESS;
+}
+
+int config_parse_serial_number(const char *val, void *data)
+{
+	struct config_s *p = data;
+	int i = atoi(val);
+
+	if (i == 0)
+		return INI_FAILURE;
+	p->serial_number = i;
+
+	return INI_SUCCESS;
+}
+
 struct config_key_s {
 	const char *key;
 	int (*handler)(const char *val, void *data);
@@ -148,6 +196,10 @@ const struct config_key_s g_config_key_cp[] = {
 
 const struct config_key_s g_config_key_pd[] = {
 	{ "address", 		config_parse_key_address },
+	{ "vendor_code",	config_parse_key_vendor_code },
+	{ "model",		config_parse_key_model },
+	{ "version",		config_parse_key_version },
+	{ "serial_number",	config_parse_serial_number },
 	{ NULL, NULL }
 };
 
@@ -206,7 +258,7 @@ void config_print(struct config_s *config)
 
 	printf("GLOBAL:\n");
 	printf("mode: %d\n", config->osdp_mode);
-	printf("channel_speed: %d\n", config->baud_rate);
+	printf("channel_speed: %d\n", config->channel_speed);
 	printf("channel_type: %d\n", config->channel_type);
 	printf("channel_topology: %d\n", config->channel_topology);
 	printf("channel_device: %s\n", config->channel_device);
@@ -218,6 +270,10 @@ void config_print(struct config_s *config)
 
 	printf("\nPD:\n");
 	printf("address: %d\n", config->pd_address);
+	printf("vendor_code: %d\n", config->vendor_code);
+	printf("model: %d\n", config->model);
+	printf("version: %d\n", config->version);
+	printf("serial_number: 0x%08x\n", config->serial_number);
 
 	printf("\n--- END ---\n\n");
 }

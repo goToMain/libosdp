@@ -29,14 +29,26 @@ enum config_channel_type_e {
 };
 
 struct config_s {
-	int pd_address;
-	int baud_rate;
+	/* GLOBAL */
 	int osdp_mode;
 	char *channel_device;
 	int channel_type;
 	int channel_topology;
+	int channel_speed;
+
+	/* CP */
 	int num_pd;
 	uint8_t master_key[16];
+
+	/* PD */
+	int pd_address;
+	int vendor_code;
+	int model;
+	int version;
+	int serial_number;
+
+	/* cli_args */
+	int dump_config;
 	char *config_file;
 };
 

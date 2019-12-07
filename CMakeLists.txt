@@ -77,11 +77,14 @@ add_custom_target(check
 ## osdpctl
 set(BIN_OSDPCTL osdpctl)
 list(APPEND BIN_OSDPCTL_SRC
-	"osdpctl/arg_parser.c"
 	"osdpctl/ini.c"
+	"osdpctl/config_parser.c"
+	"osdpctl/arg_parser.c"
+	"osdpctl/strutils.c"
 	"osdpctl/rs232.c"
 	"osdpctl/uart.c"
 	"osdpctl/osdpctl.c"
+	"osdpctl/cmd_start.c"
 )
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
 target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} osdp)

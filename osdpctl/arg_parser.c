@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2019 Siddharth Chandrasekaran
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -7,8 +13,60 @@
 
 #define is_lower_alpha(x) (x >= 97 && x <= 122)
 
+#define xstr(s) #s
+#define str(s) xstr(s)
+#define PAD str(AP_HELP_SPACING)
+
 const char *ap_app_name;
 const char *ap_app_desc;
+
+void ap_print_help(struct ap_option *ap_opts, int exit_code)
+{
+	int count;
+	char opt_str[64];
+	struct ap_option *ap_opt;
+
+	if (ap_app_name && exit_code == 0)
+		printf("%s - %s\n", ap_app_name, ap_app_desc);
+
+	printf("\nUsage:  %s [arguments] [commands]\n", ap_app_name);
+
+	printf("\nArguments:\n");
+
+	ap_opt = ap_opts;
+	while (ap_opt->short_name != '\0') {
+		if (ap_opt->short_name == -1) {
+			ap_opt++;
+			continue;
+		}
+
+		if (ap_opt->type == AP_TYPE_BOOL) {
+			snprintf(opt_str, 64, "%s", ap_opt->long_name);
+		} else {
+			snprintf(opt_str, 64, "%s <%s>",
+				 ap_opt->long_name, ap_opt->opt_name);
+		}
+		printf("  -%c, --%-"PAD"s %s\n", ap_opt->short_name, opt_str,
+			       ap_opt->help);
+		ap_opt++;
+	}
+	printf("  -h, --%-"PAD"s Print this help message\n", "help");
+
+	count = 0;
+	ap_opt = ap_opts;
+	while (ap_opt->short_name != '\0') {
+		if (ap_opt->short_name != -1) {
+			ap_opt++;
+			continue;
+		}
+		if (count == 0)
+			printf("\nCommands:\n");
+		printf("  %-"PAD"s       %s", ap_opt->long_name, ap_opt->help);
+		ap_opt++; count++;
+	}
+
+	exit(exit_code);
+}
 
 void ap_init(const char *app_name, const char *app_desc)
 {
@@ -16,111 +74,39 @@ void ap_init(const char *app_name, const char *app_desc)
 	ap_app_desc = app_desc;
 }
 
-void ap_print_help(struct ap_option *ap_opts)
+int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 {
-	int i, l, count;
-	char tmp1[64], tmp2[64];
-	struct ap_option *ap_opt;
-
-	if (ap_app_name)
-		printf("%s - %s\n", ap_app_name, ap_app_desc);
-
-	printf("\nArguments:\n");
-
-	ap_opt = ap_opts;
-	while (ap_opt != NULL && ap_opt->short_name != '\0') {
-		if (ap_opt->short_name == -1) {
-			ap_opt++;
-			continue;
-		}
-
-		if (ap_opt->flags & AP_TYPE_BOOL) {
-			printf("  -%c, --%-28s \t%s\n",
-			       ap_opt->short_name, ap_opt->long_name,
-			       ap_opt->help);
-		} else {
-			strncpy(tmp1, ap_opt->long_name, 63);
-			tmp1[63] = 0;
-			l = strlen(tmp1);
-			for (i = 0; i < l; i++) {
-				if (is_lower_alpha(tmp1[i]))
-					tmp1[i] &= ~0x20;
-			}
-			snprintf(tmp2, 64, "--%s <%s>", ap_opt->long_name, tmp1);
-			printf("  -%c, %-30s \t%s\n", ap_opt->short_name, tmp2,
-			       ap_opt->help);
-		}
-		ap_opt++;
-	}
-	printf("  -h, %-30s \tPrint this help message\n", "--help");
-
-	count = 0;
-	ap_opt = ap_opts;
-	while (ap_opt != NULL && ap_opt->short_name != '\0') {
-		if (ap_opt->short_name != -1) {
-			ap_opt++;
-			continue;
-		}
-		if (count == 0)
-			printf("\nCommands:\n");
-		printf("  %-33s \t%s", ap_opt->long_name, ap_opt->help);
-		ap_opt++; count++;
-	}
-}
-
-int hex_string_to_array(const char *hex_string, unsigned char *arr, int maxlen)
-{
-	int i, len;
-	unsigned char tmp[64];
-
-	len = strlen(hex_string) / 2;
-	if (len > 64)
-		return -1;
-
-	if (len > maxlen)
-	len = maxlen;
-
-	for (i=0; i<len; i++) {
-		if (sscanf(&(hex_string[i * 2]), "%2hhx", &(tmp[i])) != 1)
-			return -1;
-	}
-
-	memcpy(arr, tmp, len);
-	return 0;
-}
-
-
-int ap_parse(int ac, char **av, struct ap_option *ap_opts, void *data)
-{
-	char *cval;
+	char **cval;
 	char ostr[128];
 	struct option *opts, *opt;
 	struct ap_option *ap_opt;
-	int i, j, c, r, opts_len = 0, opt_idx = 0, olen = 0, *ival;
+	int i, c, ret, opts_len = 0, cmd_len = 0, opt_idx = 0, olen = 0, *ival;
 
-	i = 0;
-	while (ap_opts[i].short_name != '\0') {
-		if (ap_opts[i].short_name != -1)
+	ap_opt = ap_opts;
+	while (ap_opt->short_name != '\0') {
+		if (ap_opt->short_name != -1)
 			opts_len++;
-		i++;
+		else
+			cmd_len++;
+		ap_opt++;
 	}
 
 	opts = malloc(sizeof (struct option) * opts_len + 1);
 	if (opts == NULL) {
-		printf("AP Alloc error\n");
+		printf("Error: alloc error\n");
 		exit(-1);
 	}
 
-	i = 0; j = 0;
-	while (ap_opts[i].short_name != '\0') {
-		if (ap_opts[i].short_name == -1) {
-			i++;
+	i = 0;
+	ap_opt = ap_opts;
+	while (ap_opt->short_name != '\0') {
+		if (ap_opt->short_name == -1) {
+			ap_opt++;
 			continue;
 		}
-		ap_opt = ap_opts + i;
-		opt = opts + j;
-		opt->name = ap_opts->long_name;
-		if (ap_opt->flags & AP_TYPE_BOOL) {
+		opt = opts + i++;
+		opt->name = ap_opt->long_name;
+		if (ap_opt->type == AP_TYPE_BOOL) {
 			opt->has_arg = no_argument;
 			olen += snprintf(ostr + olen, 128 - olen,
 			                 "%c", ap_opt->short_name);
@@ -131,27 +117,25 @@ int ap_parse(int ac, char **av, struct ap_option *ap_opts, void *data)
 		}
 		opt->flag = 0;
 		opt->val = ap_opt->short_name;
-		i++; j++;
+		ap_opt++;
 	}
 
+	/* add help option */
 	opt = opts + i;
 	opt->name = "help";
 	opt->val = 'h';
 	olen += snprintf(ostr + olen, 128 - olen, "h");
 
-	while ((c = getopt_long(ac, av, ostr, opts, &opt_idx)) >= 0) {
-		for (i = 0; i < opts_len; i++) {
-			if (c == ap_opts[i].short_name)
-				break;
-		}
-		if (c == 'h') {
-			ap_print_help(ap_opts);
-			exit(0);
-		}
-		if (i >= opts_len) {
-			ap_print_help(ap_opts);
-			exit(-1);
-		}
+	while ((c = getopt_long(argc, argv, ostr, opts, &opt_idx)) >= 0) {
+
+		/* find c in ap_opt->short_name */
+		for (i = 0; i < opts_len && c != ap_opts[i].short_name; i++);
+
+		if (c == 'h')
+			ap_print_help(ap_opts, 0);
+
+		if (c == '?')
+			ap_print_help(ap_opts, -1);
 
 		switch (ap_opts[i].type) {
 		case AP_TYPE_BOOL:
@@ -159,60 +143,47 @@ int ap_parse(int ac, char **av, struct ap_option *ap_opts, void *data)
 			*ival = 1;
 			break;
 		case AP_TYPE_STR:
-			cval = (char *)((char *)data + ap_opts[i].offset);
-			strncpy(cval, optarg, ap_opts[i].length - 1);
-			cval[ap_opts[i].length - 1] = 0;
+			cval = (char **)(((char *)data) + ap_opts[i].offset);
+			*cval = strdup(optarg);
 			break;
 		case AP_TYPE_INT:
 			ival = (int *)((char *)data + ap_opts[i].offset);
 			*ival = atoi(optarg);
 			break;
-		case AP_TYPE_HEX:
-			cval = (char *)((char *)data + ap_opts[i].offset);
-			r = hex_string_to_array(optarg, (unsigned char *)cval,
-						ap_opts[i].length);
-			if (r != 0) {
-				printf("Error parsing argument '%c'\n", c);
-				exit(-1);
-			}
-			break;
 		default:
-			printf("AP invalid type\n");
+			printf("Error: invalid arg type\n");
 			exit(-1);
 		}
 		if (ap_opts[i].validator) {
-			r = ap_opts[i].validator(data);
-			if (r != 0)
+			ret = ap_opts[i].validator(data);
+			if (ret != 0)
 				exit(-1);
 		}
 		ap_opts[i].flags |= AP_OPT_SEEN;
 	}
-
 	free(opts);
 
-	i = 0;
-	while (ap_opts[i].short_name != '\0') {
-		if (ap_opts[i].short_name != -1) {
-			if (ap_opts[i].flags & AP_OPT_REQUIRED &&
-			    (ap_opts[i].flags & AP_OPT_SEEN) == 0U) {
-				printf("Mandatory arg '%c' not provided\n",
-					ap_opts[i].short_name);
-				ap_print_help(ap_opts);
-				exit(-1);
+	ret = 0;
+	ap_opt = ap_opts;
+	while (ap_opt->short_name != '\0') {
+		if (ap_opt->short_name != -1) {
+			if (ap_opt->flags & AP_OPT_REQUIRED &&
+			   (ap_opt->flags & AP_OPT_SEEN) == 0U) {
+				printf("Error: arg '%c' is mandatory\n\n",
+					ap_opt->short_name);
+				ap_print_help(ap_opts, -1);
 			}
+		} else if (argv[optind]) {
+			if (strcmp(ap_opt->long_name, argv[optind]) == 0)
+				ret = 1;
 		}
-		i++;
+		ap_opt++;
 	}
 
-	i = 0;
-	while (ap_opts[i].short_name != '\0') {
-		if (ap_opts[i].short_name == -1) {
-			if (strcmp(ap_opts[i].long_name, av[optind]) == 0)
-				ap_opts[i].handler(ac - optind - 1,
-				                   av + optind + 1);
-		}
-		i++;
+	if (cmd_len && argv[optind] && ret == 0) {
+		printf("Error: unknown command %s\n\n", argv[optind]);
+		ap_print_help(ap_opts, -1);
 	}
 
-	return 0;
+	return optind;
 }

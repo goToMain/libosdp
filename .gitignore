@@ -55,4 +55,5 @@ dkms.conf
 .vscode/
 build/
 build-*/
+xcode/
 *.patch

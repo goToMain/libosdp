@@ -154,7 +154,7 @@ typedef struct {
 	 * Returns:
 	 *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
 	 */
-	int (*send_func) (uint8_t * buf, int len);
+	int (*send_func) (uint8_t *buf, int len);
 
 	/**
 	 * recv_func - Copies received bytes into buffer
@@ -164,7 +164,7 @@ typedef struct {
 	 * Returns:
 	 *  +ve: number of bytes copied on to `bug`. Must be <= `len`
 	 */
-	int (*recv_func) (uint8_t * buf, int len);
+	int (*recv_func) (uint8_t *buf, int len);
 
 } osdp_pd_info_t;
 
@@ -186,22 +186,23 @@ struct osdp_cp_notifiers {
 
 osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 void osdp_set_log_level(int log_level);
-void osdp_cp_refresh(osdp_cp_t * ctx);
-void osdp_cp_teardown(osdp_cp_t * ctx);
+void osdp_cp_refresh(osdp_cp_t *ctx);
+void osdp_cp_teardown(osdp_cp_t *ctx);
 
-int osdp_cp_set_callback_key_press(osdp_cp_t * ctx, int (*cb) (int address, uint8_t key));
-int osdp_cp_set_callback_card_read(osdp_cp_t * ctx, int (*cb) (int address, int format, uint8_t * data, int len));
+int osdp_cp_set_callback_key_press(osdp_cp_t *ctx, int (*cb) (int address, uint8_t key));
+int osdp_cp_set_callback_card_read(osdp_cp_t *ctx, int (*cb) (int address, int format, uint8_t * data, int len));
 
-int osdp_cp_send_cmd_output(osdp_cp_t * ctx, int pd, struct osdp_cmd_output *p);
-int osdp_cp_send_cmd_led(osdp_cp_t * ctx, int pd, struct osdp_cmd_led *p);
-int osdp_cp_send_cmd_buzzer(osdp_cp_t * ctx, int pd, struct osdp_cmd_buzzer *p);
-int osdp_cp_send_cmd_comset(osdp_cp_t * ctx, int pd, struct osdp_cmd_comset *p);
+int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p);
+int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p);
+int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
+int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p);
 int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p);
 
 /* --- PD Only --- */
 
 osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
-void osdp_pd_teardown(osdp_pd_t * ctx);
+void osdp_pd_teardown(osdp_pd_t *ctx);
+void osdp_pd_refresh(osdp_pd_t *ctx);
 void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p));
 void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p));
 void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_output *p));

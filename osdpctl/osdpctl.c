@@ -27,7 +27,7 @@ struct ap_option ap_opts[] = {
 	{
 		AP_ARG('d', "dump-config", ""),
 		AP_STORE_BOOL(struct config_s, dump_config),
-		AP_FLAGS(AP_OPT_REQUIRED),
+		AP_FLAGS(AP_OPT_NOFLAG),
 		AP_VALIDATOR(NULL),
 		AP_HELP("Print parsed config and exit")
 	},

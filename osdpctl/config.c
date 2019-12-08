@@ -163,7 +163,7 @@ int config_parse_key_vendor_code(const char *val, void *data)
 
 	if (safe_atoi(val, &i))
 		return INI_FAILURE;
-	p->vendor_code = i;
+	p->id.vendor_code = (uint32_t)i;
 
 	return INI_SUCCESS;
 }
@@ -175,7 +175,7 @@ int config_parse_key_model(const char *val, void *data)
 
 	if (safe_atoi(val, &i))
 		return INI_FAILURE;
-	p->model = i;
+	p->id.model = i;
 
 	return INI_SUCCESS;
 }
@@ -187,7 +187,7 @@ int config_parse_key_version(const char *val, void *data)
 
 	if (safe_atoi(val, &i))
 		return INI_FAILURE;
-	p->version = i;
+	p->id.version = i;
 
 	return INI_SUCCESS;
 }
@@ -199,7 +199,19 @@ int config_parse_serial_number(const char *val, void *data)
 
 	if (safe_atoi(val, &i))
 		return INI_FAILURE;
-	p->serial_number = i;
+	p->id.serial_number = (uint32_t)i;
+
+	return INI_SUCCESS;
+}
+
+int confif_parse_firmware_version(const char *val, void *data)
+{
+	struct config_pd_s *p = data;
+	int i;
+
+	if (safe_atoi(val, &i))
+		return INI_FAILURE;
+	p->id.firmware_version = (uint32_t)i;
 
 	return INI_SUCCESS;
 }
@@ -230,10 +242,57 @@ const struct config_key_s g_config_key_pd[] = {
 	{ "model",		config_parse_key_model },
 	{ "version",		config_parse_key_version },
 	{ "serial_number",	config_parse_serial_number },
+	{ "firmware_version",	confif_parse_firmware_version },
 	{ NULL, NULL }
 };
 
-int config_key_parse(const char *key, const char*val,
+const char *cap_names[CAP_SENTINEL] = {
+	[CAP_UNUSED]				= "NULL",
+	[CAP_CONTACT_STATUS_MONITORING]		= "contact_status_monitoring",
+	[CAP_OUTPUT_CONTROL]			= "output_control",
+	[CAP_CARD_DATA_FORMAT]			= "card_data_format",
+	[CAP_READER_LED_CONTROL]		= "reader_led_control",
+	[CAP_READER_AUDIBLE_OUTPUT]		= "reader_audible_control",
+	[CAP_READER_TEXT_OUTPUT]		= "reader_text_output",
+	[CAP_TIME_KEEPING]			= "time_keeping",
+	[CAP_CHECK_CHARACTER_SUPPORT]		= "check_character_support",
+	[CAP_COMMUNICATION_SECURITY]		= "communication_security",
+	[CAP_RECEIVE_BUFFERSIZE]		= "receive_buffersize",
+	[CAP_LARGEST_COMBINED_MESSAGE_SIZE]	= "largest_combined_message_size",
+	[CAP_SMART_CARD_SUPPORT]		= "smart_card_support",
+	[CAP_READERS]				= "readers",
+	[CAP_BIOMETRICS]			= "biometrics"
+};
+
+int config_key_parse_cap(const char *key, const char *val, void *data)
+{
+	char *token;
+	int i, j, len, ival[2];
+	struct config_pd_s *p = data;
+
+	for (i = 1; i < CAP_SENTINEL; i++) {
+		len = strlen(cap_names[i]);
+		if (strncmp(key, cap_names[i], len) == 0)
+			break;
+	}
+
+	if (i >= CAP_SENTINEL)
+		return INI_FAILURE;
+
+	j = 0;
+	token = strtok((char *)val, ",");
+	while (token != NULL) {
+		if (safe_atoi(token, &ival[j++]))
+			return INI_FAILURE;
+		token = strtok(NULL, ",");
+	}
+	p->cap[i].num_items = (uint8_t)ival[0];
+	p->cap[i].compliance_level = (uint8_t)ival[1];
+
+	return INI_SUCCESS;
+}
+
+int config_key_parse(const char *key, const char *val,
 		     const struct config_key_s *p, void *data)
 {
 	while(p && p->key) {
@@ -267,6 +326,10 @@ int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
 		if (safe_atoi(sec + 3, &id))
 			return INI_FAILURE;
 		pd = p->pd + id;
+
+		if (strncmp("cap.", key, 4) == 0)
+			return config_key_parse_cap(key + 4, val, (void *)pd);
+
 		return config_key_parse(key, val, g_config_key_pd, (void *)pd);
 	}
 
@@ -290,7 +353,7 @@ void config_parse(const char *filename, struct config_s *config)
 		exit(-1);
 	}
 	if (ret > 0) {
-		printf("Error parsing file %s at line %d", filename, ret);
+		printf("Error: parsing file %s at line %d\n", filename, ret);
 		exit(-1);
 	}
 }
@@ -319,10 +382,10 @@ void config_print(struct config_s *config)
 		printf("channel_type: %d\n", pd->channel_type);
 		printf("channel_device: %s\n", pd->channel_device);
 		printf("address: %d\n", pd->address);
-		printf("vendor_code: %d\n", pd->vendor_code);
-		printf("model: %d\n", pd->model);
-		printf("version: %d\n", pd->version);
-		printf("serial_number: 0x%08x\n", pd->serial_number);
+		printf("vendor_code: %d\n", pd->id.vendor_code);
+		printf("model: %d\n", pd->id.model);
+		printf("version: %d\n", pd->id.version);
+		printf("serial_number: 0x%08x\n", pd->id.serial_number);
 	}
 
 	printf("\n--- END ---\n\n");

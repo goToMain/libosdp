@@ -181,7 +181,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	}
 
 	if (cmd_len && argv[optind] && ret == 0) {
-		printf("Error: unknown command %s\n\n", argv[optind]);
+		printf("Error: unknown command '%s'\n\n", argv[optind]);
 		ap_print_help(ap_opts, -1);
 	}
 

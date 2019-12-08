@@ -8,8 +8,10 @@
 #define _OSDPCTL_COMMON_H_
 
 #include <stdint.h>
+#include <osdp.h>
 
 #define CONFIG_FILE_PATH_LENGTH		128
+#define ARG_UNUSED(x)			(void)(x)
 
 enum config_osdp_mode_e {
 	CONFIG_MODE_CP=1,
@@ -33,10 +35,8 @@ struct config_pd_s {
 	int channel_speed;
 
 	int address;
-	int vendor_code;
-	int model;
-	int version;
-	int serial_number;
+	struct pd_id id;
+	struct pd_cap cap[CAP_SENTINEL];
 };
 
 struct config_cp_s {

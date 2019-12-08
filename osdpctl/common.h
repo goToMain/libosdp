@@ -28,6 +28,10 @@ enum config_channel_type_e {
 };
 
 struct config_pd_s {
+	char *channel_device;
+	int channel_type;
+	int channel_speed;
+
 	int address;
 	int vendor_code;
 	int model;
@@ -36,17 +40,14 @@ struct config_pd_s {
 };
 
 struct config_cp_s {
-	int num_pd;
 	uint8_t master_key[16];
 };
 
 struct config_s {
 	/* ini section: "^GLOBAL" */
 	int mode;
-	char *channel_device;
-	int channel_type;
-	int channel_topology;
-	int channel_speed;
+	int num_pd;
+	int conn_topology;
 
 	/* ini section: "^CP" */
 	struct config_cp_s cp;

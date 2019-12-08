@@ -29,7 +29,7 @@ int config_parse_key_mode(const char *val, void *data)
 			printf("Error PD alloc failed!\n");
 			exit(-1);
 		}
-		p->cp.num_pd = 1;
+		p->num_pd = 1;
 		p->mode = CONFIG_MODE_PD;
 	} else {
 		return INI_FAILURE;
@@ -43,9 +43,9 @@ int config_parse_key_channel_topology(const char *val, void *data)
 	struct config_s *p = data;
 
 	if (strcmp(val, "chain") == 0)
-		p->channel_topology = CONFIG_CHANNEL_TOPOLOGY_CHAIN;
+		p->conn_topology = CONFIG_CHANNEL_TOPOLOGY_CHAIN;
 	else if (strcmp(val, "star") == 0)
-		p->channel_topology = CONFIG_CHANNEL_TOPOLOGY_STAR;
+		p->conn_topology = CONFIG_CHANNEL_TOPOLOGY_STAR;
 	else
 		return INI_FAILURE;
 
@@ -54,7 +54,7 @@ int config_parse_key_channel_topology(const char *val, void *data)
 
 int config_parse_key_channel_type(const char *val, void *data)
 {
-	struct config_s *p = data;
+	struct config_pd_s *p = data;
 
 	if (strcmp(val, "uart") == 0)
 		p->channel_type = CONFIG_CHANNEL_TYPE_UART;
@@ -70,7 +70,7 @@ int config_parse_key_channel_type(const char *val, void *data)
 
 int config_parse_key_channel_speed(const char *val, void *data)
 {
-	struct config_s *p = data;
+	struct config_pd_s *p = data;
 	int baud;
 
 	if (safe_atoi(val, &baud))
@@ -87,7 +87,7 @@ int config_parse_key_channel_speed(const char *val, void *data)
 
 int config_parse_key_channel_device(const char *val, void *data)
 {
-	struct config_s *p = data;
+	struct config_pd_s *p = data;
 
 	if (access(val, F_OK) == -1) {
 		printf("device %s does not exist\n", val);
@@ -122,7 +122,7 @@ int config_parse_key_num_pd(const char *val, void *data)
 		}
 	}
 
-	p->cp.num_pd = num_pd;
+	p->num_pd = num_pd;
 
 	return INI_SUCCESS;
 }
@@ -211,20 +211,20 @@ struct config_key_s {
 
 const struct config_key_s g_config_key_global[] = {
 	{ "mode",		config_parse_key_mode },
-	{ "channel_topology",	config_parse_key_channel_topology },
-	{ "channel_type",	config_parse_key_channel_type },
-	{ "channel_speed",	config_parse_key_channel_speed },
-	{ "channel_device",	config_parse_key_channel_device },
+	{ "num_pd",		config_parse_key_num_pd },
+	{ "conn_topology",	config_parse_key_channel_topology },
 	{ NULL, NULL }
 };
 
 const struct config_key_s g_config_key_cp[] = {
-	{ "num_pd",		config_parse_key_num_pd },
 	{ "master_key",		config_parse_key_master_key },
 	{ NULL, NULL }
 };
 
 const struct config_key_s g_config_key_pd[] = {
+	{ "channel_type",	config_parse_key_channel_type },
+	{ "channel_speed",	config_parse_key_channel_speed },
+	{ "channel_device",	config_parse_key_channel_device },
 	{ "address", 		config_parse_key_address },
 	{ "vendor_code",	config_parse_key_vendor_code },
 	{ "model",		config_parse_key_model },
@@ -305,19 +305,19 @@ void config_print(struct config_s *config)
 
 	printf("GLOBAL:\n");
 	printf("mode: %d\n", config->mode);
-	printf("channel_speed: %d\n", config->channel_speed);
-	printf("channel_type: %d\n", config->channel_type);
-	printf("channel_topology: %d\n", config->channel_topology);
-	printf("channel_device: %s\n", config->channel_device);
+	printf("conn_topology: %d\n", config->conn_topology);
 
 	printf("\nCP:\n");
-	printf("num_pd: %d\n", config->cp.num_pd);
+	printf("num_pd: %d\n", config->num_pd);
 	atohstr(tmp, config->cp.master_key, 16);
 	printf("master_key: %s\n", tmp);
 
-	for (i = 0; i < config->cp.num_pd; i++) {
+	for (i = 0; i < config->num_pd; i++) {
 		pd = config->pd + i;
 		printf("\nPD-%d:\n", i);
+		printf("channel_speed: %d\n", pd->channel_speed);
+		printf("channel_type: %d\n", pd->channel_type);
+		printf("channel_device: %s\n", pd->channel_device);
 		printf("address: %d\n", pd->address);
 		printf("vendor_code: %d\n", pd->vendor_code);
 		printf("model: %d\n", pd->model);

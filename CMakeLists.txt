@@ -78,9 +78,9 @@ add_custom_target(check
 set(BIN_OSDPCTL osdpctl)
 list(APPEND BIN_OSDPCTL_SRC
 	"osdpctl/ini.c"
-	"osdpctl/config_parser.c"
+	"osdpctl/config.c"
 	"osdpctl/arg_parser.c"
-	"osdpctl/strutils.c"
+	"osdpctl/utils.c"
 	"osdpctl/rs232.c"
 	"osdpctl/uart.c"
 	"osdpctl/osdpctl.c"

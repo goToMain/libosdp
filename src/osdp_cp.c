@@ -722,8 +722,8 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info, uint8_t *master_key)
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
 		pd = to_pd(ctx, i);
-		ctx->pd->queue = calloc(1, sizeof(struct cmd_queue));
-		if (ctx->pd->queue == NULL) {
+		pd->queue = calloc(1, sizeof(struct cmd_queue));
+		if (pd->queue == NULL) {
 			LOG_E(TAG "failed to alloc pd->cmd_queue");
 			goto malloc_err;
 		}

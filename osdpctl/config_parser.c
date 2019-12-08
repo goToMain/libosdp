@@ -21,12 +21,19 @@ int config_parse_key_mode(const char *val, void *data)
 {
 	struct config_s *p = data;
 
-	if (strcmp(val, "CP") != 0)
-		p->osdp_mode = CONFIG_OSDP_MODE_CP;
-	else if (strcmp(val, "PD") != 0)
-		p->osdp_mode = CONFIG_OSDP_MODE_PD;
-	else
+	if (strcmp(val, "CP") == 0) {
+		p->mode = CONFIG_MODE_CP;
+	} else if (strcmp(val, "PD") == 0) {
+		p->pd = calloc(1, sizeof(struct config_pd_s));
+		if (p->pd == NULL) {
+			printf("Error PD alloc failed!\n");
+			exit(-1);
+		}
+		p->cp.num_pd = 1;
+		p->mode = CONFIG_MODE_PD;
+	} else {
 		return INI_FAILURE;
+	}
 
 	return INI_SUCCESS;
 }
@@ -64,7 +71,10 @@ int config_parse_key_channel_type(const char *val, void *data)
 int config_parse_key_channel_speed(const char *val, void *data)
 {
 	struct config_s *p = data;
-	int baud = atoi(val);
+	int baud;
+
+	if (safe_atoi(val, &baud))
+		return INI_FAILURE;
 
 	if (baud != 9600 && baud != 38400 && baud != 115200) {
 		printf("Invalid baudrate %d\n", baud);
@@ -91,11 +101,28 @@ int config_parse_key_channel_device(const char *val, void *data)
 int config_parse_key_num_pd(const char *val, void *data)
 {
 	struct config_s *p = data;
-	int num_pd = atoi(val);
+	int num_pd;
+
+	if (safe_atoi(val, &num_pd))
+		return INI_FAILURE;
 
 	if (num_pd == 0)
 		return INI_FAILURE;
-	p->num_pd = num_pd;
+
+	if (p->mode == CONFIG_MODE_PD) {
+		if (num_pd != 1) {
+			printf("num_pd must be 1 for PD mode\n");
+			return INI_FAILURE;
+		}
+	} else {
+		p->pd = calloc(num_pd, sizeof(struct config_pd_s));
+		if (p->pd == NULL) {
+			printf("Error PD alloc failed!\n");
+			exit(-1);
+		}
+	}
+
+	p->cp.num_pd = num_pd;
 
 	return INI_SUCCESS;
 }
@@ -109,29 +136,32 @@ int config_parse_key_master_key(const char* val, void *data)
 		printf("Failed to parse master key\n");
 		return INI_FAILURE;
 	}
-	memcpy(p->master_key, tmp, 16);
+	memcpy(p->cp.master_key, tmp, 16);
 
 	return INI_SUCCESS;
 }
 
 int config_parse_key_address(const char *val, void *data)
 {
-	struct config_s *p = data;
-	int addr = atoi(val);
+	struct config_pd_s *p = data;
+	int addr;
 
-	if (addr == 0)
+	if (safe_atoi(val, &addr))
 		return INI_FAILURE;
-	p->pd_address = addr;
+
+	if (addr == 0 || addr > 127)
+		return INI_FAILURE;
+	p->address = addr;
 
 	return INI_SUCCESS;
 }
 
 int config_parse_key_vendor_code(const char *val, void *data)
 {
-	struct config_s *p = data;
-	int i = atoi(val);
+	struct config_pd_s *p = data;
+	int i;
 
-	if (i == 0)
+	if (safe_atoi(val, &i))
 		return INI_FAILURE;
 	p->vendor_code = i;
 
@@ -140,10 +170,10 @@ int config_parse_key_vendor_code(const char *val, void *data)
 
 int config_parse_key_model(const char *val, void *data)
 {
-	struct config_s *p = data;
-	int i = atoi(val);
+	struct config_pd_s *p = data;
+	int i;
 
-	if (i == 0)
+	if (safe_atoi(val, &i))
 		return INI_FAILURE;
 	p->model = i;
 
@@ -152,10 +182,10 @@ int config_parse_key_model(const char *val, void *data)
 
 int config_parse_key_version(const char *val, void *data)
 {
-	struct config_s *p = data;
-	int i = atoi(val);
+	struct config_pd_s *p = data;
+	int i;
 
-	if (i == 0)
+	if (safe_atoi(val, &i))
 		return INI_FAILURE;
 	p->version = i;
 
@@ -164,10 +194,10 @@ int config_parse_key_version(const char *val, void *data)
 
 int config_parse_serial_number(const char *val, void *data)
 {
-	struct config_s *p = data;
-	int i = atoi(val);
+	struct config_pd_s *p = data;
+	int i;
 
-	if (i == 0)
+	if (safe_atoi(val, &i))
 		return INI_FAILURE;
 	p->serial_number = i;
 
@@ -218,12 +248,27 @@ int config_key_parse(const char *key, const char*val,
 
 int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
 {
+	int id;
+	struct config_s *p = data;
+	struct config_pd_s *pd;
+
 	if (strcmp("GLOBAL", sec) == 0)
 		return config_key_parse(key, val, g_config_key_global, data);
 	if (strcmp("CP", sec) == 0)
 		return config_key_parse(key, val, g_config_key_cp, data);
-	if (strcmp("PD", sec) == 0)
-		return config_key_parse(key, val, g_config_key_pd, data);
+	if (strncmp("PD", sec, 3) == 0) {
+		if (p->pd == NULL)
+			return INI_FAILURE;
+		return config_key_parse(key, val, g_config_key_pd, (void *)p->pd);
+	}
+	if (strncmp("PD-", sec, 3) == 0) {
+		if (p->pd == NULL)
+			return INI_FAILURE;
+		if (safe_atoi(sec + 3, &id))
+			return INI_FAILURE;
+		pd = p->pd + id;
+		return config_key_parse(key, val, g_config_key_pd, (void *)pd);
+	}
 
 	return INI_FAILURE;
 }
@@ -252,28 +297,33 @@ void config_parse(const char *filename, struct config_s *config)
 
 void config_print(struct config_s *config)
 {
+	int i;
 	char tmp[64];
+	struct config_pd_s *pd;
 
 	printf("\n--- BEGIN (%s) ---\n\n", config->config_file);
 
 	printf("GLOBAL:\n");
-	printf("mode: %d\n", config->osdp_mode);
+	printf("mode: %d\n", config->mode);
 	printf("channel_speed: %d\n", config->channel_speed);
 	printf("channel_type: %d\n", config->channel_type);
 	printf("channel_topology: %d\n", config->channel_topology);
 	printf("channel_device: %s\n", config->channel_device);
 
 	printf("\nCP:\n");
-	printf("num_pd: %d\n", config->num_pd);
-	atohstr(tmp, config->master_key, 16);
+	printf("num_pd: %d\n", config->cp.num_pd);
+	atohstr(tmp, config->cp.master_key, 16);
 	printf("master_key: %s\n", tmp);
 
-	printf("\nPD:\n");
-	printf("address: %d\n", config->pd_address);
-	printf("vendor_code: %d\n", config->vendor_code);
-	printf("model: %d\n", config->model);
-	printf("version: %d\n", config->version);
-	printf("serial_number: 0x%08x\n", config->serial_number);
+	for (i = 0; i < config->cp.num_pd; i++) {
+		pd = config->pd + i;
+		printf("\nPD-%d:\n", i);
+		printf("address: %d\n", pd->address);
+		printf("vendor_code: %d\n", pd->vendor_code);
+		printf("model: %d\n", pd->model);
+		printf("version: %d\n", pd->version);
+		printf("serial_number: 0x%08x\n", pd->serial_number);
+	}
 
 	printf("\n--- END ---\n\n");
 }

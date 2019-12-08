@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 /*
  * atohstr - Array to Hex String
@@ -57,5 +58,16 @@ int hstrtoa(uint8_t *arr, const char *hstr)
 			return -1;
 	}
 
+	return 0;
+}
+
+int safe_atoi(const char *a, int *i)
+{
+	int val;
+
+	val = atoi(a);
+	if (val == 0 && a[0] != '0')
+		return -1;
+	*i = val;
 	return 0;
 }

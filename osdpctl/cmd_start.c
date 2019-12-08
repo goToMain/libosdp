@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "common.h"
 
+#include <osdp.h>
+
 int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 {
         return 0;

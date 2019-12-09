@@ -23,16 +23,20 @@ int test_mixed_cp_to_pd_buf_length;
 uint8_t test_mixed_pd_to_cp_buf[128];
 int test_mixed_pd_to_cp_buf_length;
 
-int test_mixed_cp_fsm_send(uint8_t * buf, int len)
+int test_mixed_cp_fsm_send(void *data, uint8_t * buf, int len)
 {
+	ARG_UNUSED(data);
+
 	memcpy(test_mixed_cp_to_pd_buf, buf, len);
 	test_mixed_cp_to_pd_buf_length = len;
 	//osdp_dump("CP Send", buf, len);
 	return len;
 }
 
-int test_mixed_cp_fsm_receive(uint8_t * buf, int len)
+int test_mixed_cp_fsm_receive(void *data, uint8_t * buf, int len)
 {
+	ARG_UNUSED(data);
+
 	int ret = test_mixed_pd_to_cp_buf_length;
 
 	ARG_UNUSED(len);
@@ -45,18 +49,21 @@ int test_mixed_cp_fsm_receive(uint8_t * buf, int len)
 	return ret;
 }
 
-int test_mixed_pd_fsm_send(uint8_t * buf, int len)
+int test_mixed_pd_fsm_send(void *data, uint8_t * buf, int len)
 {
+	ARG_UNUSED(data);
+
 	memcpy(test_mixed_pd_to_cp_buf, buf, len);
 	test_mixed_pd_to_cp_buf_length = len;
 	return len;
 }
 
-int test_mixed_pd_fsm_receive(uint8_t * buf, int len)
+int test_mixed_pd_fsm_receive(void *data, uint8_t * buf, int len)
 {
-	int ret = test_mixed_cp_to_pd_buf_length;
-
+	ARG_UNUSED(data);
 	ARG_UNUSED(len);
+
+	int ret = test_mixed_cp_to_pd_buf_length;
 
 	if (test_mixed_cp_to_pd_buf_length) {
 		memcpy(buf, test_mixed_cp_to_pd_buf,
@@ -79,8 +86,10 @@ int test_mixed_fsm_setup(struct test *t)
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.send_func = test_mixed_cp_fsm_send,
-		.recv_func = test_mixed_cp_fsm_receive
+		.channel.data = NULL,
+		.channel.send = test_mixed_cp_fsm_send,
+		.channel.recv = test_mixed_cp_fsm_receive,
+		.channel.flush = NULL
 	};
 	test_data.cp_ctx = (struct osdp *) osdp_cp_setup(1, &info_cp, master_key);
 	if (test_data.cp_ctx == NULL) {
@@ -104,8 +113,9 @@ int test_mixed_fsm_setup(struct test *t)
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.send_func = test_mixed_pd_fsm_send,
-		.recv_func = test_mixed_pd_fsm_receive,
+		.channel.data = NULL,
+		.channel.send = test_mixed_pd_fsm_send,
+		.channel.recv = test_mixed_pd_fsm_receive,
 		.id = {
 		       .version = 1,
 		       .model = 153,

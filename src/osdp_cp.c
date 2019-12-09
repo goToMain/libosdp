@@ -381,7 +381,7 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	osdp_dump("CP_SEND:", buf, len);
 #endif
 
-	ret = p->send_func(buf, len);
+	ret = p->channel.send(p->channel.data, buf, len);
 
 	return (ret == len) ? 0 : -1;
 }
@@ -398,7 +398,7 @@ int cp_process_reply(struct osdp_pd *p)
 {
 	int ret;
 
-	ret = p->recv_func(p->phy_rx_buf + p->phy_rx_buf_len,
+	ret = p->channel.recv(p->channel.data, p->phy_rx_buf + p->phy_rx_buf_len,
 			   OSDP_PACKET_BUF_SIZE - p->phy_rx_buf_len);
 	if (ret <= 0)	/* No data received */
 		return 1;
@@ -732,8 +732,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info, uint8_t *master_key)
 		pd->address = p->address;
 		pd->flags = p->flags;
 		pd->seq_number = -1;
-		pd->send_func = p->send_func;
-		pd->recv_func = p->recv_func;
+		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 	}
 	set_current_pd(ctx, 0);
 	LOG_I(TAG "setup complete");

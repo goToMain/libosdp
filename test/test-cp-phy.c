@@ -168,8 +168,10 @@ int test_cp_phy_setup(struct test *t)
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.send_func = NULL,
-		.recv_func = NULL
+		.channel.data = NULL,
+		.channel.send = NULL,
+		.channel.recv = NULL,
+		.channel.flush = NULL
 	};
 	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {

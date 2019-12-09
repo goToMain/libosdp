@@ -12,8 +12,10 @@ int cp_enqueue_command(struct osdp_pd *pd, struct osdp_data *c);
 
 int phy_fsm_resp_offset = 0;
 
-int test_cp_phy_fsm_send(uint8_t * buf, int len)
+int test_cp_phy_fsm_send(void *data, uint8_t * buf, int len)
 {
+	ARG_UNUSED(data);
+
 	uint8_t cmd_poll[] =
 	    { 0xff, 0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90 };
 	uint8_t cmd_id[] =
@@ -36,8 +38,10 @@ int test_cp_phy_fsm_send(uint8_t * buf, int len)
 	return len;
 }
 
-int test_cp_phy_fsm_receive(uint8_t * buf, int len)
+int test_cp_phy_fsm_receive(void *data, uint8_t * buf, int len)
 {
+	ARG_UNUSED(data);
+
 	uint8_t resp_ack[] = {
 		0xff, 0x53, 0xe5, 0x08, 0x00, 0x04, 0x40, 0xd2, 0x96
 	};
@@ -69,8 +73,10 @@ int test_cp_phy_fsm_setup(struct test *t)
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.send_func = test_cp_phy_fsm_send,
-		.recv_func = test_cp_phy_fsm_receive
+		.channel.data = NULL,
+		.channel.send = test_cp_phy_fsm_send,
+		.channel.recv = test_cp_phy_fsm_receive,
+		.channel.flush = NULL
 	};
 	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {

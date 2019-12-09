@@ -359,7 +359,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	osdp_dump("PD_SEND:", buf, len);
 #endif
 
-	ret = p->send_func(buf, len);
+	ret = p->channel.send(p->channel.data, buf, len);
 
 	return (ret == len) ? 0 : -1;
 }
@@ -376,8 +376,8 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 {
 	int ret;
 
-	ret = p->recv_func(p->phy_rx_buf + p->phy_rx_buf_len,
-			   OSDP_PACKET_BUF_SIZE - p->phy_rx_buf_len);
+	ret = p->channel.recv(p->channel.data, p->phy_rx_buf + p->phy_rx_buf_len,
+			      OSDP_PACKET_BUF_SIZE - p->phy_rx_buf_len);
 
 	if (ret <= 0)	/* No data received */
 		return 1;
@@ -503,8 +503,7 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 	pd->address = p->address;
 	pd->flags = p->flags;
 	pd->seq_number = -1;
-	pd->send_func = p->send_func;
-	pd->recv_func = p->recv_func;
+	memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 
 	if (scbk == NULL || isset_flag(pd, PD_FLAG_INSTALL_MODE))
 		set_flag(pd, PD_FLAG_SC_USE_SCBKD);

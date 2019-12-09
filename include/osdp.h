@@ -115,6 +115,42 @@ struct pd_id {
 	uint32_t firmware_version;
 };
 
+struct osdp_channel {
+	/**
+	 * pointer to a block of memory that will be passed to the send/receive
+	 * method. This is optional and can be left empty.
+	 */
+        void *data;
+
+	/**
+	 * recv: function pointer; Copies received bytes into buffer
+	 * @data - for use by underlying layers. channel_s::data is passed
+	 * @buf  - byte array copy incoming data
+	 * @len  - sizeof `buf`. Can copy utmost `len` number of bytes into `buf`
+	 *
+	 * Returns:
+	 *  +ve: number of bytes copied on to `bug`. Must be <= `len`
+	 */
+	int (*recv)(void *data, uint8_t *buf, int maxlen);
+
+	/**
+	 * send: function pointer; Sends byte array into some channel
+	 * @data - for use by underlying layers. channel_s::data is passed
+	 * @buf  - byte array to be sent
+	 * @len  - number of bytes in `buf`
+	 *
+	 * Returns:
+	 *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
+	 */
+	int (*send)(void *data, uint8_t *buf, int len);
+
+	/**
+	 * flush: function pointer; drop all bytes in queue to be read
+	 * @data - for use by underlying layers. channel_s::data is passed
+	 */
+	void (*flush)(void *data);
+};
+
 typedef struct {
 	/**
 	 * Can be one of 9600/38400/115200.
@@ -147,25 +183,10 @@ typedef struct {
 	struct pd_cap *cap;
 
 	/**
-	 * send_func - Sends byte array into some channel
-	 * @buf - byte array to be sent
-	 * @len - number of bytes in `buf`
-	 *
-	 * Returns:
-	 *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
+	 * Communication channel ops structure, containing send/recv function
+	 * pointers.
 	 */
-	int (*send_func) (uint8_t *buf, int len);
-
-	/**
-	 * recv_func - Copies received bytes into buffer
-	 * @buf - byte array copy incoming data
-	 * @len - sizeof `buf`. Can copy utmost `len` number of bytes into `buf`
-	 *
-	 * Returns:
-	 *  +ve: number of bytes copied on to `bug`. Must be <= `len`
-	 */
-	int (*recv_func) (uint8_t *buf, int len);
-
+	struct osdp_channel channel;
 } osdp_pd_info_t;
 
 /**

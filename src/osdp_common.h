@@ -203,6 +203,7 @@ struct osdp_pd {
 	int phy_rx_buf_len;
 	millis_t phy_tstamp;
 
+	struct osdp_channel channel;
 	struct osdp_secure_channel sc;
 
 	/* CP mode only data */
@@ -210,8 +211,6 @@ struct osdp_pd {
 
 	/* callbacks */
 	struct osdp_pd_cmd_callback cmd_cb;
-	int (*send_func) (uint8_t * buf, int len);
-	int (*recv_func) (uint8_t * buf, int len);
 };
 
 struct osdp_cp {

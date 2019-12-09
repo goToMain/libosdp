@@ -306,8 +306,11 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		else
 			smb[2] = 0x00;
 		set_flag(p, PD_FLAG_SC_ACTIVE);
-		clear_flag(p, PD_FLAG_SC_USE_SCBKD);
-		clear_flag(p, PD_FLAG_INSTALL_MODE);
+		if (isset_flag(p, PD_FLAG_SC_USE_SCBKD)) {
+			clear_flag(p, PD_FLAG_SC_USE_SCBKD);
+			clear_flag(p, PD_FLAG_INSTALL_MODE);
+			LOG_W(TAG "SC Active with SCBK-D");
+		}
 		break;
 	}
 

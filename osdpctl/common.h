@@ -25,8 +25,8 @@ enum config_channel_topology_e {
 
 enum config_channel_type_e {
 	CONFIG_CHANNEL_TYPE_UART=1,
-	CONFIG_CHANNEL_TYPE_UNIX,
-	CONFIG_CHANNEL_TYPE_INTERNAL
+	CONFIG_CHANNEL_TYPE_MSGQ,
+	CONFIG_CHANNEL_TYPE_SENTINEL
 };
 
 struct config_pd_s {
@@ -35,6 +35,8 @@ struct config_pd_s {
 	int channel_speed;
 
 	int address;
+	int is_pd_mode;
+
 	struct pd_id id;
 	struct pd_cap cap[CAP_SENTINEL];
 };
@@ -47,6 +49,7 @@ struct config_s {
 	/* ini section: "^GLOBAL" */
 	int mode;
 	int num_pd;
+	int log_level;
 	int conn_topology;
 
 	/* ini section: "^CP" */
@@ -70,8 +73,25 @@ void config_parse(const char *filename, struct config_s *config);
 int atohstr(char *hstr, const uint8_t *arr, const int arr_len);
 int hstrtoa(uint8_t *arr, const char *hstr);
 int safe_atoi(const char *a, int *i);
+void remove_spaces(char *str);
 
 // command handlers
 int cmd_handler_start(int argc, char *argv[], struct config_s *c);
+
+// from channel*.c
+
+extern struct channel_ops_s channel_uart;
+extern struct channel_ops_s channel_msgq;
+
+struct channel_ops_s {
+	int (*send)(void *data, uint8_t *buf, int len);
+	int (*recv)(void *data, uint8_t *buf, int len);
+	void (*flush)(void *data);
+	int (*setup)(void **data, struct config_pd_s *p);
+	void (*teardown)(void *data);
+};
+
+int channel_setup(struct osdp_channel *c, struct config_pd_s *p);
+void channel_teardown(struct osdp_channel *c, struct config_pd_s *p);
 
 #endif

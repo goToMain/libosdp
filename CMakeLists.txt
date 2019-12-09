@@ -82,7 +82,9 @@ list(APPEND BIN_OSDPCTL_SRC
 	"osdpctl/arg_parser.c"
 	"osdpctl/utils.c"
 	"osdpctl/rs232.c"
-	"osdpctl/uart.c"
+	"osdpctl/channel_uart.c"
+	"osdpctl/channel_msgq.c"
+	"osdpctl/channel.c"
 	"osdpctl/osdpctl.c"
 	"osdpctl/cmd_start.c"
 )

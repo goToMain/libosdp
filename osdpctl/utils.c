@@ -71,3 +71,13 @@ int safe_atoi(const char *a, int *i)
 	*i = val;
 	return 0;
 }
+
+void remove_spaces(char *str)
+{
+	int i, j = 0;
+
+	for (i = 0; str[i]; i++)
+		if (str[i] != ' ')
+			str[j++] = str[i];
+	str[j] = '\0';
+}

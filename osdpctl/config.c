@@ -30,10 +30,23 @@ int config_parse_key_mode(const char *val, void *data)
 			exit(-1);
 		}
 		p->num_pd = 1;
+		p->pd->is_pd_mode = 1;
 		p->mode = CONFIG_MODE_PD;
 	} else {
 		return INI_FAILURE;
 	}
+
+	return INI_SUCCESS;
+}
+
+int config_parse_key_log_level(const char *val, void *data)
+{
+	struct config_s *p = data;
+	int i;
+
+	if (safe_atoi(val, &i))
+		return INI_FAILURE;
+	p->log_level = i;
 
 	return INI_SUCCESS;
 }
@@ -52,16 +65,44 @@ int config_parse_key_channel_topology(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
+int config_parse_key_capabilites(const char *val, void *data)
+{
+	int i, ival[3];
+	char *tok1, *rest1, *tok2, *rest2, str[128];
+	struct config_pd_s *p = data;
+
+	strncpy(str, val, 127); str[127] = 0;
+	remove_spaces(str);
+
+	tok1 = strtok_r(str, "[)]", &rest1);
+	while (tok1 != NULL) {
+		i = 0; ival[0] = 0;
+		tok2 = strtok_r(tok1, "(,", &rest2);
+		while (tok2 != NULL) {
+			if (i > 2 || safe_atoi(tok2, &ival[i++]))
+				return INI_FAILURE;
+			tok2 = strtok_r(NULL, ", ", &rest2);
+		}
+		if (ival[0] <= 0 || ival[0] >= CAP_SENTINEL ||
+		    ival[1] < 0 || ival[2] < 0)
+			return INI_FAILURE;
+		p->cap[ival[0]].function_code = ival[0];
+		p->cap[ival[0]].compliance_level = ival[1];
+		p->cap[ival[0]].num_items = ival[2];
+		tok1 = strtok_r(NULL, "[)]", &rest1);
+	}
+
+	return INI_SUCCESS;
+}
+
 int config_parse_key_channel_type(const char *val, void *data)
 {
 	struct config_pd_s *p = data;
 
 	if (strcmp(val, "uart") == 0)
 		p->channel_type = CONFIG_CHANNEL_TYPE_UART;
-	else if (strcmp(val, "unix") == 0)
-		p->channel_type = CONFIG_CHANNEL_TYPE_UNIX;
-	else if (strcmp(val, "internal") == 0)
-		p->channel_type = CONFIG_CHANNEL_TYPE_INTERNAL;
+	else if (strcmp(val, "msgq") == 0)
+		p->channel_type = CONFIG_CHANNEL_TYPE_MSGQ;
 	else
 		return INI_FAILURE;
 
@@ -224,6 +265,7 @@ struct config_key_s {
 const struct config_key_s g_config_key_global[] = {
 	{ "mode",		config_parse_key_mode },
 	{ "num_pd",		config_parse_key_num_pd },
+	{ "log_level",		config_parse_key_log_level },
 	{ "conn_topology",	config_parse_key_channel_topology },
 	{ NULL, NULL }
 };
@@ -234,6 +276,7 @@ const struct config_key_s g_config_key_cp[] = {
 };
 
 const struct config_key_s g_config_key_pd[] = {
+	{ "capabilities",	config_parse_key_capabilites },
 	{ "channel_type",	config_parse_key_channel_type },
 	{ "channel_speed",	config_parse_key_channel_speed },
 	{ "channel_device",	config_parse_key_channel_device },
@@ -360,7 +403,7 @@ void config_parse(const char *filename, struct config_s *config)
 
 void config_print(struct config_s *config)
 {
-	int i;
+	int i, j;
 	char tmp[64];
 	struct config_pd_s *pd;
 
@@ -382,10 +425,24 @@ void config_print(struct config_s *config)
 		printf("channel_type: %d\n", pd->channel_type);
 		printf("channel_device: %s\n", pd->channel_device);
 		printf("address: %d\n", pd->address);
-		printf("vendor_code: %d\n", pd->id.vendor_code);
-		printf("model: %d\n", pd->id.model);
+		if (pd->is_pd_mode == 0)
+			continue;
+		printf("capabilities:\n");
+		for (j = 0; j < CAP_SENTINEL; j++) {
+			if (pd->cap[j].function_code == 0)
+				continue;
+			printf("\tFC-%02d %s -- [ %d, %d, %d ]\n",
+			       j, cap_names[j],
+			       pd->cap[j].function_code,
+			       pd->cap[j].compliance_level,
+			       pd->cap[j].num_items);
+		}
 		printf("version: %d\n", pd->id.version);
+		printf("model: %d\n", pd->id.model);
+		printf("vendor_code: %d\n", pd->id.vendor_code);
 		printf("serial_number: 0x%08x\n", pd->id.serial_number);
+		printf("firmware_version: %d\n", pd->id.firmware_version);
+
 	}
 
 	printf("\n--- END ---\n\n");

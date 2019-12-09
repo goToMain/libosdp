@@ -9,7 +9,6 @@
 #include <string.h>
 
 #include "arg_parser.h"
-#include "uart.h"
 #include "common.h"
 
 #define MOVE_ARGS(end) argc-end-1, argv+end+1

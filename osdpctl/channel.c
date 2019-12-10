@@ -20,6 +20,9 @@ int channel_setup(struct config_pd_s *p)
 	case CONFIG_CHANNEL_TYPE_MSGQ:
 		channel = &channel_msgq;
 		break;
+	case CONFIG_CHANNEL_TYPE_CUSTOM:
+		channel = &channel_custom;
+		break;
 	default:
 		printf("Error: invalid channel\n");
 		return -1;

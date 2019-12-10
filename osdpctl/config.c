@@ -103,6 +103,8 @@ int config_parse_key_channel_type(const char *val, void *data)
 		p->channel_type = CONFIG_CHANNEL_TYPE_UART;
 	else if (strcmp(val, "msgq") == 0)
 		p->channel_type = CONFIG_CHANNEL_TYPE_MSGQ;
+	else if (strcmp(val, "custom") == 0)
+		p->channel_type = CONFIG_CHANNEL_TYPE_CUSTOM;
 	else
 		return INI_FAILURE;
 

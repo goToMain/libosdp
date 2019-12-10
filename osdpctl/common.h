@@ -26,6 +26,7 @@ enum config_channel_topology_e {
 enum config_channel_type_e {
 	CONFIG_CHANNEL_TYPE_UART=1,
 	CONFIG_CHANNEL_TYPE_MSGQ,
+	CONFIG_CHANNEL_TYPE_CUSTOM,
 	CONFIG_CHANNEL_TYPE_SENTINEL
 };
 
@@ -83,6 +84,7 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c);
 
 extern struct channel_ops_s channel_uart;
 extern struct channel_ops_s channel_msgq;
+extern struct channel_ops_s channel_custom;
 
 struct channel_ops_s {
 	int (*send)(void *data, uint8_t *buf, int len);

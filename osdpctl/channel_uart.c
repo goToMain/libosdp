@@ -33,6 +33,13 @@ int channel_uart_recv(void *data, uint8_t *buf, int maxLen)
 	return RS232_PollComport(ctx->port_id, buf, maxLen);
 }
 
+void channel_uart_flush(void *data)
+{
+	struct channel_uart_s *ctx = data;
+
+	RS232_flushRXTX(ctx->port_id);
+}
+
 int channel_uart_setup(void **data, struct config_pd_s *c)
 {
 	struct channel_uart_s *ctx;
@@ -70,7 +77,7 @@ void channel_uart_teardown(void *data)
 struct channel_ops_s channel_uart = {
 	.send = channel_uart_send,
 	.recv = channel_uart_recv,
-	.flush = NULL,
+	.flush = channel_uart_flush,
 	.setup = channel_uart_setup,
 	.teardown = channel_uart_teardown
 };

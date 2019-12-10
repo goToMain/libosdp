@@ -26,7 +26,7 @@ int config_parse_key_mode(const char *val, void *data)
 	} else if (strcmp(val, "PD") == 0) {
 		p->pd = calloc(1, sizeof(struct config_pd_s));
 		if (p->pd == NULL) {
-			printf("Error PD alloc failed!\n");
+			printf("Error: PD alloc failed!\n");
 			exit(-1);
 		}
 		p->num_pd = 1;
@@ -118,7 +118,7 @@ int config_parse_key_channel_speed(const char *val, void *data)
 		return INI_FAILURE;
 
 	if (baud != 9600 && baud != 38400 && baud != 115200) {
-		printf("Invalid baudrate %d\n", baud);
+		printf("Error: invalid baudrate %d\n", baud);
 		return INI_FAILURE;
 	}
 	p->channel_speed = baud;
@@ -131,10 +131,14 @@ int config_parse_key_channel_device(const char *val, void *data)
 	struct config_pd_s *p = data;
 
 	if (access(val, F_OK) == -1) {
-		printf("device %s does not exist\n", val);
+		printf("Error: device %s does not exist\n", val);
 		return INI_FAILURE;
 	}
-	p->channel_device = strdup(val);
+
+	if (val[0] == '/')
+		p->channel_device = strdup(val);
+	else
+		p->channel_device = realpath(val, NULL);
 
 	return INI_SUCCESS;
 }
@@ -152,13 +156,13 @@ int config_parse_key_num_pd(const char *val, void *data)
 
 	if (p->mode == CONFIG_MODE_PD) {
 		if (num_pd != 1) {
-			printf("num_pd must be 1 for PD mode\n");
+			printf("Error: num_pd must be 1 for PD mode\n");
 			return INI_FAILURE;
 		}
 	} else {
 		p->pd = calloc(num_pd, sizeof(struct config_pd_s));
 		if (p->pd == NULL) {
-			printf("Error PD alloc failed!\n");
+			printf("Error: PD alloc failed!\n");
 			exit(-1);
 		}
 	}
@@ -174,7 +178,7 @@ int config_parse_key_master_key(const char* val, void *data)
 	struct config_s *p = data;
 
 	if (hstrtoa(tmp, val) < 0) {
-		printf("Failed to parse master key\n");
+		printf("Error: failed to parse master key\n");
 		return INI_FAILURE;
 	}
 	memcpy(p->cp.master_key, tmp, 16);
@@ -381,6 +385,7 @@ int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
 
 void config_parse(const char *filename, struct config_s *config)
 {
+	char *rp;
 	int ret = ini_parse(filename, config_ini_cb, config);
 
 	if (ret == -1) {
@@ -398,6 +403,25 @@ void config_parse(const char *filename, struct config_s *config)
 	if (ret > 0) {
 		printf("Error: parsing file %s at line %d\n", filename, ret);
 		exit(-1);
+	}
+
+	if (config->config_file[0] != '/') {
+		rp = realpath(config->config_file, NULL);
+		if (rp == NULL) {
+			printf("Error: no absolute path for %s",
+			       config->config_file);
+			exit (-1);
+		}
+		free(config->config_file);
+		config->config_file = rp;
+	}
+
+	if (config->pd->channel_type == CONFIG_CHANNEL_TYPE_MSGQ) {
+		if (config->mode == CONFIG_MODE_PD) {
+			if (config->pd->channel_device)
+				free(config->pd->channel_device);
+			config->pd->channel_device = strdup(config->config_file);
+		}
 	}
 }
 

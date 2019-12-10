@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 
 #include "arg_parser.h"
 #include "common.h"
@@ -34,9 +35,39 @@ struct ap_option ap_opts[] = {
 	AP_SENTINEL
 };
 
+static void signal_handler(int sig)
+{
+	if (sig == SIGINT)
+		exit(EXIT_FAILURE);
+}
+
+void cleanup()
+{
+	int i;
+	struct config_pd_s *pd;
+
+	for (i = 0; i < g_config.num_pd; i++) {
+		pd = g_config.pd + i;
+		channel_teardown(pd);
+	}
+}
+
+void osdpctl_process_init()
+{
+	struct sigaction sigact;
+
+	atexit(cleanup);
+	sigact.sa_handler = signal_handler;
+	sigemptyset(&sigact.sa_mask);
+	sigact.sa_flags = 0;
+	sigaction(SIGINT, &sigact, (struct sigaction *)NULL);
+}
+
 int main(int argc, char *argv[])
 {
 	int opt_end;
+
+	osdpctl_process_init();
 
         ap_init("osdpctl", "Setup/Manage OSDP devices");
 

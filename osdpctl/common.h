@@ -39,6 +39,7 @@ struct config_pd_s {
 
 	struct pd_id id;
 	struct pd_cap cap[CAP_SENTINEL];
+	struct osdp_channel channel;
 };
 
 struct config_cp_s {
@@ -91,7 +92,7 @@ struct channel_ops_s {
 	void (*teardown)(void *data);
 };
 
-int channel_setup(struct osdp_channel *c, struct config_pd_s *p);
-void channel_teardown(struct osdp_channel *c, struct config_pd_s *p);
+int channel_setup(struct config_pd_s *p);
+void channel_teardown(struct config_pd_s *p);
 
 #endif

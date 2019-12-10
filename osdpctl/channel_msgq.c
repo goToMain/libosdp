@@ -28,11 +28,16 @@ struct msgbuf {
 
 int channel_msgq_send(void *data, uint8_t *buf, int len)
 {
+	int ret;
 	struct channel_msgq_s *ctx = data;
 
 	send_buf.mtype = ctx->send_id;
 	memcpy(&send_buf.mtext, buf, len);
-	msgsnd(ctx->send_msgid, &send_buf, len, 0);
+	ret = msgsnd(ctx->send_msgid, &send_buf, len, 0);
+	if (ret < 0 && errno == EIDRM) {
+		printf("Error: msgq was removed externally. Exiting..\n");
+		exit(-1);
+	}
 
 	return len;
 }
@@ -46,11 +51,22 @@ int channel_msgq_recv(void *data, uint8_t *buf, int max_len)
 		     ctx->recv_id, MSG_NOERROR);
 	if (ret == 0 || (ret < 0 && errno == EAGAIN))
 		return 0;
+	if (ret < 0 && errno == EIDRM) {
+		printf("Error: msgq was removed externally. Exiting..\n");
+		exit(-1);
+	}
 
 	if (ret > 0)
 		memcpy(buf, recv_buf.mtext, ret);
 
 	return ret;
+}
+
+void channel_msgq_flush(void *data)
+{
+	uint8_t buf[128];
+
+	while (channel_msgq_recv(data, buf, 128) != 0);
 }
 
 int channel_msgq_setup(void **data, struct config_pd_s *c)
@@ -99,7 +115,7 @@ void channel_msgq_teardown(void *data)
 struct channel_ops_s channel_msgq = {
 	.send = channel_msgq_send,
 	.recv = channel_msgq_recv,
-	.flush = NULL,
+	.flush = channel_msgq_flush,
 	.setup = channel_msgq_setup,
 	.teardown = channel_msgq_teardown
 };

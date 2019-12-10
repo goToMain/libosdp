@@ -55,10 +55,11 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 		pd = c->pd + i;
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
-		if (channel_setup(&info->channel, pd)) {
+		if (channel_setup(pd)) {
 			printf("Failed to setup channel\n");
 			return -1;
 		}
+		memcpy(&info->channel, &pd->channel, sizeof(struct osdp_channel));
 
 		if (c->mode == CONFIG_MODE_CP)
 			continue;
@@ -67,6 +68,8 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 		pack_pd_capabilities(pd->cap);
 		info->cap = pd->cap;
 	}
+
+	osdp_set_log_level(c->log_level);
 
 	if (c->mode == CONFIG_MODE_CP) {
 		cp_ctx = osdp_cp_setup(c->num_pd, info_arr, c->cp.master_key);
@@ -82,7 +85,7 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 		}
 	}
 
-	osdp_set_log_level(c->log_level);
+	free(info_arr);
 
 	while (1)
 	{

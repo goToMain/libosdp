@@ -8,7 +8,7 @@
 
 #include "common.h"
 
-int channel_setup(struct osdp_channel *c, struct config_pd_s *p)
+int channel_setup(struct config_pd_s *p)
 {
 	void *ctx;
 	struct channel_ops_s *channel;
@@ -26,22 +26,22 @@ int channel_setup(struct osdp_channel *c, struct config_pd_s *p)
 	}
 	if (channel->setup(&ctx, p))
 		return -1;
-	c->data = ctx;
-	c->recv = channel->recv;
-	c->send = channel->send;
-	c->flush = channel->flush;
+	p->channel.data = ctx;
+	p->channel.recv = channel->recv;
+	p->channel.send = channel->send;
+	p->channel.flush = channel->flush;
 
 	return 0;
 }
 
-void channel_teardown(struct osdp_channel *c, struct config_pd_s *p)
+void channel_teardown(struct config_pd_s *p)
 {
 	switch (p->channel_type) {
 	case CONFIG_CHANNEL_TYPE_UART:
-		channel_uart.teardown(c->data);
+		channel_uart.teardown(p->channel.data);
 		break;
 	case CONFIG_CHANNEL_TYPE_MSGQ:
-		channel_msgq.teardown(c->data);
+		channel_msgq.teardown(p->channel.data);
 		break;
 	}
 }

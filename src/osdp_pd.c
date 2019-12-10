@@ -517,7 +517,7 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 
 	set_flag(pd, PD_FLAG_PD_MODE);	/* used to understand operational mode */
 
-	osdp_set_log_level(LOG_WARNING);
+	osdp_log_ctx_set(pd->address);
 	LOG_I(TAG "setup complete");
 	return (osdp_pd_t *) ctx;
 

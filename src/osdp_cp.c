@@ -779,7 +779,6 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
 		set_current_pd(ctx, i);
 		osdp_log_ctx_set(to_current_pd(ctx)->address);
 		cp_state_update(to_current_pd(ctx));
-		osdp_log_ctx_reset();
 	}
 }
 

@@ -39,7 +39,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	cmd_id = buf[pos++];
 	len--;
 
-	LOG_D(TAG "processing command: 0x%02x", cmd_id);
+	// LOG_D(TAG "processing command: 0x%02x", cmd_id);
 
 	switch (cmd_id) {
 	case CMD_POLL:
@@ -222,7 +222,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
-	LOG_D(TAG "build reply: 0x%02x", reply->id);
+	// LOG_D(TAG "build reply: 0x%02x", reply->id);
 
 	switch (reply->id) {
 	case REPLY_ACK:

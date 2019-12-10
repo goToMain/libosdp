@@ -50,7 +50,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
 
-	LOG_D(TAG "Building command 0x%02x",cmd->id);
+	// LOG_D(TAG "Building command 0x%02x",cmd->id);
 
 	switch (cmd->id) {
 	case CMD_POLL:
@@ -203,8 +203,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 	reply_id = buf[pos++];
 	len--;		/* consume reply id from the head */
 
-	LOG_D("Processing resp 0x%02x with %d data bytes",
-		 reply_id, len);
+	// LOG_D("Processing resp 0x%02x with %d data bytes", reply_id, len);
 
 	switch (reply_id) {
 	case REPLY_ACK:
@@ -685,7 +684,7 @@ int cp_state_update(struct osdp_pd *pd)
 	return 0;
 }
 
-osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t * info, uint8_t *master_key)
+osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
 	int i;
 	struct osdp_pd *pd;
@@ -776,7 +775,9 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
 
 	for (i = 0; i < to_cp(ctx)->num_pd; i++) {
 		set_current_pd(ctx, i);
+		osdp_log_ctx_set(to_current_pd(ctx)->address);
 		cp_state_update(to_current_pd(ctx));
+		osdp_log_ctx_reset();
 	}
 }
 

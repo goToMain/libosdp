@@ -15,11 +15,32 @@
 #include "osdp_common.h"
 #include "osdp_aes.h"
 
+#define LOG_CTX_GLOBAL -153
+
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
+int g_log_ctx = LOG_CTX_GLOBAL;
+int g_old_log_ctx = LOG_CTX_GLOBAL;
 
 void osdp_set_log_level(int log_level)
 {
 	g_log_level = log_level;
+}
+
+void osdp_log_ctx_set(int log_ctx)
+{
+	g_old_log_ctx = g_log_ctx;
+	g_log_ctx = log_ctx;
+}
+
+void osdp_log_ctx_reset()
+{
+	g_old_log_ctx = g_log_ctx;
+	g_log_ctx = LOG_CTX_GLOBAL;
+}
+
+void osdp_log_ctx_restore()
+{
+	g_log_ctx = g_old_log_ctx;
 }
 
 void osdp_log(int log_level, const char *fmt, ...)
@@ -38,7 +59,11 @@ void osdp_log(int log_level, const char *fmt, ...)
 	vasprintf(&buf, fmt, args);
 	va_end(args);
 
-	printf("OSDP: %s: %s\n", levels[log_level], buf);
+	if (g_log_ctx == LOG_CTX_GLOBAL)
+		printf("OSDP: %s: %s\n", levels[log_level], buf);
+	else
+		printf("OSDP: %s: PD[%d] %s\n", levels[log_level],
+		       g_log_ctx, buf);
 	free(buf);
 }
 

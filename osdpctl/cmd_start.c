@@ -55,7 +55,10 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 		pd = c->pd + i;
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
-		channel_setup(&info->channel, pd);
+		if (channel_setup(&info->channel, pd)) {
+			printf("Failed to setup channel\n");
+			return -1;
+		}
 
 		if (c->mode == CONFIG_MODE_CP)
 			continue;
@@ -66,13 +69,13 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 	}
 
 	if (c->mode == CONFIG_MODE_CP) {
-		cp_ctx = osdp_cp_setup(c->num_pd, info, c->cp.master_key);
+		cp_ctx = osdp_cp_setup(c->num_pd, info_arr, c->cp.master_key);
 		if (cp_ctx == NULL) {
 			printf("Failed to setup CP context\n");
 			return -1;
 		}
 	} else {
-		pd_ctx = osdp_pd_setup(info, NULL);
+		pd_ctx = osdp_pd_setup(info_arr, NULL);
 		if (pd_ctx == NULL) {
 			printf("Failed to setup PD context\n");
 			return -1;

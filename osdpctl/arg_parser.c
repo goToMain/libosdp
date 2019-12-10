@@ -61,7 +61,7 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 		}
 		if (count == 0)
 			printf("\nCommands:\n");
-		printf("  %-"PAD"s       %s", ap_opt->long_name, ap_opt->help);
+		printf("  %-"PAD"s       %s\n", ap_opt->long_name, ap_opt->help);
 		ap_opt++; count++;
 	}
 

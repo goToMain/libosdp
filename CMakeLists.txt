@@ -38,6 +38,11 @@ add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
 add_c_compiler_flag(-s RELEASE)
 
+## Macro Switches
+if (CONFIG_OSDP_PACKET_TRACE)
+	add_compile_definitions(OSDP_PACKET_TRACE)
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ## build libosdp

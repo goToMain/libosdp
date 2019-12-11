@@ -48,7 +48,7 @@ int channel_msgq_recv(void *data, uint8_t *buf, int max_len)
 	struct channel_msgq_s *ctx = data;
 
 	ret = msgrcv(ctx->recv_msgid, &recv_buf, max_len,
-		     ctx->recv_id, MSG_NOERROR);
+		     ctx->recv_id, MSG_NOERROR | IPC_NOWAIT);
 	if (ret == 0 || (ret < 0 && errno == EAGAIN))
 		return 0;
 	if (ret < 0 && errno == EIDRM) {
@@ -64,9 +64,14 @@ int channel_msgq_recv(void *data, uint8_t *buf, int max_len)
 
 void channel_msgq_flush(void *data)
 {
+	int ret;
 	uint8_t buf[128];
 
-	while (channel_msgq_recv(data, buf, 128) != 0);
+	while (1) {
+		ret = channel_msgq_recv(data, buf, 128);
+		if (ret <= 0)
+			break;
+	}
 }
 
 int channel_msgq_setup(void **data, struct config_pd_s *c)
@@ -92,7 +97,7 @@ int channel_msgq_setup(void **data, struct config_pd_s *c)
 
 	ctx->recv_id = c->is_pd_mode ? 17 : 13;
 	key = ftok(c->channel_device, ctx->recv_id);
-	ctx->recv_msgid = msgget(key, 0666 | IPC_CREAT | IPC_NOWAIT);
+	ctx->recv_msgid = msgget(key, 0666 | IPC_CREAT);
 	if (ctx->recv_msgid < 0) {
 		printf("Error: failed to create recv message queue %s\n",
 		       c->channel_device);

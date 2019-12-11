@@ -203,6 +203,17 @@ int config_parse_key_address(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
+int config_parse_key_key_store(const char *val, void *data)
+{
+	struct config_pd_s *p = data;
+
+	if (strcmp("", val) == 0)
+		return INI_FAILURE;
+	p->key_store = strdup(val);
+
+	return INI_SUCCESS;
+}
+
 int config_parse_key_vendor_code(const char *val, void *data)
 {
 	struct config_pd_s *p = data;
@@ -287,6 +298,7 @@ const struct config_key_s g_config_key_pd[] = {
 	{ "channel_speed",	config_parse_key_channel_speed },
 	{ "channel_device",	config_parse_key_channel_device },
 	{ "address", 		config_parse_key_address },
+	{ "key_store",		config_parse_key_key_store },
 	{ "vendor_code",	config_parse_key_vendor_code },
 	{ "model",		config_parse_key_model },
 	{ "version",		config_parse_key_version },

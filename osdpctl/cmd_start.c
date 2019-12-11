@@ -32,6 +32,43 @@ void pack_pd_capabilities(struct pd_cap *cap)
 	memcpy(cap, c, j * sizeof(struct pd_cap));
 }
 
+int load_scbk(struct config_pd_s *c, uint8_t *buf)
+{
+	int len;
+	FILE *fd;
+	char hstr[64 + 1] = { 0 };
+
+	fd = fopen(c->key_store, "r");
+	if (fd == NULL)
+		return -1;
+	fgets(hstr, 64, fd);
+	len = strlen(hstr);
+	if ((len/2) > 16)
+		return -1;
+	hstrtoa(buf, hstr);
+
+	return 0;
+}
+
+int store_scbk(struct osdp_cmd_keyset *p)
+{
+	printf("PD got a call to store scbk\n");
+	FILE *fd;
+	char hstr[64 + 1];
+	struct config_pd_s *c;
+
+	c = g_config.pd;
+	if (c == NULL)
+		return -1;
+	fd = fopen(c->key_store, "w");
+	if (fd == NULL)
+		return -1;
+	atohstr(hstr, p->data, p->len);
+	fprintf(fd, "%s\n", hstr);
+
+	return 0;
+}
+
 int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 {
 	int i;
@@ -39,6 +76,7 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 	struct config_pd_s *pd;
 	osdp_cp_t *cp_ctx;
 	osdp_pd_t *pd_ctx;
+	uint8_t *scbk, scbk_buf[16];
 
         ARG_UNUSED(argc);
         ARG_UNUSED(argv);
@@ -59,6 +97,8 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 			printf("Failed to setup channel\n");
 			return -1;
 		}
+		if (pd->channel.flush)
+			pd->channel.flush(pd->channel.data);
 		memcpy(&info->channel, &pd->channel, sizeof(struct osdp_channel));
 
 		if (c->mode == CONFIG_MODE_CP)
@@ -78,11 +118,15 @@ int cmd_handler_start(int argc, char *argv[], struct config_s *c)
 			return -1;
 		}
 	} else {
-		pd_ctx = osdp_pd_setup(info_arr, NULL);
+		scbk = NULL;
+		if (load_scbk(c->pd, scbk_buf) == 0)
+			scbk = scbk_buf;
+		pd_ctx = osdp_pd_setup(info_arr, scbk);
 		if (pd_ctx == NULL) {
 			printf("Failed to setup PD context\n");
 			return -1;
 		}
+		osdp_pd_set_callback_cmd_keyset(pd_ctx, store_scbk);
 	}
 
 	free(info_arr);

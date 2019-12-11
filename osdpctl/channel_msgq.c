@@ -112,6 +112,8 @@ void channel_msgq_teardown(void *data)
 {
 	struct channel_msgq_s *ctx = data;
 
+	if (data == NULL)
+		return;
 	msgctl(ctx->send_msgid, IPC_RMID, NULL);
 	msgctl(ctx->recv_msgid, IPC_RMID, NULL);
 	free(ctx);

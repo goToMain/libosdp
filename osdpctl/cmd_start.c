@@ -34,37 +34,35 @@ void pack_pd_capabilities(struct pd_cap *cap)
 
 int load_scbk(struct config_pd_s *c, uint8_t *buf)
 {
-	int len;
 	FILE *fd;
-	char hstr[64 + 1] = { 0 };
+	char *r, hstr[33];
 
 	fd = fopen(c->key_store, "r");
 	if (fd == NULL)
 		return -1;
-	fgets(hstr, 64, fd);
-	len = strlen(hstr);
-	if ((len/2) > 16)
+	r = fgets(hstr, 33, fd);
+	fclose(fd);
+	if (r == NULL || hstrtoa(buf, hstr))
 		return -1;
-	hstrtoa(buf, hstr);
 
 	return 0;
 }
 
 int store_scbk(struct osdp_cmd_keyset *p)
 {
-	printf("PD got a call to store scbk\n");
 	FILE *fd;
-	char hstr[64 + 1];
+	char hstr[64];
 	struct config_pd_s *c;
 
 	c = g_config.pd;
 	if (c == NULL)
 		return -1;
+	atohstr(hstr, p->data, p->len);
 	fd = fopen(c->key_store, "w");
 	if (fd == NULL)
 		return -1;
-	atohstr(hstr, p->data, p->len);
 	fprintf(fd, "%s\n", hstr);
+	fclose(fd);
 
 	return 0;
 }

@@ -175,6 +175,8 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		memcpy(cmd.keyset.data, buf, 16);
 		memcpy(p->sc.scbk, buf, 16);
 		pd_notify_keyset(p, &cmd.keyset);
+		clear_flag(p, PD_FLAG_SC_USE_SCBKD);
+		clear_flag(p, PD_FLAG_INSTALL_MODE);
 		reply->id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -315,11 +317,8 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		else
 			smb[2] = 0x00;
 		set_flag(p, PD_FLAG_SC_ACTIVE);
-		if (isset_flag(p, PD_FLAG_SC_USE_SCBKD)) {
-			clear_flag(p, PD_FLAG_SC_USE_SCBKD);
-			clear_flag(p, PD_FLAG_INSTALL_MODE);
+		if (isset_flag(p, PD_FLAG_SC_USE_SCBKD))
 			LOG_W(TAG "SC Active with SCBK-D");
-		}
 		break;
 	}
 
@@ -517,14 +516,16 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 	node_set_parent(pd, ctx);
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;
-	pd->flags = p->flags;
 	pd->seq_number = -1;
 	memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 
-	if (scbk == NULL || isset_flag(pd, PD_FLAG_INSTALL_MODE))
-		set_flag(pd, PD_FLAG_SC_USE_SCBKD);
-	else
+	if (scbk == NULL) {
+		LOG_I(TAG "SCBK not provided. PD is in INSTALL_MODE");
+		set_flag(pd, PD_FLAG_INSTALL_MODE);
+	}
+	else {
 		memcpy(pd->sc.scbk, scbk, 16);
+	}
 
 	osdp_pd_set_attributes(pd, p->cap, &p->id);
 

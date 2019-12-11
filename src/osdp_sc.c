@@ -33,7 +33,6 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	struct osdp_pd *p = to_current_pd(ctx);
 
 	if (isset_flag(p, PD_FLAG_SC_USE_SCBKD)) {
-		LOG_W(TAG "Using SCBKD");
 		memcpy(p->sc.scbk, osdp_scbk_default, 16);
 	} else {
 		/**
@@ -266,17 +265,7 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 
 void osdp_sc_init(struct osdp_pd *p)
 {
-	memset(p->sc.scbk, 0, 16);
-	memset(p->sc.s_enc, 0, 16);
-	memset(p->sc.s_mac1, 0, 16);
-	memset(p->sc.s_mac2, 0, 16);
-	memset(p->sc.r_mac, 0, 16);
-	memset(p->sc.c_mac, 0, 16);
-	memset(p->sc.cp_random, 0, 8);
-	memset(p->sc.pd_random, 0, 8);
-	memset(p->sc.cp_cryptogram, 0, 16);
-	memset(p->sc.pd_cryptogram, 0, 16);
-
+	memset(&p->sc, 0, sizeof(struct osdp_secure_channel));
 	if (isset_flag(p, PD_FLAG_PD_MODE)) {
 		p->sc.pd_client_uid[0] = byte_0(p->id.vendor_code);
 		p->sc.pd_client_uid[1] = byte_1(p->id.vendor_code);

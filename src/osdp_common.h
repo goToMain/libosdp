@@ -186,8 +186,10 @@ struct osdp_secure_channel {
 };
 
 struct osdp_pd {
-	/* OSDP specified data */
 	void *__parent;
+	uint32_t flags;
+
+	/* OSDP specified data */
 	int baud_rate;
 	int address;
 	int seq_number;
@@ -196,7 +198,6 @@ struct osdp_pd {
 
 	/* PD state management */
 	int state;
-	int flags;
 	millis_t tstamp;
 	int phy_state;
 	uint8_t phy_rx_buf[OSDP_PACKET_BUF_SIZE];
@@ -217,9 +218,10 @@ struct osdp_pd {
 
 struct osdp_cp {
 	void *__parent;
+	uint32_t flags;
+
 	int num_pd;
 	int state;
-	int flags;
 
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;		/* current pd's offset into ctx->pd */
@@ -227,7 +229,7 @@ struct osdp_cp {
 
 struct osdp {
 	int magic;
-	int flags;
+	uint32_t flags;
 	struct osdp_cp_notifiers notifier;
 
 	uint8_t sc_master_key[16];

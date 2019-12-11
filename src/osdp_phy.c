@@ -132,7 +132,7 @@ int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen)
 	} else if (phy_in_sc_handshake(pd_mode, id)) {
 		pkt->control |= PKT_CONTROL_SCB;
 		pkt->data[0] = sb_len = 3;
-		pkt->data[1] = SCS_15;
+		pkt->data[1] = SCS_11;
 	}
 
 	return sizeof(struct osdp_packet_header) + sb_len;
@@ -160,28 +160,30 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 			/**
 			 * Only the data portion of message (after id byte)
 			 * is encrypted. While (en/de)crypting, we must skip
-			 * header (6), security block (2) and cmd/reply id (1)
+			 * header, security block, and cmd/reply ID
 			 * bytes if cmd/reply has no data, use SCS_15/SCS_16.
 			 */
-			data = pkt->data + 2 + 1;
-			data_len = len - 6 - 2 - 1;
+			data = pkt->data + pkt->data[0] + 1;
+			data_len = len - sizeof(struct osdp_packet_header)
+						- pkt->data[0] - 1;
 			len -= data_len;
 			/**
 			 * check if the passed buffer can hold the encrypted
 			 * data where length may be rounded up to the nearest
 			 * 16 byte block bondary.
 			 */
-			if ((len + osdp_encrypt_data(p, data,
+			if ((len + osdp_encrypt_data(p, is_cmd, data,
 						     data_len, 1)) > maxlen)
 				return -1;
-			data_len = osdp_encrypt_data(p, data, data_len, 0);
+			data_len = osdp_encrypt_data(p, is_cmd, data,
+						     data_len, 0);
 			len += data_len;
 		}
 		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
 		if (len + 4 > maxlen)
 			return -1;
 		pkt->len_lsb = byte_0(len - 1 + 2 + 4);
-		pkt->len_lsb = byte_0(len - 1 + 2 + 4);
+		pkt->len_msb = byte_1(len - 1 + 2 + 4);
 
 		/* compute and extend the buf with 4 MAC bytes */
 		osdp_compute_mac(p, is_cmd, buf + 1, len - 1);
@@ -227,9 +229,9 @@ int phy_check_packet(const uint8_t * buf, int len)
 
 int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 {
-	uint8_t *data;
+	uint8_t *data, *mac;
 	uint16_t comp, cur;
-	int is_cmd, pkt_len, pd_mode;
+	int is_cmd, pkt_len, pd_mode, mac_offset;
 	struct osdp_packet_header *pkt;
 
 	pd_mode = isset_flag(p, PD_FLAG_PD_MODE);
@@ -265,6 +267,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			LOG_E(TAG "invalid crc 0x%04x/0x%04x", comp, cur);
 			return -1;
 		}
+		mac_offset = pkt_len - 4 - 2;
 		len -= 2; /* consume CRC */
 	} else {
 		comp = compute_checksum(buf + 1, pkt_len - 1);
@@ -272,6 +275,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			LOG_E(TAG "invalid checksum 0x%02x/0x%02x", comp, cur);
 			return -1;
 		}
+		mac_offset = pkt_len - 4 - 1;
 		len -= 1; /* consume checksum */
 	}
 
@@ -308,9 +312,9 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 	{
 		/* validate MAC */
 		is_cmd = isset_flag(p, PD_FLAG_PD_MODE);
-		osdp_compute_mac(p, is_cmd, buf + 1, len - 4);
-		data = is_cmd ? p->sc.c_mac : p->sc.r_mac;
-		if (memcmp(buf + len - 4, data, 4) != 0) {
+		osdp_compute_mac(p, is_cmd, buf + 1, mac_offset);
+		mac = is_cmd ? p->sc.c_mac : p->sc.r_mac;
+		if (memcmp(buf + 1 + mac_offset, mac, 4) != 0) {
 			LOG_E(TAG "invalid MAC");
 			return -1;
 		}
@@ -328,7 +332,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			 * already consumed.
 			 */
 			len -= 1; /* remove ID byte from len before decrypting */
-			len = osdp_decrypt_data(to_ctx(p), data + 1, len);
+			len = osdp_decrypt_data(p, is_cmd, data + 1, len);
 			if (len <= 0) {
 				LOG_E(TAG "failed at decrypt");
 				return -1;

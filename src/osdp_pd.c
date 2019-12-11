@@ -32,16 +32,14 @@ enum osdp_phy_state_e {
  */
 int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int len)
 {
-	int i, ret = -1, cmd_id, pos = 0;
+	int i, ret = -1, pos = 0;
 	union cmd_all cmd;
 
 	reply->id = 0;
-	cmd_id = buf[pos++];
+	p->cmd_id = buf[pos++];
 	len--;
 
-	// LOG_D(TAG "processing command: 0x%02x", cmd_id);
-
-	switch (cmd_id) {
+	switch (p->cmd_id) {
 	case CMD_POLL:
 		reply->id = REPLY_ACK;
 		ret = 0;
@@ -163,13 +161,17 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		if (isset_flag(p, PD_FLAG_SC_ACTIVE) == 0) {
 			reply->id = REPLY_NAK;
 			reply->data[0] = OSDP_PD_NAK_SC_COND;
+			LOG_E(TAG "Keyset with SC inactive");
 			break;
 		}
 		cmd.keyset.key_type = buf[pos++];
 		cmd.keyset.len = buf[pos++];
 		/* only key_type == SCBK and key_len == 16 is supported */
-		if (cmd.keyset.key_type != 1 || cmd.keyset.len != 16)
+		if (cmd.keyset.key_type != 1 || cmd.keyset.len != 16) {
+			LOG_E(TAG "Keyset invalid len/type: %d/%d",
+			      cmd.keyset.len, cmd.keyset.key_type);
 			break;
+		}
 		memcpy(cmd.keyset.data, buf, 16);
 		memcpy(p->sc.scbk, buf, 16);
 		pd_notify_keyset(p, &cmd.keyset);
@@ -205,6 +207,11 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	if (ret != 0 && reply->id == 0) {
 		reply->id = REPLY_NAK;
 		reply->data[0] = OSDP_PD_NAK_RECORD;
+	}
+	p->reply_id = reply->id;
+	if (p->cmd_id != CMD_POLL) {
+		LOG_D(TAG "IN(CMD): 0x%02x[%d] -- OUT(REPLY): 0x%02x",
+		      p->cmd_id, len, p->reply_id);
 	}
 
 	return 0;
@@ -290,6 +297,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 			buf[len++] = p->sc.pd_random[i];
 		for (i = 0; i < 16; i++)
 			buf[len++] = p->sc.pd_cryptogram[i];
+		smb[0] = 3;
 		smb[1] = SCS_12;
 		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
 		break;
@@ -300,6 +308,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		buf[len++] = REPLY_RMAC_I;
 		for (i = 0; i < 16; i++)
 			buf[len++] = p->sc.r_mac[i];
+		smb[0] = 3;
 		smb[1] = SCS_14;
 		if (osdp_verify_cp_cryptogram(p) == 0)
 			smb[2] = 0x01;
@@ -314,8 +323,10 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		break;
 	}
 
-	if (smb && (smb[1] > SCS_14) && isset_flag(p, PD_FLAG_SC_ACTIVE))
+	if (smb && (smb[1] > SCS_14) && isset_flag(p, PD_FLAG_SC_ACTIVE)) {
+		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
+	}
 
 	if (len == 0) {
 		buf[len++] = REPLY_NAK;
@@ -402,7 +413,7 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	if (ret < 0) {
-		LOG_E(TAG "failed to decode response");
+		LOG_E(TAG "failed to decode command");
 		return -1;
 	}
 
@@ -447,7 +458,9 @@ int pd_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = PD_PHY_STATE_IDLE;
 		break;
 	case PD_PHY_STATE_ERR:
-		ret = -1;
+		osdp_sc_init(pd);
+		clear_flag(pd, PD_FLAG_SC_ACTIVE);
+		pd->phy_state = PD_PHY_STATE_IDLE;
 		break;
 	}
 

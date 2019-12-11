@@ -100,15 +100,15 @@
 #define REPLY_XRD		0xB1
 
 /* secure block types */
-#define SCS_11			0x11
-#define SCS_12			0x12
-#define SCS_13			0x13
-#define SCS_14			0x14
+#define SCS_11			0x11	/* CP -> PD -- CMD_CHLNG */
+#define SCS_12			0x12	/* PD -> CP -- REPLY_CCRYPT */
+#define SCS_13			0x13	/* CP -> PD -- CMD_SCRYPT */
+#define SCS_14			0x14	/* PD -> CP -- REPLY_RMAC_I */
 
-#define SCS_15			0x15
-#define SCS_16			0x16
-#define SCS_17			0x17
-#define SCS_18			0x18
+#define SCS_15			0x15	/* CP -> PD -- packets w MAC w/o ENC */
+#define SCS_16			0x16	/* PD -> CP -- packets w MAC w/o ENC */
+#define SCS_17			0x17	/* CP -> PD -- packets w MAC w ENC*/
+#define SCS_18			0x18	/* PD -> CP -- packets w MAC w ENC*/
 
 /* Global flags */
 #define FLAG_CP_MODE		0x00000001 /* Set when initialized as CP */
@@ -202,6 +202,8 @@ struct osdp_pd {
 	uint8_t phy_rx_buf[OSDP_PACKET_BUF_SIZE];
 	int phy_rx_buf_len;
 	millis_t phy_tstamp;
+	int cmd_id;
+	int reply_id;
 
 	struct osdp_channel channel;
 	struct osdp_secure_channel sc;
@@ -266,6 +268,7 @@ enum cp_fsm_state_e {
 	CP_STATE_SC_INIT,
 	CP_STATE_SC_CHLNG,
 	CP_STATE_SC_SCRYPT,
+	CP_STATE_SET_SCBK,
 	CP_STATE_ONLINE,
 	CP_STATE_OFFLINE,
 	CP_STATE_SENTINEL
@@ -282,14 +285,15 @@ uint8_t *phy_packet_get_data(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 
 /* from osdp_sc.c */
+void osdp_compute_scbk(struct osdp_pd *p, uint8_t *scbk);
 void osdp_compute_session_keys(struct osdp *ctx);
 void osdp_compute_cp_cryptogram(struct osdp_pd *p);
 int osdp_verify_cp_cryptogram(struct osdp_pd *p);
 void osdp_compute_pd_cryptogram(struct osdp_pd *p);
 int osdp_verify_pd_cryptogram(struct osdp_pd *p);
 void osdp_compute_rmac_i(struct osdp_pd *p);
-int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length);
-int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length, int dry);
+int osdp_decrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
+int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length, int dry);
 int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len);
 void osdp_sc_init(struct osdp_pd *p);
 

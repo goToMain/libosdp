@@ -142,17 +142,19 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_KEYSET:
-		if (cmd->len != sizeof(struct osdp_data) + 18)
+		if (!isset_flag(p, PD_FLAG_SC_ACTIVE))
 			break;
-		c = (union cmd_all *)cmd->data;
-		buf[len++] = c->keyset.key_type;
-		buf[len++] = c->keyset.len;
-		for (i=0; i<c->keyset.len; i++)
-			buf[len++] = c->keyset.data[i];
+		buf[len++] = cmd->id;
+		buf[len++] = 1;
+		buf[len++] = 16;
+		osdp_compute_scbk(p, buf + len);
+		len += 16;
+		ret = 0;
 		break;
 	case CMD_CHLNG:
 		if (smb == NULL)
 			break;
+		smb[0] = 3;
 		smb[1] = SCS_11;  /* type */
 		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
 		buf[len++] = cmd->id;
@@ -164,6 +166,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	case CMD_SCRYPT:
 		if (smb == NULL)
 			break;
+		smb[0] = 3;
 		smb[1] = SCS_13;  /* type */
 		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
 		buf[len++] = cmd->id;
@@ -177,8 +180,11 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		break;
 	}
 
-	if (smb && isset_flag(p, PD_FLAG_SC_ACTIVE))
+	p->cmd_id = cmd->id;
+	if (smb && (smb[1] > SCS_14) && isset_flag(p, PD_FLAG_SC_ACTIVE)) {
+		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
+	}
 
 	if (ret < 0) {
 		LOG_W(TAG "cmd 0x%02x format error! -- %d", cmd->id, ret);
@@ -198,14 +204,12 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 {
 	uint32_t temp32;
 	struct osdp *ctx = to_ctx(p);
-	int i, ret = -1, reply_id, pos = 0, t1, t2;
+	int i, ret = -1, pos = 0, t1, t2;
 
-	reply_id = buf[pos++];
+	p->reply_id = buf[pos++];
 	len--;		/* consume reply id from the head */
 
-	// LOG_D("Processing resp 0x%02x with %d data bytes", reply_id, len);
-
-	switch (reply_id) {
+	switch (p->reply_id) {
 	case REPLY_ACK:
 		ret = 0;
 		break;
@@ -336,8 +340,13 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		ret = 2;
 		break;
 	default:
-		LOG_D(TAG "unexpected reply: 0x%02x", reply_id);
+		LOG_D(TAG "unexpected reply: 0x%02x", p->reply_id);
 		break;
+	}
+
+	if (p->cmd_id != CMD_POLL) {
+		LOG_D(TAG "OUT(CMD): 0x%02x -- IN(REPLY): 0x%02x[%d]",
+		p->cmd_id, p->reply_id, len);
 	}
 
 	return ret;
@@ -571,7 +580,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			LOG_I(TAG "read response timeout");
+			LOG_I(TAG "CMD: 0x%02x - response timeout", pd->cmd_id);
 			pd->phy_state = CP_PHY_STATE_ERR;
 			ret = -1;
 		}
@@ -666,7 +675,7 @@ int cp_state_update(struct osdp_pd *pd)
 			set_flag(pd, PD_FLAG_SC_USE_SCBKD);
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
-			LOG_W(TAG "SC Failed with SCBK; reting with SCBK-D");
+			LOG_W(TAG "SC Failed; retry with SCBK-D");
 			break;
 		}
 		cp_set_state(pd, CP_STATE_SC_SCRYPT);
@@ -675,9 +684,24 @@ int cp_state_update(struct osdp_pd *pd)
 		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0)
 			break;
 		if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD)) {
-			LOG_W(TAG "SC ACtive with SCBK-D");
+			LOG_W(TAG "SC ACtive with SCBK-D; Set SCBK");
+			cp_set_state(pd, CP_STATE_SET_SCBK);
+			break;
 		}
 		cp_set_state(pd, CP_STATE_ONLINE);
+		break;
+	case CP_STATE_SET_SCBK:
+		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0)
+			break;
+		if (pd->cmd_id == REPLY_NAK) {
+			LOG_W(TAG "Failed to set SCBK; continue with SCBK-D");
+			cp_set_state(pd, CP_STATE_ONLINE);
+			break;
+		}
+		LOG_I(TAG "SCBK set; Restarting SC setup");
+		clear_flag(pd, PD_FLAG_SC_USE_SCBKD);
+		clear_flag(pd, PD_FLAG_SC_ACTIVE);
+		cp_set_state(pd, CP_STATE_SC_INIT);
 		break;
 	default:
 		break;

@@ -16,6 +16,17 @@ static const uint8_t osdp_scbk_default[16] = {
     0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
+void osdp_compute_scbk(struct osdp_pd *p, uint8_t *scbk)
+{
+	int i;
+	struct osdp *ctx = to_ctx(p);
+
+	memcpy(scbk, p->sc.pd_client_uid, 8);
+	for (i = 8; i < 16; i++)
+		scbk[i] = ~scbk[i - 8];
+	osdp_encrypt(ctx->sc_master_key, NULL, scbk, 16);
+}
+
 void osdp_compute_session_keys(struct osdp *ctx)
 {
 	int i;
@@ -29,12 +40,8 @@ void osdp_compute_session_keys(struct osdp *ctx)
 		 * Compute SCBK only in CP mode. PD mode, expect to already have
 		 * the SCBK (sent from application layer).
 		 */
-		if (isset_flag(p, PD_FLAG_PD_MODE) == 0) {
-			memcpy(p->sc.scbk, p->sc.pd_client_uid, 8);
-			for (i = 8; i < 16; i++)
-				p->sc.scbk[i] = ~p->sc.scbk[i - 8];
-			osdp_encrypt(ctx->sc_master_key, NULL, p->sc.scbk, 16);
-		}
+		if (isset_flag(p, PD_FLAG_PD_MODE) == 0)
+			osdp_compute_scbk(p, p->sc.scbk);
 	}
 
 	memset(p->sc.s_enc, 0, 16);
@@ -140,27 +147,30 @@ void osdp_compute_rmac_i(struct osdp_pd *p)
 	osdp_encrypt(p->sc.s_mac2, NULL, p->sc.r_mac, 16);
 }
 
-int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
+int osdp_decrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length)
 {
 	int i;
 	uint8_t iv[16];
-	struct osdp_pd *p = to_current_pd(ctx);
 
 	if (length % 16 != 0) {
 		LOG_E(TAG "decrypt_pkt invalid len:%d", length);
 		return -1;
 	}
 
+	memcpy(iv, is_cmd ? p->sc.r_mac : p->sc.c_mac, 16);
 	for (i = 0; i < 16; i++)
-		iv[i] = ~(p->sc.c_mac[i]);
+		iv[i] = ~iv[i];
 
 	osdp_decrypt(p->sc.s_enc, iv, data, length);
 
 #if 0
-    LOG_D(TAG "Decrypt Data");
+    LOG_D(TAG "Decrypt Data -- is_cmd: %d", is_cmd);
     osdp_dump("C-MAC", p->sc.c_mac, 16);
-    osdp_dump("Key: S-ENC", p->sc.s_enc, 16);
-    osdp_dump("IV: ~C-MAC", iv, 16);
+    osdp_dump("R-MAC", p->sc.r_mac, 16);
+    osdp_dump("S-MAC1", p->sc.s_mac1, 16);
+    osdp_dump("S-MAC2", p->sc.s_mac2, 16);
+    osdp_dump("S-ENC", p->sc.s_enc, 16);
+    osdp_dump("IV", iv, 16);
     osdp_dump("Decrypt Data", data, length);
 #endif
 
@@ -174,7 +184,8 @@ int osdp_decrypt_data(struct osdp *ctx, uint8_t *data, int length)
 	return length - 1;
 }
 
-int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length, int dry)
+int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length,
+		      int dry)
 {
 	int i, pad_len;
 	uint8_t iv[16];
@@ -194,15 +205,19 @@ int osdp_encrypt_data(struct osdp_pd *p, uint8_t *data, int length, int dry)
 		memset(data + length + 1, 0, pad_len - length - 1);
 	}
 
+	memcpy(iv, is_cmd ? p->sc.r_mac : p->sc.c_mac, 16);
 	for (i = 0; i < 16; i++)
-		iv[i] = ~(p->sc.r_mac[i]);
+		iv[i] = ~iv[i];
 
 	osdp_encrypt(p->sc.s_enc, iv, data, pad_len);
 #if 0
-    LOG_D(TAG "Encrypt Data");
+    LOG_D(TAG "Encrypt Data -- is_cmd: %d", is_cmd);
     osdp_dump("R-MAC", p->sc.r_mac, 16);
-    osdp_dump("Key: S-ENC", p->sc.s_enc, 16);
-    osdp_dump("IV: ~R-MAC", iv, 16);
+    osdp_dump("C-MAC", p->sc.c_mac, 16);
+    osdp_dump("S-MAC1", p->sc.s_mac1, 16);
+    osdp_dump("S-MAC2", p->sc.s_mac2, 16);
+    osdp_dump("S-ENC", p->sc.s_enc, 16);
+    osdp_dump("IV", iv, 16);
     osdp_dump("Encrypt Data", data, pad_len);
 #endif
 	return pad_len;
@@ -236,6 +251,16 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 	/* N-th Block encrypted with SMAC-2 == MAC */
 	osdp_encrypt(p->sc.s_mac2, iv, buf + pad_len - 16, 16);
 	memcpy(is_cmd ? p->sc.c_mac : p->sc.r_mac, buf + pad_len - 16, 16);
+
+#if 0
+    LOG_D(TAG "MAC Diagnostics is_cmd: %d", is_cmd);
+    osdp_dump("S-MAC1", p->sc.s_mac1, 16);
+    osdp_dump("S-MAC2", p->sc.s_mac2, 16);
+    osdp_dump("IV", iv, 16);
+    osdp_dump("R-MAC", p->sc.r_mac, 16);
+    osdp_dump("C-MAC", p->sc.c_mac, 16);
+#endif
+
 	return 0;
 }
 

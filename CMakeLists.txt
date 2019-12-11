@@ -57,9 +57,11 @@ list(APPEND LIB_OSDP_SRC
 	"src/osdp_cp.c"
 	"src/osdp_pd.c"
 )
-ADD_LIBRARY(${LIB_OSDP} SHARED ${LIB_OSDP_SRC})
+add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SRC})
+set(OSDP_LIBRARY_TO_LINK ${LIB_OSDP})
 if (CONFIG_OSDP_BUILD_STATIC)
-	ADD_LIBRARY(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
+	add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
+	set(OSDP_LIBRARY_TO_LINK ${LIB_OSDP_STATIC})
 endif()
 
 ## tests
@@ -95,7 +97,7 @@ list(APPEND BIN_OSDPCTL_SRC
 	"osdpctl/cmd_start.c"
 )
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
-target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} osdp)
+target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} ${OSDP_LIBRARY_TO_LINK})
 
 ## Install
 set(CMAKE_INSTALL_DIR $ENV{INSTALL_PREFIX})

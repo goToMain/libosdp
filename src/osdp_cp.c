@@ -672,7 +672,13 @@ int cp_state_update(struct osdp_pd *pd)
 		if (cp_cmd_dispatcher(pd, CMD_CHLNG) != 0)
 			break;
 		if (phy_state < 0) {
+			if (isset_flag(pd, PD_FLAG_SC_SCBKD_DONE)) {
+				LOG_I(TAG "SC Failed; set to online without SC");
+				cp_set_state(pd, CP_STATE_ONLINE);
+				break;
+			}
 			set_flag(pd, PD_FLAG_SC_USE_SCBKD);
+			set_flag(pd, PD_FLAG_SC_SCBKD_DONE);
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
 			LOG_W(TAG "SC Failed; retry with SCBK-D");

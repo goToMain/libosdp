@@ -172,8 +172,8 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 			      cmd.keyset.len, cmd.keyset.key_type);
 			break;
 		}
-		memcpy(cmd.keyset.data, buf, 16);
-		memcpy(p->sc.scbk, buf, 16);
+		memcpy(cmd.keyset.data, buf + pos, 16);
+		memcpy(p->sc.scbk, buf + pos, 16);
 		pd_notify_keyset(p, &cmd.keyset);
 		clear_flag(p, PD_FLAG_SC_USE_SCBKD);
 		clear_flag(p, PD_FLAG_INSTALL_MODE);
@@ -189,6 +189,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		if (len != 8)
 			break;
 		osdp_sc_init(p);
+		clear_flag(p, PD_FLAG_SC_ACTIVE);
 		for (i = 0; i < 8; i++)
 			p->sc.cp_random[i] = buf[pos++];
 		reply->id = REPLY_CCRYPT;

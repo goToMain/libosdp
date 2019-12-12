@@ -61,7 +61,7 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac1, 16);
 	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac2, 16);
 
-#if 0
+#if 1
     LOG_D(TAG "Session Keys");
     osdp_dump("SCBK", p->sc.scbk, 16);
     osdp_dump("M-KEY", ctx->sc_master_key, 16);
@@ -265,7 +265,14 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 
 void osdp_sc_init(struct osdp_pd *p)
 {
+	uint8_t key[16];
+
+	if (isset_flag(p, PD_FLAG_PD_MODE))
+		memcpy(key, p->sc.scbk, 16);
 	memset(&p->sc, 0, sizeof(struct osdp_secure_channel));
+	if (isset_flag(p, PD_FLAG_PD_MODE))
+		memcpy(p->sc.scbk, key, 16);
+
 	if (isset_flag(p, PD_FLAG_PD_MODE)) {
 		p->sc.pd_client_uid[0] = byte_0(p->id.vendor_code);
 		p->sc.pd_client_uid[1] = byte_1(p->id.vendor_code);

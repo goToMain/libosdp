@@ -65,6 +65,30 @@ int config_parse_key_channel_topology(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
+int config_parse_key_pid_file(const char *val, void *data)
+{
+	struct config_s *p = data;
+
+	if (strcmp("", val) == 0)
+		return INI_FAILURE;
+
+	p->pid_file = strdup(val);
+
+	return INI_SUCCESS;
+}
+
+int config_parse_key_log_file(const char *val, void *data)
+{
+	struct config_s *p = data;
+
+	if (strcmp("", val) == 0)
+		return INI_FAILURE;
+
+	p->log_file = strdup(val);
+
+	return INI_SUCCESS;
+}
+
 int config_parse_key_capabilites(const char *val, void *data)
 {
 	int i, ival[3];
@@ -284,6 +308,8 @@ const struct config_key_s g_config_key_global[] = {
 	{ "num_pd",		config_parse_key_num_pd },
 	{ "log_level",		config_parse_key_log_level },
 	{ "conn_topology",	config_parse_key_channel_topology },
+	{ "pid_file",		config_parse_key_pid_file },
+	{ "log_file",		config_parse_key_log_file },
 	{ NULL, NULL }
 };
 
@@ -419,15 +445,15 @@ void config_parse(const char *filename, struct config_s *config)
 		exit(-1);
 	}
 
-	if (config->config_file[0] != '/') {
-		rp = realpath(config->config_file, NULL);
+	if (filename[0] != '/') {
+		rp = realpath(filename, NULL);
 		if (rp == NULL) {
-			printf("Error: no absolute path for %s",
-			       config->config_file);
+			printf("Error: no absolute path for %s", filename);
 			exit (-1);
 		}
-		free(config->config_file);
 		config->config_file = rp;
+	} else {
+		config->config_file = strdup(filename);
 	}
 
 	if (config->pd->channel_type == CONFIG_CHANNEL_TYPE_MSGQ) {

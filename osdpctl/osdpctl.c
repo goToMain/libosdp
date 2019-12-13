@@ -18,26 +18,30 @@ struct config_s g_config;
 
 struct ap_option ap_opts[] = {
 	{
-		AP_ARG('c', "config-file", "file"),
-		AP_STORE_STR(struct config_s, config_file),
-		AP_FLAGS(AP_OPT_REQUIRED),
-		AP_VALIDATOR(NULL),
-		AP_HELP("Config file (ini format)")
-	},
-	{
-		AP_ARG('d', "dump-config", ""),
-		AP_STORE_BOOL(struct config_s, dump_config),
+		AP_ARG('l', "log-file", "file"),
+		AP_STORE_STR(struct config_s, log_file),
 		AP_FLAGS(AP_OPT_NOFLAG),
 		AP_VALIDATOR(NULL),
-		AP_HELP("Print parsed config and exit")
+		AP_HELP("Log to file instead of tty")
 	},
-	AP_CMD("start", "Start a osdp service"),
+	{
+		AP_CMD("start", cmd_handler_start),
+		AP_HELP("Start a osdp service")
+	},
+	{
+		AP_CMD("send", cmd_handler_send),
+		AP_HELP("Send a command to a osdp device")
+	},
+	{
+		AP_CMD("stop", cmd_handler_stop),
+		AP_HELP("Stop a service started earlier")
+	},
 	AP_SENTINEL
 };
 
 static void signal_handler(int sig)
 {
-	if (sig == SIGINT)
+	if (sig == SIGINT || sig == SIGHUP || sig == SIGTERM)
 		exit(EXIT_FAILURE);
 }
 
@@ -45,6 +49,11 @@ void cleanup()
 {
 	int i;
 	struct config_pd_s *pd;
+
+	if (g_config.service_started) {
+		unlink(g_config.pid_file);
+		stop_cmd_server(&g_config);
+	}
 
 	for (i = 0; i < g_config.num_pd; i++) {
 		pd = g_config.pd + i;
@@ -61,33 +70,15 @@ void osdpctl_process_init()
 	sigemptyset(&sigact.sa_mask);
 	sigact.sa_flags = 0;
 	sigaction(SIGINT, &sigact, (struct sigaction *)NULL);
+	sigaction(SIGHUP, &sigact, (struct sigaction *)NULL);
+	sigaction(SIGTERM, &sigact, (struct sigaction *)NULL);
 }
 
 int main(int argc, char *argv[])
 {
-	int opt_end;
-
 	osdpctl_process_init();
 
         ap_init("osdpctl", "Setup/Manage OSDP devices");
 
-	opt_end = ap_parse(argc, argv, ap_opts, &g_config);
-
-	config_parse(g_config.config_file, &g_config);
-
-	if (g_config.dump_config) {
-		config_print(&g_config);
-		exit(0);
-	}
-
-	if (argv[opt_end] == NULL) {
-		printf("Error: no command specified\n");
-		ap_print_help(ap_opts, -1);
-	}
-
-	if (strcmp("start", argv[opt_end]) == 0) {
-		cmd_handler_start(MOVE_ARGS(opt_end), &g_config);
-	}
-
-	return 0;
+	return ap_parse(argc, argv, ap_opts, &g_config);
 }

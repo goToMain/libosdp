@@ -29,9 +29,8 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 	if (ap_app_name && exit_code == 0)
 		printf("%s - %s\n", ap_app_name, ap_app_desc);
 
-	printf("\nUsage:  %s [arguments] [commands]\n", ap_app_name);
-
-	printf("\nArguments:\n");
+	printf("\nUsage:  %s [OPTIONS...] <COMMAND> [CMD_ARGS[0] ...]\n"
+	       "\nOPTIONS:\n", ap_app_name);
 
 	ap_opt = ap_opts;
 	while (ap_opt->short_name != '\0') {
@@ -50,7 +49,9 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 			       ap_opt->help);
 		ap_opt++;
 	}
-	printf("  -h, --%-"PAD"s Print this help message\n", "help");
+	printf("  -%c, --%-"PAD"s Fork to background\n", 'f', "fork");
+	printf("  -%c, --%-"PAD"s Prevent writing to tty\n", 'q', "quite");
+	printf("  -%c, --%-"PAD"s Print this help message\n", 'h', "help");
 
 	count = 0;
 	ap_opt = ap_opts;
@@ -60,7 +61,7 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 			continue;
 		}
 		if (count == 0)
-			printf("\nCommands:\n");
+			printf("\nCOMMANDS:\n");
 		printf("  %-"PAD"s       %s\n", ap_opt->long_name, ap_opt->help);
 		ap_opt++; count++;
 	}
@@ -80,7 +81,8 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	char ostr[128];
 	struct option *opts, *opt;
 	struct ap_option *ap_opt;
-	int i, c, ret, opts_len = 0, cmd_len = 0, opt_idx = 0, olen = 0, *ival;
+	int i, c, ret, *ival, pid;
+	int opts_len = 0, cmd_len = 0, opt_idx = 0, olen = 0, do_fork = 0;
 
 	ap_opt = ap_opts;
 	while (ap_opt->short_name != '\0') {
@@ -91,7 +93,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 		ap_opt++;
 	}
 
-	opts = malloc(sizeof (struct option) * opts_len + 1);
+	opts = malloc(sizeof (struct option) * opts_len + 3);
 	if (opts == NULL) {
 		printf("Error: alloc error\n");
 		exit(-1);
@@ -121,10 +123,15 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	}
 
 	/* add help option */
-	opt = opts + i;
+	opt = opts + i + 0;
 	opt->name = "help";
 	opt->val = 'h';
-	olen += snprintf(ostr + olen, 128 - olen, "h");
+	opt = opts + i + 1;
+	opt->name = "quite";
+	opt->val = 'q';
+	opt = opts + i + 2;
+	opt->val = 'f';
+	olen += snprintf(ostr + olen, 128 - olen, "hqf");
 
 	while ((c = getopt_long(argc, argv, ostr, opts, &opt_idx)) >= 0) {
 
@@ -133,7 +140,15 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 
 		if (c == 'h')
 			ap_print_help(ap_opts, 0);
-
+		if (c == 'q') {
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
+			continue;
+		}
+		if (c == 'f') {
+			do_fork = 1;
+			continue;
+		}
 		if (c == '?')
 			ap_print_help(ap_opts, -1);
 
@@ -163,7 +178,6 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	}
 	free(opts);
 
-	ret = 0;
 	ap_opt = ap_opts;
 	while (ap_opt->short_name != '\0') {
 		if (ap_opt->short_name != -1) {
@@ -174,13 +188,21 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 				ap_print_help(ap_opts, -1);
 			}
 		} else if (argv[optind]) {
-			if (strcmp(ap_opt->long_name, argv[optind]) == 0)
-				ret = 1;
+			if (strcmp(ap_opt->long_name, argv[optind]) == 0) {
+				if (do_fork) {
+					if ((pid = fork()) < 0)
+						return -1;
+					if (pid != 0)
+						exit (0);
+				}
+				return ap_opt->handler(argc - optind - 1,
+						       argv + optind + 1, data);
+			}
 		}
 		ap_opt++;
 	}
 
-	if (cmd_len && argv[optind] && ret == 0) {
+	if (cmd_len) {
 		printf("Error: unknown command '%s'\n\n", argv[optind]);
 		ap_print_help(ap_opts, -1);
 	}

@@ -320,6 +320,8 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		set_flag(p, PD_FLAG_SC_ACTIVE);
 		if (isset_flag(p, PD_FLAG_SC_USE_SCBKD))
 			LOG_W(TAG "SC Active with SCBK-D");
+		else
+			LOG_I(TAG "SC Active");
 		break;
 	}
 

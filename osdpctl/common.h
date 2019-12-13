@@ -61,8 +61,16 @@ struct config_s {
 	/* ini section: "^PD(-[0-9]+)?" */
 	struct config_pd_s *pd;
 
+	osdp_cp_t *cp_ctx;
+	osdp_pd_t *pd_ctx;
+
+	int service_started;
+	int cs_send_msgid;
+	int cs_recv_msgid;
+
 	/* cli_args */
-	int dump_config;
+	char *pid_file;
+	char *log_file;
 	char *config_file;
 };
 
@@ -71,17 +79,29 @@ extern struct config_s g_config;
 void config_print(struct config_s *config);
 void config_parse(const char *filename, struct config_s *config);
 
-// from strutils.c
+// from utils.c
 
 int atohstr(char *hstr, const uint8_t *arr, const int arr_len);
 int hstrtoa(uint8_t *arr, const char *hstr);
 int safe_atoi(const char *a, int *i);
 void remove_spaces(char *str);
+int read_pid(const char *file, int *pid);
+int write_pid(const char *file);
+int redirect_output_to_log_file(const char *file);
 
 // command handlers
-int cmd_handler_start(int argc, char *argv[], struct config_s *c);
+
+void stop_cmd_server(struct config_s *c);
+int cmd_handler_start(int argc, char *argv[], void *data);
+int cmd_handler_send(int argc, char *argv[], void *data);
+int cmd_handler_stop(int argc, char *argv[], void *data);
 
 // from channel*.c
+
+struct msgbuf {
+	long mtype;		/* message type, must be > 0 */
+	uint8_t mtext[1024];	/* message data */
+};
 
 extern struct channel_ops_s channel_uart;
 extern struct channel_ops_s channel_msgq;
@@ -97,5 +117,9 @@ struct channel_ops_s {
 
 int channel_setup(struct config_pd_s *p);
 void channel_teardown(struct config_pd_s *p);
+
+// from libosdp
+
+void osdp_dump(const char *head, const uint8_t * data, int len);
 
 #endif

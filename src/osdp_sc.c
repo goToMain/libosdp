@@ -61,7 +61,7 @@ void osdp_compute_session_keys(struct osdp *ctx)
 	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac1, 16);
 	osdp_encrypt(p->sc.scbk, NULL, p->sc.s_mac2, 16);
 
-#if 1
+#if 0
     LOG_D(TAG "Session Keys");
     osdp_dump("SCBK", p->sc.scbk, 16);
     osdp_dump("M-KEY", ctx->sc_master_key, 16);

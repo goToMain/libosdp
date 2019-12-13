@@ -31,6 +31,7 @@ struct ap_option {
 	size_t offset;
 	int flags;
 	int (*validator)(void *data);
+	int (*handler)(int argc, char *argv[], void *data);
 	const char *help;
 };
 
@@ -38,12 +39,12 @@ struct ap_option {
 #define AP_STORE_STR(s, m)	AP_TYPE_STR,  (size_t)&(((s *)0)->m)
 #define AP_STORE_BOOL(s, m)	AP_TYPE_BOOL, (size_t)&(((s *)0)->m)
 
-#define AP_CMD(x, y)		{ -1, x, NULL, AP_TYPE_CMD, 0, 0, NULL, y }
-#define AP_SENTINEL 		{ '\0', NULL, NULL, AP_TYPE_SENTINEL, 0, 0, NULL, NULL }
+#define AP_CMD(x, y)		-1, x, NULL, AP_TYPE_CMD, 0, 0, NULL, y
+#define AP_SENTINEL 		{ '\0', NULL, NULL, AP_TYPE_SENTINEL, 0, 0, NULL, NULL, NULL }
 
 /* dummy macros to improve readability */
 #define AP_ARG(s, l, n)		s, l, n
-#define AP_VALIDATOR(x)		x
+#define AP_VALIDATOR(x)		x, NULL
 #define AP_FLAGS(x)		x
 #define AP_HELP(x)		x
 

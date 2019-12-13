@@ -101,6 +101,16 @@ struct osdp_cmd_keyset {
 	uint8_t data[32];
 };
 
+/* generic OSDP command structure */
+union osdp_cmd {
+	struct osdp_cmd_led led;
+	struct osdp_cmd_buzzer buzzer;
+	struct osdp_cmd_text text;
+	struct osdp_cmd_output output;
+	struct osdp_cmd_comset comset;
+	struct osdp_cmd_keyset keyset;
+};
+
 struct pd_cap {
 	uint8_t function_code;	/* enum osdp_pd_cap_function_code_e */
 	uint8_t compliance_level;
@@ -213,9 +223,10 @@ void osdp_cp_teardown(osdp_cp_t *ctx);
 int osdp_cp_set_callback_key_press(osdp_cp_t *ctx, int (*cb) (int address, uint8_t key));
 int osdp_cp_set_callback_card_read(osdp_cp_t *ctx, int (*cb) (int address, int format, uint8_t * data, int len));
 
-int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p);
 int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p);
 int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
+int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p);
+int osdp_cp_send_cmd_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p);
 int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p);
 int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p);
 

@@ -694,6 +694,7 @@ int cp_state_update(struct osdp_pd *pd)
 			cp_set_state(pd, CP_STATE_SET_SCBK);
 			break;
 		}
+		LOG_I(TAG "SC ACtive");
 		cp_set_state(pd, CP_STATE_ONLINE);
 		break;
 	case CP_STATE_SET_SCBK:

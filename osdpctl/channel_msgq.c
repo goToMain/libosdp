@@ -21,10 +21,7 @@ struct channel_msgq_s {
 	int recv_msgid;
 };
 
-struct msgbuf {
-	long mtype;		/* message type, must be > 0 */
-	uint8_t mtext[1024];	/* message data */
-} send_buf, recv_buf;
+struct msgbuf send_buf, recv_buf;
 
 int channel_msgq_send(void *data, uint8_t *buf, int len)
 {

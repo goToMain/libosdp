@@ -95,6 +95,8 @@ list(APPEND BIN_OSDPCTL_SRC
 	"osdpctl/channel.c"
 	"osdpctl/osdpctl.c"
 	"osdpctl/cmd_start.c"
+	"osdpctl/cmd_send.c"
+	"osdpctl/cmd_others.c"
 )
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
 target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} ${OSDP_LIBRARY_TO_LINK})

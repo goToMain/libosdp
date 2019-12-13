@@ -148,15 +148,6 @@ struct osdp_data {
 	uint8_t data[];
 };
 
-union cmd_all {
-	struct osdp_cmd_led led;
-	struct osdp_cmd_buzzer buzzer;
-	struct osdp_cmd_text text;
-	struct osdp_cmd_output output;
-	struct osdp_cmd_comset comset;
-	struct osdp_cmd_keyset keyset;
-};
-
 struct cmd_queue {
 	int head;
 	int tail;

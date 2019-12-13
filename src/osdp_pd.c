@@ -33,7 +33,7 @@ enum osdp_phy_state_e {
 int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int len)
 {
 	int i, ret = -1, pos = 0;
-	union cmd_all cmd;
+	union osdp_cmd cmd;
 
 	reply->id = 0;
 	p->cmd_id = buf[pos++];

@@ -45,7 +45,7 @@ enum cp_phy_state_e {
  */
 int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 {
-	union cmd_all *c;
+	union osdp_cmd *c;
 	int ret = -1, i, len = 0;
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
@@ -71,7 +71,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	case CMD_OUT:
 		if (cmd->len != sizeof(struct osdp_data) + 4)
 			break;
-		c = (union cmd_all *)cmd->data;
+		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
 		buf[len++] = c->output.output_no;
 		buf[len++] = c->output.control_code;
@@ -82,7 +82,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	case CMD_LED:
 		if (cmd->len != sizeof(struct osdp_data) + 16)
 			break;
-		c = (union cmd_all *)cmd->data;
+		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
 		buf[len++] = c->led.reader;
 		buf[len++] = c->led.number;
@@ -105,7 +105,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	case CMD_BUZ:
 		if (cmd->len != sizeof(struct osdp_data) + 5)
 			break;
-		c = (union cmd_all *)cmd->data;
+		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
 		buf[len++] = c->buzzer.reader;
 		buf[len++] = c->buzzer.tone_code;
@@ -117,7 +117,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	case CMD_TEXT:
 		if (cmd->len != sizeof(struct osdp_data) + 38)
 			break;
-		c = (union cmd_all *)cmd->data;
+		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
 		buf[len++] = c->text.reader;
 		buf[len++] = c->text.cmd;
@@ -132,7 +132,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 	case CMD_COMSET:
 		if (cmd->len != sizeof(struct osdp_data) + 5)
 			break;
-		c = (union cmd_all *)cmd->data;
+		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
 		buf[len++] = c->comset.addr;
 		buf[len++] = byte_0(c->comset.baud);
@@ -830,7 +830,7 @@ int osdp_cp_set_callback_card_read(osdp_cp_t * ctx,
 
 int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_OUT;
@@ -846,7 +846,7 @@ int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 
 int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_OUT;
@@ -862,7 +862,7 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 
 int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_BUZ;
@@ -876,9 +876,9 @@ int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	return 0;
 }
 
-int osdp_cp_set_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
+int osdp_cp_send_cmd_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_TEXT;
@@ -894,7 +894,7 @@ int osdp_cp_set_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 
 int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
 	cmd->id = CMD_COMSET;
@@ -911,7 +911,7 @@ int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p)
 {
 	int i;
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union cmd_all)];
+	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 	struct osdp_cp *cp = to_osdp(ctx)->cp;
 	struct osdp_pd *pd;

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "arg_parser.h"
 

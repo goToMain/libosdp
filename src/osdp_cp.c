@@ -69,7 +69,8 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_OUT:
-		if (cmd->len != sizeof(struct osdp_data) + 4)
+		if (cmd->len != sizeof(struct osdp_data)
+				+ sizeof(struct osdp_cmd_output))
 			break;
 		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
@@ -80,7 +81,8 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_LED:
-		if (cmd->len != sizeof(struct osdp_data) + 16)
+		if (cmd->len != sizeof(struct osdp_data)
+				+ sizeof(struct osdp_cmd_led))
 			break;
 		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
@@ -103,7 +105,8 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_BUZ:
-		if (cmd->len != sizeof(struct osdp_data) + 5)
+		if (cmd->len != sizeof(struct osdp_data)
+				+ sizeof(struct osdp_cmd_buzzer))
 			break;
 		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
@@ -115,7 +118,8 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_TEXT:
-		if (cmd->len != sizeof(struct osdp_data) + 38)
+		if (cmd->len != sizeof(struct osdp_data)
+				+ sizeof(struct osdp_cmd_text))
 			break;
 		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
@@ -130,7 +134,8 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_COMSET:
-		if (cmd->len != sizeof(struct osdp_data) + 5)
+		if (cmd->len != sizeof(struct osdp_data)
+				+ sizeof(struct osdp_cmd_comset))
 			break;
 		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
@@ -373,7 +378,7 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	/* fill command data */
 	ret = cp_build_command(p, cmd, buf);
 	if (ret < 0) {
-		LOG_E(TAG "failed to build command %d", cmd->id);
+		LOG_E(TAG "failed to build command 0x%02x", cmd->id);
 		return -1;
 	}
 	len += ret;
@@ -381,12 +386,13 @@ int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
 	/* finalize packet */
 	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		LOG_E(TAG "failed to build command %d", cmd->id);
+		LOG_E(TAG "failed to build command 0x%02x", cmd->id);
 		return -1;
 	}
 
 #ifdef OSDP_PACKET_TRACE
-	osdp_dump("CP_SEND:", buf, len);
+	if (p->cmd_id != CMD_POLL)
+		osdp_dump("CP_SEND:", buf, len);
 #endif
 
 	ret = p->channel.send(p->channel.data, buf, len);
@@ -423,7 +429,8 @@ int cp_process_reply(struct osdp_pd *p)
 	/* Valid OSDP packet in buffer */
 
 #ifdef OSDP_PACKET_TRACE
-	osdp_dump("CP_RECV:", p->phy_rx_buf, p->phy_rx_buf_len);
+	if (p->cmd_id != CMD_POLL)
+		osdp_dump("CP_RECV:", p->phy_rx_buf, p->phy_rx_buf_len);
 #endif
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
@@ -850,7 +857,7 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
-	cmd->id = CMD_OUT;
+	cmd->id = CMD_LED;
 	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_led);
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_led));
 

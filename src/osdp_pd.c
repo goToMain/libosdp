@@ -127,8 +127,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		cmd.text.temp_time  = buf[pos++];
 		cmd.text.offset_row = buf[pos++];
 		cmd.text.offset_col = buf[pos++];
-		cmd.text.offset_col = buf[pos++];
-		cmd.text.length = buf[pos++];
+		cmd.text.length     = buf[pos++];
 		if (cmd.text.length > 32)
 			break;
 		for (i = 0; i < cmd.text.length; i++)
@@ -372,7 +371,8 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
 	}
 
 #ifdef OSDP_PACKET_TRACE
-	osdp_dump("PD_SEND:", buf, len);
+	if (p->cmd_id != CMD_POLL)
+		osdp_dump("PD_SEND:", buf, len);
 #endif
 
 	ret = p->channel.send(p->channel.data, buf, len);
@@ -410,7 +410,8 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 	/* Valid OSDP packet in buffer */
 
 #ifdef OSDP_PACKET_TRACE
-	osdp_dump("PD_RECV:", p->phy_rx_buf, p->phy_rx_buf_len);
+	if (p->phy_rx_buf[6] != CMD_POLL && p->phy_rx_buf[8] != CMD_POLL)
+		osdp_dump("PD_RECV:", p->phy_rx_buf, p->phy_rx_buf_len);
 #endif
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);

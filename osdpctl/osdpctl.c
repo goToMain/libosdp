@@ -12,8 +12,6 @@
 #include "arg_parser.h"
 #include "common.h"
 
-#define MOVE_ARGS(end) argc-end-1, argv+end+1
-
 struct config_s g_config;
 
 struct ap_option ap_opts[] = {
@@ -35,6 +33,10 @@ struct ap_option ap_opts[] = {
 	{
 		AP_CMD("stop", cmd_handler_stop),
 		AP_HELP("Stop a service started earlier")
+	},
+	{
+		AP_CMD("check", cmd_handler_check),
+		AP_HELP("Check and print parsed config")
 	},
 	AP_SENTINEL
 };

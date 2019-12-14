@@ -67,6 +67,8 @@ int safe_atoi(const char *a, int *i)
 {
 	int val;
 
+	if (a == NULL)
+		return -1;
 	val = atoi(a);
 	if (val == 0 && a[0] != '0')
 		return -1;

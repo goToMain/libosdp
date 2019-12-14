@@ -52,18 +52,27 @@ struct osdp_cmd_output {
 };
 
 /* CMD_LED */
+enum osdp_led_color_e {
+	OSDP_LED_COLOR_NONE,
+	OSDP_LED_COLOR_RED,
+	OSDP_LED_COLOR_GREEN,
+	OSDP_LED_COLOR_AMBER,
+	OSDP_LED_COLOR_BLUE,
+	OSDP_LED_COLOR_SENTINEL
+};
+
 struct __osdp_cmd_led_params {
 	uint8_t control_code;
 	uint8_t on_count;
 	uint8_t off_count;
-	uint8_t on_color;
-	uint8_t off_color;
+	uint8_t on_color;	/* enum osdp_led_color_e */
+	uint8_t off_color;	/* enum osdp_led_color_e */
 	uint16_t timer;
 };
 
 struct osdp_cmd_led {
 	uint8_t reader;
-	uint8_t number;
+	uint8_t led_number;
 	struct __osdp_cmd_led_params temporary;
 	struct __osdp_cmd_led_params permanent;
 };

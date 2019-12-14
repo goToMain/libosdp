@@ -146,44 +146,31 @@ void stop_cmd_server(struct config_s *c)
 	msgctl(c->cs_recv_msgid, IPC_RMID, NULL);
 }
 
-struct osdpctl_cmd {
-	int id;
-	int offset;
-	union osdp_cmd cmd;
-};
-
-enum osdpctl_cmd_e {
-	OSDPCTL_CMD_LED,
-	OSDPCTL_CMD_BUZ,
-	OSDPCTL_CMD_TEXT,
-	OSDPCTL_CMD_OUTPUT,
-	OSDPCTL_CMD_COMSET,
-	OSDPCTL_CMD_KEYSET,
-	OSDPCTL_CMD_SENTINEL
-};
-
-void handle_command(struct config_s *c, struct osdpctl_cmd *p)
+void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 {
-	switch(p->id){
-	case OSDPCTL_CMD_LED:
+	if (p->id < OSDPCTL_CP_CMD_LED || p->id >= OSDPCTL_CP_CMD_SENTINEL) {
+		printf("Error: got invalid command ID\n");
+		return;
+	}
+
+	switch(p->id) {
+	case OSDPCTL_CP_CMD_LED:
 		osdp_cp_send_cmd_led(c->cp_ctx, p->offset, &p->cmd.led);
 		break;
-	case OSDPCTL_CMD_BUZ:
+	case OSDPCTL_CP_CMD_BUZZER:
 		osdp_cp_send_cmd_buzzer(c->cp_ctx, p->offset, &p->cmd.buzzer);
 		break;
-	case OSDPCTL_CMD_TEXT:
+	case OSDPCTL_CP_CMD_TEXT:
 		osdp_cp_send_cmd_text(c->cp_ctx, p->offset, &p->cmd.text);
 		break;
-	case OSDPCTL_CMD_OUTPUT:
+	case OSDPCTL_CP_CMD_OUTPUT:
 		osdp_cp_send_cmd_output(c->cp_ctx, p->offset, &p->cmd.output);
 		break;
-	case OSDPCTL_CMD_KEYSET:
+	case OSDPCTL_CP_CMD_KEYSET:
 		osdp_cp_send_cmd_keyset(c->cp_ctx, &p->cmd.keyset);
 		break;
-	case OSDPCTL_CMD_COMSET:
+	case OSDPCTL_CP_CMD_COMSET:
 		osdp_cp_send_cmd_comset(c->cp_ctx, p->offset, &p->cmd.comset);
-		break;
-	default:
 		break;
 	}
 }
@@ -201,7 +188,8 @@ int process_commands(struct config_s *c)
 	}
 	if (ret <= 0) return -1;;
 
-	handle_command(c, (struct osdpctl_cmd *)msgq_cmd.mtext);
+	if (c->mode == CONFIG_MODE_CP)
+		handle_cp_command(c, (struct osdpctl_cmd *)msgq_cmd.mtext);
 
 	return 0;
 }

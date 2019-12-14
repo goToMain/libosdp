@@ -85,7 +85,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
 		buf[len++] = c->led.reader;
-		buf[len++] = c->led.number;
+		buf[len++] = c->led.led_number;
 
 		buf[len++] = c->led.temporary.control_code;
 		buf[len++] = c->led.temporary.on_count;

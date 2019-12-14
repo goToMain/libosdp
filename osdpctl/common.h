@@ -95,6 +95,7 @@ void stop_cmd_server(struct config_s *c);
 int cmd_handler_start(int argc, char *argv[], void *data);
 int cmd_handler_send(int argc, char *argv[], void *data);
 int cmd_handler_stop(int argc, char *argv[], void *data);
+int cmd_handler_check(int argc, char *argv[], void *data);
 
 // from channel*.c
 
@@ -117,6 +118,27 @@ struct channel_ops_s {
 
 int channel_setup(struct config_pd_s *p);
 void channel_teardown(struct config_pd_s *p);
+
+// API
+
+enum osdpctl_cmd_e {
+	OSDPCTL_CMD_UNUSED,
+	OSDPCTL_CP_CMD_LED,
+	OSDPCTL_CP_CMD_BUZZER,
+	OSDPCTL_CP_CMD_TEXT,
+	OSDPCTL_CP_CMD_OUTPUT,
+	OSDPCTL_CP_CMD_COMSET,
+	OSDPCTL_CP_CMD_KEYSET,
+	OSDPCTL_CP_CMD_SENTINEL
+};
+
+struct osdpctl_cmd {
+	int id;
+	int offset;
+	union osdp_cmd cmd;
+};
+
+extern struct msgbuf msgq_cmd;
 
 // from libosdp
 

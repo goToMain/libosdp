@@ -86,7 +86,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		if (len != 14)
 			break;
 		cmd.led.reader = buf[pos++];
-		cmd.led.number = buf[pos++];
+		cmd.led.led_number = buf[pos++];
 
 		cmd.led.temporary.control_code = buf[pos++];
 		cmd.led.temporary.on_count     = buf[pos++];

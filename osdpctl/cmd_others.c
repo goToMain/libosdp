@@ -30,3 +30,16 @@ int cmd_handler_stop(int argc, char *argv[], void *data)
 	kill((pid_t)pid, SIGHUP);
 	return 0;
 }
+
+int cmd_handler_check(int argc, char *argv[], void *data)
+{
+	struct config_s *c = data;
+
+	if (argc < 1) {
+		printf ("Error: must pass a config file\n");
+		return -1;
+	}
+	config_parse(argv[0], c);
+	config_print(c);
+	return 0;
+}

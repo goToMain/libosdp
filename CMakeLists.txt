@@ -78,6 +78,7 @@ add_executable(${LIB_OSDP_TEST} EXCLUDE_FROM_ALL ${LIB_OSDP_TEST_SRC})
 target_link_libraries(${LIB_OSDP_TEST} osdp)
 add_custom_target(check
 	COMMAND ${CMAKE_BINARY_DIR}/${LIB_OSDP_TEST}
+	COMMAND rm ${CMAKE_BINARY_DIR}/${LIB_OSDP_TEST}
 	DEPENDS ${LIB_OSDP_TEST}
 )
 

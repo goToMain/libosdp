@@ -109,6 +109,6 @@ text 'Hello World'     # Set text "hello world" in display
 
 This command is used to control LEDs. It is of the format: ``
 
-[1]: doc/osdpctl-configuration.md
-[2]: doc/README.md
-[3]: doc/osdp-pd-capabilities.md
+[1]: /doc/osdpctl-configuration.md
+[2]: /doc/README.md
+[3]: /doc/osdp-pd-capabilities.md

@@ -85,7 +85,7 @@ add_custom_target(check
 ## osdpctl
 set(BIN_OSDPCTL osdpctl)
 list(APPEND BIN_OSDPCTL_SRC
-	"osdpctl/ini.c"
+	"osdpctl/ini_parser.c"
 	"osdpctl/config.c"
 	"osdpctl/arg_parser.c"
 	"osdpctl/utils.c"

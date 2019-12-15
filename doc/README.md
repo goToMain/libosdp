@@ -5,3 +5,4 @@
 * [Raw packet format](osdp-packet-structure.md)
 * [Secure Channel](osdp-secure-channel.md)
 * [PD Capabilities Structure](osdp-pd-capabilities.md)
+* [osdpctl tool configuration file documentation](osdpctl-configuration.md)

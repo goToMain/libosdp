@@ -36,6 +36,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	union osdp_cmd cmd;
 
 	reply->id = 0;
+	reply->len = 0;
 	p->cmd_id = buf[pos++];
 	len--;
 
@@ -159,6 +160,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		 */
 		if (isset_flag(p, PD_FLAG_SC_ACTIVE) == 0) {
 			reply->id = REPLY_NAK;
+			reply->len = 1;
 			reply->data[0] = OSDP_PD_NAK_SC_COND;
 			LOG_E(TAG "Keyset with SC inactive");
 			break;
@@ -182,6 +184,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	case CMD_CHLNG:
 		if (p->cap[CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
 			reply->id = REPLY_NAK;
+			reply->len = 1;
 			reply->data[0] = OSDP_PD_NAK_SC_UNSUP;
 			break;
 		}
@@ -208,6 +211,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 
 	if (ret != 0 && reply->id == 0) {
 		reply->id = REPLY_NAK;
+		reply->len = 1;
 		reply->data[0] = OSDP_PD_NAK_RECORD;
 	}
 	p->reply_id = reply->id;
@@ -446,7 +450,6 @@ int pd_phy_state_update(struct osdp_pd *pd)
 			pd->phy_state = PD_PHY_STATE_ERR;
 			break;
 		}
-		ret = 1;
 		pd->phy_state = PD_PHY_STATE_SEND_REPLY;
 		/* FALLTHRU */
 	case PD_PHY_STATE_SEND_REPLY:

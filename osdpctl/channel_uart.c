@@ -54,11 +54,13 @@ int channel_uart_setup(void **data, struct config_pd_s *c)
 	if (ctx->port_id < 0) {
 		printf("Error: invalid uart device %s\n",
 		       c->channel_device);
+		free(ctx);
 		return -1;
 	}
 	if (RS232_OpenComport(ctx->port_id, c->channel_speed, "8N1", 0)) {
 		printf("Error: failed to open device %s\n",
 		       c->channel_device);
+		free(ctx);
 		return -1;
 	}
 	*data = (void *)ctx;

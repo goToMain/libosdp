@@ -132,7 +132,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	opt->val = 'q';
 	opt = opts + i + 2;
 	opt->val = 'f';
-	olen += snprintf(ostr + olen, 128 - olen, "hqf");
+	snprintf(ostr + olen, 128 - olen, "hqf");
 
 	while ((c = getopt_long(argc, argv, ostr, opts, &opt_idx)) >= 0) {
 

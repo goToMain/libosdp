@@ -89,6 +89,7 @@ int channel_msgq_setup(void **data, struct config_pd_s *c)
 	if (ctx->send_msgid < 0) {
 		printf("Error: failed to create send message queue %s\n",
 		       c->channel_device);
+		free(ctx);
 		return -1;
 	}
 
@@ -98,6 +99,7 @@ int channel_msgq_setup(void **data, struct config_pd_s *c)
 	if (ctx->recv_msgid < 0) {
 		printf("Error: failed to create recv message queue %s\n",
 		       c->channel_device);
+		free(ctx);
 		return -1;
 	}
 	*data = (void *)ctx;

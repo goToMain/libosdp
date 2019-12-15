@@ -228,7 +228,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		info->baud_rate = pd->channel_speed;
 		if (channel_setup(pd)) {
 			printf("Failed to setup channel\n");
-			return -1;
+			exit (-1);
 		}
 		if (pd->channel.flush)
 			pd->channel.flush(pd->channel.data);

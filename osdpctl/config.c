@@ -347,34 +347,6 @@ const char *cap_names[CAP_SENTINEL] = {
 	[CAP_BIOMETRICS]			= "biometrics"
 };
 
-int config_key_parse_cap(const char *key, const char *val, void *data)
-{
-	char *token;
-	int i, j, len, ival[2];
-	struct config_pd_s *p = data;
-
-	for (i = 1; i < CAP_SENTINEL; i++) {
-		len = strlen(cap_names[i]);
-		if (strncmp(key, cap_names[i], len) == 0)
-			break;
-	}
-
-	if (i >= CAP_SENTINEL)
-		return INI_FAILURE;
-
-	j = 0;
-	token = strtok((char *)val, ",");
-	while (token != NULL) {
-		if (safe_atoi(token, &ival[j++]))
-			return INI_FAILURE;
-		token = strtok(NULL, ",");
-	}
-	p->cap[i].num_items = (uint8_t)ival[0];
-	p->cap[i].compliance_level = (uint8_t)ival[1];
-
-	return INI_SUCCESS;
-}
-
 int config_key_parse(const char *key, const char *val,
 		     const struct config_key_s *p, void *data)
 {
@@ -407,9 +379,6 @@ int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
 		if (safe_atoi(sec + 3, &id))
 			return INI_FAILURE;
 		pd = p->pd + id;
-
-		if (strncmp("cap.", key, 4) == 0)
-			return config_key_parse_cap(key + 4, val, (void *)pd);
 
 		return config_key_parse(key, val, g_config_key_pd, (void *)pd);
 	}

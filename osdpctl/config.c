@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "ini.h"
+#include "ini_parser.h"
 #include "common.h"
 
 #define INI_SUCCESS 1
@@ -310,10 +310,6 @@ const struct config_key_s g_config_key_global[] = {
 	{ "conn_topology",	config_parse_key_channel_topology },
 	{ "pid_file",		config_parse_key_pid_file },
 	{ "log_file",		config_parse_key_log_file },
-	{ NULL, NULL }
-};
-
-const struct config_key_s g_config_key_cp[] = {
 	{ "master_key",		config_parse_key_master_key },
 	{ NULL, NULL }
 };
@@ -400,8 +396,6 @@ int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
 
 	if (strcmp("GLOBAL", sec) == 0)
 		return config_key_parse(key, val, g_config_key_global, data);
-	if (strcmp("CP", sec) == 0)
-		return config_key_parse(key, val, g_config_key_cp, data);
 	if (strncmp("PD", sec, 3) == 0) {
 		if (p->pd == NULL)
 			return INI_FAILURE;
@@ -467,21 +461,21 @@ void config_parse(const char *filename, struct config_s *config)
 
 void config_print(struct config_s *config)
 {
-	int i, j;
+	int i, j, cp_mode;
 	char tmp[64];
 	struct config_pd_s *pd;
 
-	printf("\n--- BEGIN (%s) ---\n\n", config->config_file);
+	cp_mode = config->mode == CONFIG_MODE_CP;
 
 	printf("GLOBAL:\n");
+	printf("config_file: %s\n", config->config_file);
 	printf("mode: %d\n", config->mode);
 	printf("conn_topology: %d\n", config->conn_topology);
-
-	printf("\nCP:\n");
 	printf("num_pd: %d\n", config->num_pd);
-	atohstr(tmp, config->cp.master_key, 16);
-	printf("master_key: %s\n", tmp);
-
+	if (cp_mode) {
+		atohstr(tmp, config->cp.master_key, 16);
+		printf("master_key: %s\n", tmp);
+	}
 	for (i = 0; i < config->num_pd; i++) {
 		pd = config->pd + i;
 		printf("\nPD-%d:\n", i);
@@ -489,7 +483,7 @@ void config_print(struct config_s *config)
 		printf("channel_type: %d\n", pd->channel_type);
 		printf("channel_device: %s\n", pd->channel_device);
 		printf("address: %d\n", pd->address);
-		if (pd->is_pd_mode == 0)
+		if (cp_mode)
 			continue;
 		printf("capabilities:\n");
 		for (j = 0; j < CAP_SENTINEL; j++) {
@@ -508,6 +502,4 @@ void config_print(struct config_s *config)
 		printf("firmware_version: %d\n", pd->id.firmware_version);
 
 	}
-
-	printf("\n--- END ---\n\n");
 }

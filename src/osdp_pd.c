@@ -521,6 +521,7 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 	pd = to_pd(ctx, 0);
 
 	node_set_parent(pd, ctx);
+	pd->offset = 0;
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;
 	pd->seq_number = -1;
@@ -538,7 +539,6 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 
 	set_flag(pd, PD_FLAG_PD_MODE);	/* used to understand operational mode */
 
-	osdp_log_ctx_set(pd->address);
 	LOG_I(TAG "setup complete");
 	return (osdp_pd_t *) ctx;
 

@@ -179,6 +179,7 @@ struct osdp_secure_channel {
 
 struct osdp_pd {
 	void *__parent;
+	int offset;
 	uint32_t flags;
 
 	/* OSDP specified data */
@@ -216,7 +217,7 @@ struct osdp_cp {
 	int state;
 
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
-	int pd_offset;		/* current pd's offset into ctx->pd */
+	int pd_offset;			/* current pd's offset into ctx->pd */
 };
 
 struct osdp {

@@ -315,7 +315,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		if (ctx->notifier.keypress) {
 			for (i = 0; i < t1; i++) {
 				t2 = buf[pos + i]; /* key */
-				ctx->notifier.keypress(p->address, t2);
+				ctx->notifier.keypress(p->offset, t2);
 			}
 		}
 		ret = 0;
@@ -326,7 +326,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		t2 = buf[pos++]; /* length */
 		len |= buf[pos++] << 8;
 		if (ctx->notifier.cardread) {
-			ctx->notifier.cardread(p->address, t1, buf + pos, t2);
+			ctx->notifier.cardread(p->offset, t1, buf + pos, t2);
 		}
 		ret = 0;
 		break;
@@ -335,7 +335,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		pos++;	/* skip one byte -- TODO: discuss about reader direction */
 		t1 = buf[pos++]; /* Key length */
 		if (ctx->notifier.cardread) {
-			ctx->notifier.cardread(p->address, OSDP_CARD_FMT_ASCII,
+			ctx->notifier.cardread(p->offset, OSDP_CARD_FMT_ASCII,
 					       buf + pos, t1);
 		}
 		ret = 0;
@@ -761,6 +761,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
 		pd = to_pd(ctx, i);
+		pd->offset = i;
 		pd->queue = calloc(1, sizeof(struct cmd_queue));
 		if (pd->queue == NULL) {
 			LOG_E(TAG "failed to alloc pd->cmd_queue");
@@ -815,7 +816,7 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
 
 	for (i = 0; i < to_cp(ctx)->num_pd; i++) {
 		set_current_pd(ctx, i);
-		osdp_log_ctx_set(to_current_pd(ctx)->address);
+		osdp_log_ctx_set(i);
 		cp_state_update(to_current_pd(ctx));
 	}
 }
@@ -841,6 +842,9 @@ int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
+	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+		return -1;
+
 	cmd->id = CMD_OUT;
 	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_output);
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_output));
@@ -856,6 +860,9 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+
+	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+		return -1;
 
 	cmd->id = CMD_LED;
 	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_led);
@@ -873,6 +880,9 @@ int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
+	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+		return -1;
+
 	cmd->id = CMD_BUZ;
 	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_buzzer);
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_buzzer));
@@ -889,6 +899,9 @@ int osdp_cp_send_cmd_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
+	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+		return -1;
+
 	cmd->id = CMD_TEXT;
 	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_text);
 	memcpy(cmd->data, p, sizeof(struct osdp_cmd_text));
@@ -904,6 +917,9 @@ int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+
+	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+		return -1;
 
 	cmd->id = CMD_COMSET;
 	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_comset);

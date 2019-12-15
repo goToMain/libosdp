@@ -33,37 +33,42 @@ int msgq_send_command(struct config_s *c, struct osdpctl_cmd *cmd)
 
 int handle_cmd_led(int argc, char *argv[], struct osdp_cmd_led *c)
 {
-	int color, blink = 0, count, state;
+	int led_no, color, blink = 0, count, state;
 
-	if (argc != 3) {
-		printf("Usage: led <color> <blink|static> <count|state>\n");
+	if (argc != 4) {
+		printf("Usage: led <led_np> <color> <blink|static> "
+		       "<count|state>\n");
 		return -2;
 	}
 
-	if (strcmp("red", argv[0]) == 0)
+	if (safe_atoi(argv[0], &led_no))
+		return -1;
+
+	if (strcmp("red", argv[1]) == 0)
 		color = OSDP_LED_COLOR_RED;
-	else if (strcmp("green", argv[0]) == 0)
+	else if (strcmp("green", argv[1]) == 0)
 		color = OSDP_LED_COLOR_GREEN;
-	else if (strcmp("amber", argv[0]) == 0)
+	else if (strcmp("amber", argv[1]) == 0)
 		color = OSDP_LED_COLOR_AMBER;
-	else if (strcmp("blue", argv[0]) == 0)
+	else if (strcmp("blue", argv[1]) == 0)
 		color = OSDP_LED_COLOR_BLUE;
-	else if (strcmp("none", argv[0]) == 0)
+	else if (strcmp("none", argv[1]) == 0)
 		color = OSDP_LED_COLOR_NONE;
 	else
 		return -1;
 
-	if (strcmp("blink", argv[1]) == 0) {
+	if (strcmp("blink", argv[2]) == 0) {
 		blink = 1;
-		if (safe_atoi(argv[2], &count))
+		if (safe_atoi(argv[3], &count))
 			return -1;
-	} else if (strcmp("static", argv[1]) == 0) {
-		if (safe_atoi(argv[2], &state))
+	} else if (strcmp("static", argv[2]) == 0) {
+		if (safe_atoi(argv[3], &state))
 			return -1;
 	} else {
 		return -1;
 	}
 
+	c->led_number = led_no;
 	if (blink && count) {
 		// Non infinite sequence.
 		c->temporary.control_code = 1;
@@ -177,7 +182,7 @@ int handle_cmd_comset(int argc, char *argv[], struct osdp_cmd_comset *c)
 	int address, baud;
 
 	if (argc != 2) {
-		printf("Usage: output <address> <baud_rate>\n");
+		printf("Usage: comset <address> <baud_rate>\n");
 		return -2;
 	}
 

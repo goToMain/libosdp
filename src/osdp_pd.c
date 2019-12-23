@@ -305,7 +305,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 			buf[len++] = p->sc.pd_cryptogram[i];
 		smb[0] = 3;
 		smb[1] = SCS_12;
-		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		break;
 	case REPLY_RMAC_I:
 		if (smb == NULL)

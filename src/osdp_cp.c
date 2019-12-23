@@ -161,7 +161,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 			break;
 		smb[0] = 3;
 		smb[1] = SCS_11;  /* type */
-		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		buf[len++] = cmd->id;
 		osdp_fill_random(p->sc.cp_random, 8);
 		for (i=0; i<8; i++)
@@ -173,7 +173,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 			break;
 		smb[0] = 3;
 		smb[1] = SCS_13;  /* type */
-		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 1 : 0;
+		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		buf[len++] = cmd->id;
 		osdp_compute_cp_cryptogram(p);
 		for (i=0; i<16; i++)
@@ -445,7 +445,6 @@ int cp_process_reply(struct osdp_pd *p)
 	p->phy_rx_buf_len = ret;
 
 	ret = cp_decode_response(p, p->phy_rx_buf, p->phy_rx_buf_len);
-	p->phy_rx_buf_len = 0; /* reset buf_len for next use */
 
 	return ret;
 }
@@ -571,6 +570,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		pd->phy_state = CP_PHY_STATE_REPLY_WAIT;
+		pd->phy_rx_buf_len = 0; /* reset buf_len for next use */
 		pd->phy_tstamp = millis_now();
 		break;
 	case CP_PHY_STATE_REPLY_WAIT:

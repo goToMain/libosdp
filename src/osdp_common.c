@@ -67,12 +67,13 @@ void osdp_log(int log_level, const char *fmt, ...)
 	free(buf);
 }
 
-void osdp_dump(const char *head, const uint8_t * data, int len)
+void osdp_dump(const char *head, const uint8_t *data, int len)
 {
 	int i;
 	char str[16 + 1] = { 0 };
 
-	printf("%s [%d] =>\n    0000  %02x ", head, len, len ? data[0] : 0);
+	printf("%s [%d] =>\n    0000  %02x ", head ? head : "", len,
+	       len ? data[0] : 0);
 	str[0] = isprint(data[0]) ? data[0] : '.';
 	for (i = 1; i < len; i++) {
 		if ((i & 0x0f) == 0) {

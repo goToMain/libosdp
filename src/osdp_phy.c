@@ -154,7 +154,7 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 
 	if (isset_flag(p, PD_FLAG_SC_ACTIVE) &&
 		pkt->control & PKT_CONTROL_SCB &&
-		pkt->data[1] > SCS_15)
+		pkt->data[1] >= SCS_15)
 	{
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
@@ -309,7 +309,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 
 	if (isset_flag(p, PD_FLAG_SC_ACTIVE) &&
 		pkt->control & PKT_CONTROL_SCB &&
-		pkt->data[1] > SCS_15)
+		pkt->data[1] >= SCS_15)
 	{
 		/* validate MAC */
 		is_cmd = isset_flag(p, PD_FLAG_PD_MODE);

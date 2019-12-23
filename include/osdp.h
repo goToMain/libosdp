@@ -10,11 +10,12 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define OSDP_PD_ERR_RETRY_SEC			(60)
+#define OSDP_PD_ERR_RETRY_SEC			(300 * 1000)
 #define OSDP_PD_POLL_TIMEOUT_MS			(50)
-#define OSDP_PD_CMD_QUEUE_SIZE			(128)
 #define OSDP_RESP_TOUT_MS			(400)
 #define OSDP_CP_RETRY_WAIT_MS			(500)
+
+#define OSDP_PD_CMD_QUEUE_SIZE			(128)
 #define OSDP_PD_CAP_SENTINEL			{ -1, 0, 0 } /* struct pd_cap[] end */
 
 enum osdp_card_formats_e {

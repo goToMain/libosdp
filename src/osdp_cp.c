@@ -637,7 +637,7 @@ int cp_state_update(struct osdp_pd *pd)
 	soft_fail = (pd->state == CP_STATE_SC_CHLNG);
 
 	/* phy state error -- cleanup */
-	if (phy_state < 0 && soft_fail == 0) {
+	if (pd->state != CP_STATE_OFFLINE && phy_state < 0 && soft_fail == 0) {
 		cp_set_offline(pd);
 	}
 

@@ -660,11 +660,15 @@ int cp_state_update(struct osdp_pd *pd)
 	case CP_STATE_IDREQ:
 		if (cp_cmd_dispatcher(pd, CMD_ID) != 0)
 			break;
+		if (pd->reply_id != REPLY_PDID)
+			cp_set_offline(pd);
 		cp_set_state(pd, CP_STATE_CAPDET);
 		/* FALLTHRU */
 	case CP_STATE_CAPDET:
 		if (cp_cmd_dispatcher(pd, CMD_CAP) != 0)
 			break;
+		if (pd->reply_id != REPLY_PDCAP)
+			cp_set_offline(pd);
 		if (isset_flag(pd, PD_FLAG_SC_CAPABLE)) {
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			break;
@@ -691,11 +695,21 @@ int cp_state_update(struct osdp_pd *pd)
 			LOG_W(TAG "SC Failed; retry with SCBK-D");
 			break;
 		}
+		if (pd->reply_id != REPLY_CCRYPT) {
+			LOG_E(TAG "CHLNG failed. Online without SC");
+			cp_set_state(pd, CP_STATE_ONLINE);
+			break;
+		}
 		cp_set_state(pd, CP_STATE_SC_SCRYPT);
 		/* FALLTHRU */
 	case CP_STATE_SC_SCRYPT:
 		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0)
 			break;
+		if (pd->reply_id != REPLY_RMAC_I) {
+			LOG_E(TAG "SCRYPT failed. Online without SC");
+			cp_set_state(pd, CP_STATE_ONLINE);
+			break;
+		}
 		if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_W(TAG "SC ACtive with SCBK-D; Set SCBK");
 			cp_set_state(pd, CP_STATE_SET_SCBK);
@@ -707,7 +721,7 @@ int cp_state_update(struct osdp_pd *pd)
 	case CP_STATE_SET_SCBK:
 		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0)
 			break;
-		if (pd->cmd_id == REPLY_NAK) {
+		if (pd->reply_id == REPLY_NAK) {
 			LOG_W(TAG "Failed to set SCBK; continue with SCBK-D");
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;

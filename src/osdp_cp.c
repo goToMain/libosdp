@@ -645,6 +645,13 @@ int cp_state_update(struct osdp_pd *pd)
 
 	switch (pd->state) {
 	case CP_STATE_ONLINE:
+		if (isset_flag(pd, PD_FLAG_SC_ACTIVE)  == FALSE &&
+		    isset_flag(pd, PD_FLAG_SC_CAPABLE) == TRUE  &&
+		    millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_SEC) {
+			LOG_I("retry SC after retry timeout");
+			cp_set_state(pd, CP_STATE_SC_INIT);
+			break;
+		}
 		if (millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS)
 			break;
 		if (cp_cmd_dispatcher(pd, CMD_POLL) == 0)
@@ -685,6 +692,7 @@ int cp_state_update(struct osdp_pd *pd)
 		if (phy_state < 0) {
 			if (isset_flag(pd, PD_FLAG_SC_SCBKD_DONE)) {
 				LOG_I(TAG "SC Failed; set to online without SC");
+				pd->sc_tstamp = millis_now();
 				cp_set_state(pd, CP_STATE_ONLINE);
 				break;
 			}
@@ -697,6 +705,7 @@ int cp_state_update(struct osdp_pd *pd)
 		}
 		if (pd->reply_id != REPLY_CCRYPT) {
 			LOG_E(TAG "CHLNG failed. Online without SC");
+			pd->sc_tstamp = millis_now();
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
 		}
@@ -707,6 +716,7 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		if (pd->reply_id != REPLY_RMAC_I) {
 			LOG_E(TAG "SCRYPT failed. Online without SC");
+			pd->sc_tstamp = millis_now();
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
 		}
@@ -716,6 +726,7 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		}
 		LOG_I(TAG "SC ACtive");
+		pd->sc_tstamp = millis_now();
 		cp_set_state(pd, CP_STATE_ONLINE);
 		break;
 	case CP_STATE_SET_SCBK:

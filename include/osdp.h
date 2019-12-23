@@ -11,6 +11,7 @@
 #include <stddef.h>
 
 #define OSDP_PD_ERR_RETRY_SEC			(300 * 1000)
+#define OSDP_PD_SC_RETRY_SEC			(600 * 1000)
 #define OSDP_PD_POLL_TIMEOUT_MS			(50)
 #define OSDP_RESP_TOUT_MS			(400)
 #define OSDP_CP_RETRY_WAIT_MS			(500)

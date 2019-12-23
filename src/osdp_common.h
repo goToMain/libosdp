@@ -192,6 +192,7 @@ struct osdp_pd {
 	/* PD state management */
 	int state;
 	millis_t tstamp;
+	millis_t sc_tstamp;
 	int phy_state;
 	uint8_t phy_rx_buf[OSDP_PACKET_BUF_SIZE];
 	int phy_rx_buf_len;

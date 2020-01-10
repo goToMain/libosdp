@@ -153,8 +153,8 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 	pkt = (struct osdp_packet_header *)buf;
 
 	if (isset_flag(p, PD_FLAG_SC_ACTIVE) &&
-		pkt->control & PKT_CONTROL_SCB &&
-		pkt->data[1] >= SCS_15)
+	    pkt->control & PKT_CONTROL_SCB &&
+	    pkt->data[1] >= SCS_15)
 	{
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**

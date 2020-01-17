@@ -405,32 +405,30 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 		return 1;
 	p->phy_rx_buf_len += ret;
 
-	ret = phy_check_packet(p->phy_rx_buf, p->phy_rx_buf_len);
-	if (ret < 0) {	/* rx_buf had invalid MARK or SOM. Reset buf_len */
+	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
+	switch(ret) {
+	case -1: /* fatal errors */
+		LOG_E(TAG "failed to decode packet");
+		return -1;
+	case -2: /* rx_buf_len != pkt->len; wait for more data */
+		return 1;
+	case -3: /* soft fail */
+	case -4: /* rx_buf had invalid MARK or SOM */
+		/* Reset rx_buf_len so next call can start afresh */
 		p->phy_rx_buf_len = 0;
 		return 1;
 	}
-	if (ret > 1)	/* rx_buf_len != pkt->len; wait for more data */
-		return 1;
 
-	/* Valid OSDP packet in buffer */
+	ret = pd_decode_command(p, reply, p->phy_rx_buf, ret);
 
 #ifdef OSDP_PACKET_TRACE
-	if (p->phy_rx_buf[6] != CMD_POLL && p->phy_rx_buf[8] != CMD_POLL) {
+	if (p->cmd_id != CMD_POLL) {
 		LOG_EM(TAG "bytes received");
 		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
 	}
 #endif
 
-	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
-	if (ret < 0) {
-		LOG_E(TAG "failed to decode command");
-		return -1;
-	}
-
-	ret = pd_decode_command(p, reply, p->phy_rx_buf, ret);
 	p->phy_rx_buf_len = 0;
-
 	return ret;
 }
 
@@ -471,6 +469,7 @@ int pd_phy_state_update(struct osdp_pd *pd)
 		osdp_sc_init(pd);
 		clear_flag(pd, PD_FLAG_SC_ACTIVE);
 		pd->phy_state = PD_PHY_STATE_IDLE;
+		pd->phy_rx_buf_len = 0;
 		break;
 	}
 

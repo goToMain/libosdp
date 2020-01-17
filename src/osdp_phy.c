@@ -207,31 +207,19 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 	return len;
 }
 
-int phy_check_packet(const uint8_t * buf, int len)
-{
-	int pkt_len;
-	struct osdp_packet_header *pkt;
-
-	pkt = (struct osdp_packet_header *)buf;
-
-	/* validate packet header */
-	if (pkt->mark != 0xFF || pkt->som != 0x53) {
-		return -1;
-	}
-	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-	if (pkt_len != len - 1) {
-		LOG_E(TAG "packet length mismatch %d/%d", pkt_len,
-			 len - 1);
-		return 1;
-	}
-	return 0;
-}
-
+/**
+ * Returns:
+ *  +ve: length of decoded packet.
+ *   -1: fatal errors
+ *   -2: incomplete data
+ *   -3: soft fail. upper layers must skip this message
+ *   -4: packet format errors
+ */
 int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 {
 	uint8_t *data, *mac;
 	uint16_t comp, cur;
-	int is_cmd, pkt_len, pd_mode, mac_offset;
+	int is_cmd, pkt_len, pd_mode, pd_addr, mac_offset;
 	struct osdp_packet_header *pkt;
 
 	pd_mode = isset_flag(p, PD_FLAG_PD_MODE);
@@ -242,15 +230,27 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 		LOG_E(TAG "reply without MSB set 0x%02x", pkt->pd_address);
 		return -1;
 	}
-	if ((pkt->pd_address & 0x7F) != (p->address & 0x7F)) {
-		LOG_E(TAG "invalid pd address %d", (pkt->pd_address & 0x7F));
-		return -1;
-	}
+
+	/* validate packet length */
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
 	if (pkt_len != len - 1) {
 		LOG_E(TAG "packet length mismatch %d/%d", pkt_len, len - 1);
-		return -1;
+		return -2;
 	}
+
+	/* validate PD address */
+	pd_addr = pkt->pd_address & 0x7F;
+	if (pd_addr != p->address) {
+		if (!pd_mode) {
+			LOG_E(TAG "invalid pd address %d", pd_addr);
+			return -1;
+		} else {
+			LOG_D(TAG "cmd for PD[%d] discarded", pd_addr);
+			return -3;
+		}
+	}
+
+	/* validate sequence number */
 	cur = pkt->control & PKT_CONTROL_SQN;
 	comp = phy_get_seq_number(p, pd_mode);
 	if (comp != cur && !isset_flag(p, PD_FLAG_SKIP_SEQ_CHECK)) {
@@ -332,13 +332,13 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
 			 * At this point, the header and security block is
 			 * already consumed.
 			 */
-			len -= 1; /* remove ID byte from len before decrypting */
+			len -= 1; /* remove ID from len before decrypting */
 			len = osdp_decrypt_data(p, is_cmd, data + 1, len);
 			if (len <= 0) {
 				LOG_E(TAG "failed at decrypt");
 				return -1;
 			}
-			len += 1; /* put back ID byte */
+			len += 1; /* put back ID */
 		}
 	}
 

@@ -271,7 +271,6 @@ enum cp_fsm_state_e {
 };
 
 /* from osdp_phy.c */
-int phy_check_packet(const uint8_t * buf, int len);
 int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen);
 int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen);
 int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len);

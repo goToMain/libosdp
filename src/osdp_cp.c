@@ -211,6 +211,11 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 	struct osdp *ctx = to_ctx(p);
 	int i, ret = -1, pos = 0, t1, t2;
 
+	if (len < 1) {
+		LOG_E("response must have at least one byte");
+		return -1;
+	}
+
 	p->reply_id = buf[pos++];
 	len--;		/* consume reply id from the head */
 
@@ -420,15 +425,21 @@ int cp_process_reply(struct osdp_pd *p)
 		return 1;
 	p->phy_rx_buf_len += ret;
 
-	ret = phy_check_packet(p->phy_rx_buf, p->phy_rx_buf_len);
-	if (ret < 0) {	/* rx_buf had invalid MARK or SOM. Reset buf_len */
+	/* Valid OSDP packet in buffer */
+
+	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
+	switch(ret) {
+	case -1: /* fatal errors */
+		LOG_E(TAG "failed to decode packet");
+		return -1;
+	case -2: /* rx_buf_len != pkt->len; wait for more data */
+		return 1;
+	case -3: /* soft fail */
+	case -4: /* rx_buf had invalid MARK or SOM */
+		/* Reset rx_buf_len so next call can start afresh */
 		p->phy_rx_buf_len = 0;
 		return 1;
 	}
-	if (ret > 1)	/* rx_buf_len != pkt->len; wait for more data */
-		return 1;
-
-	/* Valid OSDP packet in buffer */
 
 #ifdef OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
@@ -437,16 +448,7 @@ int cp_process_reply(struct osdp_pd *p)
 	}
 #endif
 
-	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
-	if (ret < 0) {
-		LOG_E(TAG "failed decode response");
-		return -1;
-	}
-	p->phy_rx_buf_len = ret;
-
-	ret = cp_decode_response(p, p->phy_rx_buf, p->phy_rx_buf_len);
-
-	return ret;
+	return cp_decode_response(p, p->phy_rx_buf, ret);
 }
 
 int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c)

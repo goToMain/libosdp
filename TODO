@@ -12,10 +12,6 @@ PD Mode:
 
 Documentation:
 
-[*] osdp.h method params to be documented
-[*] Integration guide for cp and pd mode
-[*] PD/CP API documentation in wiki
-[*] Supported commands/replies and their limitations
 [*] Master key-set process; a note on install mode
 
 Tests/Emulations:

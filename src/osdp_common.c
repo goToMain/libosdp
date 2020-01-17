@@ -17,6 +17,10 @@
 
 #define LOG_CTX_GLOBAL -153
 
+#ifndef PROJECT_VERSION
+#define PROJECT_VERSION "0.0.0"
+#endif
+
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
@@ -165,31 +169,7 @@ void osdp_fill_random(uint8_t *buf, int len)
 	}
 }
 
-/**
- * Defined in <build-dir>/build_meta_data.c; see cmake/BuildMetaData.cmake for
- * more details on how this is obtained.
- */
-extern const char *VERSION;
-extern const char *GIT_TAG;
-extern const char *GIT_REV;
-extern const char *GIT_BRANCH;
-
 const char * osdp_get_version()
 {
-	return VERSION;
-}
-
-const char *osdp_get_git_tag()
-{
-	return GIT_TAG;
-}
-
-const char *osdp_get_git_rev()
-{
-	return GIT_REV;
-}
-
-const char *osdp_get_git_branch()
-{
-	return GIT_BRANCH;
+	return PROJECT_VERSION;
 }

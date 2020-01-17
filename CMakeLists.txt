@@ -5,24 +5,15 @@
 #
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
-project(libosdp)
+
+project(libosdp VERSION 1.0.0 LANGUAGES C)
+
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif()
-
-# Custom command produces build_meta_data.c, and a dummy output that's
-# not actually produced, in order to force Version.cmake to always be
-# re-run before the build
-ADD_CUSTOM_COMMAND(
-	OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/build_meta_data.c
-		${CMAKE_CURRENT_BINARY_DIR}/_build_meta_data.c
-	COMMAND ${CMAKE_COMMAND} -P
-		${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildMetaData.cmake
-	COMMENT "Generating build meta data.."
-)
 
 ## Options
 option(CONFIG_OSDP_BUILD_STATIC "Build static archive (in addition to shared library)" OFF)
@@ -31,12 +22,15 @@ option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
-include(BuildMetaData)
 
 ## Global settings
 add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
 add_c_compiler_flag(-s RELEASE)
+
+## Add compile time defines
+add_c_compiler_flag(-DPROJECT_VERSION=\\"${PROJECT_VERSION}\\")
+add_c_compiler_flag(-DPROJECT_NAME=\\"${PROJECT_NAME}\\")
 
 ## Macro Switches
 if (CONFIG_OSDP_PACKET_TRACE)
@@ -49,7 +43,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(LIB_OSDP osdp)
 set(LIB_OSDP_STATIC osdpstatic)
 list(APPEND LIB_OSDP_SRC
-	"${CMAKE_BINARY_DIR}/build_meta_data.c"
 	"src/osdp_common.c"
 	"src/osdp_phy.c"
 	"src/osdp_sc.c"
@@ -58,6 +51,10 @@ list(APPEND LIB_OSDP_SRC
 	"src/osdp_pd.c"
 )
 add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SRC})
+set_target_properties(${LIB_OSDP} PROPERTIES
+	VERSION ${PROJECT_VERSION}
+	SOVERSION ${PROJECT_VERSION_MAJOR}
+)
 set(OSDP_LIBRARY_TO_LINK ${LIB_OSDP})
 if (CONFIG_OSDP_BUILD_STATIC)
 	add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})

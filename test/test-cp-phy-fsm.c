@@ -96,8 +96,8 @@ void test_cp_phy_fsm_teardown(struct test *t)
 
 void run_cp_phy_fsm_tests(struct test *t)
 {
-	int ret, result = TRUE;
-	struct osdp *ctx = t->mock_data;
+	int ret=-128, result = TRUE;
+	struct osdp *ctx;
 	struct osdp_pd *p;
 
 	printf("\nStarting CP fsm state tests\n");
@@ -110,6 +110,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 		return;
 	}
 
+	ctx = t->mock_data;
 	p = to_current_pd(ctx);
 
 	if (cp_enqueue_command(p, &cmd_poll)) {

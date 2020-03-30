@@ -216,8 +216,8 @@ typedef struct {
  * level of abstaction looked reasonable as _technically_ no one should attempt
  * to modify it outside fo the LibOSDP.
  */
-typedef void *osdp_cp_t;
-typedef void *osdp_pd_t;
+typedef void osdp_cp_t;
+typedef void osdp_pd_t;
 
 /* --- CP Only---- */
 

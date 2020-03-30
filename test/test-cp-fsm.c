@@ -98,18 +98,21 @@ void run_cp_fsm_tests(struct test *t)
 {
 	int result = TRUE;
 	uint32_t count = 0;
-	struct osdp *ctx = t->mock_data;
+	struct osdp *ctx;
 
 	printf("\nStarting CP Phy state tests\n");
 
 	if (test_cp_fsm_setup(t))
 		return;
 
+	ctx = t->mock_data;
+
 	printf("    -- executing cp_state_update()\n");
 	while (1) {
 		cp_state_update(to_current_pd(ctx));
 
 		if (to_current_pd(ctx)->state == CP_STATE_OFFLINE) {
+			printf("    -- cp_state_update() CP went offline\n");
 			result = FALSE;
 			break;
 		}

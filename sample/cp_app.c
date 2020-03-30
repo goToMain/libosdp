@@ -8,12 +8,12 @@
 #include <unistd.h>
 #include <osdp.h>
 
-int sample_cp_send_func(uint8_t *buf, int len)
+int sample_cp_send_func(void *data, uint8_t *buf, int len)
 {
 	return len;
 }
 
-int sample_cp_recv_func(uint8_t *buf, int len)
+int sample_cp_recv_func(void *data, uint8_t *buf, int len)
 {
 	return 0;
 }
@@ -25,8 +25,8 @@ int main()
 			.address = 101,
 			.baud_rate = 115200,
 			.flags = 0,
-			.send_func = sample_cp_send_func,
-			.recv_func = sample_cp_recv_func
+			.channel.send = sample_cp_send_func,
+			.channel.recv = sample_cp_recv_func
 		},
 	};
 

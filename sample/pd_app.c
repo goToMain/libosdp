@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <osdp.h>
 
 enum osdp_pd_e {
@@ -12,19 +13,19 @@ enum osdp_pd_e {
 	OSDP_PD_SENTINEL,
 };
 
-int sample_pd_send_func(uint8_t *buf, int len)
+int sample_pd_send_func(void *data, uint8_t *buf, int len)
 {
 	return len;
 }
 
-int sample_pd_recv_func(uint8_t *buf, int len)
+int sample_pd_recv_func(void *data, uint8_t *buf, int len)
 {
 	return 0;
 }
 
 int main()
 {
-	struct osdp_pd *ctx;
+	struct osdp_pd_t *ctx;
 	struct pd_cap cap[] = {
 		{
 			.function_code = CAP_READER_LED_CONTROL,
@@ -42,8 +43,8 @@ int main()
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.send_func = sample_pd_send_func,
-		.recv_func = sample_pd_recv_func,
+		.channel.send = sample_pd_send_func,
+		.channel.recv = sample_pd_recv_func,
 		.id = {
 			.version = 1,
 			.model = 153,

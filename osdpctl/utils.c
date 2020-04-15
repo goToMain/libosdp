@@ -11,6 +11,22 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+static inline int hex2int(char ch)
+{
+	ch &= ~0x20; // to upper case.
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	if (ch >= 'A' && ch <= 'F')
+		return ch - 'A' + 10;
+	return -1;
+}
+
+static inline char int2hex(int v)
+{
+	v &= 0x0f; // consider only the lower nibble
+	return (v >= 0 && v <= 9) ? '0' + v : 'A' + v;
+}
+
 /*
  * atohstr - Array to Hex String
  *
@@ -22,14 +38,16 @@
  *   }
  *
  * Note:
- * The passed char *hstr, has to be sufficiently large.
+ * The passed char *hstr, has to be 2 * arr_len.
  */
 int atohstr(char *hstr, const uint8_t *arr, const int arr_len)
 {
-	int i, off = 0;
+	int i;
 
-	for (i = 0; i < arr_len; i++)
-		off += sprintf(hstr + off, "%02x", arr[i]);
+	for (i = 0; i < arr_len; i++) {
+		hstr[(i * 2) + 0] = int2hex(arr[i] >> 4);
+		hstr[(i * 2) + 1] = int2hex(arr[i]);
+	}
 
 	return 0;
 }
@@ -45,22 +63,25 @@ int atohstr(char *hstr, const uint8_t *arr, const int arr_len)
  *   }
  *
  * Note:
- * uint8_t *arr has to be half of sizeof(const char *hstr)
+ * uint8_t *arr has to be atleast half of strlen(hstr)
  */
 int hstrtoa(uint8_t *arr, const char *hstr)
 {
-	int i, len;
+	int i, len, nib1, nib2;
 
 	len = strlen(hstr);
-	if (len & 1)
+	if ((len & 1) == 1 || len == 0)
 		return -1; // Must have even number of chars
 	len = len / 2;
 	for (i = 0; i < len; i++) {
-		if (sscanf(&(hstr[i * 2]), "%2hhx", &(arr[i])) != 1)
+		nib1 = hex2int(hstr[(i * 2) + 0]);
+		nib2 = hex2int(hstr[(i * 2) + 1]);
+		if (nib1 == -1 || nib2 == -1)
 			return -1;
+		arr[i] = nib1 << 4 | nib2;
 	}
 
-	return 0;
+	return len;
 }
 
 int safe_atoi(const char *a, int *i)

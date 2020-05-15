@@ -13,9 +13,9 @@
 
 static inline int hex2int(char ch)
 {
-	ch &= ~0x20; // to upper case.
 	if (ch >= '0' && ch <= '9')
 		return ch - '0';
+	ch &= ~0x20; // to upper case.
 	if (ch >= 'A' && ch <= 'F')
 		return ch - 'A' + 10;
 	return -1;

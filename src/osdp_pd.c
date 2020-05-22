@@ -493,7 +493,7 @@ void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
 	memcpy(&pd->id, id, sizeof(struct pd_id));
 }
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
+osdp_pd_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 {
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
@@ -527,6 +527,7 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t * p, uint8_t *scbk)
 	pd->offset = 0;
 	pd->baud_rate = p->baud_rate;
 	pd->address = p->address;
+	pd->flags = p->flags;
 	pd->seq_number = -1;
 	memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 

@@ -145,5 +145,5 @@ this project (https://github.com/cbsiddharth/libosdp) if you face any issues.
 [2]: https://travis-ci.org/cbsiddharth/libosdp
 [3]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [4]: doc/osdp-logo.png
-[5]: doc/osdp-design.md
+[5]: doc/README.md
 [6]: doc/osdp-commands-and-replies.md

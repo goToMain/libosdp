@@ -8,7 +8,6 @@
 #include "osdp_common.h"
 
 #define TAG "SC: "
-#define get_pad_len(x) ((x + 16 - 1) & (~(16 - 1)))
 
 /* Default key as specified in OSDP protocol specification */
 static const uint8_t osdp_scbk_default[16] = {
@@ -183,26 +182,15 @@ int osdp_decrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length)
 	return length - 1;
 }
 
-int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length,
-		      int dry)
+int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length)
 {
 	int i, pad_len;
 	uint8_t iv[16];
 
-	pad_len = length;
-
-	/* check if padding is needed */
-	if (length % 16 != 0) {
-		pad_len = get_pad_len(length);
-	}
-
-	if (dry)
-		return pad_len;
-
-	if (pad_len != length) {
-		data[length] = 0x80; /* end marker */
+	data[length] = 0x80;  /* append EOM marker */
+	pad_len = AES_PAD_LEN(length + 1);
+	if ((pad_len - length - 1) > 0)
 		memset(data + length + 1, 0, pad_len - length - 1);
-	}
 
 	memcpy(iv, is_cmd ? p->sc.r_mac : p->sc.c_mac, 16);
 	for (i = 0; i < 16; i++)
@@ -229,7 +217,7 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 	uint8_t iv[16];
 
 	memcpy(buf, data, len);
-	pad_len = (len % 16 == 0) ? len : get_pad_len(len);
+	pad_len = (len % 16 == 0) ? len : AES_PAD_LEN(len);
 	if (len % 16 != 0)
 		buf[len] = 0x80; /* end marker */
 

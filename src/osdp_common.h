@@ -42,6 +42,7 @@
 		to_cp(p)->current_pd = to_pd(p, i);		\
 		to_cp(p)->pd_offset = i;			\
 	} while (0)
+#define AES_PAD_LEN(x)			((x + 16 - 1) & (~(16 - 1)))
 
 /* OSDP reserved commands */
 #define CMD_POLL		0x60
@@ -288,7 +289,7 @@ void osdp_compute_pd_cryptogram(struct osdp_pd *p);
 int osdp_verify_pd_cryptogram(struct osdp_pd *p);
 void osdp_compute_rmac_i(struct osdp_pd *p);
 int osdp_decrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
-int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length, int dry);
+int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
 int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len);
 void osdp_sc_init(struct osdp_pd *p);
 

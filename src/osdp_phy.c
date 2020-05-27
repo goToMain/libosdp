@@ -172,12 +172,9 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
 			 * data where length may be rounded up to the nearest
 			 * 16 byte block bondary.
 			 */
-			if ((len + osdp_encrypt_data(p, is_cmd, data,
-						     data_len, 1)) > maxlen)
+			if (AES_PAD_LEN(data_len + 1) > maxlen)
 				return -1;
-			data_len = osdp_encrypt_data(p, is_cmd, data,
-						     data_len, 0);
-			len += data_len;
+			len += osdp_encrypt_data(p, is_cmd, data, data_len);
 		}
 		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
 		if (len + 4 > maxlen)

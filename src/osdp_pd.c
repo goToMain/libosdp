@@ -330,7 +330,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 
 	if (smb && (smb[1] > SCS_14) && isset_flag(p, PD_FLAG_SC_ACTIVE)) {
 		smb[0] = 2;
-		smb[1] = (len > 1) ? SCS_17 : SCS_15;
+		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
 
 	if (len == 0) {

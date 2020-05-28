@@ -1,0 +1,86 @@
+v.1.0.0
+-------
+
+29 May 2020
+
+This is the first release of libosdp. It has been in pre-release for a
+long time now and has been tested sufficiently well for a first release.
+Rate of bug fixes has gone down significantly.
+
+As of this release, libosdp has the following high level feature:
+  - Supports OSDP CP mode of operation
+  - Supports OSDP PD mode of operation
+  - Supports Secure Channel for communication
+  - Ships a tool: osdpctl to consume and library and setup/manage osdp
+    devices
+  - Documents key areas in the protocol that are of interest for consumers
+    of this library.
+
+So far, this library's CP implementation has been tested with multiple
+OSDP PDs including HID's devices and found to be working as expected. The
+PD implementation has been tested with it's own CP counterpart so this some
+level of confidence on the that too.
+
+
+v0.4 Beta - 3
+-------------
+
+17 Jan 2020
+
+Fix multiple bugs found in LibOSDP:
+  - fix unhandled reply-code bug
+  - fix issue where reader goes permanent reader offline
+  - retry SC after OSDP_PD_SC_RETRY_SEC when possible
+  - fix USE_SCBKD inversion bug
+  - fix bug in MAC add/check for SCS_15
+
+Note:
+This tag has CP mode verified with HID RK40 readers. This can act as
+reference point for all PD change validation hereafter.
+
+
+v0.3 Beta - 2
+-------------
+
+15 Dec 2019
+
+New Features:
+  - Added new tool osdpctl to create, manage and control osdp devices
+  - Add PD context to CP logs for clarity
+
+Enhancements and bug fixes:
+  - Fix PD stale pointer issue in osdp_setup
+  - Fix MAC generation bug in Secure Channel
+  - Fix Data offset bug in Secure Channel
+  - Fix issues reported by -Wimplicit-fallthrough
+  - Fix memleak in PD command queue alloc
+  - Fix wrap around bug in cmd_queue
+  - Fix many clang static code analysis issues
+
+
+v0.2 Beta - 1
+-------------
+
+29 Nov 2019
+
+Features and Issue Fixes:
+  - Master key management in CP and PD
+  - Many small issue fixes
+  - Known limitations:
+
+install mode stuffs need to be ironed out comset command needs to be
+handled correctly
+
+
+v0.1 Alpha
+----------
+
+15 Nov 2019
+
+libosdp has reached a point where all the primary featured are in place.
+
+Known limitations:
+  - Master key management is missing
+  - Install mode stuffs need to be ironed out
+  - comset command needs to be handled correctly
+

@@ -280,6 +280,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		break;
 	case REPLY_COM:
 		buf[len++] = reply->id;
+		buf[len++] = p->address;
 		buf[len++] = byte_0(p->baud_rate);
 		buf[len++] = byte_1(p->baud_rate);
 		buf[len++] = byte_2(p->baud_rate);

@@ -121,7 +121,7 @@ int read_pid(const char *file, int *pid)
 
 	if (fscanf(fd, "%d", pid) != 1) {
 		printf("Failed to read PID from file %s\n", file);
-		ret = -1
+		ret = -1;
 	}
 	fclose(fd);
 

@@ -109,6 +109,7 @@ void remove_spaces(char *str)
 
 int read_pid(const char *file, int *pid)
 {
+	int ret = 0;
 	FILE *fd;
 
 	if (file == NULL)
@@ -120,11 +121,11 @@ int read_pid(const char *file, int *pid)
 
 	if (fscanf(fd, "%d", pid) != 1) {
 		printf("Failed to read PID from file %s\n", file);
-		return -1;
+		ret = -1
 	}
 	fclose(fd);
 
-	return 0;
+	return ret;
 }
 
 int write_pid(const char *file)

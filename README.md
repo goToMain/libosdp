@@ -17,6 +17,8 @@ a better idea.
 
 ## Salient Features of LibOSDP
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/7b6f389d4fbf46a692b64d3e82452af9)](https://app.codacy.com/manual/siddharth_6/libosdp?utm_source=github.com&utm_medium=referral&utm_content=cbsiddharth/libosdp&utm_campaign=Badge_Grade_Dashboard)
+
 - Supports secure channel communication (AES-128).
 - Can be used to setup a PD or CP mode of operation.
 - Exposes a well defined contract though `include/osdp.h`.

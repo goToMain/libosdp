@@ -22,6 +22,7 @@ option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
+include(GitInfo)
 
 ## Global settings
 add_c_compiler_flag(-Wall)

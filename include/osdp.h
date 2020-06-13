@@ -63,5 +63,6 @@ void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...));
 /* --- Diagnostics --- */
 
 const char *osdp_get_version();
+const char *osdp_get_source_info();
 
 #endif	/* _OSDP_H_ */

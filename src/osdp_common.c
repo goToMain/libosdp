@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/time.h>
-#include <assert.h>
+#include <string.h>
 
 #include "osdp_common.h"
 #include "osdp_aes.h"
@@ -177,7 +177,17 @@ void osdp_fill_random(uint8_t *buf, int len)
 	}
 }
 
-const char * osdp_get_version()
+const char *osdp_get_version()
 {
-	return PROJECT_VERSION;
+	return PROJECT_NAME "-" PROJECT_VERSION;
+}
+
+const char *osdp_get_source_info()
+{
+	if (strlen(GIT_TAG) > 0)
+		return GIT_BRANCH " (" GIT_TAG ")";
+	else if (strlen(GIT_REV) > 0)
+		return GIT_BRANCH " (" GIT_REV GIT_DIFF ")";
+	else
+		return GIT_BRANCH;
 }

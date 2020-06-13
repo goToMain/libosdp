@@ -10,11 +10,22 @@
 
 int sample_cp_send_func(void *data, uint8_t *buf, int len)
 {
+	(void)(data);
+	(void)(buf);
+
+	// Fill these
+
 	return len;
 }
 
 int sample_cp_recv_func(void *data, uint8_t *buf, int len)
 {
+	(void)(data);
+	(void)(buf);
+	(void)(len);
+
+	// Fill these
+
 	return 0;
 }
 

@@ -15,11 +15,22 @@ enum osdp_pd_e {
 
 int sample_pd_send_func(void *data, uint8_t *buf, int len)
 {
+	(void)(data);
+	(void)(buf);
+
+	// Fill these
+
 	return len;
 }
 
 int sample_pd_recv_func(void *data, uint8_t *buf, int len)
 {
+	(void)(data);
+	(void)(buf);
+	(void)(len);
+
+	// Fill these
+
 	return 0;
 }
 

@@ -14,6 +14,11 @@
 
 struct config_s g_config;
 
+static void print_version()
+{
+	printf("%s [%s]\n", osdp_get_version(), osdp_get_source_info());
+}
+
 struct ap_option ap_opts[] = {
 	{
 		AP_ARG('l', "log-file", "file"),
@@ -37,6 +42,9 @@ struct ap_option ap_opts[] = {
 	{
 		AP_CMD("check", cmd_handler_check),
 		AP_HELP("Check and print parsed config")
+	},
+	{
+		AP_ARG_BOOL('v', "version", print_version, "Print Version"),
 	},
 	AP_SENTINEL
 };

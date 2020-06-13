@@ -20,6 +20,7 @@ enum ap_type_e {
 	AP_TYPE_BOOL,
 	AP_TYPE_INT,
 	AP_TYPE_STR,
+	AP_TYPE_BOOL_HANDLER,
 	AP_TYPE_SENTINEL
 };
 
@@ -29,10 +30,12 @@ struct ap_option {
 	const char *opt_name;
 	enum ap_type_e type;
 	size_t offset;
+
 	int flags;
 	int (*validator)(void *data);
 	int (*handler)(int argc, char *argv[], void *data);
 	const char *help;
+	void (*bool_handler)();
 };
 
 #define AP_STORE_INT(s, m) 	AP_TYPE_INT,  (size_t)&(((s *)0)->m)
@@ -40,13 +43,14 @@ struct ap_option {
 #define AP_STORE_BOOL(s, m)	AP_TYPE_BOOL, (size_t)&(((s *)0)->m)
 
 #define AP_CMD(x, y)		-1, x, NULL, AP_TYPE_CMD, 0, 0, NULL, y
-#define AP_SENTINEL 		{ '\0', NULL, NULL, AP_TYPE_SENTINEL, 0, 0, NULL, NULL, NULL }
+#define AP_ARG_BOOL(s, l, h, m)	s, l, NULL, AP_TYPE_BOOL_HANDLER, 0, 0, NULL, NULL, m, h
+#define AP_SENTINEL 		{ '\0', NULL, NULL, AP_TYPE_SENTINEL, 0, 0, NULL, NULL, NULL, NULL }
 
 /* dummy macros to improve readability */
 #define AP_ARG(s, l, n)		s, l, n
 #define AP_VALIDATOR(x)		x, NULL
 #define AP_FLAGS(x)		x
-#define AP_HELP(x)		x
+#define AP_HELP(x)		x, NULL
 
 void ap_init(const char *app_name, const char *app_desc);
 int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data);

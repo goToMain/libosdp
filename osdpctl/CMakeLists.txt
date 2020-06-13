@@ -22,6 +22,8 @@ list(APPEND BIN_OSDPCTL_SRC
 	cmd_others.c
 )
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
 
 target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} ${OSDP_LIBRARY_TO_LINK})

@@ -6,7 +6,7 @@
 
 set(LIB_OSDP_TEST osdp-test)
 
-include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
 list(APPEND LIB_OSDP_TEST_SRC
 	test.c

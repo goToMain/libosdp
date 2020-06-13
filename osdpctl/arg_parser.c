@@ -97,7 +97,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 		ap_opt++;
 	}
 
-	opts = malloc(sizeof (struct option) * opts_len + 3);
+	opts = malloc(sizeof (struct option) * (opts_len + 3));
 	if (opts == NULL) {
 		printf("Error: alloc error\n");
 		exit(-1);

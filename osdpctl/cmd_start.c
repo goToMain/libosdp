@@ -172,6 +172,10 @@ void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 	case OSDPCTL_CP_CMD_COMSET:
 		osdp_cp_send_cmd_comset(c->cp_ctx, p->offset, &p->cmd.comset);
 		break;
+	case OSDPCTL_CMD_STATUS:
+		printf("SC Status: 0x%08x\n", osdp_get_sc_status_mask(c->cp_ctx));
+		printf("   Status: 0x%08x\n", osdp_get_status_mask(c->cp_ctx));
+		break;
 	}
 }
 

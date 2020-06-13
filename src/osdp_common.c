@@ -191,3 +191,52 @@ const char *osdp_get_source_info()
 	else
 		return GIT_BRANCH;
 }
+
+uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
+{
+	int i;
+	uint32_t mask = 0;
+	struct osdp_pd *pd;
+
+	assert(ctx);
+
+	if (isset_flag(to_osdp(ctx), FLAG_CP_MODE)) {
+		for (i = 0; i < to_osdp(ctx)->cp->num_pd; i++) {
+			pd = to_pd(ctx, i);
+			if (pd->state == CP_STATE_ONLINE &&
+			    isset_flag(pd, PD_FLAG_SC_ACTIVE)) {
+				mask |= 1 << i;
+			}
+		}
+	} else {
+		pd = to_pd(ctx, 0);
+		if (isset_flag(pd, PD_FLAG_SC_ACTIVE)) {
+			mask = 1;
+		}
+	}
+
+	return mask;
+}
+
+uint32_t osdp_get_status_mask(osdp_t *ctx)
+{
+	int i;
+	uint32_t mask = 0;
+	struct osdp_pd *pd;
+
+	assert(ctx);
+
+	if (isset_flag(to_osdp(ctx), FLAG_CP_MODE)) {
+		for (i = 0; i < to_osdp(ctx)->cp->num_pd; i++) {
+			pd = to_pd(ctx, i);
+			if (pd->state == CP_STATE_ONLINE) {
+				mask |= 1 << i;
+			}
+		}
+	} else {
+		/* PD is stateless */
+		mask = 1;
+	}
+
+	return mask;
+}

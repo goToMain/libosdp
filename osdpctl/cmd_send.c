@@ -245,7 +245,12 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 	else if (strcmp("comset", argv[2]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_COMSET;
 		ret = handle_cmd_comset(argc-3, argv+3, &mq_cmd.cmd.comset);
-	} else {
+	}
+	else if (strcmp("status", argv[2]) == 0) {
+		mq_cmd.id = OSDPCTL_CMD_STATUS;
+		ret = 0;
+	}
+	else {
 		printf("Error: unkown command %s\n", argv[2]);
 		goto print_usage;
 	}
@@ -266,6 +271,6 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 print_usage:
 	printf("\nUsage: <PD> <COMMAND> [ARGS..]\n\n");
 	printf("COMMANDS:\n\t"
-		"led\n\tbuzzer\n\toutput\n\ttext\n\tcomset\n\n");
+		"led\n\tbuzzer\n\toutput\n\ttext\n\tcomset\n\tstatus\n\n");
 	return -1;
 }

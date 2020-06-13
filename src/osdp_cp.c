@@ -762,8 +762,8 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	struct osdp_cp *cp;
 	struct osdp *ctx;
 
-	if (num_pd <= 0 || info == NULL)
-		return NULL;
+	assert(info);
+	assert(num_pd > 0);
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
@@ -820,8 +820,7 @@ void osdp_cp_teardown(osdp_cp_t *ctx)
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
 
-	if (ctx == NULL)
-		return;
+	assert(ctx);
 
 	cp = to_cp(ctx);
 	if (cp == NULL)
@@ -845,6 +844,8 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
 {
 	int i;
 
+	assert(ctx);
+
 	for (i = 0; i < to_cp(ctx)->num_pd; i++) {
 		set_current_pd(ctx, i);
 		osdp_log_ctx_set(i);
@@ -855,6 +856,8 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
 int osdp_cp_set_callback_key_press(osdp_cp_t * ctx,
 	int (*cb) (int address, uint8_t key))
 {
+	assert(ctx);
+
 	(to_osdp(ctx))->notifier.keypress = cb;
 
 	return 0;
@@ -863,6 +866,8 @@ int osdp_cp_set_callback_key_press(osdp_cp_t * ctx,
 int osdp_cp_set_callback_card_read(osdp_cp_t * ctx,
 	int (*cb) (int address, int format, uint8_t * data, int len))
 {
+	assert(ctx);
+
 	(to_osdp(ctx))->notifier.cardread = cb;
 
 	return 0;
@@ -873,7 +878,8 @@ int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
-	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+	assert(ctx);
+	if (pd >= to_cp(ctx)->num_pd)
 		return -1;
 
 	cmd->id = CMD_OUT;
@@ -892,7 +898,8 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
-	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+	assert(ctx);
+	if (pd >= to_cp(ctx)->num_pd)
 		return -1;
 
 	cmd->id = CMD_LED;
@@ -911,7 +918,8 @@ int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
-	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+	assert(ctx);
+	if (pd >= to_cp(ctx)->num_pd)
 		return -1;
 
 	cmd->id = CMD_BUZ;
@@ -930,7 +938,8 @@ int osdp_cp_send_cmd_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
-	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+	assert(ctx);
+	if (pd >= to_cp(ctx)->num_pd)
 		return -1;
 
 	cmd->id = CMD_TEXT;
@@ -949,7 +958,8 @@ int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
 
-	if (ctx == NULL || pd >= to_cp(ctx)->num_pd)
+	assert(ctx);
+	if (pd >= to_cp(ctx)->num_pd)
 		return -1;
 
 	cmd->id = CMD_COMSET;
@@ -968,15 +978,19 @@ int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p)
 	int i;
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
-	struct osdp_cp *cp = to_osdp(ctx)->cp;
+	struct osdp_cp *cp;
 	struct osdp_pd *pd;
 
+	assert(ctx);
+
+	cp = to_osdp(ctx)->cp;
 	for (i = 0; i < cp->num_pd; i++) {
 		pd = to_pd(ctx, i);
 		if (pd->state != CP_STATE_ONLINE ||
 		    isset_flag(pd, PD_FLAG_SC_ACTIVE) == 0)
 			break;
 	}
+
 	if (i < cp->num_pd) {
 		LOG_W(TAG "CMD_KEYSET can be sent only when all PDs are "
 		          "ONLINE and SC_ACTIVE.");

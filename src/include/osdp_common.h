@@ -8,6 +8,7 @@
 #define _OSDP_COMMON_H_
 
 #include <osdp.h>
+#include <assert.h>
 
 #ifndef NULL
 #define NULL				((void *)0)

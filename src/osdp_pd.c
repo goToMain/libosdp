@@ -500,6 +500,8 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 	struct osdp_cp *cp;
 	struct osdp *ctx;
 
+	assert(p);
+
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
 		LOG_E(TAG "failed to alloc struct osdp");
@@ -554,22 +556,16 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 
 void osdp_pd_teardown(osdp_pd_t *ctx)
 {
-	struct osdp_cp *cp;
-	struct osdp_pd *pd;
-
-	if (ctx == NULL)
-		return;
+	assert(ctx);
 
 	/* teardown PD */
-	pd = to_pd(ctx, 0);
-	if (pd != NULL) {
-		free(pd);
+	if (to_pd(ctx, 0) != NULL) {
+		free(to_pd(ctx, 0));
 	}
 
 	/* teardown CP */
-	cp = to_cp(ctx);
-	if (cp != NULL) {
-		free(cp);
+	if (to_cp(ctx) != NULL) {
+		free(to_cp(ctx));
 	}
 
 	free(ctx);
@@ -577,6 +573,7 @@ void osdp_pd_teardown(osdp_pd_t *ctx)
 
 void osdp_pd_refresh(osdp_pd_t *ctx)
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd_phy_state_update(pd);
@@ -584,6 +581,7 @@ void osdp_pd_refresh(osdp_pd_t *ctx)
 
 void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p))
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.led = cb;
@@ -591,6 +589,7 @@ void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led
 
 void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p))
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.buzzer = cb;
@@ -598,6 +597,7 @@ void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 
 void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_text *p))
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.text = cb;
@@ -605,6 +605,7 @@ void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_te
 
 void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_output *p))
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.output = cb;
@@ -612,6 +613,7 @@ void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 
 void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_comset *p))
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.comset = cb;
@@ -619,6 +621,7 @@ void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 
 void osdp_pd_set_callback_cmd_keyset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_keyset *p))
 {
+	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
 	pd->cmd_cb.keyset = cb;

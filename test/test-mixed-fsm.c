@@ -9,7 +9,7 @@
 #include <osdp.h>
 #include "test.h"
 
-int pd_phy_state_update(struct osdp_pd *pd);
+void pd_phy_state_update(struct osdp_pd *pd);
 int cp_state_update(struct osdp_pd *pd);
 
 struct test_mixed {
@@ -128,7 +128,7 @@ int test_mixed_fsm_setup(struct test *t)
 	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
 	if (test_data.pd_ctx == NULL) {
 		printf("   pd init failed!\n");
-		osdp_cp_teardown((osdp_cp_t *) test_data.cp_ctx);
+		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
 		return -1;
 	}
 	// osdp_set_log_level(LOG_DEBUG);
@@ -140,8 +140,8 @@ void test_mixed_fsm_teardown(struct test *t)
 {
 	struct test_mixed *p = t->mock_data;
 
-	osdp_cp_teardown((osdp_cp_t *) p->cp_ctx);
-	osdp_pd_teardown((osdp_pd_t *) p->pd_ctx);
+	osdp_cp_teardown((osdp_t *) p->cp_ctx);
+	osdp_pd_teardown((osdp_t *) p->pd_ctx);
 }
 
 void run_mixed_fsm_tests(struct test *t)

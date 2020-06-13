@@ -41,7 +41,7 @@ int main()
 		},
 	};
 
-	osdp_cp_t *ctx = osdp_cp_setup(1, info, NULL);
+	osdp_t *ctx = osdp_cp_setup(1, info, NULL);
 	osdp_set_log_level(7);
 
 	if (ctx == NULL)

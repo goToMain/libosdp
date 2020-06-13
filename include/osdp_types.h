@@ -138,7 +138,6 @@ struct osdp_cp_notifiers {
  * to modify it outside fo the LibOSDP and their definition may change at any
  * time.
  */
-typedef void osdp_cp_t;
-typedef void osdp_pd_t;
+typedef void osdp_t;
 
 #endif /* _OSDP_TYPES_H_ */

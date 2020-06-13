@@ -61,8 +61,8 @@ struct config_s {
 	/* ini section: "^PD(-[0-9]+)?" */
 	struct config_pd_s *pd;
 
-	osdp_cp_t *cp_ctx;
-	osdp_pd_t *pd_ctx;
+	osdp_t *cp_ctx;
+	osdp_t *pd_ctx;
 
 	int service_started;
 	int cs_send_msgid;

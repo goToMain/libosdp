@@ -755,7 +755,7 @@ int cp_state_update(struct osdp_pd *pd)
 	return 0;
 }
 
-osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
+osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
 	int i;
 	struct osdp_pd *pd;
@@ -771,6 +771,7 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
+	ctx->flags |= FLAG_CP_MODE;
 	if (master_key != NULL)
 		memcpy(ctx->sc_master_key, master_key, 16);
 
@@ -807,14 +808,14 @@ osdp_cp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	}
 	set_current_pd(ctx, 0);
 	LOG_I(TAG "setup complete");
-	return (osdp_cp_t *) ctx;
+	return (osdp_t *) ctx;
 
  malloc_err:
-	osdp_cp_teardown((osdp_cp_t *) ctx);
+	osdp_cp_teardown((osdp_t *) ctx);
 	return NULL;
 }
 
-void osdp_cp_teardown(osdp_cp_t *ctx)
+void osdp_cp_teardown(osdp_t *ctx)
 {
 	int i;
 	struct osdp_cp *cp;
@@ -840,7 +841,7 @@ void osdp_cp_teardown(osdp_cp_t *ctx)
 	free(ctx);
 }
 
-void osdp_cp_refresh(osdp_cp_t *ctx)
+void osdp_cp_refresh(osdp_t *ctx)
 {
 	int i;
 
@@ -853,7 +854,7 @@ void osdp_cp_refresh(osdp_cp_t *ctx)
 	}
 }
 
-int osdp_cp_set_callback_key_press(osdp_cp_t * ctx,
+int osdp_cp_set_callback_key_press(osdp_t * ctx,
 	int (*cb) (int address, uint8_t key))
 {
 	assert(ctx);
@@ -863,7 +864,7 @@ int osdp_cp_set_callback_key_press(osdp_cp_t * ctx,
 	return 0;
 }
 
-int osdp_cp_set_callback_card_read(osdp_cp_t * ctx,
+int osdp_cp_set_callback_card_read(osdp_t * ctx,
 	int (*cb) (int address, int format, uint8_t * data, int len))
 {
 	assert(ctx);
@@ -873,7 +874,7 @@ int osdp_cp_set_callback_card_read(osdp_cp_t * ctx,
 	return 0;
 }
 
-int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
+int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
@@ -893,7 +894,7 @@ int osdp_cp_send_cmd_output(osdp_cp_t *ctx, int pd, struct osdp_cmd_output *p)
 	return 0;
 }
 
-int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
+int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
@@ -913,7 +914,7 @@ int osdp_cp_send_cmd_led(osdp_cp_t *ctx, int pd, struct osdp_cmd_led *p)
 	return 0;
 }
 
-int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
+int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
@@ -933,7 +934,7 @@ int osdp_cp_send_cmd_buzzer(osdp_cp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	return 0;
 }
 
-int osdp_cp_send_cmd_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
+int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
@@ -953,7 +954,7 @@ int osdp_cp_send_cmd_text(osdp_cp_t *ctx, int pd, struct osdp_cmd_text *p)
 	return 0;
 }
 
-int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
+int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
 	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
@@ -973,7 +974,7 @@ int osdp_cp_send_cmd_comset(osdp_cp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	return 0;
 }
 
-int osdp_cp_send_cmd_keyset(osdp_cp_t *ctx, struct osdp_cmd_keyset *p)
+int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 {
 	int i;
 	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];

@@ -433,14 +433,9 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 	return ret;
 }
 
-/**
- * Returns:
- *  -1: phy is in error state. Main state machine must reset it.
- *   0: Success
- */
-int pd_phy_state_update(struct osdp_pd *pd)
+void pd_phy_state_update(struct osdp_pd *pd)
 {
-	int ret = 0;
+	int ret;
 	uint8_t phy_reply[OSDP_DATA_BUF_SIZE];
 	struct osdp_data *reply = (struct osdp_data *)phy_reply;
 
@@ -473,8 +468,6 @@ int pd_phy_state_update(struct osdp_pd *pd)
 		pd->phy_rx_buf_len = 0;
 		break;
 	}
-
-	return ret;
 }
 
 void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
@@ -494,7 +487,7 @@ void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
 	memcpy(&pd->id, id, sizeof(struct pd_id));
 }
 
-osdp_pd_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
+osdp_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 {
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
@@ -547,14 +540,14 @@ osdp_pd_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 	set_flag(pd, PD_FLAG_PD_MODE);	/* used to understand operational mode */
 
 	LOG_I(TAG "setup complete");
-	return (osdp_pd_t *) ctx;
+	return (osdp_t *) ctx;
 
  malloc_err:
-	osdp_pd_teardown((osdp_pd_t *) ctx);
+	osdp_pd_teardown((osdp_t *) ctx);
 	return NULL;
 }
 
-void osdp_pd_teardown(osdp_pd_t *ctx)
+void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
 
@@ -571,7 +564,7 @@ void osdp_pd_teardown(osdp_pd_t *ctx)
 	free(ctx);
 }
 
-void osdp_pd_refresh(osdp_pd_t *ctx)
+void osdp_pd_refresh(osdp_t *ctx)
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
@@ -579,7 +572,7 @@ void osdp_pd_refresh(osdp_pd_t *ctx)
 	pd_phy_state_update(pd);
 }
 
-void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led *p))
+void osdp_pd_set_callback_cmd_led(osdp_t *ctx, int (*cb) (struct osdp_cmd_led *p))
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
@@ -587,7 +580,7 @@ void osdp_pd_set_callback_cmd_led(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_led
 	pd->cmd_cb.led = cb;
 }
 
-void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p))
+void osdp_pd_set_callback_cmd_buzzer(osdp_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p))
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
@@ -595,7 +588,7 @@ void osdp_pd_set_callback_cmd_buzzer(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 	pd->cmd_cb.buzzer = cb;
 }
 
-void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_text *p))
+void osdp_pd_set_callback_cmd_text(osdp_t *ctx, int (*cb) (struct osdp_cmd_text *p))
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
@@ -603,7 +596,7 @@ void osdp_pd_set_callback_cmd_text(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_te
 	pd->cmd_cb.text = cb;
 }
 
-void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_output *p))
+void osdp_pd_set_callback_cmd_output(osdp_t *ctx, int (*cb) (struct osdp_cmd_output *p))
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
@@ -611,7 +604,7 @@ void osdp_pd_set_callback_cmd_output(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 	pd->cmd_cb.output = cb;
 }
 
-void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_comset *p))
+void osdp_pd_set_callback_cmd_comset(osdp_t *ctx, int (*cb) (struct osdp_cmd_comset *p))
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
@@ -619,7 +612,7 @@ void osdp_pd_set_callback_cmd_comset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_
 	pd->cmd_cb.comset = cb;
 }
 
-void osdp_pd_set_callback_cmd_keyset(osdp_pd_t *ctx, int (*cb) (struct osdp_cmd_keyset *p))
+void osdp_pd_set_callback_cmd_keyset(osdp_t *ctx, int (*cb) (struct osdp_cmd_keyset *p))
 {
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);

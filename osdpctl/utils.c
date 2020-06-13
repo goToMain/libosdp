@@ -38,7 +38,7 @@ static inline char int2hex(int v)
  *   }
  *
  * Note:
- * The passed char *hstr, has to be 2 * arr_len.
+ * The passed char *hstr, has to be 2 * arr_len + 1 (for null char).
  */
 int atohstr(char *hstr, const uint8_t *arr, const int arr_len)
 {
@@ -48,6 +48,7 @@ int atohstr(char *hstr, const uint8_t *arr, const int arr_len)
 		hstr[(i * 2) + 0] = int2hex(arr[i] >> 4);
 		hstr[(i * 2) + 1] = int2hex(arr[i]);
 	}
+	hstr[i * 2] = '\0';
 
 	return 0;
 }

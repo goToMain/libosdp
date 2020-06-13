@@ -302,7 +302,6 @@ void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
-void osdp_set_log_level(int log_level);
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);

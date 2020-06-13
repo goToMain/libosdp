@@ -24,10 +24,13 @@
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
+int (*log_printf)(const char *fmt, ...) = printf;
 
-void osdp_set_log_level(int log_level)
+void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
 {
 	g_log_level = log_level;
+	if (log_fn != NULL)
+		log_printf = log_fn;
 }
 
 void osdp_log_ctx_set(int log_ctx)
@@ -64,10 +67,10 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_end(args);
 
 	if (g_log_ctx == LOG_CTX_GLOBAL)
-		printf("OSDP: %s: %s\n", levels[log_level], buf);
+		log_printf("OSDP: %s: %s\n", levels[log_level], buf);
 	else
-		printf("OSDP: %s: PD[%d] %s\n", levels[log_level],
-		       g_log_ctx, buf);
+		log_printf("OSDP: %s: PD[%d] %s\n", levels[log_level],
+			   g_log_ctx, buf);
 	free(buf);
 }
 
@@ -76,29 +79,29 @@ void osdp_dump(const char *head, const uint8_t *data, int len)
 	int i;
 	char str[16 + 1] = { 0 };
 
-	printf("%s [%d] =>\n    0000  %02x ", head ? head : "", len,
+	log_printf("%s [%d] =>\n    0000  %02x ", head ? head : "", len,
 	       len ? data[0] : 0);
 	str[0] = isprint(data[0]) ? data[0] : '.';
 	for (i = 1; i < len; i++) {
 		if ((i & 0x0f) == 0) {
-			printf(" |%16s|", str);
-			printf("\n    %04d  ", i);
+			log_printf(" |%16s|", str);
+			log_printf("\n    %04d  ", i);
 		} else if ((i & 0x07) == 0) {
-			printf(" ");
+			log_printf(" ");
 		}
-		printf("%02x ", data[i]);
+		log_printf("%02x ", data[i]);
 		str[i & 0x0f] = isprint(data[i]) ? data[i] : '.';
 	}
 	if ((i &= 0x0f) != 0) {
 		if (i < 8)
-			printf(" ");
+			log_printf(" ");
 		for (; i < 16; i++) {
-			printf("   ");
+			log_printf("   ");
 			str[i] = ' ';
 		}
-		printf(" |%16s|", str);
+		log_printf(" |%16s|", str);
 	}
-	printf("\n");
+	log_printf("\n");
 }
 
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)

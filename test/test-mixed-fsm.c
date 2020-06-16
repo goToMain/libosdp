@@ -23,7 +23,7 @@ int test_mixed_cp_to_pd_buf_length;
 uint8_t test_mixed_pd_to_cp_buf[128];
 int test_mixed_pd_to_cp_buf_length;
 
-int test_mixed_cp_fsm_send(void *data, uint8_t * buf, int len)
+int test_mixed_cp_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -33,7 +33,7 @@ int test_mixed_cp_fsm_send(void *data, uint8_t * buf, int len)
 	return len;
 }
 
-int test_mixed_cp_fsm_receive(void *data, uint8_t * buf, int len)
+int test_mixed_cp_fsm_receive(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -49,7 +49,7 @@ int test_mixed_cp_fsm_receive(void *data, uint8_t * buf, int len)
 	return ret;
 }
 
-int test_mixed_pd_fsm_send(void *data, uint8_t * buf, int len)
+int test_mixed_pd_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -58,7 +58,7 @@ int test_mixed_pd_fsm_send(void *data, uint8_t * buf, int len)
 	return len;
 }
 
-int test_mixed_pd_fsm_receive(void *data, uint8_t * buf, int len)
+int test_mixed_pd_fsm_receive(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
@@ -113,17 +113,17 @@ int test_mixed_fsm_setup(struct test *t)
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
+		.id = {
+			.version = 1,
+			.model = 153,
+			.vendor_code = 31337,
+			.serial_number = 0x01020304,
+			.firmware_version = 0x0A0B0C0D,
+		},
+		.cap = cap,
 		.channel.data = NULL,
 		.channel.send = test_mixed_pd_fsm_send,
 		.channel.recv = test_mixed_pd_fsm_receive,
-		.id = {
-		       .version = 1,
-		       .model = 153,
-		       .vendor_code = 31337,
-		       .serial_number = 0x01020304,
-		       .firmware_version = 0x0A0B0C0D,
-		       },
-		.cap = cap,
 	};
 	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
 	if (test_data.pd_ctx == NULL) {
@@ -131,7 +131,7 @@ int test_mixed_fsm_setup(struct test *t)
 		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
 		return -1;
 	}
-	// osdp_set_log_level(LOG_DEBUG);
+	osdp_set_log_level(LOG_EMERG);
 	t->mock_data = (void *)&test_data;
 	return 0;
 }
@@ -174,7 +174,6 @@ void run_mixed_fsm_tests(struct test *t)
 		}
 		if (count++ > 300)
 			break;
-		usleep(1000);
 	}
 	printf("    -- CP - PD mixed tests complete\n");
 

@@ -8,11 +8,12 @@
 #include "test.h"
 
 int cp_phy_state_update(struct osdp_pd *pd);
-int cp_enqueue_command(struct osdp_pd *pd, struct osdp_data *c);
+void cp_enqueue_command(struct osdp_pd *p, struct osdp_cmd *cmd);
+int cp_alloc_command(struct osdp *ctx, struct osdp_cmd **cmd);
 
 int phy_fsm_resp_offset = 0;
 
-int test_cp_phy_fsm_send(void *data, uint8_t * buf, int len)
+int test_cp_phy_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -38,7 +39,7 @@ int test_cp_phy_fsm_send(void *data, uint8_t * buf, int len)
 	return len;
 }
 
-int test_cp_phy_fsm_receive(void *data, uint8_t * buf, int len)
+int test_cp_phy_fsm_receive(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -97,13 +98,12 @@ void test_cp_phy_fsm_teardown(struct test *t)
 void run_cp_phy_fsm_tests(struct test *t)
 {
 	int ret=-128, result = TRUE;
+	struct osdp_cmd *cmd_poll;
+	struct osdp_cmd *cmd_id;
 	struct osdp *ctx;
 	struct osdp_pd *p;
 
 	printf("\nStarting CP fsm state tests\n");
-
-	struct osdp_data cmd_poll = {.id = CMD_POLL,.len = 2 };
-	struct osdp_data cmd_id = {.id = CMD_ID,.len = 2 };
 
 	if (test_cp_phy_fsm_setup(t)) {
 		printf("    -- error failed to setup cp_phy\n");
@@ -113,15 +113,14 @@ void run_cp_phy_fsm_tests(struct test *t)
 	ctx = t->mock_data;
 	p = to_current_pd(ctx);
 
-	if (cp_enqueue_command(p, &cmd_poll)) {
-		printf("enqueue cmd_poll error!\n");
-		result = FALSE;
-	}
+	cp_alloc_command(ctx, &cmd_poll);
+	cp_alloc_command(ctx, &cmd_id);
 
-	if (cp_enqueue_command(p, &cmd_id)) {
-		printf("enqueue cmd_id error!\n");
-		result = FALSE;
-	}
+	cmd_poll->id = CMD_POLL;
+	cmd_id->id = CMD_ID;
+
+	cp_enqueue_command(p, cmd_poll);
+	cp_enqueue_command(p, cmd_id);
 
 	printf("    -- executing test_cp_phy_fsm()\n");
 	while (result) {

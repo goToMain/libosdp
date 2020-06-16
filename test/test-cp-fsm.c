@@ -9,12 +9,11 @@
 #include <osdp.h>
 #include "test.h"
 
-int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c);
 int cp_state_update(struct osdp_pd *pd);
 
 int test_fsm_resp = 0;
 
-int test_cp_fsm_send(void *data, uint8_t * buf, int len)
+int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -32,7 +31,7 @@ int test_cp_fsm_send(void *data, uint8_t * buf, int len)
 	return len;
 }
 
-int test_cp_fsm_receive(void *data, uint8_t * buf, int len)
+int test_cp_fsm_receive(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
@@ -126,3 +125,5 @@ void run_cp_fsm_tests(struct test *t)
 
 	test_cp_fsm_teardown(t);
 }
+
+// unnecessary

@@ -30,13 +30,13 @@ enum osdp_phy_state_e {
  *  0: success
  *  2: retry current command
  */
-int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf, int len)
+int pd_decode_command(struct osdp_pd *p, struct osdp_cmd *reply,
+		      uint8_t *buf, int len)
 {
 	int i, ret = -1, pos = 0;
-	union osdp_cmd cmd;
+	struct osdp_cmd cmd;
 
 	reply->id = 0;
-	reply->len = 0;
 	p->cmd_id = buf[pos++];
 	len--;
 
@@ -160,8 +160,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 		 */
 		if (isset_flag(p, PD_FLAG_SC_ACTIVE) == 0) {
 			reply->id = REPLY_NAK;
-			reply->len = 1;
-			reply->data[0] = OSDP_PD_NAK_SC_COND;
+			reply->cmd_bytes[0] = OSDP_PD_NAK_SC_COND;
 			LOG_E(TAG "Keyset with SC inactive");
 			break;
 		}
@@ -184,8 +183,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 	case CMD_CHLNG:
 		if (p->cap[CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
 			reply->id = REPLY_NAK;
-			reply->len = 1;
-			reply->data[0] = OSDP_PD_NAK_SC_UNSUP;
+			reply->cmd_bytes[0] = OSDP_PD_NAK_SC_UNSUP;
 			break;
 		}
 		if (len != 8)
@@ -211,9 +209,9 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
 
 	if (ret != 0 && reply->id == 0) {
 		reply->id = REPLY_NAK;
-		reply->len = 1;
-		reply->data[0] = OSDP_PD_NAK_RECORD;
+		reply->cmd_bytes[0] = OSDP_PD_NAK_RECORD;
 	}
+
 	p->reply_id = reply->id;
 	if (p->cmd_id != CMD_POLL) {
 		LOG_D(TAG "IN(CMD): 0x%02x[%d] -- OUT(REPLY): 0x%02x",
@@ -228,7 +226,7 @@ int pd_decode_command(struct osdp_pd *p, struct osdp_data *reply, uint8_t * buf,
  * +ve: length of command
  * -ve: error
  */
-int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
+int pd_build_reply(struct osdp_pd *p, struct osdp_cmd *reply, uint8_t *pkt)
 {
 	int i, len = 0;
 
@@ -288,8 +286,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
 		break;
 	case REPLY_NAK:
 		buf[len++] = reply->id;
-		buf[len++] = (reply->len > sizeof(struct osdp_data)) ?
-					reply->data[0] : OSDP_PD_NAK_RECORD;
+		buf[len++] = reply->cmd_bytes[0];
 		break;
 	case REPLY_CCRYPT:
 		if (smb == NULL)
@@ -348,7 +345,7 @@ int pd_build_reply(struct osdp_pd *p, struct osdp_data *reply, uint8_t * pkt)
  *   0 - success
  *  -1 - failure
  */
-int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
+int pd_send_reply(struct osdp_pd *p, struct osdp_cmd *reply)
 {
 	int ret, len;
 	uint8_t buf[OSDP_PACKET_BUF_SIZE];
@@ -395,7 +392,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_data *reply)
  *  1: no data yet
  *  2: re-issue command
  */
-int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
+int pd_process_command(struct osdp_pd *p, struct osdp_cmd *reply)
 {
 	int ret;
 
@@ -436,12 +433,11 @@ int pd_process_command(struct osdp_pd *p, struct osdp_data *reply)
 void pd_phy_state_update(struct osdp_pd *pd)
 {
 	int ret;
-	uint8_t phy_reply[OSDP_DATA_BUF_SIZE];
-	struct osdp_data *reply = (struct osdp_data *)phy_reply;
+	struct osdp_cmd reply;
 
 	switch (pd->phy_state) {
 	case PD_PHY_STATE_IDLE:
-		ret = pd_process_command(pd, reply);
+		ret = pd_process_command(pd, &reply);
 		if (ret == 1)	/* no data; wait */
 			break;
 		if (ret < 0) {	/* error */
@@ -451,7 +447,7 @@ void pd_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = PD_PHY_STATE_SEND_REPLY;
 		/* FALLTHRU */
 	case PD_PHY_STATE_SEND_REPLY:
-		if ((ret = pd_send_reply(pd, reply)) == 0) {
+		if ((ret = pd_send_reply(pd, &reply)) == 0) {
 			pd->phy_state = PD_PHY_STATE_IDLE;
 			break;
 		}
@@ -486,6 +482,8 @@ void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
 
 	memcpy(&pd->id, id, sizeof(struct pd_id));
 }
+
+/* --- Exported Methods --- */
 
 osdp_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 {
@@ -549,19 +547,11 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 
 void osdp_pd_teardown(osdp_t *ctx)
 {
-	assert(ctx);
-
-	/* teardown PD */
-	if (to_pd(ctx, 0) != NULL) {
-		free(to_pd(ctx, 0));
+	if (ctx != NULL) {
+		safe_free(to_pd(ctx, 0));
+		safe_free(to_cp(ctx));
+		safe_free(ctx);
 	}
-
-	/* teardown CP */
-	if (to_cp(ctx) != NULL) {
-		free(to_cp(ctx));
-	}
-
-	free(ctx);
 }
 
 void osdp_pd_refresh(osdp_t *ctx)

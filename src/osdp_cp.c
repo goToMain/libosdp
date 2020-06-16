@@ -36,6 +36,7 @@ enum cp_phy_state_e {
 	CP_PHY_STATE_REPLY_WAIT,
 	CP_PHY_STATE_WAIT,
 	CP_PHY_STATE_ERR,
+	CP_PHY_STATE_CLEANUP,
 };
 
 /**
@@ -43,9 +44,8 @@ enum cp_phy_state_e {
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
+int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *pkt)
 {
-	union osdp_cmd *c;
 	int ret = -1, i, len = 0;
 	uint8_t *buf = phy_packet_get_data(p, pkt);
 	uint8_t *smb = phy_packet_get_smb(p, pkt);
@@ -69,81 +69,61 @@ int cp_build_command(struct osdp_pd *p, struct osdp_data *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	case CMD_OUT:
-		if (cmd->len != sizeof(struct osdp_data)
-				+ sizeof(struct osdp_cmd_output))
-			break;
-		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
-		buf[len++] = c->output.output_no;
-		buf[len++] = c->output.control_code;
-		buf[len++] = byte_0(c->output.tmr_count);
-		buf[len++] = byte_1(c->output.tmr_count);
+		buf[len++] = cmd->output.output_no;
+		buf[len++] = cmd->output.control_code;
+		buf[len++] = byte_0(cmd->output.tmr_count);
+		buf[len++] = byte_1(cmd->output.tmr_count);
 		ret = 0;
 		break;
 	case CMD_LED:
-		if (cmd->len != sizeof(struct osdp_data)
-				+ sizeof(struct osdp_cmd_led))
-			break;
-		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
-		buf[len++] = c->led.reader;
-		buf[len++] = c->led.led_number;
+		buf[len++] = cmd->led.reader;
+		buf[len++] = cmd->led.led_number;
 
-		buf[len++] = c->led.temporary.control_code;
-		buf[len++] = c->led.temporary.on_count;
-		buf[len++] = c->led.temporary.off_count;
-		buf[len++] = c->led.temporary.on_color;
-		buf[len++] = c->led.temporary.off_color;
-		buf[len++] = byte_0(c->led.temporary.timer);
-		buf[len++] = byte_1(c->led.temporary.timer);
+		buf[len++] = cmd->led.temporary.control_code;
+		buf[len++] = cmd->led.temporary.on_count;
+		buf[len++] = cmd->led.temporary.off_count;
+		buf[len++] = cmd->led.temporary.on_color;
+		buf[len++] = cmd->led.temporary.off_color;
+		buf[len++] = byte_0(cmd->led.temporary.timer);
+		buf[len++] = byte_1(cmd->led.temporary.timer);
 
-		buf[len++] = c->led.permanent.control_code;
-		buf[len++] = c->led.permanent.on_count;
-		buf[len++] = c->led.permanent.off_count;
-		buf[len++] = c->led.permanent.on_color;
-		buf[len++] = c->led.permanent.off_color;
+		buf[len++] = cmd->led.permanent.control_code;
+		buf[len++] = cmd->led.permanent.on_count;
+		buf[len++] = cmd->led.permanent.off_count;
+		buf[len++] = cmd->led.permanent.on_color;
+		buf[len++] = cmd->led.permanent.off_color;
 		ret = 0;
 		break;
 	case CMD_BUZ:
-		if (cmd->len != sizeof(struct osdp_data)
-				+ sizeof(struct osdp_cmd_buzzer))
-			break;
-		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
-		buf[len++] = c->buzzer.reader;
-		buf[len++] = c->buzzer.tone_code;
-		buf[len++] = c->buzzer.on_count;
-		buf[len++] = c->buzzer.off_count;
-		buf[len++] = c->buzzer.rep_count;
+		buf[len++] = cmd->buzzer.reader;
+		buf[len++] = cmd->buzzer.tone_code;
+		buf[len++] = cmd->buzzer.on_count;
+		buf[len++] = cmd->buzzer.off_count;
+		buf[len++] = cmd->buzzer.rep_count;
 		ret = 0;
 		break;
 	case CMD_TEXT:
-		if (cmd->len != sizeof(struct osdp_data)
-				+ sizeof(struct osdp_cmd_text))
-			break;
-		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
-		buf[len++] = c->text.reader;
-		buf[len++] = c->text.cmd;
-		buf[len++] = c->text.temp_time;
-		buf[len++] = c->text.offset_row;
-		buf[len++] = c->text.offset_col;
-		buf[len++] = c->text.length;
-		for (i = 0; i < c->text.length; i++)
-			buf[len++] = c->text.data[i];
+		buf[len++] = cmd->text.reader;
+		buf[len++] = cmd->text.cmd;
+		buf[len++] = cmd->text.temp_time;
+		buf[len++] = cmd->text.offset_row;
+		buf[len++] = cmd->text.offset_col;
+		buf[len++] = cmd->text.length;
+		for (i = 0; i < cmd->text.length; i++)
+			buf[len++] = cmd->text.data[i];
 		ret = 0;
 		break;
 	case CMD_COMSET:
-		if (cmd->len != sizeof(struct osdp_data)
-				+ sizeof(struct osdp_cmd_comset))
-			break;
-		c = (union osdp_cmd *)cmd->data;
 		buf[len++] = cmd->id;
-		buf[len++] = c->comset.addr;
-		buf[len++] = byte_0(c->comset.baud);
-		buf[len++] = byte_1(c->comset.baud);
-		buf[len++] = byte_2(c->comset.baud);
-		buf[len++] = byte_3(c->comset.baud);
+		buf[len++] = cmd->comset.addr;
+		buf[len++] = byte_0(cmd->comset.baud);
+		buf[len++] = byte_1(cmd->comset.baud);
+		buf[len++] = byte_2(cmd->comset.baud);
+		buf[len++] = byte_3(cmd->comset.baud);
 		ret = 0;
 		break;
 	case CMD_KEYSET:
@@ -368,10 +348,13 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
  *   0 - success
  *  -1 - failure
  */
-int cp_send_command(struct osdp_pd *p, struct osdp_data *cmd)
+int cp_send_command(struct osdp_pd *p, struct osdp_cmd *cmd)
 {
 	int ret, len;
 	uint8_t buf[OSDP_PACKET_BUF_SIZE];
+
+	if (cmd == NULL)
+		return -1;
 
 	len = phy_build_packet_head(p, cmd->id, buf, OSDP_PACKET_BUF_SIZE);
 	/* init packet buf with header */
@@ -451,46 +434,57 @@ int cp_process_reply(struct osdp_pd *p)
 	return cp_decode_response(p, p->phy_rx_buf, ret);
 }
 
-int cp_enqueue_command(struct osdp_pd *p, struct osdp_data *c)
+inline void cp_free_command(struct osdp *ctx, struct osdp_cmd *cmd)
 {
-	int len, fs, start, end;
-	struct cmd_queue *q = p->queue;
+	osdp_slab_free(to_cp(ctx)->cmd_slab, cmd);
+}
 
-	fs = q->tail - q->head;
-	if (fs <= 0)
-		fs += OSDP_PD_CMD_QUEUE_SIZE;
+int cp_alloc_command(struct osdp *ctx, struct osdp_cmd **cmd)
+{
+	void *p;
 
-	len = c->len;
-	if (len > fs)
+	p = osdp_slab_alloc(to_cp(ctx)->cmd_slab);
+	if (p == NULL) {
+		LOG_W(TAG "Failed to alloc cmd");
 		return -1;
-
-	start = q->head + 1;
-	if (start >= OSDP_PD_CMD_QUEUE_SIZE)
-		start = 0;
-
-	if (start == q->tail)
-		return -1;
-
-	end = start + len;
-	if (end >= OSDP_PD_CMD_QUEUE_SIZE)
-		end = end % OSDP_PD_CMD_QUEUE_SIZE;
-
-	if (start > end) {
-		memcpy(q->buffer + start, c, OSDP_PD_CMD_QUEUE_SIZE - start);
-		memcpy(q->buffer,
-		       (uint8_t *) c + OSDP_PD_CMD_QUEUE_SIZE - start, end);
-	} else {
-		memcpy(q->buffer + start, c, len);
 	}
-
-	q->head = end;
+	*cmd = p;
 	return 0;
 }
 
-void cp_flush_command_queue(struct osdp_pd *pd)
+void cp_enqueue_command(struct osdp_pd *p, struct osdp_cmd *cmd)
 {
-	pd->queue->head = 0;
-	pd->queue->head = 0;
+	struct osdp_cmd_queue *q = &p->queue;
+
+	cmd->__next = NULL;
+	if (q->front == NULL) {
+		q->front = q->back = cmd;
+	} else {
+		assert(q->back);
+		q->back->__next = cmd;
+		q->back = cmd;
+	}
+}
+
+int cp_dequeue_command(struct osdp_pd *p, struct osdp_cmd **cmd, int read_only)
+{
+	struct osdp_cmd_queue *q = &p->queue;
+
+	if (q->front == NULL)
+		return -1;
+	*cmd = q->front;
+	if (!read_only)
+		q->front = q->front->__next;
+	return 0;
+}
+
+void cp_flush_command_queue(struct osdp_pd *p)
+{
+	struct osdp_cmd *cmd;
+
+	while (cp_dequeue_command(p, &cmd, FALSE) == 0) {
+		cp_free_command(to_ctx(p), cmd);
+	}
 }
 
 void cp_flush_all_cmd_queues(struct osdp *ctx)
@@ -498,42 +492,10 @@ void cp_flush_all_cmd_queues(struct osdp *ctx)
 	int i;
 	struct osdp_pd *pd;
 
-	for (i = 0; i < ctx->cp->num_pd; i++) {
+	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = to_pd(ctx, i);
 		cp_flush_command_queue(pd);
 	}
-}
-
-int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int maxlen)
-{
-	int start, end, len;
-	struct cmd_queue *q = pd->queue;
-
-	if (q->head == q->tail)
-		return 0;	/* empty */
-
-	start = q->tail + 1;
-	if (start >= OSDP_PD_CMD_QUEUE_SIZE)
-		start = 0;
-	len = q->buffer[start];
-
-	if (len > maxlen)
-		return -1;
-
-	end = start + len;
-	if (end >= OSDP_PD_CMD_QUEUE_SIZE)
-		end = end % OSDP_PD_CMD_QUEUE_SIZE;
-
-	if (start > end) {
-		memcpy(cmd_buf, q->buffer + start, OSDP_PD_CMD_QUEUE_SIZE - start);
-		memcpy(cmd_buf + OSDP_PD_CMD_QUEUE_SIZE - start, q->buffer, end);
-	} else {
-		memcpy(cmd_buf, q->buffer + start, len);
-	}
-
-	if (!readonly)
-		q->tail = end;
-	return len;
 }
 
 /**
@@ -548,21 +510,12 @@ int cp_dequeue_command(struct osdp_pd *pd, int readonly, uint8_t * cmd_buf, int 
 int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 0;
-	uint8_t phy_cmd[OSDP_DATA_BUF_SIZE];
-	struct osdp_data *cmd = (struct osdp_data *)phy_cmd;
+	struct osdp_cmd *cmd = NULL;
 
 	switch (pd->phy_state) {
 	case CP_PHY_STATE_IDLE:
-		ret = cp_dequeue_command(pd, FALSE, phy_cmd, OSDP_DATA_BUF_SIZE);
-		if (ret == 0)
+		if (cp_dequeue_command(pd, &cmd, TRUE))
 			break;
-		if (ret < 0) {
-			LOG_I(TAG "command dequeue error");
-			cp_flush_command_queue(pd);
-			pd->phy_state = CP_PHY_STATE_ERR;
-			break;
-		}
-		ret = 1;
 		/* fall-thru */
 	case CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd, cmd)) < 0) {
@@ -574,10 +527,11 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = CP_PHY_STATE_REPLY_WAIT;
 		pd->phy_rx_buf_len = 0; /* reset buf_len for next use */
 		pd->phy_tstamp = millis_now();
+		ret = 1;
 		break;
 	case CP_PHY_STATE_REPLY_WAIT:
 		if ((ret = cp_process_reply(pd)) == 0) {
-			pd->phy_state = CP_PHY_STATE_IDLE;
+			pd->phy_state = CP_PHY_STATE_CLEANUP;
 			ret = 2;
 			break;
 		}
@@ -602,10 +556,23 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		ret = 1;
 		if (millis_since(pd->phy_tstamp) < OSDP_CP_RETRY_WAIT_MS)
 			break;
-		pd->phy_state = CP_PHY_STATE_SEND_CMD;
+		pd->phy_state = CP_PHY_STATE_IDLE;
 		break;
 	case CP_PHY_STATE_ERR:
+		cp_flush_command_queue(pd);
 		ret = -1;
+		break;
+	case CP_PHY_STATE_CLEANUP:
+		if (cp_dequeue_command(pd, &cmd, FALSE) < 0) {
+			// Got to cleanup but pop failed?
+			LOG_EM(TAG "command pop failed!");
+			pd->phy_state = CP_PHY_STATE_ERR;
+			ret = -1;
+			break;
+		}
+		cp_free_command(to_ctx(pd), cmd);
+		pd->phy_state = CP_PHY_STATE_IDLE;
+		ret = 2;
 		break;
 	}
 
@@ -614,18 +581,18 @@ int cp_phy_state_update(struct osdp_pd *pd)
 
 int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 {
-	struct osdp_data c;
+	struct osdp_cmd *c;
 
 	if (isset_flag(p, PD_FLAG_AWAIT_RESP)) {
 		clear_flag(p, PD_FLAG_AWAIT_RESP);
 		return 0;
 	}
 
-	c.id = cmd;
-	c.len = sizeof(struct osdp_data);
-	if (cp_enqueue_command(p, &c) != 0) {
-		LOG_W(TAG "command_enqueue error!");
-	}
+	if (cp_alloc_command(to_ctx(p), &c))
+		return -1;
+
+	c->id = cmd;
+	cp_enqueue_command(p, c);
 	set_flag(p, PD_FLAG_AWAIT_RESP);
 	return 1;
 }
@@ -755,6 +722,8 @@ int cp_state_update(struct osdp_pd *pd)
 	return 0;
 }
 
+/* --- Exported Methods --- */
+
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
 	int i;
@@ -784,6 +753,13 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	node_set_parent(cp, ctx);
 	cp->num_pd = num_pd;
 
+	cp->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
+				      OSDP_CP_CMD_POOL_SIZE);
+	if (cp->cmd_slab == NULL) {
+		LOG_E(TAG "failed to alloc struct osdp_cp_cmd_slab");
+		goto malloc_err;
+	}
+
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
 		LOG_E(TAG "failed to alloc struct osdp_pd[]");
@@ -794,11 +770,6 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		osdp_pd_info_t *p = info + i;
 		pd = to_pd(ctx, i);
 		pd->offset = i;
-		pd->queue = calloc(1, sizeof(struct cmd_queue));
-		if (pd->queue == NULL) {
-			LOG_E(TAG "failed to alloc pd->cmd_queue");
-			goto malloc_err;
-		}
 		node_set_parent(pd, ctx);
 		pd->baud_rate = p->baud_rate;
 		pd->address = p->address;
@@ -817,28 +788,12 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 void osdp_cp_teardown(osdp_t *ctx)
 {
-	int i;
-	struct osdp_cp *cp;
-	struct osdp_pd *pd;
-
-	assert(ctx);
-
-	cp = to_cp(ctx);
-	if (cp == NULL)
-		return;
-
-	for (i = cp->num_pd - 1; i >= 0; i--) {
-		pd = to_pd(ctx, i);
-		if (pd != NULL) {
-			if (pd->queue != NULL)
-				free(pd->queue);
-			if (i == 0)
-				free(pd);	// final
-		}
+	if (ctx != NULL) {
+		safe_free(to_pd(ctx, 0));
+		osdp_slab_del(to_cp(ctx)->cmd_slab);
+		safe_free(to_cp(ctx));
+		safe_free(ctx);
 	}
-
-	free(cp);
-	free(ctx);
 }
 
 void osdp_cp_refresh(osdp_t *ctx)
@@ -847,14 +802,14 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	assert(ctx);
 
-	for (i = 0; i < to_cp(ctx)->num_pd; i++) {
+	for (i = 0; i < NUM_PD(ctx); i++) {
 		set_current_pd(ctx, i);
 		osdp_log_ctx_set(i);
 		cp_state_update(to_current_pd(ctx));
 	}
 }
 
-int osdp_cp_set_callback_key_press(osdp_t * ctx,
+int osdp_cp_set_callback_key_press(osdp_t *ctx,
 	int (*cb) (int address, uint8_t key))
 {
 	assert(ctx);
@@ -864,8 +819,8 @@ int osdp_cp_set_callback_key_press(osdp_t * ctx,
 	return 0;
 }
 
-int osdp_cp_set_callback_card_read(osdp_t * ctx,
-	int (*cb) (int address, int format, uint8_t * data, int len))
+int osdp_cp_set_callback_card_read(osdp_t *ctx,
+	int (*cb) (int address, int format, uint8_t *data, int len))
 {
 	assert(ctx);
 
@@ -876,140 +831,125 @@ int osdp_cp_set_callback_card_read(osdp_t * ctx,
 
 int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
-	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+	struct osdp_cmd *cmd;
 
 	assert(ctx);
-	if (pd >= to_cp(ctx)->num_pd)
+	if (pd < 0 || pd >= NUM_PD(ctx)) {
+		LOG_E(TAG "Invalid PD number");
+		return -1;
+	}
+
+	if (cp_alloc_command(to_osdp(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_OUT;
-	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_output);
-	memcpy(cmd->data, p, sizeof(struct osdp_cmd_output));
-
-	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		LOG_W(TAG "CMD_OUT enqueue error!");
-		return -1;
-	}
+	memcpy(&cmd->output, p, sizeof(struct osdp_cmd_output));
+	cp_enqueue_command(to_pd(ctx, pd), cmd);
 	return 0;
 }
 
 int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
-	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+	struct osdp_cmd *cmd;
 
 	assert(ctx);
-	if (pd >= to_cp(ctx)->num_pd)
+	if (pd < 0 || pd >= NUM_PD(ctx)) {
+		LOG_E(TAG "Invalid PD number");
+		return -1;
+	}
+
+	if (cp_alloc_command(to_osdp(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_LED;
-	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_led);
-	memcpy(cmd->data, p, sizeof(struct osdp_cmd_led));
-
-	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		LOG_W(TAG "CMD_OUT enqueue error!");
-		return -1;
-	}
+	memcpy(&cmd->led, p, sizeof(struct osdp_cmd_led));
+	cp_enqueue_command(to_pd(ctx, pd), cmd);
 	return 0;
 }
 
 int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
-	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+	struct osdp_cmd *cmd;
 
 	assert(ctx);
-	if (pd >= to_cp(ctx)->num_pd)
+	if (pd < 0 || pd >= NUM_PD(ctx)) {
+		LOG_E(TAG "Invalid PD number");
+		return -1;
+	}
+
+	if (cp_alloc_command(to_osdp(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_BUZ;
-	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_buzzer);
-	memcpy(cmd->data, p, sizeof(struct osdp_cmd_buzzer));
-
-	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		LOG_W(TAG "CMD_BUZ enqueue error!");
-		return -1;
-	}
+	memcpy(&cmd->buzzer, p, sizeof(struct osdp_cmd_buzzer));
+	cp_enqueue_command(to_pd(ctx, pd), cmd);
 	return 0;
 }
 
 int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
-	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+	struct osdp_cmd *cmd;
 
 	assert(ctx);
-	if (pd >= to_cp(ctx)->num_pd)
+	if (pd < 0 || pd >= NUM_PD(ctx)) {
+		LOG_E(TAG "Invalid PD number");
+		return -1;
+	}
+
+	if (cp_alloc_command(to_osdp(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_TEXT;
-	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_text);
-	memcpy(cmd->data, p, sizeof(struct osdp_cmd_text));
-
-	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		LOG_W(TAG "CMD_BUZ enqueue error!");
-		return -1;
-	}
+	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_text));
+	cp_enqueue_command(to_pd(ctx, pd), cmd);
 	return 0;
 }
 
 int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
-	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
+	struct osdp_cmd *cmd;
 
 	assert(ctx);
-	if (pd >= to_cp(ctx)->num_pd)
+	if (pd < 0 || pd >= NUM_PD(ctx)) {
+		LOG_E(TAG "Invalid PD number");
+		return -1;
+	}
+
+	if (cp_alloc_command(to_osdp(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_COMSET;
-	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_comset);
-	memcpy(cmd->data, p, sizeof(struct osdp_cmd_comset));
-
-	if (cp_enqueue_command(to_pd(ctx, pd), cmd) != 0) {
-		LOG_W(TAG "CMD_BUZ enqueue error!");
-		return -1;
-	}
+	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_comset));
+	cp_enqueue_command(to_pd(ctx, pd), cmd);
 	return 0;
 }
 
 int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 {
 	int i;
-	uint8_t cmd_buf[sizeof(struct osdp_data) + sizeof(union osdp_cmd)];
-	struct osdp_data *cmd = (struct osdp_data *)cmd_buf;
-	struct osdp_cp *cp;
+	struct osdp_cmd *cmd;
 	struct osdp_pd *pd;
 
 	assert(ctx);
 
-	cp = to_osdp(ctx)->cp;
-	for (i = 0; i < cp->num_pd; i++) {
-		pd = to_pd(ctx, i);
-		if (pd->state != CP_STATE_ONLINE ||
-		    isset_flag(pd, PD_FLAG_SC_ACTIVE) == 0)
-			break;
-	}
-
-	if (i < cp->num_pd) {
+	if (osdp_get_status_mask(ctx) != PD_MASK(ctx)) {
 		LOG_W(TAG "CMD_KEYSET can be sent only when all PDs are "
 		          "ONLINE and SC_ACTIVE.");
 		return 1;
 	}
 
-	cmd->id = CMD_KEYSET;
-	cmd->len = sizeof(struct osdp_data) + sizeof(struct osdp_cmd_keyset);
-	memcpy(cmd->data, p, sizeof(struct osdp_cmd_keyset));
-
-	for (i = 0; i < cp->num_pd; i++) {
-		pd = to_pd(ctx, i);
-		if (cp_enqueue_command(pd, cmd) != 0) {
-			LOG_EM(TAG "CMD_KEYSET enqueue error! Flushing all "
-			           "commands in queue for all PDs.");
-			cp_flush_all_cmd_queues(to_osdp(ctx));
-			return -1;
-		}
+	if (osdp_slab_blocks(to_cp(ctx)->cmd_slab) < NUM_PD(ctx)) {
+		LOG_W(TAG "Out of slab space for keyset operation");
 	}
+
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = to_pd(ctx, i);
+		if (cp_alloc_command(to_osdp(ctx), &cmd))
+			return -1;
+		cmd->id = CMD_KEYSET;
+		memcpy(&cmd->keyset, p, sizeof(struct osdp_cmd_keyset));
+		cp_enqueue_command(pd, cmd);
+	}
+
 	return 0;
 }

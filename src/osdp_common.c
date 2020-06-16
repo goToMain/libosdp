@@ -177,6 +177,84 @@ void osdp_fill_random(uint8_t *buf, int len)
 	}
 }
 
+void safe_free(void *p)
+{
+	if (p != NULL)
+		free(p);
+}
+
+struct osdp_slab *osdp_slab_init(int block_size, int num_blocks)
+{
+	struct osdp_slab *slab;
+
+	slab = calloc(1, sizeof(struct osdp_slab));
+	if (slab == NULL)
+		goto cleanup;
+
+	slab->block_size = block_size + 2;
+	slab->num_blocks = num_blocks;
+	slab->free_blocks = num_blocks;
+	slab->blob = calloc(num_blocks, block_size + 2);
+	if (slab->blob == NULL)
+		goto cleanup;
+
+	return slab;
+
+cleanup:
+	osdp_slab_del(slab);
+	return NULL;
+}
+
+void osdp_slab_del(struct osdp_slab *s)
+{
+	if (s != NULL) {
+		safe_free(s->blob);
+		safe_free(s);
+	}
+}
+
+void *osdp_slab_alloc(struct osdp_slab *s)
+{
+	int i;
+	uint8_t *p;
+
+	for (i = 0; i < s->num_blocks; i++) {
+		p = s->blob + (s->block_size * i);
+		if (*p == 0)
+			break;
+	}
+	if (i == s->num_blocks)
+		return NULL;
+	*p = 1; // Mark as allocated.
+	*(p + s->block_size - 1) = 0x55;  // cookie.
+	s->free_blocks -= 1;
+	return (void *)(p + 1);
+}
+
+void osdp_slab_free(struct osdp_slab *s, void *block)
+{
+	uint8_t *p = block;
+
+	if (*(p + s->block_size - 2) != 0x55) {
+		LOG_EM("slab: fatal, cookie crushed!");
+		exit(0);
+	}
+	if (*(p - 1) != 1) {
+		LOG_EM("slab: free called on unallocated block");
+		return;
+	}
+	s->free_blocks += 1;
+	*(p - 1) = 0; // Mark as free.
+	// memset(p - 1, 0, s->block_size);
+}
+
+int osdp_slab_blocks(struct osdp_slab *s)
+{
+	return (int)s->free_blocks;
+}
+
+/* --- Exported Methods --- */
+
 const char *osdp_get_version()
 {
 	return PROJECT_NAME "-" PROJECT_VERSION;

@@ -78,13 +78,18 @@ struct osdp_cmd_keyset {
 };
 
 /* generic OSDP command structure */
-union osdp_cmd {
-	struct osdp_cmd_led led;
-	struct osdp_cmd_buzzer buzzer;
-	struct osdp_cmd_text text;
-	struct osdp_cmd_output output;
-	struct osdp_cmd_comset comset;
-	struct osdp_cmd_keyset keyset;
+struct osdp_cmd {
+	void *__next;
+	int id;
+	union {
+		uint8_t cmd_bytes[32];
+		struct osdp_cmd_led    led;
+		struct osdp_cmd_buzzer buzzer;
+		struct osdp_cmd_text   text;
+		struct osdp_cmd_output output;
+		struct osdp_cmd_comset comset;
+		struct osdp_cmd_keyset keyset;
+	};
 };
 
 #endif /* _OSDP_CMD_H_ */

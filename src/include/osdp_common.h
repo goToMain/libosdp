@@ -44,6 +44,8 @@
 		to_cp(p)->pd_offset = i;			\
 	} while (0)
 #define AES_PAD_LEN(x)			((x + 16 - 1) & (~(16 - 1)))
+#define PD_MASK(ctx)			((1 << (to_cp(ctx)->num_pd + 1)) - 1)
+#define NUM_PD(ctx)			(to_cp(ctx)->num_pd)
 
 /* OSDP reserved commands */
 #define CMD_POLL		0x60
@@ -144,16 +146,16 @@
 
 typedef uint64_t millis_t;
 
-struct osdp_data {
-	uint8_t len;
-	uint8_t id;
-	uint8_t data[];
+struct osdp_slab {
+	int block_size;
+	int num_blocks;
+	int free_blocks;
+	uint8_t *blob;
 };
 
-struct cmd_queue {
-	int head;
-	int tail;
-	uint8_t buffer[OSDP_PD_CMD_QUEUE_SIZE];
+struct osdp_cmd_queue {
+	struct osdp_cmd *front;
+	struct osdp_cmd *back;
 };
 
 struct osdp_pd_cmd_callback {
@@ -206,7 +208,7 @@ struct osdp_pd {
 	struct osdp_secure_channel sc;
 
 	/* CP mode only data */
-	struct cmd_queue *queue;
+	struct osdp_cmd_queue queue;
 
 	/* callbacks */
 	struct osdp_pd_cmd_callback cmd_cb;
@@ -218,6 +220,8 @@ struct osdp_cp {
 
 	int num_pd;
 	int state;
+
+	struct osdp_slab *cmd_slab;
 
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
@@ -306,5 +310,12 @@ void osdp_log_ctx_restore();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);
+void safe_free(void *p);
+
+struct osdp_slab *osdp_slab_init(int block_size, int num_blocks);
+void osdp_slab_del(struct osdp_slab *s);
+void *osdp_slab_alloc(struct osdp_slab *s);
+void osdp_slab_free(struct osdp_slab *s, void *block);
+int osdp_slab_blocks(struct osdp_slab *s);
 
 #endif	/* _OSDP_COMMON_H_ */

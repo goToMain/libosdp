@@ -223,7 +223,7 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 
 	config_parse(argv[0], c);
 
-	memset(&mq_cmd.cmd, 0, sizeof(union osdp_cmd));
+	memset(&mq_cmd.cmd, 0, sizeof(struct osdp_cmd));
 	mq_cmd.offset = offset;
 
 	if (strcmp("led", argv[2]) == 0) {

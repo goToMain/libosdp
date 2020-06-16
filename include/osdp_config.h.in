@@ -23,5 +23,6 @@
 
 #define OSDP_PD_CMD_QUEUE_SIZE			(128)
 #define OSDP_PD_CAP_SENTINEL			{ -1, 0, 0 } /* struct pd_cap[] end */
+#define OSDP_CP_CMD_POOL_SIZE			32
 
 #endif /* _OSDP_CONFIG_H_ */

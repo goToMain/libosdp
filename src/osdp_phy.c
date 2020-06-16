@@ -23,7 +23,7 @@ struct osdp_packet_header {
 	uint8_t data[];
 };
 
-uint8_t compute_checksum(uint8_t * msg, int length)
+uint8_t compute_checksum(uint8_t *msg, int length)
 {
 	uint8_t checksum = 0;
 	int i, whole_checksum;
@@ -101,7 +101,7 @@ int phy_in_sc_handshake(int is_reply, int id)
 		return (id == CMD_CHLNG || id == CMD_SCRYPT);
 }
 
-int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen)
+int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t *buf, int maxlen)
 {
 	int exp_len, pd_mode, sb_len;
 	struct osdp_packet_header *pkt;
@@ -138,7 +138,7 @@ int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen)
 	return sizeof(struct osdp_packet_header) + sb_len;
 }
 
-int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
+int phy_build_packet_tail(struct osdp_pd *p, uint8_t *buf, int len, int maxlen)
 {
 	int i, is_cmd, data_len;
 	uint8_t *data;
@@ -212,7 +212,7 @@ int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen)
  *   -3: soft fail. upper layers must skip this message
  *   -4: packet format errors
  */
-int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len)
+int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len)
 {
 	uint8_t *data, *mac;
 	uint16_t comp, cur;

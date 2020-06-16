@@ -136,7 +136,7 @@ enum osdpctl_cmd_e {
 struct osdpctl_cmd {
 	int id;
 	int offset;
-	union osdp_cmd cmd;
+	struct osdp_cmd cmd;
 };
 
 extern struct msgbuf msgq_cmd;

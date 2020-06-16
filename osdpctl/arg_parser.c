@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "arg_parser.h"
 
@@ -115,28 +116,37 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 		if (ap_opt->type == AP_TYPE_BOOL ||
 		    ap_opt->type == AP_TYPE_BOOL_HANDLER) {
 			opt->has_arg = no_argument;
-			olen += snprintf(ostr + olen, 128 - olen,
-			                 "%c", ap_opt->short_name);
+			assert(olen + 2 < 128);
+			ostr[olen++] = ap_opt->short_name;
 		} else {
 			opt->has_arg = required_argument;
-			olen += snprintf(ostr + olen, 128 - olen,
-			                 "%c:", ap_opt->short_name);
+			assert(olen + 3 < 128);
+			ostr[olen++] = ap_opt->short_name;
+			ostr[olen++] = ':';
 		}
 		opt->flag = 0;
 		opt->val = ap_opt->short_name;
 		ap_opt++;
 	}
 
-	/* add help option */
+	assert(olen + 4 < 128);
+
+	/* add help and other default options */
 	opt = opts + i + 0;
 	opt->name = "help";
 	opt->val = 'h';
+	ostr[olen++] = 'h';
+
 	opt = opts + i + 1;
 	opt->name = "quite";
 	opt->val = 'q';
+	ostr[olen++] = 'q';
+
 	opt = opts + i + 2;
 	opt->val = 'f';
-	snprintf(ostr + olen, 128 - olen, "hqf");
+	ostr[olen++] = 'f';
+
+	ostr[olen] = '\0';
 
 	while ((c = getopt_long(argc, argv, ostr, opts, &opt_idx)) >= 0) {
 

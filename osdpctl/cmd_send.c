@@ -166,14 +166,13 @@ int handle_cmd_text(int argc, char *argv[], struct osdp_cmd_text *c)
 		return -2;
 	}
 
-	len = strlen(argv[0]);
+	len = strnlen(argv[0], 33);
 	if (len > 32)
 		return -1;
 
 	c->cmd = 1;
 	c->length = len;
-	strncpy((char *)c->data, argv[0], len);
-
+	memcpy(c->data, argv[0], len);
 	return 0;
 }
 

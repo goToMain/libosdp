@@ -98,14 +98,22 @@ int safe_atoi(const char *a, int *i)
 	return 0;
 }
 
-void remove_spaces(char *str)
+void remove_char(char *str, char c)
 {
 	int i, j = 0;
 
-	for (i = 0; str[i]; i++)
-		if (str[i] != ' ')
+	for (i = 0; str[i]; i++) {
+		if (str[i] != c)
 			str[j++] = str[i];
+	}
 	str[j] = '\0';
+}
+
+char *safe_strncpy(char* dest, const char* src, size_t size)
+{
+	strncpy(dest, src, size - 1);
+	dest[size - 1] = '\0';
+	return dest;
 }
 
 int read_pid(const char *file, int *pid)
@@ -165,4 +173,42 @@ int redirect_output_to_log_file(const char *file)
 		return -1;
 	}
 	return 0;
+}
+
+int o_redirect(int mode, const char *file)
+{
+	int fd = -1;
+	int has_err = 0;
+
+	if (file != NULL) {
+		fd = open(file, O_RDWR | O_CREAT | O_APPEND, 0644);
+		if (fd == -1) {
+			perror("opening log_file");
+			return -1;
+		}
+	}
+
+	if (mode & 0x01) {
+		if (fd != -1) {
+			if (dup2(fd, fileno(stdout)) == -1) {
+				perror("cannot redirect stdout to log_file");
+				has_err = -1;
+			}
+		} else {
+			close(fileno(stdout));
+		}
+	}
+
+	if (mode & 0x02) {
+		if (fd != -1) {
+			if (dup2(fd, fileno(stderr)) == -1) {
+				perror("cannot redirect stderr to log_file");
+				has_err = -1;
+			}
+		} else {
+			close(fileno(stderr));
+		}
+	}
+
+	return has_err;
 }

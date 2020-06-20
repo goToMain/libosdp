@@ -95,9 +95,8 @@ int config_parse_key_capabilites(const char *val, void *data)
 	char *tok1, *rest1, *tok2, *rest2, str[128];
 	struct config_pd_s *p = data;
 
-	strncpy(str, val, 127); str[127] = 0;
-	remove_spaces(str);
-
+	safe_strncpy(str, val, sizeof(str));
+	remove_char(str, ' ');
 	tok1 = strtok_r(str, "[)]", &rest1);
 	while (tok1 != NULL) {
 		i = 0; ival[0] = 0;

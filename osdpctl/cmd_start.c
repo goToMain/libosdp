@@ -212,8 +212,8 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	}
 	config_parse(argv[0], c);
 	if (c->log_file) {
-		printf("Redirecting output to log_file %s\n", c->log_file);
-		redirect_output_to_log_file(c->log_file);
+		printf("Redirecting stdout and strerr to log_file %s\n", c->log_file);
+		o_redirect(3, c->log_file);
 	}
 	start_cmd_server(c);
 	write_pid(c->pid_file);

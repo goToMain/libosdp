@@ -436,14 +436,14 @@ int cp_process_reply(struct osdp_pd *p)
 
 inline void cp_free_command(struct osdp *ctx, struct osdp_cmd *cmd)
 {
-	osdp_slab_free(to_cp(ctx)->cmd_slab, cmd);
+	osdp_slab_free(ctx->cmd_slab, cmd);
 }
 
 int cp_alloc_command(struct osdp *ctx, struct osdp_cmd **cmd)
 {
 	void *p;
 
-	p = osdp_slab_alloc(to_cp(ctx)->cmd_slab);
+	p = osdp_slab_alloc(ctx->cmd_slab);
 	if (p == NULL) {
 		LOG_W(TAG "Failed to alloc cmd");
 		return -1;
@@ -744,6 +744,13 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	if (master_key != NULL)
 		memcpy(ctx->sc_master_key, master_key, 16);
 
+	ctx->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
+				       OSDP_CP_CMD_POOL_SIZE * num_pd);
+	if (ctx->cmd_slab == NULL) {
+		LOG_E(TAG "failed to alloc struct osdp_cp_cmd_slab");
+		goto malloc_err;
+	}
+
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
 		LOG_E(TAG "failed to alloc struct osdp_cp");
@@ -752,13 +759,6 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	cp = to_cp(ctx);
 	node_set_parent(cp, ctx);
 	cp->num_pd = num_pd;
-
-	cp->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
-				      OSDP_CP_CMD_POOL_SIZE);
-	if (cp->cmd_slab == NULL) {
-		LOG_E(TAG "failed to alloc struct osdp_cp_cmd_slab");
-		goto malloc_err;
-	}
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
@@ -790,7 +790,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 {
 	if (ctx != NULL) {
 		safe_free(to_pd(ctx, 0));
-		osdp_slab_del(to_cp(ctx)->cmd_slab);
+		osdp_slab_del(to_osdp(ctx)->cmd_slab);
 		safe_free(to_cp(ctx));
 		safe_free(ctx);
 	}
@@ -938,7 +938,7 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 		return 1;
 	}
 
-	if (osdp_slab_blocks(to_cp(ctx)->cmd_slab) < NUM_PD(ctx)) {
+	if (osdp_slab_blocks(to_osdp(ctx)->cmd_slab) < NUM_PD(ctx)) {
 		LOG_W(TAG "Out of slab space for keyset operation");
 	}
 

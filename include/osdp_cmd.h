@@ -11,6 +11,16 @@
 
 #include <stdint.h>
 
+enum osdp_cmd_e {
+	OSDP_CMD_OUTPUT = 1,
+	OSDP_CMD_LED,
+	OSDP_CMD_BUZZER,
+	OSDP_CMD_TEXT,
+	OSDP_CMD_KEYSET,
+	OSDP_CMD_COMSET,
+	OSDP_CMD_SENTINEL
+};
+
 /* CMD_OUT */
 struct osdp_cmd_output {
 	uint8_t output_no;

@@ -37,6 +37,7 @@ int sample_pd_recv_func(void *data, uint8_t *buf, int len)
 int main()
 {
 	struct osdp_t *ctx;
+	struct osdp_cmd cmd;
 	struct pd_cap cap[] = {
 		{
 			.function_code = CAP_READER_LED_CONTROL,
@@ -73,9 +74,13 @@ int main()
 	}
 
 	while (1) {
-		// your application code.
-
 		osdp_pd_refresh(ctx);
+		if (osdp_pd_get_cmd(ctx, &cmd) == 0) {
+			// do something with command.
+		}
+
+		// your application code.
+		u	sleep(1000);
 	}
 
 	return 0;

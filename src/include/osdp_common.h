@@ -158,15 +158,6 @@ struct osdp_cmd_queue {
 	struct osdp_cmd *back;
 };
 
-struct osdp_pd_cmd_callback {
-	int (*led) (struct osdp_cmd_led *p);
-	int (*buzzer) (struct osdp_cmd_buzzer *p);
-	int (*text) (struct osdp_cmd_text *p);
-	int (*output) (struct osdp_cmd_output *p);
-	int (*comset) (struct osdp_cmd_comset *p);
-	int (*keyset) (struct osdp_cmd_keyset *p);
-};
-
 struct osdp_secure_channel {
         uint8_t scbk[16];
         uint8_t s_enc[16];
@@ -207,11 +198,7 @@ struct osdp_pd {
 	struct osdp_channel channel;
 	struct osdp_secure_channel sc;
 
-	/* CP mode only data */
 	struct osdp_cmd_queue queue;
-
-	/* callbacks */
-	struct osdp_pd_cmd_callback cmd_cb;
 };
 
 struct osdp_cp {
@@ -220,8 +207,6 @@ struct osdp_cp {
 
 	int num_pd;
 	int state;
-
-	struct osdp_slab *cmd_slab;
 
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
@@ -233,7 +218,7 @@ struct osdp {
 	struct osdp_cp_notifiers notifier;
 
 	uint8_t sc_master_key[16];
-
+	struct osdp_slab *cmd_slab;
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
 };

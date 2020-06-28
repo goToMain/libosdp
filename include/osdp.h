@@ -43,15 +43,7 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 void osdp_pd_teardown(osdp_t *ctx);
 void osdp_pd_refresh(osdp_t *ctx);
-
-/* --- PD application command call backs --- */
-
-void osdp_pd_set_callback_cmd_led(osdp_t *ctx, int (*cb) (struct osdp_cmd_led *p));
-void osdp_pd_set_callback_cmd_buzzer(osdp_t *ctx, int (*cb) (struct osdp_cmd_buzzer *p));
-void osdp_pd_set_callback_cmd_output(osdp_t *ctx, int (*cb) (struct osdp_cmd_output *p));
-void osdp_pd_set_callback_cmd_text(osdp_t *ctx, int (*cb) (struct osdp_cmd_text *p));
-void osdp_pd_set_callback_cmd_comset(osdp_t *ctx, int (*cb) (struct osdp_cmd_comset *p));
-void osdp_pd_set_callback_cmd_keyset(osdp_t *ctx, int (*cb) (struct osdp_cmd_keyset *p));
+int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd);
 
 /* ============================= Common Methods ============================= */
 

@@ -103,6 +103,25 @@ int pd_cmd_comset_handler(struct osdp_cmd_comset *p)
 	return 0;
 }
 
+int pd_cmd_handler(struct osdp_cmd *cmd)
+{
+	switch(cmd->id) {
+	case OSDP_CMD_OUTPUT:
+		return pd_cmd_output_handler(&cmd->output);
+	case OSDP_CMD_LED:
+		return pd_cmd_led_handler(&cmd->led);
+	case OSDP_CMD_BUZZER:
+		return pd_cmd_buzzer_handler(&cmd->buzzer);
+	case OSDP_CMD_TEXT:
+		return pd_cmd_text_handler(&cmd->text);
+	case OSDP_CMD_COMSET:
+		return pd_cmd_comset_handler(&cmd->comset);
+	case OSDP_CMD_KEYSET:
+		return pd_cmd_keyset_handler(&cmd->keyset);
+	}
+	return -1;
+}
+
 int cp_keypress_handler(int pd, uint8_t key)
 {
 	printf("CP: PD[%d]: keypressed: 0x%02x\n", pd, key);
@@ -205,6 +224,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	struct config_pd_s *pd;
 	uint8_t *scbk, scbk_buf[16];
 	struct config_s *c = data;
+	struct osdp_cmd cmd;
 
 	if (argc < 1) {
 		printf ("Error: must pass a config file\n");
@@ -265,21 +285,19 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			printf("Failed to setup PD context\n");
 			return -1;
 		}
-		osdp_pd_set_callback_cmd_led(c->pd_ctx, pd_cmd_led_handler);
-		osdp_pd_set_callback_cmd_buzzer(c->pd_ctx, pd_cmd_buzzer_handler);
-		osdp_pd_set_callback_cmd_output(c->pd_ctx, pd_cmd_output_handler);
-		osdp_pd_set_callback_cmd_text(c->pd_ctx, pd_cmd_text_handler);
-		osdp_pd_set_callback_cmd_comset(c->pd_ctx, pd_cmd_comset_handler);
-		osdp_pd_set_callback_cmd_keyset(c->pd_ctx, pd_cmd_keyset_handler);
 	}
 
 	free(info_arr);
 
 	while (1) {
-		if (c->mode == CONFIG_MODE_CP)
+		if (c->mode == CONFIG_MODE_CP) {
 			osdp_cp_refresh(c->cp_ctx);
-		else
+		} else {
 			osdp_pd_refresh(c->pd_ctx);
+			if (osdp_pd_get_cmd(c->pd_ctx, &cmd) == 0) {
+				pd_cmd_handler(&cmd);
+			}
+		}
 		process_commands(c);
 		usleep(20 * 1000);
 	}

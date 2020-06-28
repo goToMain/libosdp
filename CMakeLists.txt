@@ -6,7 +6,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(libosdp VERSION 1.0.0 LANGUAGES C)
+project(libosdp VERSION 1.1.0 LANGUAGES C)
 
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)

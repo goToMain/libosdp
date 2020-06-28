@@ -44,7 +44,7 @@
 		to_cp(p)->pd_offset = i;			\
 	} while (0)
 #define AES_PAD_LEN(x)			((x + 16 - 1) & (~(16 - 1)))
-#define PD_MASK(ctx)			((1 << (to_cp(ctx)->num_pd + 1)) - 1)
+#define PD_MASK(ctx)			(uint32_t)((1 << (to_cp(ctx)->num_pd + 1)) - 1)
 #define NUM_PD(ctx)			(to_cp(ctx)->num_pd)
 
 /* OSDP reserved commands */

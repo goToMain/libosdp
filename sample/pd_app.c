@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <osdp.h>
 
 enum osdp_pd_e {
@@ -80,7 +81,7 @@ int main()
 		}
 
 		// your application code.
-		u	sleep(1000);
+		usleep(1000);
 	}
 
 	return 0;

@@ -109,7 +109,7 @@ int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t *buf, int maxlen)
 	pd_mode = isset_flag(p, PD_FLAG_PD_MODE);
 	exp_len = sizeof(struct osdp_packet_header) + 64; /* estimated cmd len */
 	if (maxlen < exp_len) {
-		LOG_N(TAG "pkt_buf len err - %d/%d", maxlen,
+		LOG_I(TAG "pkt_buf len err - %d/%d", maxlen,
 			 exp_len);
 		return -1;
 	}

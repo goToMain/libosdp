@@ -216,14 +216,14 @@ void osdp_slab_del(struct osdp_slab *s)
 void *osdp_slab_alloc(struct osdp_slab *s)
 {
 	int i;
-	uint8_t *p;
+	uint8_t *p = NULL;
 
 	for (i = 0; i < s->num_blocks; i++) {
 		p = s->blob + (s->block_size * i);
 		if (*p == 0)
 			break;
 	}
-	if (i == s->num_blocks)
+	if (p == NULL || i == s->num_blocks)
 		return NULL;
 	*p = 1; // Mark as allocated.
 	*(p + s->block_size - 1) = 0x55;  // cookie.

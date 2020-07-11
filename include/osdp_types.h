@@ -39,17 +39,24 @@ enum osdp_pd_cap_function_code_e {
 };
 
 struct pd_cap {
-	uint8_t function_code;	/* enum osdp_pd_cap_function_code_e */
+	/**
+	 * Each PD capability has a 3 byte representation:
+	 *   function_code:    One of enum osdp_pd_cap_function_code_e.
+	 *   compliance_level: A function_code dependent number that indicates
+	 *                     what the PD can do with this capability.
+	 *   num_items:        Number of such capability entities in PD.
+	 */
+	uint8_t function_code;
 	uint8_t compliance_level;
 	uint8_t num_items;
 };
 
 struct pd_id {
-	int version;
-	int model;
-	uint32_t vendor_code;
-	uint32_t serial_number;
-	uint32_t firmware_version;
+	int version;  /* 3-bytes IEEE assigned OUI  */
+	int model;    /* 1-byte Manufacturer's model number */
+	uint32_t vendor_code;   /* 1-Byte Manufacturer's version number */
+	uint32_t serial_number; /* 4-byte serial number for the PD */
+	uint32_t firmware_version; /* 3-byte version (major, minor, build) */
 };
 
 struct osdp_channel {
@@ -77,7 +84,7 @@ struct osdp_channel {
 	 * @len  - number of bytes in `buf`
 	 *
 	 * Returns:
-	 *  +ve: number of bytes sent. must be <= `len` (TODO: handle partials)
+	 *  +ve: number of bytes sent. must be <= `len`
 	 */
 	int (*send)(void *data, uint8_t *buf, int len);
 

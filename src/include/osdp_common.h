@@ -159,17 +159,17 @@ struct osdp_cmd_queue {
 };
 
 struct osdp_secure_channel {
-        uint8_t scbk[16];
-        uint8_t s_enc[16];
-        uint8_t s_mac1[16];
-        uint8_t s_mac2[16];
-        uint8_t r_mac[16];
+	uint8_t scbk[16];
+	uint8_t s_enc[16];
+	uint8_t s_mac1[16];
+	uint8_t s_mac2[16];
+	uint8_t r_mac[16];
 	uint8_t c_mac[16];
-        uint8_t cp_random[8];
-        uint8_t pd_random[8];
-        uint8_t pd_client_uid[8];
-        uint8_t cp_cryptogram[16];
-        uint8_t pd_cryptogram[16];
+	uint8_t cp_random[8];
+	uint8_t pd_random[8];
+	uint8_t pd_client_uid[8];
+	uint8_t cp_cryptogram[16];
+	uint8_t pd_cryptogram[16];
 };
 
 struct osdp_pd {

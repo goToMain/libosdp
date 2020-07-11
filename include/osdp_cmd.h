@@ -89,8 +89,8 @@ struct osdp_cmd_keyset {
 
 /* generic OSDP command structure */
 struct osdp_cmd {
-	void *__next;
-	int id;
+	void *__next; /* OSDP internal. Don't modify */
+	int id;       /* enum osdp_cmd_e */
 	union {
 		uint8_t cmd_bytes[32];
 		struct osdp_cmd_led    led;

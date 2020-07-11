@@ -223,6 +223,16 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len)
 	pkt = (struct osdp_packet_header *)buf;
 
 	/* validate packet header */
+	if (len < (int)sizeof(struct osdp_packet_header)) {
+		/* incomplete data */
+		return -2;
+	}
+
+	if (pkt->mark != 0xFF || pkt->som != 0x53) {
+		LOG_E(TAG "invalid MARK/SOM");
+		osdp_dump("raw packet", buf, len);
+	}
+
 	if (!pd_mode && !(pkt->pd_address & 0x80)) {
 		LOG_E(TAG "reply without MSB set 0x%02x", pkt->pd_address);
 		return -1;

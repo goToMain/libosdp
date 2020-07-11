@@ -495,7 +495,6 @@ void pd_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = PD_PHY_STATE_IDLE;
 		break;
 	case PD_PHY_STATE_ERR:
-		osdp_sc_init(pd);
 		clear_flag(pd, PD_FLAG_SC_ACTIVE);
 		pd->phy_state = PD_PHY_STATE_IDLE;
 		pd->phy_rx_buf_len = 0;

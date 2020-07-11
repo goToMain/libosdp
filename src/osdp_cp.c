@@ -408,6 +408,13 @@ int cp_process_reply(struct osdp_pd *p)
 		return 1;
 	p->phy_rx_buf_len += ret;
 
+#ifdef OSDP_PACKET_TRACE
+	if (p->cmd_id != CMD_POLL) {
+		LOG_EM(TAG "bytes received");
+		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
+	}
+#endif
+
 	/* Valid OSDP packet in buffer */
 
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
@@ -423,13 +430,6 @@ int cp_process_reply(struct osdp_pd *p)
 		p->phy_rx_buf_len = 0;
 		return 1;
 	}
-
-#ifdef OSDP_PACKET_TRACE
-	if (p->cmd_id != CMD_POLL) {
-		LOG_EM(TAG "bytes received");
-		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
-	}
-#endif
 
 	return cp_decode_response(p, p->phy_rx_buf, ret);
 }

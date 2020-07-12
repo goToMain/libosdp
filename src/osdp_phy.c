@@ -259,6 +259,20 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len)
 
 	/* validate sequence number */
 	cur = pkt->control & PKT_CONTROL_SQN;
+	if (pd_mode && cur == 0) {
+		/**
+		 * CP is trying to restart communication by sending a 0. The
+		 * current libosdp PD implementation does not hold any state
+		 * between commands so we can just set seq_number to -1 so it
+		 * gets incremented to 0 with a call to phy_get_seq_number().
+		 */
+		p->seq_number = -1;
+	}
+	if (pd_mode && cur == p->seq_number) {
+		/* PD must resend the last response */
+		LOG_E(TAG "seq-repeat reply-resend feature not supported!");
+		return -1;
+	}
 	comp = phy_get_seq_number(p, pd_mode);
 	if (comp != cur && !isset_flag(p, PD_FLAG_SKIP_SEQ_CHECK)) {
 		LOG_E(TAG "packet seq mismatch %d/%d", comp, cur);

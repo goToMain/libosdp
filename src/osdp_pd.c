@@ -440,6 +440,13 @@ int pd_process_command(struct osdp_pd *p, struct osdp_cmd *reply)
 		return 1;
 	p->phy_rx_buf_len += ret;
 
+#ifdef OSDP_PACKET_TRACE
+	if (p->cmd_id != CMD_POLL) {
+		LOG_EM(TAG "bytes received");
+		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
+	}
+#endif
+
 	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
 	switch(ret) {
 	case -1: /* fatal errors */
@@ -456,13 +463,6 @@ int pd_process_command(struct osdp_pd *p, struct osdp_cmd *reply)
 
 	ret = pd_decode_command(p, reply, p->phy_rx_buf, ret);
 
-#ifdef OSDP_PACKET_TRACE
-	if (p->cmd_id != CMD_POLL) {
-		LOG_EM(TAG "bytes received");
-		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
-	}
-#endif
-
 	p->phy_rx_buf_len = 0;
 	return ret;
 }
@@ -474,6 +474,10 @@ void pd_phy_state_update(struct osdp_pd *pd)
 
 	switch (pd->phy_state) {
 	case PD_PHY_STATE_IDLE:
+		if (millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS) {
+			pd->phy_state = PD_PHY_STATE_ERR;
+			break;
+		}
 		ret = pd_process_command(pd, &reply);
 		if (ret == 1)	/* no data; wait */
 			break;
@@ -481,6 +485,7 @@ void pd_phy_state_update(struct osdp_pd *pd)
 			pd->phy_state = PD_PHY_STATE_ERR;
 			break;
 		}
+		pd->tstamp = millis_now();
 		pd->phy_state = PD_PHY_STATE_SEND_REPLY;
 		/* FALLTHRU */
 	case PD_PHY_STATE_SEND_REPLY:
@@ -488,16 +493,21 @@ void pd_phy_state_update(struct osdp_pd *pd)
 			pd->phy_state = PD_PHY_STATE_IDLE;
 			break;
 		}
-		if (ret == -1) {	/* send failed! */
+		if (ret == -1) {  /* send failed! */
 			pd->phy_state = PD_PHY_STATE_ERR;
 			break;
 		}
 		pd->phy_state = PD_PHY_STATE_IDLE;
 		break;
 	case PD_PHY_STATE_ERR:
+		/**
+		 * PD error state is momentary as it doesn't maintain any state
+		 * between commands. We just clean up secure channel status and
+		 * go back to idle state with a call to phy_state_reset().
+		 */
 		clear_flag(pd, PD_FLAG_SC_ACTIVE);
-		pd->phy_state = PD_PHY_STATE_IDLE;
-		pd->phy_rx_buf_len = 0;
+		phy_state_reset(pd);
+		pd->tstamp = millis_now();
 		break;
 	}
 }

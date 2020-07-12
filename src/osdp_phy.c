@@ -371,4 +371,5 @@ void phy_state_reset(struct osdp_pd *pd)
 {
 	pd->phy_state = 0;
 	pd->seq_number = -1;
+	pd->phy_rx_buf_len = 0;
 }

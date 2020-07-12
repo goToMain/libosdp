@@ -17,6 +17,7 @@
 struct channel_msgq_s {
 	int send_id;
 	int send_msgid;
+	int is_server;
 	int recv_id;
 	int recv_msgid;
 };
@@ -77,28 +78,29 @@ int channel_msgq_setup(void **data, struct config_pd_s *c)
 	struct channel_msgq_s *ctx;
 
 	ctx = malloc(sizeof(struct channel_msgq_s));
-	if (ctx == NULL)
-	{
-		printf("Failed at alloc for uart channel\n");
+	if (ctx == NULL) {
+		printf("Failed at alloc for msgq channel\n");
 		return -1;
 	}
-
-	ctx->send_id = c->is_pd_mode ? 13 : 17;
+	ctx->is_server = c->is_pd_mode;
+	ctx->send_id = ctx->is_server ? 13 : 17;
 	key = ftok(c->channel_device, ctx->send_id);
 	ctx->send_msgid = msgget(key, 0666 | IPC_CREAT);
 	if (ctx->send_msgid < 0) {
-		printf("Error: failed to create send message queue %s\n",
+		printf("Error: failed to create send message queue %s. ",
 		       c->channel_device);
+		perror("");
 		free(ctx);
 		return -1;
 	}
 
-	ctx->recv_id = c->is_pd_mode ? 17 : 13;
+	ctx->recv_id = ctx->is_server ? 17 : 13;
 	key = ftok(c->channel_device, ctx->recv_id);
 	ctx->recv_msgid = msgget(key, 0666 | IPC_CREAT);
 	if (ctx->recv_msgid < 0) {
-		printf("Error: failed to create recv message queue %s\n",
+		printf("Error: failed to create recv message queue %s. ",
 		       c->channel_device);
+		perror("");
 		free(ctx);
 		return -1;
 	}
@@ -113,8 +115,10 @@ void channel_msgq_teardown(void *data)
 
 	if (data == NULL)
 		return;
-	msgctl(ctx->send_msgid, IPC_RMID, NULL);
-	msgctl(ctx->recv_msgid, IPC_RMID, NULL);
+	if (ctx->is_server) {
+		msgctl(ctx->send_msgid, IPC_RMID, NULL);
+		msgctl(ctx->recv_msgid, IPC_RMID, NULL);
+	}
 	free(ctx);
 }
 

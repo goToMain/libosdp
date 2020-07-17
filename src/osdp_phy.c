@@ -263,10 +263,12 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len)
 		/**
 		 * CP is trying to restart communication by sending a 0. The
 		 * current libosdp PD implementation does not hold any state
-		 * between commands so we can just set seq_number to -1 so it
-		 * gets incremented to 0 with a call to phy_get_seq_number().
+		 * between commands so we can just set seq_number to -1 (so it
+		 * gets incremented to 0 with a call to phy_get_seq_number())
+		 * and invalidate any established secure channels.
 		 */
 		p->seq_number = -1;
+		clear_flag(p, PD_FLAG_SC_ACTIVE);
 	}
 	if (pd_mode && cur == p->seq_number) {
 		/* PD must resend the last response */

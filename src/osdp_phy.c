@@ -231,6 +231,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len)
 	if (pkt->mark != 0xFF || pkt->som != 0x53) {
 		LOG_E(TAG "invalid MARK/SOM");
 		osdp_dump("raw packet", buf, len);
+		return -4;
 	}
 
 	if (!pd_mode && !(pkt->pd_address & 0x80)) {
@@ -241,7 +242,7 @@ int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len)
 	/* validate packet length */
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
 	if (pkt_len != len - 1) {
-		LOG_E(TAG "packet length mismatch %d/%d", pkt_len, len - 1);
+		/* Wait for more data? */
 		return -2;
 	}
 

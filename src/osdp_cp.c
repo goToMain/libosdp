@@ -509,13 +509,15 @@ void cp_flush_all_cmd_queues(struct osdp *ctx)
  */
 int cp_phy_state_update(struct osdp_pd *pd)
 {
-	int ret = 0;
+	int ret = 1, tmp;
 	struct osdp_cmd *cmd = NULL;
 
 	switch (pd->phy_state) {
 	case CP_PHY_STATE_IDLE:
-		if (cp_dequeue_command(pd, &cmd, TRUE))
+		if (cp_dequeue_command(pd, &cmd, TRUE)) {
+			ret = 0;
 			break;
+		}
 		/* fall-thru */
 	case CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd, cmd)) < 0) {
@@ -527,33 +529,29 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = CP_PHY_STATE_REPLY_WAIT;
 		pd->phy_rx_buf_len = 0; /* reset buf_len for next use */
 		pd->phy_tstamp = millis_now();
-		ret = 1;
 		break;
 	case CP_PHY_STATE_REPLY_WAIT:
-		if ((ret = cp_process_reply(pd)) == 0) {
+		if ((tmp = cp_process_reply(pd)) == 0) {
 			pd->phy_state = CP_PHY_STATE_CLEANUP;
-			ret = 2;
 			break;
 		}
-		if (ret == 2) {
+		if (tmp == 2) {
 			LOG_I(TAG "PD busy; retry last command");
 			pd->phy_tstamp = millis_now();
 			pd->phy_state = CP_PHY_STATE_WAIT;
+			ret = 2;
 			break;
 		}
-		if (ret == -1) {
+		if (tmp == -1) {
 			pd->phy_state = CP_PHY_STATE_ERR;
-			ret = -1;
 			break;
 		}
 		if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			LOG_I(TAG "CMD: 0x%02x - response timeout", pd->cmd_id);
 			pd->phy_state = CP_PHY_STATE_ERR;
-			ret = -1;
 		}
 		break;
 	case CP_PHY_STATE_WAIT:
-		ret = 1;
 		if (millis_since(pd->phy_tstamp) < OSDP_CP_RETRY_WAIT_MS)
 			break;
 		pd->phy_state = CP_PHY_STATE_IDLE;
@@ -710,10 +708,11 @@ int cp_state_update(struct osdp_pd *pd)
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
 		}
-		LOG_I(TAG "SCBK set; Restarting SC setup");
+		LOG_I(TAG "SCBK set; restarting SC to verify new SCBK");
 		clear_flag(pd, PD_FLAG_SC_USE_SCBKD);
 		clear_flag(pd, PD_FLAG_SC_ACTIVE);
 		cp_set_state(pd, CP_STATE_SC_INIT);
+		pd->seq_number = -1;
 		break;
 	default:
 		break;

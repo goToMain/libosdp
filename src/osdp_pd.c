@@ -451,6 +451,8 @@ int pd_process_command(struct osdp_pd *p, struct osdp_cmd *reply)
 	switch(ret) {
 	case -1: /* fatal errors */
 		LOG_E(TAG "failed to decode packet");
+		if (p->channel.flush)
+			p->channel.flush(p->channel.data);
 		return -1;
 	case -2: /* rx_buf_len != pkt->len; wait for more data */
 		return 1;
@@ -458,6 +460,8 @@ int pd_process_command(struct osdp_pd *p, struct osdp_cmd *reply)
 	case -4: /* rx_buf had invalid MARK or SOM */
 		/* Reset rx_buf_len so next call can start afresh */
 		p->phy_rx_buf_len = 0;
+		if (p->channel.flush)
+			p->channel.flush(p->channel.data);
 		return 1;
 	}
 

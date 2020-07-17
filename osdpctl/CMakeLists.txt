@@ -11,7 +11,7 @@ list(APPEND BIN_OSDPCTL_SRC
 	config.c
 	arg_parser.c
 	utils.c
-	rs232.c
+	serial.c
 	channel_uart.c
 	channel_msgq.c
 	channel_custom.c

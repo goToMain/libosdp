@@ -521,7 +521,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		/* fall-thru */
 	case CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd, cmd)) < 0) {
-			LOG_I(TAG "command dispatch error");
+			LOG_E(TAG "send command error");
 			pd->phy_state = CP_PHY_STATE_ERR;
 			ret = -1;
 			break;
@@ -577,6 +577,12 @@ int cp_phy_state_update(struct osdp_pd *pd)
 	return ret;
 }
 
+/**
+ * Returns:
+ *   0: nothing done
+ *   1: dispatched
+ *  -1: error
+ */
 int cp_cmd_dispatcher(struct osdp_pd *p, int cmd)
 {
 	struct osdp_cmd *c;

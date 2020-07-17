@@ -72,8 +72,10 @@ void channel_uart_teardown(void *data)
 {
 	struct channel_uart_s *ctx = data;
 
-	RS232_CloseComport(ctx->port_id);
-	free(ctx);
+	if (ctx != NULL) {
+		RS232_CloseComport(ctx->port_id);
+		free(ctx);
+	}
 }
 
 struct channel_ops_s channel_uart = {

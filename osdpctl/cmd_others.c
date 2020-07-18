@@ -20,6 +20,7 @@ int cmd_handler_stop(int argc, char *argv[], void *data)
 		printf ("Error: must pass a config file\n");
 		return -1;
 	}
+
 	config_parse(argv[0], c);
 
 	if (read_pid(c->pid_file, &pid)) {
@@ -27,7 +28,11 @@ int cmd_handler_stop(int argc, char *argv[], void *data)
 		return -1;
 	}
 
-	kill((pid_t)pid, SIGHUP);
+	if (kill((pid_t)pid, SIGHUP) == -1) {
+		perror("Failed to stop service.");
+	}
+
+	unlink(c->pid_file);
 	return 0;
 }
 

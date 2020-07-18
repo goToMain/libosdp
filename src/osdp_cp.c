@@ -378,14 +378,14 @@ int cp_send_command(struct osdp_pd *p, struct osdp_cmd *cmd)
 		return -1;
 	}
 
+	ret = p->channel.send(p->channel.data, buf, len);
+
 #ifdef OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
-		LOG_EM(TAG "bytes sent");
+		LOG_D(TAG "bytes sent"); /* to get PD context printed */
 		osdp_dump(NULL, buf, len);
 	}
 #endif
-
-	ret = p->channel.send(p->channel.data, buf, len);
 
 	return (ret == len) ? 0 : -1;
 }
@@ -410,7 +410,7 @@ int cp_process_reply(struct osdp_pd *p)
 
 #ifdef OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
-		LOG_EM(TAG "bytes received");
+		LOG_D(TAG "bytes received"); /* to get PD context printed */
 		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
 	}
 #endif
@@ -434,7 +434,7 @@ int cp_process_reply(struct osdp_pd *p)
 	return cp_decode_response(p, p->phy_rx_buf, ret);
 }
 
-inline void cp_free_command(struct osdp *ctx, struct osdp_cmd *cmd)
+void cp_free_command(struct osdp *ctx, struct osdp_cmd *cmd)
 {
 	osdp_slab_free(ctx->cmd_slab, cmd);
 }

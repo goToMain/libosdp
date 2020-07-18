@@ -411,8 +411,7 @@ int pd_send_reply(struct osdp_pd *p, struct osdp_cmd *reply)
 
 #ifdef OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
-		LOG_EM(TAG "bytes sent");
-		osdp_dump(NULL, buf, len);
+		osdp_dump("bytes sent", buf, len);
 	}
 #endif
 
@@ -442,8 +441,7 @@ int pd_process_command(struct osdp_pd *p, struct osdp_cmd *reply)
 
 #ifdef OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
-		LOG_EM(TAG "bytes received");
-		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
+		osdp_dump("bytes received", p->phy_rx_buf, p->phy_rx_buf_len);
 	}
 #endif
 
@@ -583,7 +581,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *p, uint8_t *scbk)
 	memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 
 	if (scbk == NULL) {
-		LOG_I(TAG "SCBK not provided. PD is in INSTALL_MODE");
+		LOG_W(TAG "SCBK not provided. PD is in INSTALL_MODE");
 		set_flag(pd, PD_FLAG_INSTALL_MODE);
 	}
 	else {

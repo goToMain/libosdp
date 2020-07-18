@@ -145,7 +145,7 @@ void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 		AES_CBC_encrypt_buffer(&aes_ctx, data, len);
 	} else {
 		/* encrypt one block with AES in ECB mode */
-		assert(len == 1);
+		assert(len <= 16);
 		AES_init_ctx(&aes_ctx, key);
 		AES_ECB_encrypt(&aes_ctx, data);
 	}
@@ -161,7 +161,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 		AES_CBC_decrypt_buffer(&aes_ctx, data, len);
 	} else {
 		/* decrypt one block with AES in ECB mode */
-		assert(len == 1);
+		assert(len <= 16);
 		AES_init_ctx(&aes_ctx, key);
 		AES_ECB_decrypt(&aes_ctx, data);
 	}

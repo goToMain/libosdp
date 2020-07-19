@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "osdp_common.h"
 #include "osdp_aes.h"
@@ -22,10 +23,35 @@
 #define PROJECT_VERSION "0.0.0"
 #endif
 
+#define RED   "\x1B[31m"
+#define GRN   "\x1B[32m"
+#define YEL   "\x1B[33m"
+#define BLU   "\x1B[34m"
+#define MAG   "\x1B[35m"
+#define CYN   "\x1B[36m"
+#define WHT   "\x1B[37m"
+#define RESET "\x1B[0m"
+
+const char *log_level_colors[LOG_MAX_LEVEL] = {
+	RED,   RED,   RED,   RED,
+	YEL,   MAG,   RESET, RESET
+};
+
+const char *log_level_names[LOG_MAX_LEVEL] = {
+	"EMERG", "ALERT", "CRIT ", "ERROR",
+	"WARN ", "NOTIC", "INFO ", "DEBUG"
+};
+
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
 int (*log_printf)(const char *fmt, ...) = printf;
+
+void osdp_log_set_color(const char *color)
+{
+	if (isatty(fileno(stdout)))
+		write(fileno(stdout), color, strlen(color));
+}
 
 void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
 {
@@ -55,10 +81,9 @@ void osdp_log(int log_level, const char *fmt, ...)
 {
 	va_list args;
 	char *buf;
-	const char *levels[] = {
-		"EMERG", "ALERT", "CRIT ", "ERROR",
-		"WARN ", "NOTIC", "INFO ", "DEBUG"
-	};
+
+	if (log_level < LOG_EMERG || log_level >= LOG_MAX_LEVEL)
+		return;
 
 	if (log_level > g_log_level)
 		return;
@@ -66,12 +91,13 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_start(args, fmt);
 	vasprintf(&buf, fmt, args);
 	va_end(args);
-
+	osdp_log_set_color(log_level_colors[log_level]);
 	if (g_log_ctx == LOG_CTX_GLOBAL)
-		log_printf("OSDP: %s: %s\n", levels[log_level], buf);
+		log_printf("OSDP: %s: %s\n", log_level_names[log_level], buf);
 	else
-		log_printf("OSDP: %s: PD[%d] %s\n", levels[log_level],
+		log_printf("OSDP: %s: PD[%d] %s\n", log_level_names[log_level],
 			   g_log_ctx, buf);
+	osdp_log_set_color(RESET);
 	free(buf);
 }
 

@@ -34,7 +34,7 @@
 
 const char *log_level_colors[LOG_MAX_LEVEL] = {
 	RED,   RED,   RED,   RED,
-	YEL,   MAG,   RESET, RESET
+	YEL,   MAG,   GRN,   GRN
 };
 
 const char *log_level_names[LOG_MAX_LEVEL] = {
@@ -106,6 +106,7 @@ void osdp_dump(const char *head, const uint8_t *data, int len)
 	int i;
 	char str[16 + 1] = { 0 };
 
+	osdp_log_set_color(RESET); /* no color for osdp_dump */
 	log_printf("%s [%d] =>\n    0000  %02x ", head ? head : "", len,
 	       len ? data[0] : 0);
 	str[0] = isprint(data[0]) ? data[0] : '.';

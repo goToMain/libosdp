@@ -136,13 +136,13 @@
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
-#define LOG_A(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
-#define LOG_C(...)	(osdp_log(LOG_CRIT, __VA_ARGS__))
-#define LOG_E(...)	(osdp_log(LOG_ERR, __VA_ARGS__))
-#define LOG_I(...)	(osdp_log(LOG_INFO, __VA_ARGS__))
-#define LOG_W(...)	(osdp_log(LOG_WARNING, __VA_ARGS__))
-#define LOG_N(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
-#define LOG_D(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
+#define LOG_ALRT(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
+#define LOG_CRIT(...)	(osdp_log(LOG_CRIT, __VA_ARGS__))
+#define LOG_ERR(...)	(osdp_log(LOG_ERR, __VA_ARGS__))
+#define LOG_INF(...)	(osdp_log(LOG_INFO, __VA_ARGS__))
+#define LOG_WRN(...)	(osdp_log(LOG_WARNING, __VA_ARGS__))
+#define LOG_NOT(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
+#define LOG_DBG(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
 
 typedef uint64_t millis_t;
 
@@ -189,8 +189,8 @@ struct osdp_pd {
 	millis_t tstamp;
 	millis_t sc_tstamp;
 	int phy_state;
-	uint8_t phy_rx_buf[OSDP_PACKET_BUF_SIZE];
-	int phy_rx_buf_len;
+	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
+	int rx_buf_len;
 	millis_t phy_tstamp;
 	int cmd_id;
 	int reply_id;
@@ -231,7 +231,8 @@ enum log_levels_e {
 	LOG_WARNING,
 	LOG_NOTICE,
 	LOG_INFO,
-	LOG_DEBUG
+	LOG_DEBUG,
+	LOG_MAX_LEVEL
 };
 
 enum pd_nak_code_e {
@@ -261,13 +262,21 @@ enum cp_fsm_state_e {
 	CP_STATE_SENTINEL
 };
 
+enum osdp_phy_state_e {
+	PD_PHY_STATE_IDLE,
+	PD_PHY_STATE_PROC_CMD,
+	PD_PHY_STATE_SEND_REPLY,
+	PD_PHY_STATE_ERR,
+	PD_PHT_STATE_SENTINEL
+};
+
 /* from osdp_phy.c */
 int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen);
 int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen);
 int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len);
 const char *get_nac_reason(int code);
 void phy_state_reset(struct osdp_pd *pd);
-uint8_t *phy_packet_get_data(struct osdp_pd *p, const uint8_t *buf);
+int phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 
 /* from osdp_sc.c */

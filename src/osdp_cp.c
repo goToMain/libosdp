@@ -44,13 +44,19 @@ enum cp_phy_state_e {
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *pkt)
+int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
+		     int max_len)
 {
-	int ret = -1, i, len = 0;
-	uint8_t *buf = phy_packet_get_data(p, pkt);
-	uint8_t *smb = phy_packet_get_smb(p, pkt);
+	uint8_t *smb;
+	int data_off, i, ret = -1, len = 0;
 
-	// LOG_D(TAG "Building command 0x%02x",cmd->id);
+	data_off = phy_packet_get_data_offset(p, buf);
+	smb = phy_packet_get_smb(p, buf);
+
+	buf += data_off;
+	max_len -= data_off;
+
+	// LOG_DBG(TAG "Building command 0x%02x",cmd->id);
 
 	switch (cmd->id) {
 	case CMD_POLL:
@@ -161,7 +167,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *pkt)
 		ret = 0;
 		break;
 	default:
-		LOG_E(TAG "command 0x%02x isn't supported", cmd->id);
+		LOG_ERR(TAG "command 0x%02x isn't supported", cmd->id);
 		break;
 	}
 
@@ -172,7 +178,7 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *pkt)
 	}
 
 	if (ret < 0) {
-		LOG_W(TAG "cmd 0x%02x format error! -- %d", cmd->id, ret);
+		LOG_WRN(TAG "cmd 0x%02x format error! -- %d", cmd->id, ret);
 		return ret;
 	}
 
@@ -192,7 +198,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 	int i, ret = -1, pos = 0, t1, t2;
 
 	if (len < 1) {
-		LOG_E("response must have at least one byte");
+		LOG_ERR("response must have at least one byte");
 		return -1;
 	}
 
@@ -205,13 +211,13 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		break;
 	case REPLY_NAK:
 		if (buf[pos]) {
-			LOG_E(TAG "NAK: %s", get_nac_reason(buf[pos]));
+			LOG_ERR(TAG "NAK: %s", get_nac_reason(buf[pos]));
 		}
 		ret = 0;
 		break;
 	case REPLY_PDID:
 		if (len != 12) {
-			LOG_D(TAG "PDID format error, %d/%d",
+			LOG_DBG(TAG "PDID format error, %d/%d",
 				 len, pos);
 			break;
 		}
@@ -234,7 +240,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		break;
 	case REPLY_PDCAP:
 		if (len % 3 != 0) {
-			LOG_D(TAG "PDCAP format error, %d/%d", len, pos);
+			LOG_DBG(TAG "PDCAP format error, %d/%d", len, pos);
 			break;
 		}
 		while (pos < len) {
@@ -267,7 +273,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		temp32 |= buf[pos++] << 8;
 		temp32 |= buf[pos++] << 16;
 		temp32 |= buf[pos++] << 24;
-		LOG_C(TAG "COMSET responded with ID:%d baud:%d", t1, temp32);
+		LOG_CRIT(TAG "COMSET responded with ID:%d baud:%d", t1, temp32);
 		p->baud_rate = temp32;
 		set_flag(p, PD_FLAG_COMSET_INPROG);
 		ret = 0;
@@ -281,7 +287,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 			p->sc.pd_cryptogram[i] = buf[pos++];
 		osdp_compute_session_keys(to_ctx(p));
 		if (osdp_verify_pd_cryptogram(p) != 0) {
-			LOG_E(TAG "failed to verify PD_crypt");
+			LOG_ERR(TAG "failed to verify PD_crypt");
 			break;
 		}
 		ret = 0;
@@ -330,12 +336,12 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		ret = 2;
 		break;
 	default:
-		LOG_D(TAG "unexpected reply: 0x%02x", p->reply_id);
+		LOG_DBG(TAG "unexpected reply: 0x%02x", p->reply_id);
 		break;
 	}
 
 	if (p->cmd_id != CMD_POLL) {
-		LOG_D(TAG "OUT(CMD): 0x%02x -- IN(REPLY): 0x%02x[%d]",
+		LOG_DBG(TAG "OUT(CMD): 0x%02x -- IN(REPLY): 0x%02x[%d]",
 		p->cmd_id, p->reply_id, len);
 	}
 
@@ -359,14 +365,14 @@ int cp_send_command(struct osdp_pd *p, struct osdp_cmd *cmd)
 	len = phy_build_packet_head(p, cmd->id, buf, OSDP_PACKET_BUF_SIZE);
 	/* init packet buf with header */
 	if (len < 0) {
-		LOG_E(TAG "failed at phy_build_packet_head");
+		LOG_ERR(TAG "failed at phy_build_packet_head");
 		return -1;
 	}
 
 	/* fill command data */
-	ret = cp_build_command(p, cmd, buf);
+	ret = cp_build_command(p, cmd, buf, OSDP_PACKET_BUF_SIZE);
 	if (ret < 0) {
-		LOG_E(TAG "failed to build command 0x%02x", cmd->id);
+		LOG_ERR(TAG "failed to build command 0x%02x", cmd->id);
 		return -1;
 	}
 	len += ret;
@@ -374,15 +380,15 @@ int cp_send_command(struct osdp_pd *p, struct osdp_cmd *cmd)
 	/* finalize packet */
 	len = phy_build_packet_tail(p, buf, len, OSDP_PACKET_BUF_SIZE);
 	if (len < 0) {
-		LOG_E(TAG "failed to build command 0x%02x", cmd->id);
+		LOG_ERR(TAG "failed to build command 0x%02x", cmd->id);
 		return -1;
 	}
 
 	ret = p->channel.send(p->channel.data, buf, len);
 
-#ifdef OSDP_PACKET_TRACE
+#ifdef CONFIG_OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
-		LOG_D(TAG "bytes sent"); /* to get PD context printed */
+		LOG_DBG(TAG "bytes sent"); /* to get PD context printed */
 		osdp_dump(NULL, buf, len);
 	}
 #endif
@@ -402,36 +408,36 @@ int cp_process_reply(struct osdp_pd *p)
 {
 	int ret;
 
-	ret = p->channel.recv(p->channel.data, p->phy_rx_buf + p->phy_rx_buf_len,
-			   OSDP_PACKET_BUF_SIZE - p->phy_rx_buf_len);
+	ret = p->channel.recv(p->channel.data, p->rx_buf + p->rx_buf_len,
+			   OSDP_PACKET_BUF_SIZE - p->rx_buf_len);
 	if (ret <= 0)	/* No data received */
 		return 1;
-	p->phy_rx_buf_len += ret;
+	p->rx_buf_len += ret;
 
-#ifdef OSDP_PACKET_TRACE
+#ifdef CONFIG_OSDP_PACKET_TRACE
 	if (p->cmd_id != CMD_POLL) {
-		LOG_D(TAG "bytes received"); /* to get PD context printed */
-		osdp_dump(NULL, p->phy_rx_buf, p->phy_rx_buf_len);
+		LOG_DBG(TAG "bytes received"); /* to get PD context printed */
+		osdp_dump(NULL, p->rx_buf, p->rx_buf_len);
 	}
 #endif
 
 	/* Valid OSDP packet in buffer */
 
-	ret = phy_decode_packet(p, p->phy_rx_buf, p->phy_rx_buf_len);
+	ret = phy_decode_packet(p, p->rx_buf, p->rx_buf_len);
 	switch(ret) {
 	case -1: /* fatal errors */
-		LOG_E(TAG "failed to decode packet");
+		LOG_ERR(TAG "failed to decode packet");
 		return -1;
 	case -2: /* rx_buf_len != pkt->len; wait for more data */
 		return 1;
 	case -3: /* soft fail */
 	case -4: /* rx_buf had invalid MARK or SOM */
 		/* Reset rx_buf_len so next call can start afresh */
-		p->phy_rx_buf_len = 0;
+		p->rx_buf_len = 0;
 		return 1;
 	}
 
-	return cp_decode_response(p, p->phy_rx_buf, ret);
+	return cp_decode_response(p, p->rx_buf, ret);
 }
 
 void cp_free_command(struct osdp *ctx, struct osdp_cmd *cmd)
@@ -445,7 +451,7 @@ int cp_alloc_command(struct osdp *ctx, struct osdp_cmd **cmd)
 
 	p = osdp_slab_alloc(ctx->cmd_slab);
 	if (p == NULL) {
-		LOG_W(TAG "Failed to alloc cmd");
+		LOG_WRN(TAG "Failed to alloc cmd");
 		return -1;
 	}
 	*cmd = p;
@@ -521,13 +527,13 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		/* fall-thru */
 	case CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd, cmd)) < 0) {
-			LOG_E(TAG "send command error");
+			LOG_ERR(TAG "send command error");
 			pd->phy_state = CP_PHY_STATE_ERR;
 			ret = -1;
 			break;
 		}
 		pd->phy_state = CP_PHY_STATE_REPLY_WAIT;
-		pd->phy_rx_buf_len = 0; /* reset buf_len for next use */
+		pd->rx_buf_len = 0; /* reset buf_len for next use */
 		pd->phy_tstamp = millis_now();
 		break;
 	case CP_PHY_STATE_REPLY_WAIT:
@@ -536,7 +542,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (tmp == 2) {
-			LOG_I(TAG "PD busy; retry last command");
+			LOG_INF(TAG "PD busy; retry last command");
 			pd->phy_tstamp = millis_now();
 			pd->phy_state = CP_PHY_STATE_WAIT;
 			ret = 2;
@@ -547,12 +553,12 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			LOG_I(TAG "CMD: 0x%02x - response timeout", pd->cmd_id);
+			LOG_ERR(TAG "CMD: 0x%02x - response timeout", pd->cmd_id);
 			pd->phy_state = CP_PHY_STATE_ERR;
 		}
 		break;
 	case CP_PHY_STATE_WAIT:
-		if (millis_since(pd->phy_tstamp) < OSDP_CP_RETRY_WAIT_MS)
+		if (millis_since(pd->phy_tstamp) < OSDP_CMD_RETRY_WAIT_MS)
 			break;
 		pd->phy_state = CP_PHY_STATE_IDLE;
 		break;
@@ -625,7 +631,7 @@ int cp_state_update(struct osdp_pd *pd)
 		if (isset_flag(pd, PD_FLAG_SC_ACTIVE)  == FALSE &&
 		    isset_flag(pd, PD_FLAG_SC_CAPABLE) == TRUE  &&
 		    millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_SEC) {
-			LOG_I("retry SC after retry timeout");
+			LOG_INF("retry SC after retry timeout");
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			break;
 		}
@@ -668,7 +674,7 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		if (phy_state < 0) {
 			if (isset_flag(pd, PD_FLAG_SC_SCBKD_DONE)) {
-				LOG_I(TAG "SC Failed; set to online without SC");
+				LOG_INF(TAG "SC Failed; set to online without SC");
 				pd->sc_tstamp = millis_now();
 				cp_set_state(pd, CP_STATE_ONLINE);
 				break;
@@ -677,11 +683,11 @@ int cp_state_update(struct osdp_pd *pd)
 			set_flag(pd, PD_FLAG_SC_SCBKD_DONE);
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
-			LOG_W(TAG "SC Failed; retry with SCBK-D");
+			LOG_WRN(TAG "SC Failed; retry with SCBK-D");
 			break;
 		}
 		if (pd->reply_id != REPLY_CCRYPT) {
-			LOG_E(TAG "CHLNG failed. Online without SC");
+			LOG_ERR(TAG "CHLNG failed. Online without SC");
 			pd->sc_tstamp = millis_now();
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
@@ -692,17 +698,17 @@ int cp_state_update(struct osdp_pd *pd)
 		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0)
 			break;
 		if (pd->reply_id != REPLY_RMAC_I) {
-			LOG_E(TAG "SCRYPT failed. Online without SC");
+			LOG_ERR(TAG "SCRYPT failed. Online without SC");
 			pd->sc_tstamp = millis_now();
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
 		}
 		if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD)) {
-			LOG_W(TAG "SC ACtive with SCBK-D; Set SCBK");
+			LOG_WRN(TAG "SC ACtive with SCBK-D; Set SCBK");
 			cp_set_state(pd, CP_STATE_SET_SCBK);
 			break;
 		}
-		LOG_I(TAG "SC ACtive");
+		LOG_INF(TAG "SC ACtive");
 		pd->sc_tstamp = millis_now();
 		cp_set_state(pd, CP_STATE_ONLINE);
 		break;
@@ -710,11 +716,11 @@ int cp_state_update(struct osdp_pd *pd)
 		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0)
 			break;
 		if (pd->reply_id == REPLY_NAK) {
-			LOG_W(TAG "Failed to set SCBK; continue with SCBK-D");
+			LOG_WRN(TAG "Failed to set SCBK; continue with SCBK-D");
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
 		}
-		LOG_I(TAG "SCBK set; restarting SC to verify new SCBK");
+		LOG_INF(TAG "SCBK set; restarting SC to verify new SCBK");
 		clear_flag(pd, PD_FLAG_SC_USE_SCBKD);
 		clear_flag(pd, PD_FLAG_SC_ACTIVE);
 		cp_set_state(pd, CP_STATE_SC_INIT);
@@ -741,7 +747,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		LOG_E(TAG "failed to alloc struct osdp");
+		LOG_ERR(TAG "failed to alloc struct osdp");
 		goto malloc_err;
 	}
 	ctx->magic = 0xDEADBEAF;
@@ -752,13 +758,13 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	ctx->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
 				       OSDP_CP_CMD_POOL_SIZE * num_pd);
 	if (ctx->cmd_slab == NULL) {
-		LOG_E(TAG "failed to alloc struct osdp_cp_cmd_slab");
+		LOG_ERR(TAG "failed to alloc struct osdp_cp_cmd_slab");
 		goto malloc_err;
 	}
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
-		LOG_E(TAG "failed to alloc struct osdp_cp");
+		LOG_ERR(TAG "failed to alloc struct osdp_cp");
 		goto malloc_err;
 	}
 	cp = to_cp(ctx);
@@ -767,7 +773,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
-		LOG_E(TAG "failed to alloc struct osdp_pd[]");
+		LOG_ERR(TAG "failed to alloc struct osdp_pd[]");
 		goto malloc_err;
 	}
 
@@ -783,7 +789,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 	}
 	set_current_pd(ctx, 0);
-	LOG_I(TAG "setup complete");
+	LOG_INF(TAG "setup complete");
 	return (osdp_t *) ctx;
 
  malloc_err:
@@ -840,7 +846,7 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 
 	assert(ctx);
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_E(TAG "Invalid PD number");
+		LOG_ERR(TAG "Invalid PD number");
 		return -1;
 	}
 
@@ -859,7 +865,7 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 
 	assert(ctx);
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_E(TAG "Invalid PD number");
+		LOG_ERR(TAG "Invalid PD number");
 		return -1;
 	}
 
@@ -878,7 +884,7 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 
 	assert(ctx);
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_E(TAG "Invalid PD number");
+		LOG_ERR(TAG "Invalid PD number");
 		return -1;
 	}
 
@@ -897,7 +903,7 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 
 	assert(ctx);
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_E(TAG "Invalid PD number");
+		LOG_ERR(TAG "Invalid PD number");
 		return -1;
 	}
 
@@ -916,7 +922,7 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 
 	assert(ctx);
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_E(TAG "Invalid PD number");
+		LOG_ERR(TAG "Invalid PD number");
 		return -1;
 	}
 
@@ -938,13 +944,13 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	assert(ctx);
 
 	if (osdp_get_status_mask(ctx) != PD_MASK(ctx)) {
-		LOG_W(TAG "CMD_KEYSET can be sent only when all PDs are "
+		LOG_WRN(TAG "CMD_KEYSET can be sent only when all PDs are "
 		          "ONLINE and SC_ACTIVE.");
 		return 1;
 	}
 
 	if (osdp_slab_blocks(to_osdp(ctx)->cmd_slab) < NUM_PD(ctx)) {
-		LOG_W(TAG "Out of slab space for keyset operation");
+		LOG_WRN(TAG "Out of slab space for keyset operation");
 	}
 
 	for (i = 0; i < NUM_PD(ctx); i++) {

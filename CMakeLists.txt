@@ -16,8 +16,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 ## Options
-option(CONFIG_OSDP_BUILD_STATIC "Build static archive (in addition to shared library)" OFF)
-option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
+option(OSDP_BUILD_STATIC "Build static archive (in addition to shared library)" OFF)
+option(OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -30,8 +30,8 @@ add_c_compiler_flag(-Wextra)
 add_c_compiler_flag(-s RELEASE)
 
 ## Macro Switches
-if (CONFIG_OSDP_PACKET_TRACE)
-	add_compile_definitions(OSDP_PACKET_TRACE)
+if (OSDP_PACKET_TRACE)
+	add_compile_definitions(CONFIG_OSDP_PACKET_TRACE)
 endif()
 
 configure_file(

@@ -29,7 +29,6 @@ int test_mixed_cp_fsm_send(void *data, uint8_t *buf, int len)
 
 	memcpy(test_mixed_cp_to_pd_buf, buf, len);
 	test_mixed_cp_to_pd_buf_length = len;
-	//osdp_dump("CP Send", buf, len);
 	return len;
 }
 
@@ -45,7 +44,6 @@ int test_mixed_cp_fsm_receive(void *data, uint8_t *buf, int len)
 		memcpy(buf, test_mixed_pd_to_cp_buf, ret);
 		test_mixed_pd_to_cp_buf_length = 0;
 	}
-	//osdp_dump("PD Recv", buf, ret);
 	return ret;
 }
 
@@ -147,8 +145,8 @@ void test_mixed_fsm_teardown(struct test *t)
 void run_mixed_fsm_tests(struct test *t)
 {
 	int result = TRUE;
-	uint32_t count = 0;
 	struct test_mixed *p;
+	millis_t start;
 
 	printf("\nStarting CP - PD phy layer mixed tests\n");
 
@@ -158,6 +156,7 @@ void run_mixed_fsm_tests(struct test *t)
 	p = t->mock_data;
 
 	printf("    -- executing CP - PD mixed tests\n");
+	start = millis_now();
 	while (1) {
 		cp_state_update(to_current_pd(p->cp_ctx));
 		pd_phy_state_update(to_current_pd(p->pd_ctx));
@@ -167,7 +166,12 @@ void run_mixed_fsm_tests(struct test *t)
 			result = FALSE;
 			break;
 		}
-		if (count++ > 300)
+		if (to_current_pd(p->pd_ctx)->phy_state == PD_PHY_STATE_ERR) {
+			printf("    -- PD phy state error!\n");
+			result = FALSE;
+			break;
+		}
+		if (millis_since(start) > 5 * 1000)
 			break;
 	}
 	printf("    -- CP - PD mixed tests complete\n");

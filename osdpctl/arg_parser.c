@@ -31,7 +31,7 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 	if (ap_app_name && exit_code == 0)
 		printf("%s - %s\n", ap_app_name, ap_app_desc);
 
-	printf("\nUsage:  %s [OPTIONS...] <COMMAND> [CMD_ARGS[0] ...]\n"
+	printf("\nUsage: %s [OPTIONS...] <CONFIG> <COMMAND> [CMD_ARGS[0] ...]\n"
 	       "\nOPTIONS:\n", ap_app_name);
 
 	ap_opt = ap_opts;

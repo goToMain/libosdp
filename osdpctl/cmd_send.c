@@ -206,57 +206,50 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 	struct config_s *c = data;
 	struct osdpctl_cmd mq_cmd;
 
-	if (argc < 1) {
-		printf ("Error: must pass a config file\n");
-		return -1;
-	}
-
 	if (c->mode == CONFIG_MODE_PD) {
 		printf("Commands can be sent only to CP for now\n");
 		return -1;
 	}
 
-	if (argc < 3) {
+	if (argc < 2) {
 		printf("Error: PD offset/command is missing\n");
 		goto print_usage;
 	}
 
-	if (safe_atoi(argv[1], &offset)) {
+	if (safe_atoi(argv[0], &offset)) {
 		printf("Error: Invalid PD offset");
 		return -1;
 	}
 
-	config_parse(argv[0], c);
-
 	memset(&mq_cmd.cmd, 0, sizeof(struct osdp_cmd));
 	mq_cmd.offset = offset;
 
-	if (strcmp("led", argv[2]) == 0) {
+	if (strcmp("led", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_LED;
-		ret = handle_cmd_led(argc-3, argv+3, &mq_cmd.cmd.led);
+		ret = handle_cmd_led(argc-2, argv+2, &mq_cmd.cmd.led);
 	}
-	else if (strcmp("buzzer", argv[2]) == 0) {
+	else if (strcmp("buzzer", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_BUZZER;
-		ret = handle_cmd_buzzer(argc-3, argv+3, &mq_cmd.cmd.buzzer);
+		ret = handle_cmd_buzzer(argc-2, argv+2, &mq_cmd.cmd.buzzer);
 	}
-	else if (strcmp("output", argv[2]) == 0) {
+	else if (strcmp("output", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_OUTPUT;
-		ret = handle_cmd_output(argc-3, argv+3, &mq_cmd.cmd.output);
+		ret = handle_cmd_output(argc-2, argv+2, &mq_cmd.cmd.output);
 	}
-	else if (strcmp("text", argv[2]) == 0) {
+	else if (strcmp("text", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_TEXT;
-		ret = handle_cmd_text(argc-3, argv+3, &mq_cmd.cmd.text);
+		ret = handle_cmd_text(argc-2, argv+2, &mq_cmd.cmd.text);
 	}
-	else if (strcmp("comset", argv[2]) == 0) {
+	else if (strcmp("comset", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_COMSET;
-		ret = handle_cmd_comset(argc-3, argv+3, &mq_cmd.cmd.comset);
+		ret = handle_cmd_comset(argc-2, argv+2, &mq_cmd.cmd.comset);
 	}
-	else if (strcmp("status", argv[2]) == 0) {
+	else if (strcmp("status", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CMD_STATUS;
 		ret = 0;
 	}
 	else {
-		printf("Error: unkown command %s\n", argv[2]);
+		printf("Error: unkown command %s\n", argv[1]);
 		goto print_usage;
 	}
 

@@ -118,7 +118,7 @@ char *safe_strncpy(char* dest, const char* src, size_t size)
 
 int read_pid(const char *file, int *pid)
 {
-	int ret = 0;
+	int pid_val, ret = 0;
 	FILE *fd;
 
 	if (file == NULL)
@@ -127,12 +127,14 @@ int read_pid(const char *file, int *pid)
 	fd = fopen(file, "r");
 	if (fd == NULL)
 		return -1;
-
-	if (fscanf(fd, "%d", pid) != 1) {
+	if (fscanf(fd, "%d", &pid_val) != 1) {
 		printf("Failed to read PID from file %s\n", file);
 		ret = -1;
 	}
 	fclose(fd);
+
+	if (pid)
+		*pid = pid_val;
 
 	return ret;
 }

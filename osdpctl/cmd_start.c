@@ -228,15 +228,21 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	struct config_s *c = data;
 	struct osdp_cmd cmd;
 
-	if (argc < 1) {
-		printf ("Error: must pass a config file\n");
-		return -1;
-	}
-	config_parse(argv[0], c);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
 	if (c->log_file) {
 		printf("Redirecting stdout and strerr to log_file %s\n", c->log_file);
 		o_redirect(3, c->log_file);
 	}
+
+	if (read_pid(c->pid_file, NULL) == 0) {
+		printf("Error: A service for this file already exists!\n"
+		       "If you are sure it doesn't, remove %s and retry.\n",
+		       c->pid_file);
+		return -1;
+	}
+
 	start_cmd_server(c);
 	write_pid(c->pid_file);
 	c->service_started = 1;

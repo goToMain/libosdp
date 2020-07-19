@@ -90,5 +90,12 @@ int main(int argc, char *argv[])
 
         ap_init("osdpctl", "Setup/Manage OSDP devices");
 
-	return ap_parse(argc, argv, ap_opts, &g_config);
+	if (argc < 2) {
+		printf("Error: must provide a config file!\n");
+		exit(-1);
+	}
+
+	config_parse(argv[1], &g_config);
+
+	return ap_parse(argc - 1, argv + 1, ap_opts, &g_config);
 }

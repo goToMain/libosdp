@@ -16,12 +16,8 @@ int cmd_handler_stop(int argc, char *argv[], void *data)
 	int pid;
 	struct config_s *c = data;
 
-	if (argc < 1) {
-		printf ("Error: must pass a config file\n");
-		return -1;
-	}
-
-	config_parse(argv[0], c);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
 
 	if (read_pid(c->pid_file, &pid)) {
 		printf("Failed to read PID. Service not running\n");
@@ -40,11 +36,9 @@ int cmd_handler_check(int argc, char *argv[], void *data)
 {
 	struct config_s *c = data;
 
-	if (argc < 1) {
-		printf ("Error: must pass a config file\n");
-		return -1;
-	}
-	config_parse(argv[0], c);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
 	config_print(c);
 	return 0;
 }

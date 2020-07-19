@@ -29,14 +29,14 @@ flag to log output to a file or `-q` to disable logging. So to start a OSDP
 process as a daemon, you can do the following:
 
 ```bash
-osdpctl start pd-0.cfg -f -l /tmp/pd-0.log
+osdpctl pd-0.cfg start -f -l /tmp/pd-0.log
 ```
 
 To stop a running service, you must pass the same configuration file that was
 used to start it.
 
 ```bash
-osdpctl stop pd-0.cfg
+osdpctl pd-0.cfg stop
 ```
 
 ## Send control commands to a OSDP service
@@ -49,7 +49,7 @@ For instance, if you send a LED command to a CP instance specifying a correct PD
 offset, then that command is sent over to the relevant PD.
 
 ```
-osdpctl send <CONFIG> <PD-OFFSET> <COMMANDS> [ARG1 ARG2 ...]
+osdpctl <CONFIG> send <PD-OFFSET> <COMMANDS> [ARG1 ARG2 ...]
 ```
 
 Here, `PD-OFFSET` is the offset number (starting with 0) of the PD in the
@@ -57,7 +57,7 @@ config file `CONFIG`. In PD mode, since there is only one PD, this is
 always set as 0.
 
 This section will only document the `COMMANDS` and their arguments. You must
-prefix `osdpctl send <CONFIG> <PD-OFFSET>` to each of these commands for
+prefix `osdpctl <CONFIG> send <PD-OFFSET>` to each of these commands for
 them to actually get through.
 
 ### CP commands

@@ -210,6 +210,12 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 		printf ("Error: must pass a config file\n");
 		return -1;
 	}
+
+	if (c->mode == CONFIG_MODE_PD) {
+		printf("Commands can be sent only to CP for now\n");
+		return -1;
+	}
+
 	if (argc < 3) {
 		printf("Error: PD offset/command is missing\n");
 		goto print_usage;

@@ -48,9 +48,11 @@ int load_scbk(struct config_pd_s *c, uint8_t *buf)
 		return -1;
 	r = fgets(hstr, 33, fd);
 	fclose(fd);
-	if (r == NULL || hstrtoa(buf, hstr))
+	if (r == NULL || hstrtoa(buf, hstr) != 16) {
+		printf("Invalid key_store %s deleted!\n", c->key_store);
+		unlink(c->key_store);
 		return -1;
-
+	}
 	return 0;
 }
 

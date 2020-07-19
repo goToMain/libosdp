@@ -24,7 +24,7 @@ static inline int hex2int(char ch)
 static inline char int2hex(int v)
 {
 	v &= 0x0f; // consider only the lower nibble
-	return (v >= 0 && v <= 9) ? '0' + v : 'A' + v;
+	return (v >= 0 && v <= 9) ? '0' + v : 'A' + (v - 10);
 }
 
 /*

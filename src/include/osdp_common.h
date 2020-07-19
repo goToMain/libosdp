@@ -263,11 +263,10 @@ enum cp_fsm_state_e {
 };
 
 enum osdp_phy_state_e {
-	PD_PHY_STATE_IDLE,
-	PD_PHY_STATE_PROC_CMD,
-	PD_PHY_STATE_SEND_REPLY,
-	PD_PHY_STATE_ERR,
-	PD_PHT_STATE_SENTINEL
+	PD_STATE_IDLE,
+	PD_STATE_SEND_REPLY,
+	PD_STATE_ERR,
+	PD_STATE_SENTINEL
 };
 
 /* from osdp_phy.c */

@@ -44,8 +44,8 @@ enum cp_phy_state_e {
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
-		     int max_len)
+int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd,
+		     uint8_t *buf, int max_len)
 {
 	uint8_t *smb;
 	int data_off, i, ret = -1, len = 0;
@@ -54,9 +54,13 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 	smb = phy_packet_get_smb(p, buf);
 
 	buf += data_off;
-	max_len -= data_off;
+	max_len -= data_off + 1;
 
-	// LOG_DBG(TAG "Building command 0x%02x",cmd->id);
+	if (max_len < 0) {
+		LOG_ERR(TAG "cp_build_command out of buffer space!");
+		return -1;
+	}
+	buf[len++] = cmd->id;
 
 	switch (cmd->id) {
 	case CMD_POLL:
@@ -64,18 +68,23 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 	case CMD_ISTAT:
 	case CMD_OSTAT:
 	case CMD_RSTAT:
-		buf[len++] = cmd->id;
 		ret = 0;
 		break;
 	case CMD_ID:
 	case CMD_CAP:
 	case CMD_DIAG:
-		buf[len++] = cmd->id;
+		if (max_len < 1) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = 0x00;
 		ret = 0;
 		break;
 	case CMD_OUT:
-		buf[len++] = cmd->id;
+		if (max_len < 4) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = cmd->output.output_no;
 		buf[len++] = cmd->output.control_code;
 		buf[len++] = byte_0(cmd->output.tmr_count);
@@ -83,7 +92,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 		ret = 0;
 		break;
 	case CMD_LED:
-		buf[len++] = cmd->id;
+		if (max_len < 14) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = cmd->led.reader;
 		buf[len++] = cmd->led.led_number;
 
@@ -103,7 +115,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 		ret = 0;
 		break;
 	case CMD_BUZ:
-		buf[len++] = cmd->id;
+		if (max_len < 5) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = cmd->buzzer.reader;
 		buf[len++] = cmd->buzzer.tone_code;
 		buf[len++] = cmd->buzzer.on_count;
@@ -112,7 +127,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 		ret = 0;
 		break;
 	case CMD_TEXT:
-		buf[len++] = cmd->id;
+		if (max_len < (6 + cmd->text.length)) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = cmd->text.reader;
 		buf[len++] = cmd->text.cmd;
 		buf[len++] = cmd->text.temp_time;
@@ -124,7 +142,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 		ret = 0;
 		break;
 	case CMD_COMSET:
-		buf[len++] = cmd->id;
+		if (max_len < 5) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = cmd->comset.addr;
 		buf[len++] = byte_0(cmd->comset.baud);
 		buf[len++] = byte_1(cmd->comset.baud);
@@ -135,7 +156,10 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 	case CMD_KEYSET:
 		if (!isset_flag(p, PD_FLAG_SC_ACTIVE))
 			break;
-		buf[len++] = cmd->id;
+		if (max_len < 18) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		buf[len++] = 1;
 		buf[len++] = 16;
 		osdp_compute_scbk(p, buf + len);
@@ -145,24 +169,30 @@ int cp_build_command(struct osdp_pd *p, struct osdp_cmd *cmd, uint8_t *buf,
 	case CMD_CHLNG:
 		if (smb == NULL)
 			break;
+		if (max_len < 8) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		smb[0] = 3;
 		smb[1] = SCS_11;  /* type */
 		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
-		buf[len++] = cmd->id;
 		osdp_fill_random(p->sc.cp_random, 8);
-		for (i=0; i<8; i++)
+		for (i = 0; i < 8; i++)
 			buf[len++] = p->sc.cp_random[i];
 		ret = 0;
 		break;
 	case CMD_SCRYPT:
 		if (smb == NULL)
 			break;
+		if (max_len < 16) {
+			LOG_ERR(TAG "Out of buffer space!");
+			return -1;
+		}
 		smb[0] = 3;
 		smb[1] = SCS_13;  /* type */
 		smb[2] = isset_flag(p, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
-		buf[len++] = cmd->id;
 		osdp_compute_cp_cryptogram(p);
-		for (i=0; i<16; i++)
+		for (i = 0; i < 16; i++)
 			buf[len++] = p->sc.cp_cryptogram[i];
 		ret = 0;
 		break;
@@ -323,7 +353,7 @@ int cp_decode_response(struct osdp_pd *p, uint8_t *buf, int len)
 		break;
 	case REPLY_FMT:
 		pos++;	/* skip one byte */
-		pos++;	/* skip one byte -- TODO: discuss about reader direction */
+		pos++;	/* skip one byte -- TODO: handle reader direction */
 		t1 = buf[pos++]; /* Key length */
 		if (ctx->notifier.cardread) {
 			ctx->notifier.cardread(p->offset, OSDP_CARD_FMT_ASCII,

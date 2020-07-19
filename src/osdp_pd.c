@@ -25,8 +25,8 @@ void pd_enqueue_command(struct osdp_pd *p, struct osdp_cmd *cmd)
 	}
 }
 
-void pd_decode_command(struct osdp_pd *p, struct osdp_cmd *reply, uint8_t *buf,
-		       int len)
+void pd_decode_command(struct osdp_pd *p, struct osdp_cmd *reply,
+		       uint8_t *buf, int len)
 {
 	int i, ret = -1, pos = 0;
 	struct osdp_cmd *cmd;
@@ -256,8 +256,8 @@ void pd_decode_command(struct osdp_pd *p, struct osdp_cmd *reply, uint8_t *buf,
  * +ve: length of command
  * -ve: error
  */
-int pd_build_reply(struct osdp_pd *p, struct osdp_cmd *reply, uint8_t *buf,
-		   int max_len)
+int pd_build_reply(struct osdp_pd *p, struct osdp_cmd *reply,
+		   uint8_t *buf, int max_len)
 {
 	uint8_t *smb;
 	int i, data_off, len = 0;
@@ -502,13 +502,13 @@ int pd_receve_packet(struct osdp_pd *pd)
 	return 0;
 }
 
-void pd_phy_state_update(struct osdp_pd *pd)
+void pd_state_update(struct osdp_pd *pd)
 {
 	int ret;
 	struct osdp_cmd reply;
 
-	switch (pd->phy_state) {
-	case PD_PHY_STATE_IDLE:
+	switch (pd->state) {
+	case PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
 		if (ret < 0 || (pd->rx_buf_len > 0 &&
 		    millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
@@ -516,23 +516,23 @@ void pd_phy_state_update(struct osdp_pd *pd)
 			 * When we receive a command from PD after a timeout,
 			 * any established secure channel must be discarded.
 			 */
-			pd->phy_state = PD_PHY_STATE_ERR;
+			pd->state = PD_STATE_ERR;
 			break;
 		}
 		if (ret == 1)
 			break;
 		pd_decode_command(pd, &reply, pd->rx_buf, pd->rx_buf_len);
-		pd->phy_state = PD_PHY_STATE_SEND_REPLY;
+		pd->state = PD_STATE_SEND_REPLY;
 		/* FALLTHRU */
-	case PD_PHY_STATE_SEND_REPLY:
+	case PD_STATE_SEND_REPLY:
 		if (pd_send_reply(pd, &reply) == -1) {
-			pd->phy_state = PD_PHY_STATE_ERR;
+			pd->state = PD_STATE_ERR;
 			break;
 		}
 		pd->rx_buf_len = 0;
-		pd->phy_state = PD_PHY_STATE_IDLE;
+		pd->state = PD_STATE_IDLE;
 		break;
-	case PD_PHY_STATE_ERR:
+	case PD_STATE_ERR:
 		/**
 		 * PD error state is momentary as it doesn't maintain any state
 		 * between commands. We just clean up secure channel status and
@@ -540,7 +540,7 @@ void pd_phy_state_update(struct osdp_pd *pd)
 		 */
 		clear_flag(pd, PD_FLAG_SC_ACTIVE);
 		pd->rx_buf_len = 0;
-		pd->phy_state = PD_PHY_STATE_IDLE;
+		pd->state = PD_STATE_IDLE;
 		break;
 	}
 }
@@ -645,7 +645,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 	assert(ctx);
 	struct osdp_pd *pd = to_current_pd(ctx);
 
-	pd_phy_state_update(pd);
+	pd_state_update(pd);
 }
 
 int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)

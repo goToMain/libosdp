@@ -9,7 +9,7 @@
 #include <osdp.h>
 #include "test.h"
 
-void pd_phy_state_update(struct osdp_pd *pd);
+void pd_state_update(struct osdp_pd *pd);
 int cp_state_update(struct osdp_pd *pd);
 
 struct test_mixed {
@@ -159,14 +159,14 @@ void run_mixed_fsm_tests(struct test *t)
 	start = millis_now();
 	while (1) {
 		cp_state_update(to_current_pd(p->cp_ctx));
-		pd_phy_state_update(to_current_pd(p->pd_ctx));
+		pd_state_update(to_current_pd(p->pd_ctx));
 
 		if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE) {
 			printf("    -- CP went offline!\n");
 			result = FALSE;
 			break;
 		}
-		if (to_current_pd(p->pd_ctx)->phy_state == PD_PHY_STATE_ERR) {
+		if (to_current_pd(p->pd_ctx)->phy_state == PD_STATE_ERR) {
 			printf("    -- PD phy state error!\n");
 			result = FALSE;
 			break;

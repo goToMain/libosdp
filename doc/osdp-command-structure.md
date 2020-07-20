@@ -96,7 +96,7 @@ struct osdp_cmd_buzzer {
 | off_count       | The OFF duration of the flash, in units of 100 ms           |
 | rep_count       | The number of times to repeat the ON/OFF cycle; 0: forever  |
 
-## Command Test
+## Command Text
 
 ```
 struct osdp_cmd_text {

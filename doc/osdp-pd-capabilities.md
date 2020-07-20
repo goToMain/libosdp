@@ -153,7 +153,7 @@ N/A, set to 0.
 
 ## Function Code 9 - Communication Security
 
-This capability indicates the extent to which the PD supports communication security as defined in
+This capability indicates the extent to which the PD supports communication security (Secure Channel Communication)
 
 
 ### Compliance Levels:
@@ -208,6 +208,19 @@ This capability indicates the number of credential reader devices present. Compl
 
 ### Compliance Levels:
 * 0x01 - (Bit-0) 0X02 - (Bit-1)
+
+### Number of Units:
+Number of readers
+
+### Function Code 14 – Biometrics
+
+This capability indicates the ability of the reader to handle biometric input
+
+### Compliance Levels:
+* 0 - No Biometric
+* 1 – Fingerprint, Template 1
+* 2 – Fingerprint, Template 2
+* 3 – Iris, Template 1
 
 ### Number of Units:
 Number of readers

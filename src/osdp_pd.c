@@ -57,12 +57,12 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		ret = 0;
 		break;
 	case CMD_ID:
-		pos++;		// Skip reply type info.
+		pos++;		/* Skip reply type info. */
 		reply->id = REPLY_PDID;
 		ret = 0;
 		break;
 	case CMD_CAP:
-		pos++;		// Skip reply type info.
+		pos++;		/* Skip reply type info. */
 		reply->id = REPLY_PDCAP;
 		ret = 0;
 		break;
@@ -412,7 +412,8 @@ int pd_send_reply(struct osdp_pd *pd, struct osdp_cmd *reply)
 	int ret, len;
 
 	/* init packet buf with header */
-	len = phy_build_packet_head(pd, reply->id, pd->rx_buf, sizeof(pd->rx_buf));
+	len = phy_build_packet_head(pd, reply->id, pd->rx_buf,
+				    sizeof(pd->rx_buf));
 	if (len < 0) {
 		LOG_ERR(TAG "Failed to build head; ID: %02X", reply->id);
 		return -1;
@@ -475,7 +476,7 @@ int pd_receve_packet(struct osdp_pd *pd)
 
 	ret = phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len);
 	if (ret < 0) {
-		switch(ret) {
+		switch (ret) {
 		case -1: /* fatal error */
 			LOG_ERR(TAG "failed to decode packet");
 			pd->rx_buf_len = 0;

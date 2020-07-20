@@ -47,72 +47,78 @@
 #define PD_MASK(ctx)			(uint32_t)((1 << (to_cp(ctx)->num_pd + 1)) - 1)
 #define NUM_PD(ctx)			(to_cp(ctx)->num_pd)
 
-/* OSDP reserved commands */
-#define CMD_POLL		0x60
-#define CMD_ID			0x61
-#define CMD_CAP			0x62
-#define CMD_DIAG		0x63
-#define CMD_LSTAT		0x64
-#define CMD_ISTAT		0x65
-#define CMD_OSTAT		0x66
-#define CMD_RSTAT		0x67
-#define CMD_OUT			0x68
-#define CMD_LED			0x69
-#define CMD_BUZ			0x6A
-#define CMD_TEXT		0x6B
-#define CMD_RMODE		0x6C
-#define CMD_TDSET		0x6D
-#define CMD_COMSET		0x6E
-#define CMD_DATA		0x6F
-#define CMD_XMIT		0x70
-#define CMD_PROMPT		0x71
-#define CMD_SPE			0x72
-#define CMD_BIOREAD		0x73
-#define CMD_BIOMATCH		0x74
-#define CMD_KEYSET		0x75
-#define CMD_CHLNG		0x76
-#define CMD_SCRYPT		0x77
-#define CMD_CONT		0x79
-#define CMD_ABORT		0x7A
-#define CMD_MAXREPLY		0x7B
-#define CMD_MFG			0x80
-#define CMD_SCDONE		0xA0
-#define CMD_XWR			0xA1
+/**
+ * @brief OSDP reserved commands
+ */
+#define CMD_POLL                0x60
+#define CMD_ID                  0x61
+#define CMD_CAP                 0x62
+#define CMD_DIAG                0x63
+#define CMD_LSTAT               0x64
+#define CMD_ISTAT               0x65
+#define CMD_OSTAT               0x66
+#define CMD_RSTAT               0x67
+#define CMD_OUT                 0x68
+#define CMD_LED                 0x69
+#define CMD_BUZ                 0x6A
+#define CMD_TEXT                0x6B
+#define CMD_RMODE               0x6C
+#define CMD_TDSET               0x6D
+#define CMD_COMSET              0x6E
+#define CMD_DATA                0x6F
+#define CMD_XMIT                0x70
+#define CMD_PROMPT              0x71
+#define CMD_SPE                 0x72
+#define CMD_BIOREAD             0x73
+#define CMD_BIOMATCH            0x74
+#define CMD_KEYSET              0x75
+#define CMD_CHLNG               0x76
+#define CMD_SCRYPT              0x77
+#define CMD_CONT                0x79
+#define CMD_ABORT               0x7A
+#define CMD_MAXREPLY            0x7B
+#define CMD_MFG                 0x80
+#define CMD_SCDONE              0xA0
+#define CMD_XWR                 0xA1
 
-/* OSDP reserved responses */
-#define REPLY_ACK		0x40
-#define REPLY_NAK		0x41
-#define REPLY_PDID		0x45
-#define REPLY_PDCAP		0x46
-#define REPLY_LSTATR		0x48
-#define REPLY_ISTATR		0x49
-#define REPLY_OSTATR		0x4A
-#define REPLY_RSTATR		0x4B
-#define REPLY_RAW		0x50
-#define REPLY_FMT		0x51
-#define REPLY_PRES		0x52
-#define REPLY_KEYPPAD		0x53
-#define REPLY_COM		0x54
-#define REPLY_SCREP		0x55
-#define REPLY_SPER		0x56
-#define REPLY_BIOREADR		0x57
-#define REPLY_BIOMATCHR		0x58
-#define REPLY_CCRYPT		0x76
-#define REPLY_RMAC_I		0x78
-#define REPLY_MFGREP		0x90
-#define REPLY_BUSY		0x79
-#define REPLY_XRD		0xB1
+/**
+ * @brief OSDP reserved responses
+ */
+#define REPLY_ACK               0x40
+#define REPLY_NAK               0x41
+#define REPLY_PDID              0x45
+#define REPLY_PDCAP             0x46
+#define REPLY_LSTATR            0x48
+#define REPLY_ISTATR            0x49
+#define REPLY_OSTATR            0x4A
+#define REPLY_RSTATR            0x4B
+#define REPLY_RAW               0x50
+#define REPLY_FMT               0x51
+#define REPLY_PRES              0x52
+#define REPLY_KEYPPAD           0x53
+#define REPLY_COM               0x54
+#define REPLY_SCREP             0x55
+#define REPLY_SPER              0x56
+#define REPLY_BIOREADR          0x57
+#define REPLY_BIOMATCHR         0x58
+#define REPLY_CCRYPT            0x76
+#define REPLY_RMAC_I            0x78
+#define REPLY_MFGREP            0x90
+#define REPLY_BUSY              0x79
+#define REPLY_XRD               0xB1
 
-/* secure block types */
-#define SCS_11			0x11	/* CP -> PD -- CMD_CHLNG */
-#define SCS_12			0x12	/* PD -> CP -- REPLY_CCRYPT */
-#define SCS_13			0x13	/* CP -> PD -- CMD_SCRYPT */
-#define SCS_14			0x14	/* PD -> CP -- REPLY_RMAC_I */
+/**
+ * @brief secure block types
+ */
+#define SCS_11                  0x11    /* CP -> PD -- CMD_CHLNG */
+#define SCS_12                  0x12    /* PD -> CP -- REPLY_CCRYPT */
+#define SCS_13                  0x13    /* CP -> PD -- CMD_SCRYPT */
+#define SCS_14                  0x14    /* PD -> CP -- REPLY_RMAC_I */
 
-#define SCS_15			0x15	/* CP -> PD -- packets w MAC w/o ENC */
-#define SCS_16			0x16	/* PD -> CP -- packets w MAC w/o ENC */
-#define SCS_17			0x17	/* CP -> PD -- packets w MAC w ENC*/
-#define SCS_18			0x18	/* PD -> CP -- packets w MAC w ENC*/
+#define SCS_15                  0x15    /* CP -> PD -- packets w MAC w/o ENC */
+#define SCS_16                  0x16    /* PD -> CP -- packets w MAC w/o ENC */
+#define SCS_17                  0x17    /* CP -> PD -- packets w MAC w ENC*/
+#define SCS_18                  0x18    /* PD -> CP -- packets w MAC w ENC*/
 
 /* Global flags */
 #define FLAG_CP_MODE		0x00000001 /* Set when initialized as CP */
@@ -158,6 +164,11 @@ struct osdp_cmd_queue {
 	struct osdp_cmd *back;
 };
 
+struct osdp_cp_notifiers {
+	int (*keypress) (int address, uint8_t key);
+	int (*cardread) (int address, int format, uint8_t * data, int len);
+};
+
 struct osdp_secure_channel {
 	uint8_t scbk[16];
 	uint8_t s_enc[16];
@@ -197,7 +208,6 @@ struct osdp_pd {
 
 	struct osdp_channel channel;
 	struct osdp_secure_channel sc;
-
 	struct osdp_cmd_queue queue;
 };
 
@@ -270,9 +280,9 @@ enum osdp_phy_state_e {
 };
 
 /* from osdp_phy.c */
-int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t * buf, int maxlen);
-int phy_build_packet_tail(struct osdp_pd *p, uint8_t * buf, int len, int maxlen);
-int phy_decode_packet(struct osdp_pd *p, uint8_t * buf, int len);
+int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t *buf, int maxlen);
+int phy_build_packet_tail(struct osdp_pd *p, uint8_t *buf, int len, int maxlen);
+int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
 const char *get_nac_reason(int code);
 void phy_state_reset(struct osdp_pd *pd);
 int phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
@@ -292,10 +302,10 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 void osdp_sc_init(struct osdp_pd *p);
 
 /* from osdp_common.c */
-millis_t millis_now();
+millis_t millis_now(void);
 millis_t millis_since(millis_t last);
 uint16_t compute_crc16(const uint8_t *buf, size_t len);
-void osdp_dump(const char *head, const uint8_t * data, int len);
+void osdp_dump(const char *head, const uint8_t *data, int len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();

@@ -181,7 +181,8 @@ int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	return pad_len;
 }
 
-int osdp_compute_mac(struct osdp_pd *pd, int is_cmd, const uint8_t *data, int len)
+int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
+		     const uint8_t *data, int len)
 {
 	int pad_len;
 	uint8_t buf[OSDP_PACKET_BUF_SIZE] = { 0 };

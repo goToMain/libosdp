@@ -38,7 +38,7 @@ uint8_t compute_checksum(uint8_t *msg, int length)
 
 const char *get_nac_reason(int code)
 {
-	const char *osdp_nak_reasons[] = {
+	static const char *osdp_nak_reasons[] = {
 		"",
 		"Message check character(s) error (bad cksum/crc)",
 		"Command length error",
@@ -107,10 +107,9 @@ int phy_build_packet_head(struct osdp_pd *pd, int id, uint8_t *buf, int maxlen)
 	struct osdp_packet_header *pkt;
 
 	pd_mode = isset_flag(pd, PD_FLAG_PD_MODE);
-	exp_len = sizeof(struct osdp_packet_header) + 64; /* estimated cmd len */
+	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
 	if (maxlen < exp_len) {
-		LOG_INF(TAG "pkt_buf len err - %d/%d", maxlen,
-			 exp_len);
+		LOG_INF(TAG "pkt_buf len err - %d/%d", maxlen, exp_len);
 		return -1;
 	}
 
@@ -138,7 +137,7 @@ int phy_build_packet_head(struct osdp_pd *pd, int id, uint8_t *buf, int maxlen)
 	return sizeof(struct osdp_packet_header) + sb_len;
 }
 
-int phy_build_packet_tail(struct osdp_pd *pd, uint8_t *buf, int len, int max_len)
+int phy_build_packet_tail(struct osdp_pd *pd, uint8_t *buf, int len, int max)
 {
 	int i, is_cmd, data_len;
 	uint8_t *data;
@@ -176,12 +175,12 @@ int phy_build_packet_tail(struct osdp_pd *pd, uint8_t *buf, int len, int max_len
 			 * data where length may be rounded up to the nearest
 			 * 16 byte block bondary.
 			 */
-			if (AES_PAD_LEN(data_len + 1) > max_len)
+			if (AES_PAD_LEN(data_len + 1) > max)
 				return -1;
 			len += osdp_encrypt_data(pd, is_cmd, data, data_len);
 		}
 		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
-		if (len + 4 > max_len)
+		if (len + 4 > max)
 			return -1;
 		pkt->len_lsb = byte_0(len - 1 + 2 + 4);
 		pkt->len_msb = byte_1(len - 1 + 2 + 4);
@@ -194,9 +193,9 @@ int phy_build_packet_tail(struct osdp_pd *pd, uint8_t *buf, int len, int max_len
 		len += 4;
 	}
 	/* fill crc16 */
-	if (len + 2 > max_len)
+	if (len + 2 > max)
 		return -1;
-	crc16 = compute_crc16(buf + 1, len - 1);	/* excluding mark byte */
+	crc16 = compute_crc16(buf + 1, len - 1);  /* excluding mark byte */
 	buf[len + 0] = byte_0(crc16);
 	buf[len + 1] = byte_1(crc16);
 	len += 2;
@@ -253,10 +252,9 @@ int phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (!pd_mode) {
 			LOG_ERR(TAG "invalid pd address %d", pd_addr);
 			return -1;
-		} else {
-			LOG_DBG(TAG "cmd for PD[%d] discarded", pd_addr);
-			return -3;
 		}
+		LOG_DBG(TAG "cmd for PD[%d] discarded", pd_addr);
+		return -3;
 	}
 
 	/* validate sequence number */
@@ -297,7 +295,7 @@ int phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	} else {
 		comp = compute_checksum(buf + 1, pkt_len - 1);
 		if (comp != buf[len - 1]) {
-			LOG_ERR(TAG "invalid checksum 0x%02x/0x%02x", comp, cur);
+			LOG_ERR(TAG "invalid checksum %02x/%02x", comp, cur);
 			return -1;
 		}
 		mac_offset = pkt_len - 4 - 1;

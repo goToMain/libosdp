@@ -289,12 +289,21 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	case REPLY_LSTATR:
-		buf[pos++] ? set_flag(pd, PD_FLAG_TAMPER) : clear_flag(pd, PD_FLAG_TAMPER);
-		buf[pos++] ? set_flag(pd, PD_FLAG_POWER) : clear_flag(pd, PD_FLAG_POWER);
+		if (buf[pos++])
+			set_flag(pd, PD_FLAG_TAMPER);
+		else
+			clear_flag(pd, PD_FLAG_TAMPER);
+		if (buf[pos++])
+			set_flag(pd, PD_FLAG_POWER);
+		else
+			clear_flag(pd, PD_FLAG_POWER);
 		ret = 0;
 		break;
 	case REPLY_RSTATR:
-		buf[pos++] ? set_flag(pd, PD_FLAG_R_TAMPER) : clear_flag(pd, PD_FLAG_R_TAMPER);
+		if (buf[pos++])
+			set_flag(pd, PD_FLAG_R_TAMPER);
+		else
+			clear_flag(pd, PD_FLAG_R_TAMPER);
 		ret = 0;
 		break;
 	case REPLY_COM:
@@ -583,7 +592,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			LOG_ERR(TAG "CMD: 0x%02x - response timeout", pd->cmd_id);
+			LOG_ERR(TAG "CMD: %02x - response timeout", pd->cmd_id);
 			pd->phy_state = CP_PHY_STATE_ERR;
 		}
 		break;
@@ -704,7 +713,7 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		if (phy_state < 0) {
 			if (isset_flag(pd, PD_FLAG_SC_SCBKD_DONE)) {
-				LOG_INF(TAG "SC Failed; set to online without SC");
+				LOG_INF(TAG "SC Failed; online without SC");
 				pd->sc_tstamp = millis_now();
 				cp_set_state(pd, CP_STATE_ONLINE);
 				break;

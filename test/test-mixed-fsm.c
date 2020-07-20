@@ -160,19 +160,23 @@ void run_mixed_fsm_tests(struct test *t)
 	while (1) {
 		cp_state_update(to_current_pd(p->cp_ctx));
 		pd_state_update(to_current_pd(p->pd_ctx));
-
+		if (osdp_get_sc_status_mask(p->cp_ctx))
+			break;
 		if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE) {
 			printf("    -- CP went offline!\n");
 			result = FALSE;
 			break;
 		}
 		if (to_current_pd(p->pd_ctx)->phy_state == PD_STATE_ERR) {
-			printf("    -- PD phy state error!\n");
+			printf("    -- PD state error!\n");
 			result = FALSE;
 			break;
 		}
-		if (millis_since(start) > 5 * 1000)
+		if (millis_since(start) > 5 * 1000) {
+			printf("    -- test timout!\n");
+			result = FALSE;
 			break;
+		}
 	}
 	printf("    -- CP - PD mixed tests complete\n");
 

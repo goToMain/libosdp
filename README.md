@@ -1,6 +1,6 @@
 ![OSDP - Open Supervised Device Protocol][4]
 
-[![Build Status][1]][2] [![Codacy Badge][7]][8]
+![Build CI][9] [![Build Status][1]][2] [![Codacy Badge][7]][8]
 
 This is an open source implementation of Open Supervised Device Protocol (OSDP)
 developed by [Security Industry Association (SIA)][3]. The protocol is intended
@@ -149,3 +149,4 @@ this project (https://github.com/cbsiddharth/libosdp) if you face any issues.
 [6]: doc/osdp-commands-and-replies.md
 [7]: https://api.codacy.com/project/badge/Grade/7b6f389d4fbf46a692b64d3e82452af9
 [8]: https://app.codacy.com/manual/siddharth_6/libosdp?utm_source=github.com&utm_medium=referral&utm_content=cbsiddharth/libosdp&utm_campaign=Badge_Grade_Dashboard
+[9]: https://github.com/cbsiddharth/libosdp/workflows/Build%20CI/badge.svg

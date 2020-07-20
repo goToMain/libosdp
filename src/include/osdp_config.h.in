@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _OSDP_CONFIG_H_
+#define _OSDP_CONFIG_H_
+
+/**
+ * @brief The following macros are defined defined from the variabled in cmake
+ * files. All @XXX@ are replaced by the value of XXX as resolved by cmake.
+ */
+#define PROJECT_VERSION                "@PROJECT_VERSION@"
+#define PROJECT_NAME                   "@PROJECT_NAME@"
+#define GIT_BRANCH                     "@GIT_BRANCH@"
+#define GIT_REV                        "@GIT_REV@"
+#define GIT_TAG                        "@GIT_TAG@"
+#define GIT_DIFF                       "@GIT_DIFF@"
+
+/**
+ * @brief CONFIG_XXX macros are defined by the below cmakedefine statement by
+ * cmake during project configuration. These options can be enabled by passing
+ * -DCONFIG_XXX=on to cmake.
+ */
+#cmakedefine CONFIG_OSDP_PACKET_TRACE
+
+/**
+ * @brief Other OSDP constants
+ */
+#define OSDP_PD_ERR_RETRY_SEC                   (300 * 1000)
+#define OSDP_PD_SC_RETRY_SEC                    (600 * 1000)
+#define OSDP_PD_POLL_TIMEOUT_MS                 (50)
+#define OSDP_RESP_TOUT_MS                       (200)
+#define OSDP_CMD_RETRY_WAIT_MS                  (500)
+#define OSDP_PACKET_BUF_SIZE                    (512)
+#define OSDP_PD_CMD_QUEUE_SIZE                  (128)
+#define OSDP_CP_CMD_POOL_SIZE                   (32)
+
+#endif /* _OSDP_CONFIG_H_ */

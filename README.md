@@ -55,10 +55,10 @@ LibOSDP can can be configured to enable/disable certain featured by passing the
 switches.  For instance, if you want to also build static library, you can pass
 the flag `-DCONFIG_OSDP_BUILD_STATIC=ON` to cmake.
 
-| OPTION                    | Default | Description                                            |
-|:--------------------------|:-------:|:-------------------------------------------------------|
-| OSDP_BUILD_STATIC         |   OFF   | Build static archive (in addition to shared library)   |
-| OSDP_PACKET_TRACE         |   OFF   | Enable raw packet trace for diagnostics                |
+| OPTION                           | Default | Description                                            |
+|:---------------------------------|:-------:|:-------------------------------------------------------|
+| CONFIG_OSDP_BUILD_STATIC         |   OFF   | Build static archive (in addition to shared library)   |
+| CONFIG_OSDP_PACKET_TRACE         |   OFF   | Enable raw packet trace for diagnostics                |
 
 ## Add LibOSDP to your cmake project
 

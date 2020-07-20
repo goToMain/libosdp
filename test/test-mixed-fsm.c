@@ -105,7 +105,7 @@ int test_mixed_fsm_setup(struct test *t)
 			.compliance_level = 1,
 			.num_items = 1
 		},
-		OSDP_PD_CAP_SENTINEL
+		{ -1, 0, 0 }
 	};
 	osdp_pd_info_t info_pd = {
 		.address = 101,

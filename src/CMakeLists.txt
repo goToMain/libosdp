@@ -4,13 +4,12 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-configure_file(
-	${CMAKE_CURRENT_SOURCE_DIR}/include/osdp_config.h.in
-	${CMAKE_CURRENT_SOURCE_DIR}/include/osdp_config.h @ONLY
-)
+# Generate osdp_config.h in build dir and add it to include path.
+configure_file( include/osdp_config.h.in include/osdp_config.h @ONLY)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
 
 set(LIB_OSDP osdp)
-set(LIB_OSDP_STATIC osdpstatic)
+set(OSDP_LIBRARY ${LIB_OSDP} PARENT_SCOPE)
 
 list(APPEND LIB_OSDP_SRC
 	osdp_common.c
@@ -21,32 +20,20 @@ list(APPEND LIB_OSDP_SRC
 	osdp_pd.c
 )
 
+# private header files
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SRC})
+file(GLOB LIB_OSDP_PUB_INC ${CMAKE_SOURCE_DIR}/include/*.h)
+
+add_library(${LIB_OSDP} ${LIB_OSDP_SRC})
 
 set_target_properties(${LIB_OSDP} PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
+	PUBLIC_HEADER "${LIB_OSDP_PUB_INC}"
 )
-
-set(OSDP_LIBRARY_TO_LINK ${LIB_OSDP} PARENT_SCOPE)
 
 install(
 	TARGETS ${LIB_OSDP}
-	DESTINATION ${CMAKE_INSTALL_DIR}/lib
+	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_DIR}/include
 )
-
-install(
-	FILES ${CMAKE_SOURCE_DIR}/include/osdp.h
-	DESTINATION ${CMAKE_INSTALL_DIR}/include
-)
-
-if (CONFIG_OSDP_BUILD_STATIC)
-	add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
-	set(OSDP_LIBRARY_TO_LINK ${LIB_OSDP_STATIC} PARENT_SCOPE)
-	install(
-		TARGETS ${LIB_OSDP_STATIC}
-		DESTINATION ${CMAKE_INSTALL_DIR}/lib
-	)
-endif()

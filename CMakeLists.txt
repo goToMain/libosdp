@@ -19,6 +19,10 @@ endif()
 option(CONFIG_OSDP_BUILD_STATIC "Build static archive (in addition to shared library)" OFF)
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 
+if(NOT CONFIG_OSDP_BUILD_STATIC)
+	set(BUILD_SHARED_LIBS on)
+endif()
+
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)

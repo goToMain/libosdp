@@ -8,7 +8,10 @@
 #define _OSDP_H_
 
 #include <stdint.h>
-#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
@@ -450,6 +453,14 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 void osdp_pd_teardown(osdp_t *ctx);
 void osdp_pd_refresh(osdp_t *ctx);
+
+/**
+ * @param ctx pointer to osdp context
+ * @param cmd pointer to a command structure that would be filled by the driver.
+ *
+ * @retval 0 on success.
+ * @retval -1 on failure.
+ */
 int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd);
 
 /* ============================= Common Methods ============================= */
@@ -461,5 +472,9 @@ const char *osdp_get_source_info();
 
 uint32_t osdp_get_status_mask(osdp_t *ctx);
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* _OSDP_H_ */

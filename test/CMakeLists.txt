@@ -6,7 +6,9 @@
 
 set(LIB_OSDP_TEST osdp-test)
 
-include_directories(${CMAKE_SOURCE_DIR}/src/include)
+# tests can include private headers
+include_directories(${CMAKE_SOURCE_DIR}/src/include) # for osdp_common.h
+include_directories(${CMAKE_BINARY_DIR}/src/include) # for osdp_config.h
 
 list(APPEND LIB_OSDP_TEST_SRC
 	test.c

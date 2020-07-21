@@ -6,7 +6,7 @@
 
 # Generate osdp_config.h in build dir and add it to include path.
 configure_file( include/osdp_config.h.in include/osdp_config.h @ONLY)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
+include_directories(${CMAKE_BINARY_DIR}/src/include)
 
 set(LIB_OSDP osdp)
 set(OSDP_LIBRARY ${LIB_OSDP} PARENT_SCOPE)
@@ -35,5 +35,7 @@ set_target_properties(${LIB_OSDP} PROPERTIES
 
 install(
 	TARGETS ${LIB_OSDP}
+	LIBRARY DESTINATION ${CMAKE_INSTALL_DIR}/lib
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_DIR}/lib
 	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_DIR}/include
 )

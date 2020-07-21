@@ -50,7 +50,7 @@ int (*log_printf)(const char *fmt, ...) = printf;
 void osdp_log_set_color(const char *color)
 {
 	if (isatty(fileno(stdout)))
-		write(fileno(stdout), color, strlen(color));
+		(void)write(fileno(stdout), color, strlen(color));
 }
 
 void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
@@ -89,7 +89,10 @@ void osdp_log(int log_level, const char *fmt, ...)
 		return;
 
 	va_start(args, fmt);
-	vasprintf(&buf, fmt, args);
+	if (vasprintf(&buf, fmt, args) == -1) {
+		log_printf("vasprintf error\n");
+		return;
+	}
 	va_end(args);
 	osdp_log_set_color(log_level_colors[log_level]);
 	if (g_log_ctx == LOG_CTX_GLOBAL)

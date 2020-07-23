@@ -69,7 +69,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 	case CMD_OUT:
 		if (len != 4)
 			break;
-		cmd = osdp_slab_alloc(to_ctx(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -86,7 +86,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 	case CMD_LED:
 		if (len != 14)
 			break;
-		cmd = osdp_slab_alloc(to_ctx(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -115,7 +115,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 	case CMD_BUZ:
 		if (len != 5)
 			break;
-		cmd = osdp_slab_alloc(to_ctx(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -133,7 +133,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 	case CMD_TEXT:
 		if (len < 7)
 			break;
-		cmd = osdp_slab_alloc(to_ctx(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -156,7 +156,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 	case CMD_COMSET:
 		if (len != 5)
 			break;
-		cmd = osdp_slab_alloc(to_ctx(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -180,7 +180,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		 * For CMD_KEYSET to be accepted, PD must be
 		 * ONLINE and SC_ACTIVE.
 		 */
-		if (isset_flag(pd, PD_FLAG_SC_ACTIVE) == 0) {
+		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) == 0) {
 			reply->id = REPLY_NAK;
 			reply->cmd_bytes[0] = OSDP_PD_NAK_SC_COND;
 			LOG_ERR(TAG "Keyset with SC inactive");
@@ -192,7 +192,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 			      buf[pos], buf[pos + 1]);
 			break;
 		}
-		cmd = osdp_slab_alloc(to_ctx(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -203,8 +203,8 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		memcpy(cmd->keyset.data, buf + pos, 16);
 		memcpy(pd->sc.scbk, buf + pos, 16);
 		pd_enqueue_command(pd, cmd);
-		clear_flag(pd, PD_FLAG_SC_USE_SCBKD);
-		clear_flag(pd, PD_FLAG_INSTALL_MODE);
+		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 		reply->id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -219,7 +219,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 			break;
 		}
 		osdp_sc_init(pd);
-		clear_flag(pd, PD_FLAG_SC_ACTIVE);
+		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 		for (i = 0; i < 8; i++)
 			pd->sc.cp_random[i] = buf[pos++];
 		reply->id = REPLY_CCRYPT;
@@ -281,21 +281,21 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 			LOG_ERR(TAG "Out of buffer space!");
 			return -1;
 		}
-		buf[len++] = byte_0(pd->id.vendor_code);
-		buf[len++] = byte_1(pd->id.vendor_code);
-		buf[len++] = byte_2(pd->id.vendor_code);
+		buf[len++] = BYTE_0(pd->id.vendor_code);
+		buf[len++] = BYTE_1(pd->id.vendor_code);
+		buf[len++] = BYTE_2(pd->id.vendor_code);
 
 		buf[len++] = pd->id.model;
 		buf[len++] = pd->id.version;
 
-		buf[len++] = byte_0(pd->id.serial_number);
-		buf[len++] = byte_1(pd->id.serial_number);
-		buf[len++] = byte_2(pd->id.serial_number);
-		buf[len++] = byte_3(pd->id.serial_number);
+		buf[len++] = BYTE_0(pd->id.serial_number);
+		buf[len++] = BYTE_1(pd->id.serial_number);
+		buf[len++] = BYTE_2(pd->id.serial_number);
+		buf[len++] = BYTE_3(pd->id.serial_number);
 
-		buf[len++] = byte_3(pd->id.firmware_version);
-		buf[len++] = byte_2(pd->id.firmware_version);
-		buf[len++] = byte_1(pd->id.firmware_version);
+		buf[len++] = BYTE_3(pd->id.firmware_version);
+		buf[len++] = BYTE_2(pd->id.firmware_version);
+		buf[len++] = BYTE_1(pd->id.firmware_version);
 		break;
 	case REPLY_PDCAP:
 		for (i = 0; i < CAP_SENTINEL; i++) {
@@ -316,15 +316,15 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 			LOG_ERR(TAG "Out of buffer space!");
 			return -1;
 		}
-		buf[len++] = isset_flag(pd, PD_FLAG_TAMPER);
-		buf[len++] = isset_flag(pd, PD_FLAG_POWER);
+		buf[len++] = ISSET_FLAG(pd, PD_FLAG_TAMPER);
+		buf[len++] = ISSET_FLAG(pd, PD_FLAG_POWER);
 		break;
 	case REPLY_RSTATR:
 		if (max_len < 1) {
 			LOG_ERR(TAG "Out of buffer space!");
 			return -1;
 		}
-		buf[len++] = isset_flag(pd, PD_FLAG_R_TAMPER);
+		buf[len++] = ISSET_FLAG(pd, PD_FLAG_R_TAMPER);
 		break;
 	case REPLY_COM:
 		if (max_len < 5) {
@@ -332,10 +332,10 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 			return -1;
 		}
 		buf[len++] = pd->address;
-		buf[len++] = byte_0(pd->baud_rate);
-		buf[len++] = byte_1(pd->baud_rate);
-		buf[len++] = byte_2(pd->baud_rate);
-		buf[len++] = byte_3(pd->baud_rate);
+		buf[len++] = BYTE_0(pd->baud_rate);
+		buf[len++] = BYTE_1(pd->baud_rate);
+		buf[len++] = BYTE_2(pd->baud_rate);
+		buf[len++] = BYTE_3(pd->baud_rate);
 		break;
 	case REPLY_NAK:
 		if (max_len < 1) {
@@ -352,7 +352,7 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 			return -1;
 		}
 		osdp_fill_random(pd->sc.pd_random, 8);
-		osdp_compute_session_keys(to_ctx(pd));
+		osdp_compute_session_keys(TO_CTX(pd));
 		osdp_compute_pd_cryptogram(pd);
 		for (i = 0; i < 8; i++)
 			buf[len++] = pd->sc.pd_client_uid[i];
@@ -362,7 +362,7 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 			buf[len++] = pd->sc.pd_cryptogram[i];
 		smb[0] = 3;
 		smb[1] = SCS_12;
-		smb[2] = isset_flag(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		break;
 	case REPLY_RMAC_I:
 		if (smb == NULL)
@@ -380,15 +380,15 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 			smb[2] = 0x01;
 		else
 			smb[2] = 0x00;
-		set_flag(pd, PD_FLAG_SC_ACTIVE);
-		if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD))
+		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD))
 			LOG_WRN(TAG "SC Active with SCBK-D");
 		else
 			LOG_INF(TAG "SC Active");
 		break;
 	}
 
-	if (smb && (smb[1] > SCS_14) && isset_flag(pd, PD_FLAG_SC_ACTIVE)) {
+	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
@@ -539,7 +539,7 @@ void pd_state_update(struct osdp_pd *pd)
 		 * between commands. We just clean up secure channel status and
 		 * go back to idle state with a call to phy_state_reset().
 		 */
-		clear_flag(pd, PD_FLAG_SC_ACTIVE);
+		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 		pd->rx_buf_len = 0;
 		pd->state = PD_STATE_IDLE;
 		break;
@@ -592,8 +592,8 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 		LOG_ERR(TAG "failed to alloc struct osdp_cp");
 		goto error;
 	}
-	cp = to_cp(ctx);
-	node_set_parent(cp, ctx);
+	cp = TO_CP(ctx);
+	cp->__parent = ctx;
 	cp->num_pd = 1;
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd));
@@ -601,10 +601,10 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 		LOG_ERR(TAG "failed to alloc struct osdp_pd");
 		goto error;
 	}
-	set_current_pd(ctx, 0);
-	pd = to_pd(ctx, 0);
+	SET_CURRENT_PD(ctx, 0);
+	pd = TO_PD(ctx, 0);
 
-	node_set_parent(pd, ctx);
+	pd->__parent = ctx;
 	pd->offset = 0;
 	pd->baud_rate = info->baud_rate;
 	pd->address = info->address;
@@ -614,7 +614,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 
 	if (scbk == NULL) {
 		LOG_WRN(TAG "SCBK not provided. PD is in INSTALL_MODE");
-		set_flag(pd, PD_FLAG_INSTALL_MODE);
+		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
 	}
 	else {
 		memcpy(pd->sc.scbk, scbk, 16);
@@ -622,7 +622,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 
 	osdp_pd_set_attributes(pd, info->cap, &info->id);
 
-	set_flag(pd, PD_FLAG_PD_MODE);	/* used to understand operational mode */
+	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
 	LOG_INF(TAG "setup complete");
 	return (osdp_t *) ctx;
@@ -635,8 +635,8 @@ error:
 void osdp_pd_teardown(osdp_t *ctx)
 {
 	if (ctx != NULL) {
-		safe_free(to_pd(ctx, 0));
-		safe_free(to_cp(ctx));
+		safe_free(TO_PD(ctx, 0));
+		safe_free(TO_CP(ctx));
 		safe_free(ctx);
 	}
 }
@@ -644,7 +644,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 void osdp_pd_refresh(osdp_t *ctx)
 {
 	assert(ctx);
-	struct osdp_pd *pd = to_current_pd(ctx);
+	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	pd_state_update(pd);
 }
@@ -653,7 +653,7 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 {
 	assert(ctx);
 	struct osdp_cmd *f;
-	struct osdp_pd *pd = to_current_pd(ctx);
+	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	f = pd->queue.front;
 	if (f == NULL)
@@ -661,6 +661,6 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 
 	memcpy(cmd, f, sizeof(struct osdp_cmd));
 	pd->queue.front = pd->queue.front->__next;
-	osdp_slab_free(to_osdp(ctx)->cmd_slab, f);
+	osdp_slab_free(TO_OSDP(ctx)->cmd_slab, f);
 	return 0;
 }

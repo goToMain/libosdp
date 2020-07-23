@@ -18,7 +18,7 @@ static const uint8_t osdp_scbk_default[16] = {
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
 {
 	int i;
-	struct osdp *ctx = to_ctx(pd);
+	struct osdp *ctx = TO_CTX(pd);
 
 	memcpy(scbk, pd->sc.pd_client_uid, 8);
 	for (i = 8; i < 16; i++)
@@ -29,16 +29,16 @@ void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
 void osdp_compute_session_keys(struct osdp *ctx)
 {
 	int i;
-	struct osdp_pd *pd = to_current_pd(ctx);
+	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD)) {
+	if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 		memcpy(pd->sc.scbk, osdp_scbk_default, 16);
 	} else {
 		/**
 		 * Compute SCBK only in CP mode. PD mode, expect to already have
 		 * the SCBK (sent from application layer).
 		 */
-		if (isset_flag(pd, PD_FLAG_PD_MODE) == 0)
+		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0)
 			osdp_compute_scbk(pd, pd->sc.scbk);
 	}
 
@@ -218,20 +218,20 @@ void osdp_sc_init(struct osdp_pd *pd)
 {
 	uint8_t key[16];
 
-	if (isset_flag(pd, PD_FLAG_PD_MODE))
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE))
 		memcpy(key, pd->sc.scbk, 16);
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
-	if (isset_flag(pd, PD_FLAG_PD_MODE))
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE))
 		memcpy(pd->sc.scbk, key, 16);
 
-	if (isset_flag(pd, PD_FLAG_PD_MODE)) {
-		pd->sc.pd_client_uid[0] = byte_0(pd->id.vendor_code);
-		pd->sc.pd_client_uid[1] = byte_1(pd->id.vendor_code);
-		pd->sc.pd_client_uid[2] = byte_0(pd->id.model);
-		pd->sc.pd_client_uid[3] = byte_1(pd->id.version);
-		pd->sc.pd_client_uid[4] = byte_0(pd->id.serial_number);
-		pd->sc.pd_client_uid[5] = byte_1(pd->id.serial_number);
-		pd->sc.pd_client_uid[6] = byte_2(pd->id.serial_number);
-		pd->sc.pd_client_uid[7] = byte_3(pd->id.serial_number);
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
+		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);
+		pd->sc.pd_client_uid[2] = BYTE_0(pd->id.model);
+		pd->sc.pd_client_uid[3] = BYTE_1(pd->id.version);
+		pd->sc.pd_client_uid[4] = BYTE_0(pd->id.serial_number);
+		pd->sc.pd_client_uid[5] = BYTE_1(pd->id.serial_number);
+		pd->sc.pd_client_uid[6] = BYTE_2(pd->id.serial_number);
+		pd->sc.pd_client_uid[7] = BYTE_3(pd->id.serial_number);
 	}
 }

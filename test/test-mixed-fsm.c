@@ -158,16 +158,16 @@ void run_mixed_fsm_tests(struct test *t)
 	printf("    -- executing CP - PD mixed tests\n");
 	start = millis_now();
 	while (1) {
-		cp_state_update(to_current_pd(p->cp_ctx));
-		pd_state_update(to_current_pd(p->pd_ctx));
+		cp_state_update(GET_CURRENT_PD(p->cp_ctx));
+		pd_state_update(GET_CURRENT_PD(p->pd_ctx));
 		if (osdp_get_sc_status_mask(p->cp_ctx))
 			break;
-		if (to_current_pd(p->cp_ctx)->state == CP_STATE_OFFLINE) {
+		if (GET_CURRENT_PD(p->cp_ctx)->state == CP_STATE_OFFLINE) {
 			printf("    -- CP went offline!\n");
 			result = FALSE;
 			break;
 		}
-		if (to_current_pd(p->pd_ctx)->phy_state == PD_STATE_ERR) {
+		if (GET_CURRENT_PD(p->pd_ctx)->phy_state == PD_STATE_ERR) {
 			printf("    -- PD state error!\n");
 			result = FALSE;
 			break;

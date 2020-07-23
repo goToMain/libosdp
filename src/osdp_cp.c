@@ -11,25 +11,6 @@
 
 #define TAG "CP: "
 
-#define cp_set_offline(pd)					\
-	do {							\
-		pd->state = CP_STATE_OFFLINE;			\
-		pd->tstamp = millis_now();			\
-	} while (0)
-
-#define cp_set_state(pd, s)					\
-	do {							\
-		pd->state = s;					\
-		clear_flag(pd, PD_FLAG_AWAIT_RESP);		\
-	} while (0)
-
-#define cp_reset_state(pd)					\
-	do {							\
-		pd->state = CP_STATE_INIT;			\
-		phy_state_reset(pd);				\
-		pd->flags = 0;					\
-	} while (0)
-
 enum cp_phy_state_e {
 	CP_PHY_STATE_IDLE,
 	CP_PHY_STATE_SEND_CMD,
@@ -87,8 +68,8 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 		}
 		buf[len++] = cmd->output.output_no;
 		buf[len++] = cmd->output.control_code;
-		buf[len++] = byte_0(cmd->output.tmr_count);
-		buf[len++] = byte_1(cmd->output.tmr_count);
+		buf[len++] = BYTE_0(cmd->output.tmr_count);
+		buf[len++] = BYTE_1(cmd->output.tmr_count);
 		ret = 0;
 		break;
 	case CMD_LED:
@@ -104,8 +85,8 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 		buf[len++] = cmd->led.temporary.off_count;
 		buf[len++] = cmd->led.temporary.on_color;
 		buf[len++] = cmd->led.temporary.off_color;
-		buf[len++] = byte_0(cmd->led.temporary.timer);
-		buf[len++] = byte_1(cmd->led.temporary.timer);
+		buf[len++] = BYTE_0(cmd->led.temporary.timer);
+		buf[len++] = BYTE_1(cmd->led.temporary.timer);
 
 		buf[len++] = cmd->led.permanent.control_code;
 		buf[len++] = cmd->led.permanent.on_count;
@@ -147,14 +128,14 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 			return -1;
 		}
 		buf[len++] = cmd->comset.addr;
-		buf[len++] = byte_0(cmd->comset.baud);
-		buf[len++] = byte_1(cmd->comset.baud);
-		buf[len++] = byte_2(cmd->comset.baud);
-		buf[len++] = byte_3(cmd->comset.baud);
+		buf[len++] = BYTE_0(cmd->comset.baud);
+		buf[len++] = BYTE_1(cmd->comset.baud);
+		buf[len++] = BYTE_2(cmd->comset.baud);
+		buf[len++] = BYTE_3(cmd->comset.baud);
 		ret = 0;
 		break;
 	case CMD_KEYSET:
-		if (!isset_flag(pd, PD_FLAG_SC_ACTIVE))
+		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE))
 			break;
 		if (max_len < 18) {
 			LOG_ERR(TAG "Out of buffer space!");
@@ -175,7 +156,7 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 		}
 		smb[0] = 3;
 		smb[1] = SCS_11;  /* type */
-		smb[2] = isset_flag(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		osdp_fill_random(pd->sc.cp_random, 8);
 		for (i = 0; i < 8; i++)
 			buf[len++] = pd->sc.cp_random[i];
@@ -190,7 +171,7 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 		}
 		smb[0] = 3;
 		smb[1] = SCS_13;  /* type */
-		smb[2] = isset_flag(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		osdp_compute_cp_cryptogram(pd);
 		for (i = 0; i < 16; i++)
 			buf[len++] = pd->sc.cp_cryptogram[i];
@@ -202,7 +183,7 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 	}
 
 	pd->cmd_id = cmd->id;
-	if (smb && (smb[1] > SCS_14) && isset_flag(pd, PD_FLAG_SC_ACTIVE)) {
+	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 	}
@@ -224,7 +205,7 @@ int cp_build_command(struct osdp_pd *pd, struct osdp_cmd *cmd,
 int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	uint32_t temp32;
-	struct osdp *ctx = to_ctx(pd);
+	struct osdp *ctx = TO_CTX(pd);
 	int i, ret = -1, pos = 0, t1, t2;
 
 	if (len < 1) {
@@ -283,27 +264,27 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		/* post-capabilities hooks */
 		if (pd->cap[CAP_COMMUNICATION_SECURITY].compliance_level & 0x01)
-			set_flag(pd, PD_FLAG_SC_CAPABLE);
+			SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 		else
-			clear_flag(pd, PD_FLAG_SC_CAPABLE);
+			CLEAR_FLAG(pd, PD_FLAG_SC_CAPABLE);
 		ret = 0;
 		break;
 	case REPLY_LSTATR:
 		if (buf[pos++])
-			set_flag(pd, PD_FLAG_TAMPER);
+			SET_FLAG(pd, PD_FLAG_TAMPER);
 		else
-			clear_flag(pd, PD_FLAG_TAMPER);
+			CLEAR_FLAG(pd, PD_FLAG_TAMPER);
 		if (buf[pos++])
-			set_flag(pd, PD_FLAG_POWER);
+			SET_FLAG(pd, PD_FLAG_POWER);
 		else
-			clear_flag(pd, PD_FLAG_POWER);
+			CLEAR_FLAG(pd, PD_FLAG_POWER);
 		ret = 0;
 		break;
 	case REPLY_RSTATR:
 		if (buf[pos++])
-			set_flag(pd, PD_FLAG_R_TAMPER);
+			SET_FLAG(pd, PD_FLAG_R_TAMPER);
 		else
-			clear_flag(pd, PD_FLAG_R_TAMPER);
+			CLEAR_FLAG(pd, PD_FLAG_R_TAMPER);
 		ret = 0;
 		break;
 	case REPLY_COM:
@@ -314,7 +295,7 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		temp32 |= buf[pos++] << 24;
 		LOG_CRIT(TAG "COMSET responded with ID:%d baud:%d", t1, temp32);
 		pd->baud_rate = temp32;
-		set_flag(pd, PD_FLAG_COMSET_INPROG);
+		SET_FLAG(pd, PD_FLAG_COMSET_INPROG);
 		ret = 0;
 		break;
 	case REPLY_CCRYPT:
@@ -324,7 +305,7 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			pd->sc.pd_random[i] = buf[pos++];
 		for (i=0; i<16; i++)
 			pd->sc.pd_cryptogram[i] = buf[pos++];
-		osdp_compute_session_keys(to_ctx(pd));
+		osdp_compute_session_keys(TO_CTX(pd));
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
 			LOG_ERR(TAG "failed to verify PD_crypt");
 			break;
@@ -336,7 +317,7 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		for (i=0; i<16; i++)
 			pd->sc.r_mac[i] = buf[pos++];
-		set_flag(pd, PD_FLAG_SC_ACTIVE);
+		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
 		ret = 0;
 		break;
 	case REPLY_KEYPPAD:
@@ -526,9 +507,10 @@ int cp_dequeue_command(struct osdp_pd *pd, struct osdp_cmd **cmd, int read_only)
 void cp_flush_command_queue(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
+	struct osdp *ctx = TO_CTX(pd);
 
 	while (cp_dequeue_command(pd, &cmd, FALSE) == 0) {
-		cp_free_command(to_ctx(pd), cmd);
+		cp_free_command(ctx, cmd);
 	}
 }
 
@@ -538,9 +520,28 @@ void cp_flush_all_cmd_queues(struct osdp *ctx)
 	struct osdp_pd *pd;
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = to_pd(ctx, i);
+		pd = TO_PD(ctx, i);
 		cp_flush_command_queue(pd);
 	}
+}
+
+inline void cp_set_offline(struct osdp_pd *pd)
+{
+	pd->state = CP_STATE_OFFLINE;
+	pd->tstamp = millis_now();
+}
+
+inline void cp_reset_state(struct osdp_pd *pd)
+{
+	pd->state = CP_STATE_INIT;
+	phy_state_reset(pd);
+	pd->flags = 0;
+}
+
+inline void cp_set_state(struct osdp_pd *pd, int state)
+{
+	pd->state = state;
+	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 }
 
 /**
@@ -613,7 +614,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 			ret = -1;
 			break;
 		}
-		cp_free_command(to_ctx(pd), cmd);
+		cp_free_command(TO_CTX(pd), cmd);
 		pd->phy_state = CP_PHY_STATE_IDLE;
 		ret = 2;
 		break;
@@ -632,17 +633,17 @@ int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 {
 	struct osdp_cmd *c;
 
-	if (isset_flag(pd, PD_FLAG_AWAIT_RESP)) {
-		clear_flag(pd, PD_FLAG_AWAIT_RESP);
+	if (ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
+		CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 		return 0;
 	}
 
-	if (cp_alloc_command(to_ctx(pd), &c))
+	if (cp_alloc_command(TO_CTX(pd), &c))
 		return -1;
 
 	c->id = cmd;
 	cp_enqueue_command(pd, c);
-	set_flag(pd, PD_FLAG_AWAIT_RESP);
+	SET_FLAG(pd, PD_FLAG_AWAIT_RESP);
 	return 1;
 }
 
@@ -667,8 +668,8 @@ int cp_state_update(struct osdp_pd *pd)
 
 	switch (pd->state) {
 	case CP_STATE_ONLINE:
-		if (isset_flag(pd, PD_FLAG_SC_ACTIVE)  == FALSE &&
-		    isset_flag(pd, PD_FLAG_SC_CAPABLE) == TRUE  &&
+		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)  == FALSE &&
+		    ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) == TRUE  &&
 		    millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_SEC) {
 			LOG_INF("retry SC after retry timeout");
 			cp_set_state(pd, CP_STATE_SC_INIT);
@@ -698,7 +699,7 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		if (pd->reply_id != REPLY_PDCAP)
 			cp_set_offline(pd);
-		if (isset_flag(pd, PD_FLAG_SC_CAPABLE)) {
+		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			break;
 		}
@@ -712,14 +713,14 @@ int cp_state_update(struct osdp_pd *pd)
 		if (cp_cmd_dispatcher(pd, CMD_CHLNG) != 0)
 			break;
 		if (phy_state < 0) {
-			if (isset_flag(pd, PD_FLAG_SC_SCBKD_DONE)) {
+			if (ISSET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE)) {
 				LOG_INF(TAG "SC Failed; online without SC");
 				pd->sc_tstamp = millis_now();
 				cp_set_state(pd, CP_STATE_ONLINE);
 				break;
 			}
-			set_flag(pd, PD_FLAG_SC_USE_SCBKD);
-			set_flag(pd, PD_FLAG_SC_SCBKD_DONE);
+			SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+			SET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			cp_set_state(pd, CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
 			LOG_WRN(TAG "SC Failed; retry with SCBK-D");
@@ -742,7 +743,7 @@ int cp_state_update(struct osdp_pd *pd)
 			cp_set_state(pd, CP_STATE_ONLINE);
 			break;
 		}
-		if (isset_flag(pd, PD_FLAG_SC_USE_SCBKD)) {
+		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_WRN(TAG "SC ACtive with SCBK-D; Set SCBK");
 			cp_set_state(pd, CP_STATE_SET_SCBK);
 			break;
@@ -760,8 +761,8 @@ int cp_state_update(struct osdp_pd *pd)
 			break;
 		}
 		LOG_INF(TAG "SCBK set; restarting SC to verify new SCBK");
-		clear_flag(pd, PD_FLAG_SC_USE_SCBKD);
-		clear_flag(pd, PD_FLAG_SC_ACTIVE);
+		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 		cp_set_state(pd, CP_STATE_SC_INIT);
 		pd->seq_number = -1;
 		break;
@@ -806,8 +807,8 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		LOG_ERR(TAG "failed to alloc struct osdp_cp");
 		goto error;
 	}
-	cp = to_cp(ctx);
-	node_set_parent(cp, ctx);
+	cp = TO_CP(ctx);
+	cp->__parent = ctx;
 	cp->num_pd = num_pd;
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
@@ -818,16 +819,16 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
-		pd = to_pd(ctx, i);
+		pd = TO_PD(ctx, i);
 		pd->offset = i;
-		node_set_parent(pd, ctx);
+		pd->__parent = ctx;
 		pd->baud_rate = p->baud_rate;
 		pd->address = p->address;
 		pd->flags = p->flags;
 		pd->seq_number = -1;
 		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 	}
-	set_current_pd(ctx, 0);
+	SET_CURRENT_PD(ctx, 0);
 	LOG_INF(TAG "setup complete");
 	return (osdp_t *) ctx;
 
@@ -839,9 +840,9 @@ error:
 void osdp_cp_teardown(osdp_t *ctx)
 {
 	if (ctx != NULL) {
-		safe_free(to_pd(ctx, 0));
-		osdp_slab_del(to_osdp(ctx)->cmd_slab);
-		safe_free(to_cp(ctx));
+		safe_free(TO_PD(ctx, 0));
+		osdp_slab_del(TO_OSDP(ctx)->cmd_slab);
+		safe_free(TO_CP(ctx));
 		safe_free(ctx);
 	}
 }
@@ -853,9 +854,9 @@ void osdp_cp_refresh(osdp_t *ctx)
 	assert(ctx);
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		set_current_pd(ctx, i);
+		SET_CURRENT_PD(ctx, i);
 		osdp_log_ctx_set(i);
-		cp_state_update(to_current_pd(ctx));
+		cp_state_update(GET_CURRENT_PD(ctx));
 	}
 }
 
@@ -864,7 +865,7 @@ int osdp_cp_set_callback_key_press(osdp_t *ctx,
 {
 	assert(ctx);
 
-	(to_osdp(ctx))->notifier.keypress = cb;
+	(TO_OSDP(ctx))->notifier.keypress = cb;
 
 	return 0;
 }
@@ -874,7 +875,7 @@ int osdp_cp_set_callback_card_read(osdp_t *ctx,
 {
 	assert(ctx);
 
-	(to_osdp(ctx))->notifier.cardread = cb;
+	(TO_OSDP(ctx))->notifier.cardread = cb;
 
 	return 0;
 }
@@ -889,12 +890,12 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 		return -1;
 	}
 
-	if (cp_alloc_command(to_osdp(ctx), &cmd))
+	if (cp_alloc_command(TO_OSDP(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_OUT;
 	memcpy(&cmd->output, p, sizeof(struct osdp_cmd_output));
-	cp_enqueue_command(to_pd(ctx, pd), cmd);
+	cp_enqueue_command(TO_PD(ctx, pd), cmd);
 	return 0;
 }
 
@@ -908,12 +909,12 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 		return -1;
 	}
 
-	if (cp_alloc_command(to_osdp(ctx), &cmd))
+	if (cp_alloc_command(TO_OSDP(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_LED;
 	memcpy(&cmd->led, p, sizeof(struct osdp_cmd_led));
-	cp_enqueue_command(to_pd(ctx, pd), cmd);
+	cp_enqueue_command(TO_PD(ctx, pd), cmd);
 	return 0;
 }
 
@@ -927,12 +928,12 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 		return -1;
 	}
 
-	if (cp_alloc_command(to_osdp(ctx), &cmd))
+	if (cp_alloc_command(TO_OSDP(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_BUZ;
 	memcpy(&cmd->buzzer, p, sizeof(struct osdp_cmd_buzzer));
-	cp_enqueue_command(to_pd(ctx, pd), cmd);
+	cp_enqueue_command(TO_PD(ctx, pd), cmd);
 	return 0;
 }
 
@@ -946,12 +947,12 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 		return -1;
 	}
 
-	if (cp_alloc_command(to_osdp(ctx), &cmd))
+	if (cp_alloc_command(TO_OSDP(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_TEXT;
 	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_text));
-	cp_enqueue_command(to_pd(ctx, pd), cmd);
+	cp_enqueue_command(TO_PD(ctx, pd), cmd);
 	return 0;
 }
 
@@ -965,12 +966,12 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 		return -1;
 	}
 
-	if (cp_alloc_command(to_osdp(ctx), &cmd))
+	if (cp_alloc_command(TO_OSDP(ctx), &cmd))
 		return -1;
 
 	cmd->id = CMD_COMSET;
 	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_comset));
-	cp_enqueue_command(to_pd(ctx, pd), cmd);
+	cp_enqueue_command(TO_PD(ctx, pd), cmd);
 	return 0;
 }
 
@@ -988,13 +989,13 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 		return 1;
 	}
 
-	if (osdp_slab_blocks(to_osdp(ctx)->cmd_slab) < NUM_PD(ctx)) {
+	if (osdp_slab_blocks(TO_OSDP(ctx)->cmd_slab) < NUM_PD(ctx)) {
 		LOG_WRN(TAG "Out of slab space for keyset operation");
 	}
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = to_pd(ctx, i);
-		if (cp_alloc_command(to_osdp(ctx), &cmd))
+		pd = TO_PD(ctx, i);
+		if (cp_alloc_command(TO_OSDP(ctx), &cmd))
 			return -1;
 		cmd->id = CMD_KEYSET;
 		memcpy(&cmd->keyset, p, sizeof(struct osdp_cmd_keyset));

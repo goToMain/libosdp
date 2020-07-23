@@ -7,8 +7,10 @@
 #ifndef _OSDP_COMMON_H_
 #define _OSDP_COMMON_H_
 
-#include <osdp.h>
 #include <assert.h>
+#include <stddef.h>
+
+#include <osdp.h>
 #include "osdp_config.h"
 
 #ifndef NULL
@@ -19,32 +21,31 @@
 #define FALSE                          (0)
 #define ARG_UNUSED(x)                  (void)(x)
 
-#define isset_flag(p, f)               (((p)->flags & (f)) == (f))
-#define set_flag(p, f)                 ((p)->flags |= (f))
-#define clear_flag(p, f)               ((p)->flags &= ~(f))
+#define ISSET_FLAG(p, f)               (((p)->flags & (f)) == (f))
+#define SET_FLAG(p, f)                 ((p)->flags |= (f))
+#define CLEAR_FLAG(p, f)               ((p)->flags &= ~(f))
 
-#define byte_0(x)                      (uint8_t)((x)&0xFF)
-#define byte_1(x)                      (uint8_t)(((x)>> 8)&0xFF)
-#define byte_2(x)                      (uint8_t)(((x)>>16)&0xFF)
-#define byte_3(x)                      (uint8_t)(((x)>>24)&0xFF)
+#define BYTE_0(x)                      (uint8_t)(((x) >>  0) & 0xFF)
+#define BYTE_1(x)                      (uint8_t)(((x) >>  8) & 0xFF)
+#define BYTE_2(x)                      (uint8_t)(((x) >> 16) & 0xFF)
+#define BYTE_3(x)                      (uint8_t)(((x) >> 24) & 0xFF)
 
 /* casting helpers */
-#define to_osdp(p)                     ((struct osdp *)p)
-#define to_cp(p)                       (((struct osdp *)(p))->cp)
-#define to_pd(p, i)                    (((struct osdp *)(p))->pd + i)
-#define to_ctx(p)                      ((struct osdp *)p->__parent)
-#define node_set_parent(c, p)          ((c)->__parent = (void *)(p))
-#define to_current_pd(p)               (to_cp(p)->current_pd)
+#define TO_OSDP(p)                     ((struct osdp *)p)
+#define TO_CP(p)                       (((struct osdp *)(p))->cp)
+#define TO_PD(p, i)                    (((struct osdp *)(p))->pd + i)
+#define TO_CTX(p)                      ((struct osdp *)p->__parent)
 
-#define sizeof_array(x)			(sizeof(x)/sizeof(x[0]))
-#define set_current_pd(p, i)                                    \
+#define GET_CURRENT_PD(p)              (TO_CP(p)->current_pd)
+#define SET_CURRENT_PD(p, i)                                    \
 	do {                                                    \
-		to_cp(p)->current_pd = to_pd(p, i);             \
-		to_cp(p)->pd_offset = i;                        \
+		TO_CP(p)->current_pd = TO_PD(p, i);             \
+		TO_CP(p)->pd_offset = i;                        \
 	} while (0)
+#define PD_MASK(ctx) \
+	(uint32_t)((1 << (TO_CP(ctx)->num_pd + 1)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
-#define PD_MASK(ctx)                   (uint32_t)((1 << (to_cp(ctx)->num_pd + 1)) - 1)
-#define NUM_PD(ctx)                    (to_cp(ctx)->num_pd)
+#define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
 
 /**
  * @brief OSDP reserved commands

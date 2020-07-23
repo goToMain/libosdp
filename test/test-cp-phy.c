@@ -38,7 +38,7 @@ static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len, int ma
 int test_cp_build_packet_poll(struct osdp *ctx)
 {
 	int len;
-	struct osdp_pd *p = to_current_pd(ctx);
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[512] = { CMD_POLL };
 	uint8_t expected[] = { 0xff, 0x53, 0x65, 0x08, 0x00,
 		0x04, 0x60, 0x60, 0x90
@@ -56,7 +56,7 @@ int test_cp_build_packet_poll(struct osdp *ctx)
 int test_cp_build_packet_id(struct osdp *ctx)
 {
 	int len;
-	struct osdp_pd *p = to_current_pd(ctx);
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[512] = { CMD_ID, 0x00 };
 	uint8_t expected[] = { 0xff, 0x53, 0x65, 0x09, 0x00,
 		0x05, 0x61, 0x00, 0xe9, 0x4d
@@ -75,7 +75,7 @@ int test_cp_build_packet_id(struct osdp *ctx)
 int test_phy_decode_packet_ack(struct osdp *ctx)
 {
 	int len;
-	struct osdp_pd *p = to_current_pd(ctx);
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[128] = { 0xff, 0x53, 0xe5, 0x08, 0x00,
 		0x05, 0x40, 0xe3, 0xa5
 	};
@@ -108,7 +108,7 @@ int test_cp_phy_setup(struct test *t)
 		printf("   init failed!\n");
 		return -1;
 	}
-	set_current_pd(ctx, 0);
+	SET_CURRENT_PD(ctx, 0);
 	t->mock_data = (void *)ctx;
 	return 0;
 }

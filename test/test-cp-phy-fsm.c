@@ -84,8 +84,8 @@ int test_cp_phy_fsm_setup(struct test *t)
 		printf("   init failed!\n");
 		return -1;
 	}
-	// osdp_set_log_level(LOG_DEBUG);
-	set_current_pd(ctx, 0);
+	osdp_set_log_level(LOG_DEBUG);
+	SET_CURRENT_PD(ctx, 0);
 	t->mock_data = (void *)ctx;
 	return 0;
 }
@@ -111,7 +111,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 	}
 
 	ctx = t->mock_data;
-	p = to_current_pd(ctx);
+	p = GET_CURRENT_PD(ctx);
 
 	cp_alloc_command(ctx, &cmd_poll);
 	cp_alloc_command(ctx, &cmd_id);
@@ -129,7 +129,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 			break;
 		/* continue when in command and between commands continue */
 	}
-
+	printf("    -- of text loop\n");
 	if (p->id.vendor_code != 0x00a3a2a1 ||
 	    p->id.model != 0xb1 ||
 	    p->id.version != 0xc1 ||

@@ -95,7 +95,7 @@ void test_cp_fsm_teardown(struct test *t)
 
 void run_cp_fsm_tests(struct test *t)
 {
-	int result = TRUE;
+	int result = true;
 	uint32_t count = 0;
 	struct osdp *ctx;
 
@@ -110,9 +110,9 @@ void run_cp_fsm_tests(struct test *t)
 	while (1) {
 		cp_state_update(GET_CURRENT_PD(ctx));
 
-		if (GET_CURRENT_PD(ctx)->state == CP_STATE_OFFLINE) {
+		if (GET_CURRENT_PD(ctx)->cp_state == OSDP_CP_STATE_OFFLINE) {
 			printf("    -- cp_state_update() CP went offline\n");
-			result = FALSE;
+			result = false;
 			break;
 		}
 		if (count++ > 300)

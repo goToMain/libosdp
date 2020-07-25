@@ -23,7 +23,7 @@
  * cmake during project configuration. These options can be enabled by passing
  * -DCONFIG_XXX=on to cmake.
  */
-#cmakedefine CONFIG_OSDP_PACKET_TRACE
+#cmakedefine CONFIG_OSDP_PACKET_TRACE           1
 
 /**
  * @brief Other OSDP constants

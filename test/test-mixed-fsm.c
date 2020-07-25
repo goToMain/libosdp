@@ -9,7 +9,7 @@
 #include <osdp.h>
 #include "test.h"
 
-void pd_state_update(struct osdp_pd *pd);
+void osdp_pd_update(struct osdp_pd *pd);
 int cp_state_update(struct osdp_pd *pd);
 
 struct test_mixed {
@@ -144,9 +144,10 @@ void test_mixed_fsm_teardown(struct test *t)
 
 void run_mixed_fsm_tests(struct test *t)
 {
-	int result = TRUE;
+	int result = true;
 	struct test_mixed *p;
-	millis_t start;
+	struct osdp_pd *pd_cp, *pd_pd;
+	int64_t start;
 
 	printf("\nStarting CP - PD phy layer mixed tests\n");
 
@@ -156,25 +157,27 @@ void run_mixed_fsm_tests(struct test *t)
 	p = t->mock_data;
 
 	printf("    -- executing CP - PD mixed tests\n");
-	start = millis_now();
+	start = osdp_millis_now();
+	pd_cp = GET_CURRENT_PD(p->cp_ctx);
+	pd_pd = GET_CURRENT_PD(p->pd_ctx);
 	while (1) {
-		cp_state_update(GET_CURRENT_PD(p->cp_ctx));
-		pd_state_update(GET_CURRENT_PD(p->pd_ctx));
+		cp_state_update(pd_cp);
+		osdp_pd_update(pd_pd);
 		if (osdp_get_sc_status_mask(p->cp_ctx))
 			break;
-		if (GET_CURRENT_PD(p->cp_ctx)->state == CP_STATE_OFFLINE) {
+		if (pd_cp->cp_state == OSDP_CP_STATE_OFFLINE) {
 			printf("    -- CP went offline!\n");
-			result = FALSE;
+			result = false;
 			break;
 		}
-		if (GET_CURRENT_PD(p->pd_ctx)->phy_state == PD_STATE_ERR) {
+		if (pd_pd->pd_state == OSDP_PD_STATE_ERR) {
 			printf("    -- PD state error!\n");
-			result = FALSE;
+			result = false;
 			break;
 		}
-		if (millis_since(start) > 5 * 1000) {
+		if (osdp_millis_since(start) > 5 * 1000) {
 			printf("    -- test timout!\n");
-			result = FALSE;
+			result = false;
 			break;
 		}
 	}

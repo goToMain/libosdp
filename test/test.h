@@ -22,7 +22,7 @@
 
 #define TEST_REPORT(t, s) do {      \
         t->tests++;                 \
-        if (s == TRUE)              \
+        if (s == true)              \
             t->success++;           \
         else                        \
             t->failure++;           \

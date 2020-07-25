@@ -49,15 +49,17 @@ int (*log_printf)(const char *fmt, ...) = printf;
 
 void osdp_log_set_color(const char *color)
 {
-	if (isatty(fileno(stdout)))
+	if (isatty(fileno(stdout))) {
 		(void)write(fileno(stdout), color, strlen(color));
+	}
 }
 
 void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
 {
 	g_log_level = log_level;
-	if (log_fn != NULL)
+	if (log_fn != NULL) {
 		log_printf = log_fn;
+	}
 }
 
 void osdp_log_ctx_set(int log_ctx)
@@ -82,12 +84,12 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_list args;
 	char *buf;
 
-	if (log_level < LOG_EMERG || log_level >= LOG_MAX_LEVEL)
+	if (log_level < LOG_EMERG || log_level >= LOG_MAX_LEVEL) {
 		return;
-
-	if (log_level > g_log_level)
+	}
+	if (log_level > g_log_level) {
 		return;
-
+	}
 	va_start(args, fmt);
 	if (vasprintf(&buf, fmt, args) == -1) {
 		log_printf("vasprintf error\n");
@@ -95,24 +97,25 @@ void osdp_log(int log_level, const char *fmt, ...)
 	}
 	va_end(args);
 	osdp_log_set_color(log_level_colors[log_level]);
-	if (g_log_ctx == LOG_CTX_GLOBAL)
+	if (g_log_ctx == LOG_CTX_GLOBAL) {
 		log_printf("OSDP: %s: %s\n", log_level_names[log_level], buf);
-	else
+	} else {
 		log_printf("OSDP: %s: PD[%d] %s\n", log_level_names[log_level],
 			   g_log_ctx, buf);
+	}
 	osdp_log_set_color(RESET);
 	free(buf);
 }
 
-void osdp_dump(const char *head, const uint8_t *data, int len)
+void osdp_dump(const char *head, uint8_t *buf, int len)
 {
 	int i;
 	char str[16 + 1] = { 0 };
 
 	osdp_log_set_color(RESET); /* no color for osdp_dump */
-	log_printf("%s [%d] =>\n    0000  %02x ", head ? head : "", len,
-	       len ? data[0] : 0);
-	str[0] = isprint(data[0]) ? data[0] : '.';
+	log_printf("%s [%d] =>\n    0000  %02x ", head ? head : "",
+		   len, len ? buf[0] : 0);
+	str[0] = isprint(buf[0]) ? buf[0] : '.';
 	for (i = 1; i < len; i++) {
 		if ((i & 0x0f) == 0) {
 			log_printf(" |%16s|", str);
@@ -120,12 +123,13 @@ void osdp_dump(const char *head, const uint8_t *data, int len)
 		} else if ((i & 0x07) == 0) {
 			log_printf(" ");
 		}
-		log_printf("%02x ", data[i]);
-		str[i & 0x0f] = isprint(data[i]) ? data[i] : '.';
+		log_printf("%02x ", buf[i]);
+		str[i & 0x0f] = isprint(buf[i]) ? buf[i] : '.';
 	}
 	if ((i &= 0x0f) != 0) {
-		if (i < 8)
+		if (i < 8) {
 			log_printf(" ");
+		}
 		for (; i < 16; i++) {
 			log_printf("   ");
 			str[i] = ' ';
@@ -147,22 +151,22 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
 	return seed;
 }
 
-uint16_t compute_crc16(const uint8_t *buf, size_t len)
+uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len)
 {
 	return crc16_itu_t(0x1D0F, buf, len);
 }
 
-millis_t millis_now()
+int64_t osdp_millis_now()
 {
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
-	return (millis_t) ((tv.tv_sec) * 1000L + (tv.tv_usec) / 1000L);
+	return (int64_t) ((tv.tv_sec) * 1000L + (tv.tv_usec) / 1000L);
 }
 
-millis_t millis_since(millis_t last)
+int64_t osdp_millis_since(int64_t last)
 {
-	return millis_now() - last;
+	return osdp_millis_now() - last;
 }
 
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
@@ -209,8 +213,9 @@ void osdp_fill_random(uint8_t *buf, int len)
 
 void safe_free(void *p)
 {
-	if (p != NULL)
+	if (p != NULL) {
 		free(p);
+	}
 }
 
 struct osdp_slab *osdp_slab_init(int block_size, int num_blocks)
@@ -218,16 +223,16 @@ struct osdp_slab *osdp_slab_init(int block_size, int num_blocks)
 	struct osdp_slab *slab;
 
 	slab = calloc(1, sizeof(struct osdp_slab));
-	if (slab == NULL)
+	if (slab == NULL) {
 		goto cleanup;
-
+	}
 	slab->block_size = block_size + 2;
 	slab->num_blocks = num_blocks;
 	slab->free_blocks = num_blocks;
 	slab->blob = calloc(num_blocks, block_size + 2);
-	if (slab->blob == NULL)
+	if (slab->blob == NULL) {
 		goto cleanup;
-
+	}
 	return slab;
 
 cleanup:
@@ -253,8 +258,9 @@ void *osdp_slab_alloc(struct osdp_slab *s)
 		if (*p == 0)
 			break;
 	}
-	if (p == NULL || i == s->num_blocks)
+	if (p == NULL || i == s->num_blocks) {
 		return NULL;
+	}
 	*p = 1; // Mark as allocated.
 	*(p + s->block_size - 1) = 0x55;  // cookie.
 	s->free_blocks -= 1;
@@ -292,12 +298,13 @@ const char *osdp_get_version()
 
 const char *osdp_get_source_info()
 {
-	if (strlen(GIT_TAG) > 0)
+	if (strlen(GIT_TAG) > 0) {
 		return GIT_BRANCH " (" GIT_TAG ")";
-	else if (strlen(GIT_REV) > 0)
+	} else if (strlen(GIT_REV) > 0) {
 		return GIT_BRANCH " (" GIT_REV GIT_DIFF ")";
-	else
+	} else {
 		return GIT_BRANCH;
+	}
 }
 
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
@@ -311,7 +318,7 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
 		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
 			pd = TO_PD(ctx, i);
-			if (pd->state == CP_STATE_ONLINE &&
+			if (pd->cp_state == OSDP_CP_STATE_ONLINE &&
 			    ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 				mask |= 1 << i;
 			}
@@ -337,7 +344,7 @@ uint32_t osdp_get_status_mask(osdp_t *ctx)
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
 		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
 			pd = TO_PD(ctx, i);
-			if (pd->state == CP_STATE_ONLINE) {
+			if (pd->cp_state == OSDP_CP_STATE_ONLINE) {
 				mask |= 1 << i;
 			}
 		}

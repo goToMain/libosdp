@@ -11,7 +11,48 @@
 
 #define TAG "PD: "
 
-void pd_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
+#define CMD_POLL_DATA_LEN              0
+#define CMD_LSTAT_DATA_LEN             0
+#define CMD_ISTAT_DATA_LEN             0
+#define CMD_OSTAT_DATA_LEN             0
+#define CMD_RSTAT_DATA_LEN             0
+#define CMD_ID_DATA_LEN                1
+#define CMD_CAP_DATA_LEN               1
+#define CMD_OUT_DATA_LEN               4
+#define CMD_LED_DATA_LEN               14
+#define CMD_BUZ_DATA_LEN               5
+#define CMD_TEXT_DATA_LEN              6   /* variable length command */
+#define CMD_COMSET_DATA_LEN            5
+#define CMD_KEYSET_DATA_LEN            18
+#define CMD_CHLNG_DATA_LEN             8
+#define CMD_SCRYPT_DATA_LEN            16
+
+#define REPLY_ACK_LEN                  1
+#define REPLY_PDID_LEN                 13
+#define REPLY_PDCAP_LEN                1   /* variable length command */
+#define REPLY_PDCAP_ENTITY_LEN         3
+#define REPLY_LSTATR_LEN               3
+#define REPLY_RSTATR_LEN               2
+#define REPLY_COM_LEN                  6
+#define REPLY_NAK_LEN                  2
+#define REPLY_CCRYPT_LEN               33
+#define REPLY_RMAC_I_LEN               17
+
+/* Implicit cababilities */
+static struct pd_cap libosdp_pd_capabilities[] = {
+	{
+		CAP_CHECK_CHARACTER_SUPPORT,
+		1, /* The PD supports the 16-bit CRC-16 mode */
+		0, /* N/A */
+	},
+	{
+		CAP_COMMUNICATION_SECURITY,
+		1, /* (Bit-0) AES128 support */
+		1, /* (Bit-0) default AES128 key */
+	},
+};
+
+static void pd_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
 	struct osdp_cmd_queue *q = &pd->queue;
 
@@ -25,51 +66,79 @@ void pd_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	}
 }
 
-void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
-		       uint8_t *buf, int len)
+static struct osdp_cmd *pd_get_last_command(struct osdp_pd *pd)
+{
+	struct osdp_cmd_queue *q = &pd->queue;
+
+	return q->back;
+}
+
+static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = -1, pos = 0;
 	struct osdp_cmd *cmd;
 
-	reply->id = 0;
+	pd->reply_id = 0;
 	pd->cmd_id = buf[pos++];
 	len--;
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
-		reply->id = REPLY_ACK;
+		if (len != CMD_POLL_DATA_LEN) {
+			break;
+		}
+		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
 	case CMD_LSTAT:
-		reply->id = REPLY_LSTATR;
+		if (len != CMD_LSTAT_DATA_LEN) {
+			break;
+		}
+		pd->reply_id = REPLY_LSTATR;
 		ret = 0;
 		break;
 	case CMD_ISTAT:
-		reply->id = REPLY_ISTATR;
+		if (len != CMD_ISTAT_DATA_LEN) {
+			break;
+		}
+		pd->reply_id = REPLY_ISTATR;
 		ret = 0;
 		break;
 	case CMD_OSTAT:
-		reply->id = REPLY_OSTATR;
+		if (len != CMD_OSTAT_DATA_LEN) {
+			break;
+		}
+		pd->reply_id = REPLY_OSTATR;
 		ret = 0;
 		break;
 	case CMD_RSTAT:
-		reply->id = REPLY_RSTATR;
+		if (len != CMD_RSTAT_DATA_LEN) {
+			break;
+		}
+		pd->reply_id = REPLY_RSTATR;
 		ret = 0;
 		break;
 	case CMD_ID:
+		if (len != CMD_ID_DATA_LEN) {
+			break;
+		}
 		pos++;		/* Skip reply type info. */
-		reply->id = REPLY_PDID;
+		pd->reply_id = REPLY_PDID;
 		ret = 0;
 		break;
 	case CMD_CAP:
+		if (len != CMD_CAP_DATA_LEN) {
+			break;
+		}
 		pos++;		/* Skip reply type info. */
-		reply->id = REPLY_PDCAP;
+		pd->reply_id = REPLY_PDCAP;
 		ret = 0;
 		break;
 	case CMD_OUT:
-		if (len != 4)
+		if (len != CMD_OUT_DATA_LEN) {
 			break;
-		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
+		}
+		cmd = osdp_slab_alloc(pd->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -80,13 +149,14 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		cmd->output.tmr_count    = buf[pos++];
 		cmd->output.tmr_count   |= buf[pos++] << 8;
 		pd_enqueue_command(pd, cmd);
-		reply->id = REPLY_OSTATR;
+		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
 	case CMD_LED:
-		if (len != 14)
+		if (len != CMD_LED_DATA_LEN) {
 			break;
-		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
+		}
+		cmd = osdp_slab_alloc(pd->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -109,13 +179,14 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		cmd->led.permanent.on_color     = buf[pos++];
 		cmd->led.permanent.off_color    = buf[pos++];
 		pd_enqueue_command(pd, cmd);
-		reply->id = REPLY_ACK;
+		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
 	case CMD_BUZ:
-		if (len != 5)
+		if (len != CMD_BUZ_DATA_LEN) {
 			break;
-		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
+		}
+		cmd = osdp_slab_alloc(pd->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -127,13 +198,14 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		cmd->buzzer.off_count = buf[pos++];
 		cmd->buzzer.rep_count = buf[pos++];
 		pd_enqueue_command(pd, cmd);
-		reply->id = REPLY_ACK;
+		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
 	case CMD_TEXT:
-		if (len < 7)
+		if (len < CMD_TEXT_DATA_LEN) {
 			break;
-		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
+		}
+		cmd = osdp_slab_alloc(pd->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -145,18 +217,24 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		cmd->text.offset_row = buf[pos++];
 		cmd->text.offset_col = buf[pos++];
 		cmd->text.length     = buf[pos++];
-		if (cmd->text.length > 32)
+		if (cmd->text.length > OSDP_CMD_TEXT_MAX_LEN ||
+		    ((len - CMD_TEXT_DATA_LEN) < cmd->text.length) ||
+		    cmd->text.length > OSDP_CMD_TEXT_MAX_LEN) {
+			osdp_slab_free(pd->cmd_slab, cmd);
 			break;
-		for (i = 0; i < cmd->text.length; i++)
+		}
+		for (i = 0; i < cmd->text.length; i++) {
 			cmd->text.data[i] = buf[pos++];
+		}
 		pd_enqueue_command(pd, cmd);
-		reply->id = REPLY_ACK;
+		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
 	case CMD_COMSET:
-		if (len != 5)
+		if (len != CMD_COMSET_DATA_LEN) {
 			break;
-		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
+		}
+		cmd = osdp_slab_alloc(pd->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -167,12 +245,17 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		cmd->comset.baud |= buf[pos++] << 8;
 		cmd->comset.baud |= buf[pos++] << 16;
 		cmd->comset.baud |= buf[pos++] << 24;
+		if (cmd->comset.addr >= 0x7F || (cmd->comset.baud != 9600 &&
+		    cmd->comset.baud != 38400 && cmd->comset.baud != 115200)) {
+			LOG_ERR("COMSET Failed! command discarded.");
+			cmd->comset.addr = pd->address;
+			cmd->comset.baud = pd->baud_rate;
+		}
 		pd_enqueue_command(pd, cmd);
-		reply->id = REPLY_COM;
+		pd->reply_id = REPLY_COM;
 		ret = 0;
-		break;
 	case CMD_KEYSET:
-		if (len != 18) {
+		if (len != CMD_KEYSET_DATA_LEN) {
 			LOG_ERR(TAG "CMD_KEYSET length mismatch! %d/18", len);
 			break;
 		}
@@ -181,8 +264,8 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		 * ONLINE and SC_ACTIVE.
 		 */
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) == 0) {
-			reply->id = REPLY_NAK;
-			reply->cmd_bytes[0] = OSDP_PD_NAK_SC_COND;
+			pd->reply_id = REPLY_NAK;
+			pd->cmd_data[0] = OSDP_PD_NAK_SC_COND;
 			LOG_ERR(TAG "Keyset with SC inactive");
 			break;
 		}
@@ -192,7 +275,7 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 			      buf[pos], buf[pos + 1]);
 			break;
 		}
-		cmd = osdp_slab_alloc(TO_CTX(pd)->cmd_slab);
+		cmd = osdp_slab_alloc(pd->cmd_slab);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -205,16 +288,16 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		pd_enqueue_command(pd, cmd);
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
-		reply->id = REPLY_ACK;
+		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
 	case CMD_CHLNG:
 		if (pd->cap[CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
-			reply->id = REPLY_NAK;
-			reply->cmd_bytes[0] = OSDP_PD_NAK_SC_UNSUP;
+			pd->reply_id = REPLY_NAK;
+			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
 			break;
 		}
-		if (len != 8) {
+		if (len != CMD_CHLNG_DATA_LEN) {
 			LOG_ERR(TAG "CMD_CHLNG length mismatch! %d/8", len);
 			break;
 		}
@@ -222,29 +305,33 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
 		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 		for (i = 0; i < 8; i++)
 			pd->sc.cp_random[i] = buf[pos++];
-		reply->id = REPLY_CCRYPT;
+		pd->reply_id = REPLY_CCRYPT;
 		ret = 0;
 		break;
 	case CMD_SCRYPT:
-		if (len != 16) {
+		if (len != CMD_SCRYPT_DATA_LEN) {
 			LOG_ERR(TAG "CMD_SCRYPT length mismatch! %d/16", len);
 			break;
 		}
 		for (i = 0; i < 16; i++)
 			pd->sc.cp_cryptogram[i] = buf[pos++];
-		reply->id = REPLY_RMAC_I;
+		pd->reply_id = REPLY_RMAC_I;
 		ret = 0;
 		break;
 	default:
+		pd->reply_id = REPLY_NAK;
+		pd->cmd_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
+		ret = 0;
 		break;
 	}
 
-	if (ret != 0 && reply->id == 0) {
-		reply->id = REPLY_NAK;
-		reply->cmd_bytes[0] = OSDP_PD_NAK_RECORD;
+	if (ret != 0) {
+		LOG_ERR(TAG "Invalid command structure. CMD: %02x, Len: %d",
+			pd->cmd_id, len);
+		pd->reply_id = REPLY_NAK;
+		pd->cmd_data[0] = OSDP_PD_NAK_CMD_LEN;
 	}
 
-	pd->reply_id = reply->id;
 	if (pd->cmd_id != CMD_POLL) {
 		LOG_DBG(TAG "IN(CMD): 0x%02x[%d] -- OUT(REPLY): 0x%02x",
 		      pd->cmd_id, len, pd->reply_id);
@@ -256,31 +343,38 @@ void pd_decode_command(struct osdp_pd *pd, struct osdp_cmd *reply,
  * +ve: length of command
  * -ve: error
  */
-int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
-		   uint8_t *buf, int max_len)
+static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	uint8_t *smb;
-	int i, data_off, len = 0;
+	int i, data_off, len = 0, ret = -1;
+	struct osdp_cmd *cmd;
 
-	data_off = phy_packet_get_data_offset(pd, buf);
-	smb = phy_packet_get_smb(pd, buf);
+	data_off = osdp_phy_packet_get_data_offset(pd, buf);
+	smb = osdp_phy_packet_get_smb(pd, buf);
 
 	buf += data_off;
-	max_len -= (data_off + 1); /* +1 for reply->id */
-	if (max_len < 0) {
+	max_len -= data_off;
+	if (max_len <= 0) {
 		LOG_ERR(TAG "Out of buffer space!");
 		return -1;
 	}
-	buf[len++] = reply->id;
 
-	switch (reply->id) {
+	switch (pd->reply_id) {
 	case REPLY_ACK:
+		if (max_len < REPLY_ACK_LEN) {
+			LOG_ERR(TAG "Out of buffer space!");
+			break;
+		}
+		buf[len++] = pd->reply_id;
+		ret = 0;
 		break;
 	case REPLY_PDID:
-		if (max_len < 12) {
+		if (max_len < REPLY_PDID_LEN) {
 			LOG_ERR(TAG "Out of buffer space!");
-			return -1;
+			break;
 		}
+		buf[len++] = pd->reply_id;
+
 		buf[len++] = BYTE_0(pd->id.vendor_code);
 		buf[len++] = BYTE_1(pd->id.vendor_code);
 		buf[len++] = BYTE_2(pd->id.vendor_code);
@@ -296,106 +390,157 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
 		buf[len++] = BYTE_3(pd->id.firmware_version);
 		buf[len++] = BYTE_2(pd->id.firmware_version);
 		buf[len++] = BYTE_1(pd->id.firmware_version);
+		ret = 0;
 		break;
 	case REPLY_PDCAP:
+		if (max_len < REPLY_PDCAP_LEN) {
+			LOG_ERR(TAG "Out of buffer space!");
+			break;
+		}
+		buf[len++] = pd->reply_id;
 		for (i = 0; i < CAP_SENTINEL; i++) {
-			if (pd->cap[i].function_code != i)
+			if (pd->cap[i].function_code != i) {
 				continue;
-			if (max_len < 3) {
+			}
+			if (max_len < REPLY_PDCAP_ENTITY_LEN) {
 				LOG_ERR(TAG "Out of buffer space!");
-				return -1;
+				break;
 			}
 			buf[len++] = i;
 			buf[len++] = pd->cap[i].compliance_level;
 			buf[len++] = pd->cap[i].num_items;
-			max_len -= 3;
+			max_len -= REPLY_PDCAP_ENTITY_LEN;
 		}
+		ret = 0;
 		break;
 	case REPLY_LSTATR:
-		if (max_len < 2) {
+		if (max_len < REPLY_LSTATR_LEN) {
 			LOG_ERR(TAG "Out of buffer space!");
-			return -1;
+			break;
 		}
+		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_TAMPER);
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_POWER);
+		ret = 0;
 		break;
 	case REPLY_RSTATR:
-		if (max_len < 1) {
+		if (max_len < REPLY_RSTATR_LEN) {
 			LOG_ERR(TAG "Out of buffer space!");
-			return -1;
+			break;
 		}
+		buf[len++] = pd->reply_id;
 		buf[len++] = ISSET_FLAG(pd, PD_FLAG_R_TAMPER);
+		ret = 0;
 		break;
 	case REPLY_COM:
-		if (max_len < 5) {
+		if (max_len < REPLY_COM_LEN) {
 			LOG_ERR(TAG "Out of buffer space!");
-			return -1;
+			break;
 		}
-		buf[len++] = pd->address;
-		buf[len++] = BYTE_0(pd->baud_rate);
-		buf[len++] = BYTE_1(pd->baud_rate);
-		buf[len++] = BYTE_2(pd->baud_rate);
-		buf[len++] = BYTE_3(pd->baud_rate);
+		/**
+		 * If COMSET succeeds, the PD must reply with the old params and
+		 * then switch to the new params from then then on. We have the
+		 * new params in the commands struct that we just enqueued so
+		 * we can peek at tail of command queue and set that to
+		 * pd->addr/pd->baud_rate.
+		 *
+		 * TODO: Persist pd->address and pd->baud_rate via
+		 * subsys/settings
+		 */
+		cmd = pd_get_last_command(pd);
+		if (cmd == NULL || cmd->id != OSDP_CMD_COMSET) {
+			LOG_ERR(TAG "Failed to fetch queue tail for COMSET");
+			break;
+		}
+
+		buf[len++] = pd->reply_id;
+		buf[len++] = cmd->comset.addr;
+		buf[len++] = BYTE_0(cmd->comset.baud);
+		buf[len++] = BYTE_1(cmd->comset.baud);
+		buf[len++] = BYTE_2(cmd->comset.baud);
+		buf[len++] = BYTE_3(cmd->comset.baud);
+
+		pd->address = (int)cmd->comset.addr;
+		pd->baud_rate = (int)cmd->comset.baud;
+		LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
+			pd->address, pd->baud_rate);
+		ret = 0;
 		break;
 	case REPLY_NAK:
-		if (max_len < 1) {
-			LOG_ERR(TAG "Out of buffer space!");
+		if (max_len < REPLY_NAK_LEN) {
+			LOG_ERR(TAG "Fatal: insufficent space for sending NAK");
 			return -1;
 		}
-		buf[len++] = reply->cmd_bytes[0];
+		buf[len++] = pd->reply_id;
+		buf[len++] = pd->cmd_data[0];
+		ret = 0;
 		break;
 	case REPLY_CCRYPT:
 		if (smb == NULL)
 			break;
-		if (max_len < 32) {
+		if (max_len < REPLY_CCRYPT_LEN) {
 			LOG_ERR(TAG "Out of buffer space!");
 			return -1;
 		}
 		osdp_fill_random(pd->sc.pd_random, 8);
 		osdp_compute_session_keys(TO_CTX(pd));
 		osdp_compute_pd_cryptogram(pd);
-		for (i = 0; i < 8; i++)
+		buf[len++] = pd->reply_id;
+		for (i = 0; i < 8; i++) {
 			buf[len++] = pd->sc.pd_client_uid[i];
-		for (i = 0; i < 8; i++)
+		}
+		for (i = 0; i < 8; i++) {
 			buf[len++] = pd->sc.pd_random[i];
-		for (i = 0; i < 16; i++)
+		}
+		for (i = 0; i < 16; i++) {
 			buf[len++] = pd->sc.pd_cryptogram[i];
-		smb[0] = 3;
-		smb[1] = SCS_12;
+		}
+		smb[0] = 3;      /* length */
+		smb[1] = SCS_12; /* type */
 		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		ret = 0;
 		break;
 	case REPLY_RMAC_I:
 		if (smb == NULL)
 			break;
-		if (max_len < 16) {
+		if (max_len < REPLY_RMAC_I_LEN) {
 			LOG_ERR(TAG "Out of buffer space!");
 			return -1;
 		}
 		osdp_compute_rmac_i(pd);
-		for (i = 0; i < 16; i++)
+		buf[len++] = pd->reply_id;
+		for (i = 0; i < 16; i++) {
 			buf[len++] = pd->sc.r_mac[i];
-		smb[0] = 3;
-		smb[1] = SCS_14;
-		if (osdp_verify_cp_cryptogram(pd) == 0)
-			smb[2] = 0x01;
-		else
-			smb[2] = 0x00;
+		}
+		smb[0] = 3;       /* length */
+		smb[1] = SCS_14;  /* type */
+		smb[2] = osdp_verify_cp_cryptogram(pd) == 0;
 		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD))
+		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_WRN(TAG "SC Active with SCBK-D");
-		else
+		} else {
 			LOG_INF(TAG "SC Active");
+		}
+		ret = 0;
 		break;
 	}
 
 	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-		smb[0] = 2;
+		smb[0] = 2; /* length */
 		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
 
-	if (len == 0) {
-		buf[len++] = REPLY_NAK;
-		buf[len++] = OSDP_PD_NAK_SC_UNSUP;
+	if (ret != 0) {
+		/* catch all errors and report it as a RECORD error to CP */
+		LOG_ERR(TAG "ReplyID unknown or insufficent space or some other"
+			"error. Sending NAK");
+		if (max_len < REPLY_NAK_LEN) {
+			LOG_ERR(TAG "Fatal: insufficent space for sending NAK");
+			return -1;
+		}
+		buf[0] = REPLY_NAK;
+		buf[1] = OSDP_PD_NAK_RECORD;
+		len = 2;
 	}
 
 	return len;
@@ -407,30 +552,26 @@ int pd_build_reply(struct osdp_pd *pd, struct osdp_cmd *reply,
  *   0 - success
  *  -1 - failure
  */
-int pd_send_reply(struct osdp_pd *pd, struct osdp_cmd *reply)
+static int pd_send_reply(struct osdp_pd *pd)
 {
 	int ret, len;
 
 	/* init packet buf with header */
-	len = phy_build_packet_head(pd, reply->id, pd->rx_buf,
-				    sizeof(pd->rx_buf));
+	len = osdp_phy_packet_init(pd, pd->rx_buf, sizeof(pd->rx_buf));
 	if (len < 0) {
-		LOG_ERR(TAG "Failed to build head; ID: %02X", reply->id);
 		return -1;
 	}
 
 	/* fill reply data */
-	ret = pd_build_reply(pd, reply, pd->rx_buf, sizeof(pd->rx_buf));
+	ret = pd_build_reply(pd, pd->rx_buf, sizeof(pd->rx_buf));
 	if (ret <= 0) {
-		LOG_ERR(TAG "Failed build reply; ID: %02X", reply->id);
 		return -1;
 	}
 	len += ret;
 
 	/* finalize packet */
-	len = phy_build_packet_tail(pd,  pd->rx_buf, len, sizeof(pd->rx_buf));
+	len = osdp_phy_packet_finalize(pd, pd->rx_buf, len, sizeof(pd->rx_buf));
 	if (len < 0) {
-		LOG_ERR(TAG "Failed to finalize reply; ID: %02X", reply->id);
 		return -1;
 	}
 
@@ -449,118 +590,130 @@ int pd_send_reply(struct osdp_pd *pd, struct osdp_cmd *reply)
  * pd_receve_packet - received buffer from serial stream handling partials
  * Returns:
  *  0: success
- * -1: error
  *  1: no data yet
+ * -1: fatal errors
+ * -2: phy layer errors that need to reply with NAK
  */
-int pd_receve_packet(struct osdp_pd *pd)
+static int pd_receve_packet(struct osdp_pd *pd)
 {
 	uint8_t *buf;
-	int ret, new_packet, max_len;
+	int rec_bytes, ret, was_empty, max_len;
 
-	new_packet = pd->rx_buf_len == 0;
+	was_empty = pd->rx_buf_len == 0;
 	buf = pd->rx_buf + pd->rx_buf_len;
 	max_len = sizeof(pd->rx_buf) - pd->rx_buf_len;
 
-	ret = pd->channel.recv(pd->channel.data, buf, max_len);
-	if (ret <= 0)
+	rec_bytes = pd->channel.recv(pd->channel.data, buf, max_len);
+	if (rec_bytes <= 0) {
 		return 1;
-	if (new_packet && ret > 0)
-		pd->tstamp = millis_now();
-	pd->rx_buf_len += ret;
+	}
+	if (was_empty && rec_bytes > 0) {
+		/* Start of message */
+		pd->tstamp = osdp_millis_now();
+	}
+	pd->rx_buf_len += rec_bytes;
 
 #ifdef CONFIG_OSDP_PACKET_TRACE
-	if (pd->rx_buf[6] != CMD_POLL && pd->rx_buf[8] != CMD_POLL) {
+	/**
+	 * A crude way of identifying and not printing poll messages
+	 * when CONFIG_OSDP_PACKET_TRACE is enabled. This is an early
+	 * print to catch errors so keeping it simple.
+	 */
+	if (pd->rx_buf_len > 8 &&
+		pd->rx_buf[6] != CMD_POLL && pd->rx_buf[8] != CMD_POLL) {
 		osdp_dump("PD received", pd->rx_buf, pd->rx_buf_len);
 	}
 #endif
 
-	ret = phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len);
-	if (ret < 0) {
-		switch (ret) {
-		case -1: /* fatal error */
-			LOG_ERR(TAG "failed to decode packet");
-			pd->rx_buf_len = 0;
-			if (pd->channel.flush)
-				pd->channel.flush(pd->channel.data);
-			ret = -1;
-			break;
-		case -2: /* rx_buf_len != pkt->len; wait for more data */
-			ret = 1;
-			break;
-		case -3: /* soft fail - discard this message */
-		case -4: /* malformed OSDP packet - reset rx_buf_len */
-			pd->rx_buf_len = 0;
-			if (pd->channel.flush)
-				pd->channel.flush(pd->channel.data);
-			ret = 1;
-			break;
-		default:
-			ret = -1;
+	pd->reply_id = 0;    /* reset past reply ID so phy can send NAK */
+	pd->cmd_data[0] = 0; /* reset past NAK reason */
+	ret = osdp_phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len);
+	if (ret == OSDP_ERR_PKT_FMT) {
+		if (pd->reply_id != 0) {
+			return -2; /* Send a NAK */
 		}
-		return ret;
+		return -1; /* fatal errors */
+	} else if (ret == OSDP_ERR_PKT_WAIT) {
+		/* rx_buf_len != pkt->len; wait for more data */
+		return 1;
+	} else if (ret == OSDP_ERR_PKT_SKIP) {
+		/* soft fail - discard this message */
+		pd->rx_buf_len = 0;
+		if (pd->channel.flush) {
+			pd->channel.flush(pd->channel.data);
+		}
+		return 1;
 	}
 	pd->rx_buf_len = ret;
 	return 0;
 }
 
-void pd_state_update(struct osdp_pd *pd)
+void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
-	struct osdp_cmd reply;
 
-	switch (pd->state) {
-	case PD_STATE_IDLE:
+	switch (pd->pd_state) {
+	case OSDP_PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
-		if (ret < 0 || (pd->rx_buf_len > 0 &&
-		    millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
+		if (ret == 1) {
+			break;
+		}
+		if (ret == -1 || (pd->rx_buf_len > 0 &&
+		    osdp_millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
 			/**
 			 * When we receive a command from PD after a timeout,
 			 * any established secure channel must be discarded.
 			 */
-			pd->state = PD_STATE_ERR;
+			LOG_ERR(TAG "receive errors/timeout");
+			pd->pd_state = OSDP_PD_STATE_ERR;
 			break;
 		}
-		if (ret == 1)
-			break;
-		pd_decode_command(pd, &reply, pd->rx_buf, pd->rx_buf_len);
-		pd->state = PD_STATE_SEND_REPLY;
+		if (ret == 0) {
+			pd_decode_command(pd, pd->rx_buf, pd->rx_buf_len);
+		}
+		pd->pd_state = OSDP_PD_STATE_SEND_REPLY;
 		/* FALLTHRU */
-	case PD_STATE_SEND_REPLY:
-		if (pd_send_reply(pd, &reply) == -1) {
-			pd->state = PD_STATE_ERR;
+	case OSDP_PD_STATE_SEND_REPLY:
+		if (pd_send_reply(pd) == -1) {
+			pd->pd_state = OSDP_PD_STATE_ERR;
 			break;
 		}
 		pd->rx_buf_len = 0;
-		pd->state = PD_STATE_IDLE;
+		pd->pd_state = OSDP_PD_STATE_IDLE;
 		break;
-	case PD_STATE_ERR:
+	case OSDP_PD_STATE_ERR:
 		/**
 		 * PD error state is momentary as it doesn't maintain any state
 		 * between commands. We just clean up secure channel status and
-		 * go back to idle state with a call to phy_state_reset().
+		 * go back to idle state.
 		 */
 		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 		pd->rx_buf_len = 0;
-		pd->state = PD_STATE_IDLE;
+		if (pd->channel.flush) {
+			pd->channel.flush(pd->channel.data);
+		}
+		pd->pd_state = OSDP_PD_STATE_IDLE;
 		break;
 	}
 }
 
-void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
-			    struct pd_id *id)
+static void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
+				   struct pd_id *id)
 {
 	int fc;
 
 	while (cap && ((fc = cap->function_code) > 0)) {
-		if (fc >= CAP_SENTINEL)
+		if (fc >= CAP_SENTINEL) {
 			break;
+		}
 		pd->cap[fc].function_code = cap->function_code;
 		pd->cap[fc].compliance_level = cap->compliance_level;
 		pd->cap[fc].num_items = cap->num_items;
 		cap++;
 	}
-
-	memcpy(&pd->id, id, sizeof(struct pd_id));
+	if (id != NULL) {
+		memcpy(&pd->id, id, sizeof(struct pd_id));
+	}
 }
 
 /* --- Exported Methods --- */
@@ -579,13 +732,6 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 		goto error;
 	}
 	ctx->magic = 0xDEADBEAF;
-
-	ctx->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
-				      OSDP_CP_CMD_POOL_SIZE);
-	if (ctx->cmd_slab == NULL) {
-		LOG_ERR(TAG "failed to alloc struct osdp_cp_cmd_slab");
-		goto error;
-	}
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
@@ -610,6 +756,12 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	pd->address = info->address;
 	pd->flags = info->flags;
 	pd->seq_number = -1;
+	pd->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
+				      OSDP_CP_CMD_POOL_SIZE);
+	if (pd->cmd_slab == NULL) {
+		LOG_ERR(TAG "failed to alloc struct osdp_cp_cmd_slab");
+		goto error;
+	}
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 
 	if (scbk == NULL) {
@@ -621,8 +773,10 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	}
 
 	osdp_pd_set_attributes(pd, info->cap, &info->id);
+	osdp_pd_set_attributes(pd, libosdp_pd_capabilities, NULL);
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
+	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 
 	LOG_INF(TAG "setup complete");
 	return (osdp_t *) ctx;
@@ -635,6 +789,7 @@ error:
 void osdp_pd_teardown(osdp_t *ctx)
 {
 	if (ctx != NULL) {
+		osdp_slab_del(TO_PD(ctx, 0)->cmd_slab);
 		safe_free(TO_PD(ctx, 0));
 		safe_free(TO_CP(ctx));
 		safe_free(ctx);
@@ -646,7 +801,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 	assert(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	pd_state_update(pd);
+	osdp_pd_update(pd);
 }
 
 int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
@@ -661,6 +816,6 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 
 	memcpy(cmd, f, sizeof(struct osdp_cmd));
 	pd->queue.front = pd->queue.front->__next;
-	osdp_slab_free(TO_OSDP(ctx)->cmd_slab, f);
+	osdp_slab_free(pd->cmd_slab, f);
 	return 0;
 }

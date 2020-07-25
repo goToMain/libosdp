@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #include <osdp.h>
 #include "osdp_config.h"
@@ -17,8 +18,6 @@
 #define NULL                           ((void *)0)
 #endif
 
-#define TRUE                           (1)
-#define FALSE                          (0)
 #define ARG_UNUSED(x)                  (void)(x)
 
 #define ISSET_FLAG(p, f)               (((p)->flags & (f)) == (f))
@@ -46,6 +45,7 @@
 	(uint32_t)((1 << (TO_CP(ctx)->num_pd + 1)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
+#define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
 
 /**
  * @brief OSDP reserved commands
@@ -142,7 +142,7 @@
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
-#define LOG_ALRT(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
+#define LOG_ALERT(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
 #define LOG_CRIT(...)	(osdp_log(LOG_CRIT, __VA_ARGS__))
 #define LOG_ERR(...)	(osdp_log(LOG_ERR, __VA_ARGS__))
 #define LOG_INF(...)	(osdp_log(LOG_INFO, __VA_ARGS__))
@@ -150,7 +150,86 @@
 #define LOG_NOT(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
 #define LOG_DBG(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
 
-typedef uint64_t millis_t;
+enum osdp_pd_nak_code_e {
+	/**
+	 * @brief Dummy
+	 */
+	OSDP_PD_NAK_NONE,
+	/**
+	 * @brief Message check character(s) error (bad cksum/crc)
+	 */
+	OSDP_PD_NAK_MSG_CHK,
+	/**
+	 * @brief Command length error
+	 */
+	OSDP_PD_NAK_CMD_LEN,
+	/**
+	 * @brief Unknown Command Code – Command not implemented by PD
+	 */
+	OSDP_PD_NAK_CMD_UNKNOWN,
+	/**
+	 * @brief Unexpected sequence number detected in the header
+	 */
+	OSDP_PD_NAK_SEQ_NUM,
+	/**
+	 * @brief Unexpected sequence number detected in the header
+	 */
+	OSDP_PD_NAK_SC_UNSUP,
+	/**
+	 * @brief unsupported security block or security conditions not met
+	 */
+	OSDP_PD_NAK_SC_COND,
+	/**
+	 * @brief BIO_TYPE not supported
+	 */
+	OSDP_PD_NAK_BIO_TYPE,
+	/**
+	 * @brief BIO_FORMAT not supported
+	 */
+	OSDP_PD_NAK_BIO_FMT,
+	/**
+	 * @brief Unable to process command record
+	 */
+	OSDP_PD_NAK_RECORD,
+	/**
+	 * @brief Dummy
+	 */
+	OSDP_PD_NAK_SENTINEL
+};
+
+enum osdp_pd_state_e {
+	OSDP_PD_STATE_IDLE,
+	OSDP_PD_STATE_SEND_REPLY,
+	OSDP_PD_STATE_ERR,
+};
+
+enum osdp_cp_phy_state_e {
+	OSDP_CP_PHY_STATE_IDLE,
+	OSDP_CP_PHY_STATE_SEND_CMD,
+	OSDP_CP_PHY_STATE_REPLY_WAIT,
+	OSDP_CP_PHY_STATE_WAIT,
+	OSDP_CP_PHY_STATE_ERR,
+	OSDP_CP_PHY_STATE_ERR_WAIT,
+	OSDP_CP_PHY_STATE_CLEANUP,
+};
+
+enum osdp_cp_state_e {
+	OSDP_CP_STATE_INIT,
+	OSDP_CP_STATE_IDREQ,
+	OSDP_CP_STATE_CAPDET,
+	OSDP_CP_STATE_SC_INIT,
+	OSDP_CP_STATE_SC_CHLNG,
+	OSDP_CP_STATE_SC_SCRYPT,
+	OSDP_CP_STATE_SET_SCBK,
+	OSDP_CP_STATE_ONLINE,
+	OSDP_CP_STATE_OFFLINE
+};
+
+enum osdp_pkt_errors_e {
+	OSDP_ERR_PKT_FMT   = -1,
+	OSDP_ERR_PKT_WAIT  = -2,
+	OSDP_ERR_PKT_SKIP  = -3
+};
 
 struct osdp_slab {
 	int block_size;
@@ -196,16 +275,21 @@ struct osdp_pd {
 	struct pd_id id;
 
 	/* PD state management */
-	int state;
-	millis_t tstamp;
-	millis_t sc_tstamp;
-	int phy_state;
+	enum osdp_pd_state_e pd_state;
+	enum osdp_cp_state_e cp_state;
+	enum osdp_cp_phy_state_e cp_phy_state;
+
+	int64_t tstamp;
+	int64_t sc_tstamp;
 	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
 	int rx_buf_len;
-	millis_t phy_tstamp;
+	int64_t phy_tstamp;
+
 	int cmd_id;
 	int reply_id;
+	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
 
+	struct osdp_slab *cmd_slab;
 	struct osdp_channel channel;
 	struct osdp_secure_channel sc;
 	struct osdp_cmd_queue queue;
@@ -228,7 +312,6 @@ struct osdp {
 	struct osdp_cp_notifiers notifier;
 
 	uint8_t sc_master_key[16];
-	struct osdp_slab *cmd_slab;
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
 };
@@ -245,48 +328,15 @@ enum log_levels_e {
 	LOG_MAX_LEVEL
 };
 
-enum pd_nak_code_e {
-	OSDP_PD_NAK_NONE,
-	OSDP_PD_NAK_MSG_CHK,
-	OSDP_PD_NAK_CMD_LEN,
-	OSDP_PD_NAK_CMD_UNKNOWN,
-	OSDP_PD_NAK_SEQ_NUM,
-	OSDP_PD_NAK_SC_UNSUP,
-	OSDP_PD_NAK_SC_COND,
-	OSDP_PD_NAK_BIO_TYPE,
-	OSDP_PD_NAK_BIO_FMT,
-	OSDP_PD_NAK_RECORD,
-	OSDP_PD_NAK_SENTINEL
-};
-
-enum cp_fsm_state_e {
-	CP_STATE_INIT,
-	CP_STATE_IDREQ,
-	CP_STATE_CAPDET,
-	CP_STATE_SC_INIT,
-	CP_STATE_SC_CHLNG,
-	CP_STATE_SC_SCRYPT,
-	CP_STATE_SET_SCBK,
-	CP_STATE_ONLINE,
-	CP_STATE_OFFLINE,
-	CP_STATE_SENTINEL
-};
-
-enum osdp_phy_state_e {
-	PD_STATE_IDLE,
-	PD_STATE_SEND_REPLY,
-	PD_STATE_ERR,
-	PD_STATE_SENTINEL
-};
-
 /* from osdp_phy.c */
-int phy_build_packet_head(struct osdp_pd *p, int id, uint8_t *buf, int maxlen);
-int phy_build_packet_tail(struct osdp_pd *p, uint8_t *buf, int len, int maxlen);
-int phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
-const char *get_nac_reason(int code);
-void phy_state_reset(struct osdp_pd *pd);
-int phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
-uint8_t *phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
+int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
+int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
+			       int len, int max_len);
+int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
+const char *osdp_get_nac_reason(int code);
+void osdp_phy_state_reset(struct osdp_pd *pd);
+int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
+uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 
 /* from osdp_sc.c */
 void osdp_compute_scbk(struct osdp_pd *p, uint8_t *scbk);
@@ -302,10 +352,10 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 void osdp_sc_init(struct osdp_pd *p);
 
 /* from osdp_common.c */
-millis_t millis_now(void);
-millis_t millis_since(millis_t last);
-uint16_t compute_crc16(const uint8_t *buf, size_t len);
-void osdp_dump(const char *head, const uint8_t *data, int len);
+int64_t osdp_millis_now(void);
+int64_t osdp_millis_since(int64_t last);
+void osdp_dump(const char *head, uint8_t *buf, int len);
+uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();

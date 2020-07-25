@@ -9,6 +9,8 @@
 
 #define TAG "SC: "
 
+#define OSDP_SC_EOM_MARKER             0x80  /* End of Message Marker */
+
 /* Default key as specified in OSDP specification */
 static const uint8_t osdp_scbk_default[16] = {
 	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
@@ -21,8 +23,9 @@ void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
 	struct osdp *ctx = TO_CTX(pd);
 
 	memcpy(scbk, pd->sc.pd_client_uid, 8);
-	for (i = 8; i < 16; i++)
+	for (i = 8; i < 16; i++) {
 		scbk[i] = ~scbk[i - 8];
+	}
 	osdp_encrypt(ctx->sc_master_key, NULL, scbk, 16);
 }
 
@@ -38,8 +41,9 @@ void osdp_compute_session_keys(struct osdp *ctx)
 		 * Compute SCBK only in CP mode. PD mode, expect to already have
 		 * the SCBK (sent from application layer).
 		 */
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0)
+		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0) {
 			osdp_compute_scbk(pd, pd->sc.scbk);
+		}
 	}
 
 	memset(pd->sc.s_enc, 0, 16);
@@ -76,17 +80,17 @@ void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
  *    0: if memory pointed to by s1 and and s2 are identical.
  *  +ve: if the they are different.
  */
-int ct_compare(const void *s1, const void *s2, size_t len)
+int osdp_ct_compare(const void *s1, const void *s2, size_t len)
 {
 	size_t i, ret = 0;
 	const uint8_t *_s1 = s1;
 	const uint8_t *_s2 = s2;
 
 	for (i = 0; i < len; i++) {
-		if (_s1[i] != _s2[i])
+		if (_s1[i] != _s2[i]) {
 			ret++;
+		}
 	}
-
 	return ret;
 }
 
@@ -99,9 +103,9 @@ int osdp_verify_cp_cryptogram(struct osdp_pd *pd)
 	memcpy(cp_crypto + 8, pd->sc.cp_random, 8);
 	osdp_encrypt(pd->sc.s_enc, NULL, cp_crypto, 16);
 
-	if (ct_compare(pd->sc.cp_cryptogram, cp_crypto, 16) != 0)
+	if (osdp_ct_compare(pd->sc.cp_cryptogram, cp_crypto, 16) != 0) {
 		return -1;
-
+	}
 	return 0;
 }
 
@@ -122,9 +126,9 @@ int osdp_verify_pd_cryptogram(struct osdp_pd *pd)
 	memcpy(pd_crypto + 8, pd->sc.pd_random, 8);
 	osdp_encrypt(pd->sc.s_enc, NULL, pd_crypto, 16);
 
-	if (ct_compare(pd->sc.pd_cryptogram, pd_crypto, 16) != 0)
+	if (osdp_ct_compare(pd->sc.pd_cryptogram, pd_crypto, 16) != 0) {
 		return -1;
-
+	}
 	return 0;
 }
 
@@ -147,18 +151,20 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	}
 
 	memcpy(iv, is_cmd ? pd->sc.r_mac : pd->sc.c_mac, 16);
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 16; i++) {
 		iv[i] = ~iv[i];
+	}
 
 	osdp_decrypt(pd->sc.s_enc, iv, data, length);
 
-	while (data[length - 1] == 0x00)
+	while (data[length - 1] == 0x00) {
 		length--;
-
-	if (data[length - 1] != 0x80)
+	}
+	if (data[length - 1] != OSDP_SC_EOM_MARKER) {
 		return -1;
-
+	}
 	data[length - 1] = 0;
+
 	return length - 1;
 }
 
@@ -167,14 +173,15 @@ int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	int i, pad_len;
 	uint8_t iv[16];
 
-	data[length] = 0x80;  /* append EOM marker */
+	data[length] = OSDP_SC_EOM_MARKER;  /* append EOM marker */
 	pad_len = AES_PAD_LEN(length + 1);
-	if ((pad_len - length - 1) > 0)
+	if ((pad_len - length - 1) > 0) {
 		memset(data + length + 1, 0, pad_len - length - 1);
-
+	}
 	memcpy(iv, is_cmd ? pd->sc.r_mac : pd->sc.c_mac, 16);
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 16; i++) {
 		iv[i] = ~iv[i];
+	}
 
 	osdp_encrypt(pd->sc.s_enc, iv, data, pad_len);
 
@@ -190,9 +197,9 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 
 	memcpy(buf, data, len);
 	pad_len = (len % 16 == 0) ? len : AES_PAD_LEN(len);
-	if (len % 16 != 0)
+	if (len % 16 != 0) {
 		buf[len] = 0x80; /* end marker */
-
+	}
 	/**
 	 * MAC for data blocks B[1] .. B[N] (post padding) is computed as:
 	 * IV1 = R_MAC (or) C_MAC  -- depending on is_cmd
@@ -207,6 +214,7 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		/* N-1 th block is the IV the N th block */
 		memcpy(iv, buf + pad_len - 32, 16);
 	}
+
 	/* N-th Block encrypted with SMAC-2 == MAC */
 	osdp_encrypt(pd->sc.s_mac2, iv, buf + pad_len - 16, 16);
 	memcpy(is_cmd ? pd->sc.c_mac : pd->sc.r_mac, buf + pad_len - 16, 16);
@@ -218,12 +226,13 @@ void osdp_sc_init(struct osdp_pd *pd)
 {
 	uint8_t key[16];
 
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE))
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
 		memcpy(key, pd->sc.scbk, 16);
+	}
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE))
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
 		memcpy(pd->sc.scbk, key, 16);
-
+	}
 	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
 		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);

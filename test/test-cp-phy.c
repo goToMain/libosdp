@@ -6,10 +6,6 @@
 
 #include "test.h"
 
-int phy_build_packet_head(struct osdp_pd *pd, int id, uint8_t *buf, int maxlen);
-int phy_build_packet_tail(struct osdp_pd *pd, uint8_t *buf, int len, int maxlen);
-int phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len);
-
 static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len, int maxlen)
 {
 	int cmd_len;
@@ -22,13 +18,13 @@ static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len, int ma
 	cmd_len = len;
 	memcpy(cmd_buf, buf, len);
 
-	if ((len = phy_build_packet_head(p, 0, buf, maxlen)) < 0) {
+	if ((len = osdp_phy_packet_init(p, buf, maxlen)) < 0) {
 		printf("failed to phy_build_packet_head\n");
 		return -1;
 	}
 	memcpy(buf + len, cmd_buf, cmd_len);
 	len += cmd_len;
-	if ((len = phy_build_packet_tail(p, buf, len, maxlen)) < 0) {
+	if ((len = osdp_phy_packet_finalize(p, buf, len, maxlen)) < 0) {
 		printf("failed to build command\n");
 		return -1;
 	}
@@ -82,8 +78,7 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 	uint8_t expected[] = { REPLY_ACK };
 
 	printf("Testing phy_decode_packet(REPLY_ACK) -- ");
-	if ((len = phy_decode_packet(p, packet, 9)) < 0) {
-		printf("error!\n");
+	if ((len = osdp_phy_decode_packet(p, packet, 9)) < 0) {
 		return -1;
 	}
 	CHECK_ARRAY(packet, len, expected);

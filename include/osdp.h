@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+#define OSDP_CMD_TEXT_MAX_LEN          32
+
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
  * when a PD must report a card read.
@@ -361,7 +363,7 @@ struct osdp_cmd_text {
 	uint8_t offset_row;
 	uint8_t offset_col;
 	uint8_t length;
-	uint8_t data[32];
+	uint8_t data[OSDP_CMD_TEXT_MAX_LEN];
 };
 
 /**
@@ -422,7 +424,6 @@ struct osdp_cmd {
 	void *__next;
 	int id;
 	union {
-		uint8_t cmd_bytes[32];
 		struct osdp_cmd_led    led;
 		struct osdp_cmd_buzzer buzzer;
 		struct osdp_cmd_text   text;

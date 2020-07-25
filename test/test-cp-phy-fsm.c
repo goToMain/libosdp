@@ -9,7 +9,7 @@
 
 int cp_phy_state_update(struct osdp_pd *pd);
 void cp_enqueue_command(struct osdp_pd *p, struct osdp_cmd *cmd);
-int cp_alloc_command(struct osdp *ctx, struct osdp_cmd **cmd);
+int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd);
 
 int phy_fsm_resp_offset = 0;
 
@@ -97,7 +97,7 @@ void test_cp_phy_fsm_teardown(struct test *t)
 
 void run_cp_phy_fsm_tests(struct test *t)
 {
-	int ret=-128, result = TRUE;
+	int ret=-128, result = true;
 	struct osdp_cmd *cmd_poll;
 	struct osdp_cmd *cmd_id;
 	struct osdp *ctx;
@@ -113,8 +113,8 @@ void run_cp_phy_fsm_tests(struct test *t)
 	ctx = t->mock_data;
 	p = GET_CURRENT_PD(ctx);
 
-	cp_alloc_command(ctx, &cmd_poll);
-	cp_alloc_command(ctx, &cmd_id);
+	cp_alloc_command(p, &cmd_poll);
+	cp_alloc_command(p, &cmd_id);
 
 	cmd_poll->id = CMD_POLL;
 	cmd_id->id = CMD_ID;
@@ -138,7 +138,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 		printf( "    -- error ID mismatch! 0x%04x 0x%02x"
 			"0x%02x 0x%04x 0x%04x\n", p->id.vendor_code, p->id.model,
 			p->id.version, p->id.serial_number, p->id.firmware_version);
-		result = FALSE;
+		result = false;
 	}
 
 	TEST_REPORT(t, result);

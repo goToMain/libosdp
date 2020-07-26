@@ -12,7 +12,8 @@
 #include <stdbool.h>
 
 #include <osdp.h>
-#include "osdp_config.h"
+#include "osdp_config.h"  /* generated */
+#include "osdp_export.h"  /* generated */
 
 #ifndef NULL
 #define NULL                           ((void *)0)

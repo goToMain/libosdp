@@ -77,31 +77,31 @@ int pd_cmd_keyset_handler(struct osdp_cmd_keyset *p)
 
 int pd_cmd_led_handler(struct osdp_cmd_led *p)
 {
-	osdp_dump("PD-CMD: LED\n", (uint8_t *)p, sizeof(struct osdp_cmd_led));
+	hexdump("PD-CMD: LED\n", (uint8_t *)p, sizeof(struct osdp_cmd_led));
 	return 0;
 }
 
 int pd_cmd_buzzer_handler(struct osdp_cmd_buzzer *p)
 {
-	osdp_dump("PD-CMD: Buzzer\n", (uint8_t *)p, sizeof(struct osdp_cmd_buzzer));
+	hexdump("PD-CMD: Buzzer\n", (uint8_t *)p, sizeof(struct osdp_cmd_buzzer));
 	return 0;
 }
 
 int pd_cmd_output_handler(struct osdp_cmd_output *p)
 {
-	osdp_dump("PD-CMD: Output\n", (uint8_t *)p, sizeof(struct osdp_cmd_output));
+	hexdump("PD-CMD: Output\n", (uint8_t *)p, sizeof(struct osdp_cmd_output));
 	return 0;
 }
 
 int pd_cmd_text_handler(struct osdp_cmd_text *p)
 {
-	osdp_dump("PD-CMD: Text\n", (uint8_t *)p, sizeof(struct osdp_cmd_text));
+	hexdump("PD-CMD: Text\n", (uint8_t *)p, sizeof(struct osdp_cmd_text));
 	return 0;
 }
 
 int pd_cmd_comset_handler(struct osdp_cmd_comset *p)
 {
-	osdp_dump("PD-CMD: ComSet\n", (uint8_t *)p, sizeof(struct osdp_cmd_comset));
+	hexdump("PD-CMD: ComSet\n", (uint8_t *)p, sizeof(struct osdp_cmd_comset));
 	return 0;
 }
 

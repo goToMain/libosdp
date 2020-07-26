@@ -304,8 +304,9 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		osdp_sc_init(pd);
 		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		for (i = 0; i < 8; i++)
+		for (i = 0; i < 8; i++) {
 			pd->sc.cp_random[i] = buf[pos++];
+		}
 		pd->reply_id = REPLY_CCRYPT;
 		ret = 0;
 		break;
@@ -314,8 +315,9 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR(TAG "CMD_SCRYPT length mismatch! %d/16", len);
 			break;
 		}
-		for (i = 0; i < 16; i++)
+		for (i = 0; i < 16; i++) {
 			pd->sc.cp_cryptogram[i] = buf[pos++];
+		}
 		pd->reply_id = REPLY_RMAC_I;
 		ret = 0;
 		break;
@@ -514,12 +516,17 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_14;  /* type */
-		smb[2] = osdp_verify_cp_cryptogram(pd) == 0;
-		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-			LOG_WRN(TAG "SC Active with SCBK-D");
+		if (osdp_verify_cp_cryptogram(pd) == 0) {
+			smb[2] = 1;  /* CP auth succeeded */
+			SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+				LOG_WRN(TAG "SC Active with SCBK-D");
+			} else {
+				LOG_INF(TAG "SC Active");
+			}
 		} else {
-			LOG_INF(TAG "SC Active");
+			smb[2] = 0;  /* CP auth failed */
+			LOG_WRN(TAG "failed to verify CP_crypt");
 		}
 		ret = 0;
 		break;
@@ -718,6 +725,7 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
 
 /* --- Exported Methods --- */
 
+OSDP_EXPORT
 osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 {
 	struct osdp_pd *pd;
@@ -786,6 +794,7 @@ error:
 	return NULL;
 }
 
+OSDP_EXPORT
 void osdp_pd_teardown(osdp_t *ctx)
 {
 	if (ctx != NULL) {
@@ -796,6 +805,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 	}
 }
 
+OSDP_EXPORT
 void osdp_pd_refresh(osdp_t *ctx)
 {
 	assert(ctx);
@@ -804,6 +814,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 	osdp_pd_update(pd);
 }
 
+OSDP_EXPORT
 int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 {
 	assert(ctx);

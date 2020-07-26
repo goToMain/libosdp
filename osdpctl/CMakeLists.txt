@@ -22,13 +22,18 @@ list(APPEND BIN_OSDPCTL_SRC
 	cmd_others.c
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+find_package(LibOSDP NO_MODULE REQUIRED HINTS ${CMAKE_BINARY_DIR})
 
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
-
-target_link_libraries(${BIN_OSDPCTL} ${READLINE_LIBRARY} ${OSDP_LIBRARY})
-
+target_link_libraries(${BIN_OSDPCTL}
+	${LIBOSDP_LIBRARY}
+)
+target_include_directories(${BIN_OSDPCTL}
+	PRIVATE
+		${LIBOSDP_INCLUDE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 install(
 	TARGETS ${BIN_OSDPCTL}
-	DESTINATION ${CMAKE_INSTALL_DIR}/bin
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )

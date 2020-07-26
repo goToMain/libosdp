@@ -1,0 +1,33 @@
+#
+#  Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+# Use the following variables to compile and link against LIBOSDP:
+#
+#  LIBOSDP_FOUND              - True if LIBOSDP was found on your system
+#  LIBOSDP_DEFINITIONS        - Definitions needed to build with LibOSDP
+#  LIBOSDP_CMAKE_CONFIG_DIR   - Cmake configuration files install directory
+#  LIBOSDP_INCLUDE_DIR        - Directory where osdp.h can be found
+#  LIBOSDP_LIBRARY            - LIBOSDP library location
+#  LIBOSDP_LIBRARY_DIR        - Directory containing LIBOSDP library
+#  LIBOSDP_ROOT_DIR           - The base directory of LIBOSDP
+#
+#  LIBOSDP_VERSION_STRING     - A human-readable string containing the version
+#  LIBOSDP_VERSION_MAJOR      - The major version of LIBOSDP
+#  LIBOSDP_VERSION_MINOR      - The minor version of LIBOSDP
+#  LIBOSDP_VERSION_PATCH      - The patch version of LIBOSDP
+
+set(LIBOSDP_FOUND 1)
+set(LIBOSDP_DEFINITIONS      "@LIBOSDP_DEFINITIONS@")
+set(LIBOSDP_CMAKE_CONFIG_DIR "@LIBOSDP_CMAKE_CONFIG_DIR@")
+set(LIBOSDP_ROOT_DIR         "@LIBOSDP_ROOT_DIR@")
+set(LIBOSDP_INCLUDE_DIR      "@LIBOSDP_INCLUDE_DIR@")
+set(LIBOSDP_LIBRARY          "@LIBOSDP_LIBRARY@")
+set(LIBOSDP_LIBRARY_DIR      "@LIBOSDP_LIBRARY_DIR@")
+
+set(LIBOSDP_VERSION_STRING   "@LIBOSDP_VERSION_STRING@")
+set(LIBOSDP_VERSION_MAJOR    "@LIBOSDP_VERSION_MAJOR@")
+set(LIBOSDP_VERSION_MINOR    "@LIBOSDP_VERSION_MINOR@")
+set(LIBOSDP_VERSION_PATCH    "@LIBOSDP_VERSION_PATCH@")

@@ -397,7 +397,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		osdp_compute_session_keys(TO_CTX(pd));
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
 			LOG_ERR(TAG "failed to verify PD_crypt");
-			break;
+			return -1;
 		}
 		ret = 0;
 		break;
@@ -892,6 +892,7 @@ static int cp_state_update(struct osdp_pd *pd)
 
 /* --- Exported Methods --- */
 
+OSDP_EXPORT
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
 	int i;
@@ -954,6 +955,7 @@ error:
 	return NULL;
 }
 
+OSDP_EXPORT
 void osdp_cp_teardown(osdp_t *ctx)
 {
 	int i;
@@ -970,6 +972,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 	safe_free(ctx);
 }
 
+OSDP_EXPORT
 void osdp_cp_refresh(osdp_t *ctx)
 {
 	int i;
@@ -983,6 +986,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 	}
 }
 
+OSDP_EXPORT
 int osdp_cp_set_callback_key_press(osdp_t *ctx,
 	int (*cb) (int address, uint8_t key))
 {
@@ -993,6 +997,7 @@ int osdp_cp_set_callback_key_press(osdp_t *ctx,
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_set_callback_card_read(osdp_t *ctx,
 	int (*cb) (int address, int format, uint8_t *data, int len))
 {
@@ -1003,6 +1008,7 @@ int osdp_cp_set_callback_card_read(osdp_t *ctx,
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
 	struct osdp_cmd *cmd;
@@ -1023,6 +1029,7 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
 	struct osdp_cmd *cmd;
@@ -1043,6 +1050,7 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
 	struct osdp_cmd *cmd;
@@ -1063,6 +1071,7 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
 	struct osdp_cmd *cmd;
@@ -1083,6 +1092,7 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
 	struct osdp_cmd *cmd;
@@ -1103,6 +1113,7 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	return 0;
 }
 
+OSDP_EXPORT
 int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 {
 	int i;

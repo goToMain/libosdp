@@ -1,3 +1,9 @@
+#
+#  Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
 execute_process(
 	COMMAND git log --pretty=format:'%h' -n 1
 	OUTPUT_VARIABLE GIT_REV

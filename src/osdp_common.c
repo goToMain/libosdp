@@ -54,6 +54,7 @@ void osdp_log_set_color(const char *color)
 	}
 }
 
+OSDP_EXPORT
 void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
 {
 	g_log_level = log_level;
@@ -291,11 +292,13 @@ int osdp_slab_blocks(struct osdp_slab *s)
 
 /* --- Exported Methods --- */
 
+OSDP_EXPORT
 const char *osdp_get_version()
 {
 	return PROJECT_NAME "-" PROJECT_VERSION;
 }
 
+OSDP_EXPORT
 const char *osdp_get_source_info()
 {
 	if (strlen(GIT_TAG) > 0) {
@@ -307,6 +310,7 @@ const char *osdp_get_source_info()
 	}
 }
 
+OSDP_EXPORT
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 {
 	int i;
@@ -333,6 +337,7 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 	return mask;
 }
 
+OSDP_EXPORT
 uint32_t osdp_get_status_mask(osdp_t *ctx)
 {
 	int i;

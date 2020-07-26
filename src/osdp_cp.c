@@ -47,7 +47,7 @@
  * +ve: length of command
  * -ve: error
  */
-int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
+static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	uint8_t *smb;
 	struct osdp_cmd *cmd = NULL;
@@ -271,7 +271,7 @@ int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
  * -1: error
  *  2: retry current command
  */
-int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
+static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	uint32_t temp32;
 	struct osdp *ctx = TO_CTX(pd);
@@ -296,9 +296,7 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_NAK_DATA_LEN) {
 			break;
 		}
-		if (buf[pos]) {
-			LOG_ERR(TAG "NAK: %s", osdp_get_nac_reason(buf[pos]));
-		}
+		LOG_ERR(TAG "PD replied with NAK code %d", buf[pos]);
 		ret = 0;
 		break;
 	case REPLY_PDID:
@@ -328,14 +326,14 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		while (pos < len) {
 			int func_code = buf[pos++];
-			if (func_code > CAP_SENTINEL)
+			if (func_code > OSDP_PD_CAP_SENTINEL)
 				break;
 			pd->cap[func_code].function_code    = func_code;
 			pd->cap[func_code].compliance_level = buf[pos++];
 			pd->cap[func_code].num_items        = buf[pos++];
 		}
 		/* post-capabilities hooks */
-		if (pd->cap[CAP_COMMUNICATION_SECURITY].compliance_level & 0x01)
+		if (pd->cap[OSDP_PD_CAP_COMMUNICATION_SECURITY].compliance_level & 0x01)
 			SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 		else
 			CLEAR_FLAG(pd, PD_FLAG_SC_CAPABLE);
@@ -481,8 +479,7 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
-		LOG_DBG(TAG "OUT(CMD): 0x%02x -- IN(REPLY): 0x%02x[%d]",
-		pd->cmd_id, pd->reply_id, len);
+		LOG_DBG(TAG "CMD: %02x REPLY: %02x", pd->cmd_id, pd->reply_id);
 	}
 
 	return ret;
@@ -494,7 +491,7 @@ int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
  *   0 - success
  *  -1 - failure
  */
-int cp_send_command(struct osdp_pd *pd)
+static int cp_send_command(struct osdp_pd *pd)
 {
 	int ret, len;
 
@@ -537,7 +534,7 @@ int cp_send_command(struct osdp_pd *pd)
  *  1: no data yet
  *  2: re-issue command
  */
-int cp_process_reply(struct osdp_pd *pd)
+static int cp_process_reply(struct osdp_pd *pd)
 {
 	uint8_t *buf;
 	int rec_bytes, ret, max_len;
@@ -577,12 +574,12 @@ int cp_process_reply(struct osdp_pd *pd)
 	return cp_decode_response(pd, pd->rx_buf, pd->rx_buf_len);
 }
 
-void cp_free_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
+static void cp_free_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
 	osdp_slab_free(pd->cmd_slab, cmd);
 }
 
-int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd)
+static int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd)
 {
 	void *p;
 
@@ -595,7 +592,7 @@ int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd)
 	return 0;
 }
 
-void cp_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
+static void cp_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
 	struct osdp_cmd_queue *q = &pd->queue;
 
@@ -609,53 +606,40 @@ void cp_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	}
 }
 
-int cp_dequeue_command(struct osdp_pd *pd, struct osdp_cmd **cmd, int read_only)
+static int cp_dequeue_command(struct osdp_pd *pd, struct osdp_cmd **cmd)
 {
 	struct osdp_cmd_queue *q = &pd->queue;
 
 	if (q->front == NULL)
 		return -1;
 	*cmd = q->front;
-	if (!read_only) {
-		q->front = q->front->__next;
-	}
+	q->front = q->front->__next;
 	return 0;
 }
 
-void cp_flush_command_queue(struct osdp_pd *pd)
+static void cp_flush_command_queue(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
 
-	while (cp_dequeue_command(pd, &cmd, false) == 0) {
+	while (cp_dequeue_command(pd, &cmd) == 0) {
 		cp_free_command(pd, cmd);
 	}
 }
 
-void cp_flush_all_cmd_queues(struct osdp *ctx)
-{
-	int i;
-	struct osdp_pd *pd;
-
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = TO_PD(ctx, i);
-		cp_flush_command_queue(pd);
-	}
-}
-
-inline void cp_set_offline(struct osdp_pd *pd)
+static inline void cp_set_offline(struct osdp_pd *pd)
 {
 	pd->cp_state = OSDP_CP_STATE_OFFLINE;
 	pd->tstamp = osdp_millis_now();
 }
 
-inline void cp_reset_state(struct osdp_pd *pd)
+static inline void cp_reset_state(struct osdp_pd *pd)
 {
 	pd->cp_state = OSDP_CP_STATE_INIT;
 	osdp_phy_state_reset(pd);
 	pd->flags = 0;
 }
 
-inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
+static inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
 {
 	pd->cp_state = state;
 	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
@@ -670,7 +654,7 @@ inline void cp_set_state(struct osdp_pd *pd, enum osdp_cp_state_e state)
  *
  * Note: This method must not dequeue cmd unless it reaches an invalid state.
  */
-int cp_phy_state_update(struct osdp_pd *pd)
+static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int ret = 1, tmp;
 	struct osdp_cmd *cmd = NULL;
@@ -680,7 +664,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
 		ret = -1;
 		break;
 	case OSDP_CP_PHY_STATE_IDLE:
-		if (cp_dequeue_command(pd, &cmd, false)) {
+		if (cp_dequeue_command(pd, &cmd)) {
 			ret = 0;
 			break;
 		}
@@ -749,7 +733,7 @@ int cp_phy_state_update(struct osdp_pd *pd)
  *   1: dispatched
  *  -1: error
  */
-int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
+static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 {
 	struct osdp_cmd *c;
 
@@ -768,7 +752,7 @@ int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 	return 1;
 }
 
-int cp_state_update(struct osdp_pd *pd)
+static int cp_state_update(struct osdp_pd *pd)
 {
 	int phy_state, soft_fail;
 
@@ -1148,3 +1132,15 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 
 	return 0;
 }
+
+#ifdef UNIT_TESTING
+
+/**
+ * Force export some private methods for testing.
+ */
+int (*test_cp_alloc_command)(struct osdp_pd *, struct osdp_cmd **) = cp_alloc_command;
+void (*test_cp_enqueue_command)(struct osdp_pd *, struct osdp_cmd *) = cp_enqueue_command;
+int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
+int (*test_cp_state_update)(struct osdp_pd *) = cp_state_update;
+
+#endif /* UNIT_TESTING */

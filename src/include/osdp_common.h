@@ -271,8 +271,8 @@ struct osdp_pd {
 	int baud_rate;
 	int address;
 	int seq_number;
-	struct pd_cap cap[CAP_SENTINEL];
-	struct pd_id id;
+	struct osdp_pd_cap cap[OSDP_PD_CAP_SENTINEL];
+	struct osdp_pd_id id;
 
 	/* PD state management */
 	enum osdp_pd_state_e pd_state;
@@ -333,7 +333,6 @@ int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
 			       int len, int max_len);
 int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len);
-const char *osdp_get_nac_reason(int code);
 void osdp_phy_state_reset(struct osdp_pd *pd);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);

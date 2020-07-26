@@ -38,27 +38,6 @@ uint8_t osdp_compute_checksum(uint8_t *msg, int length)
 	return checksum;
 }
 
-const char *osdp_get_nac_reason(int code)
-{
-	static const char * const osdp_nak_reasons[] = {
-		"",
-		"Message check character(s) error (bad cksum/crc)",
-		"Command length error",
-		"Unknown Command Code. Command not implemented by PD",
-		"Unexpected sequence number detected in the header",
-		"This PD does not support the security block that was received",
-		"Communication security conditions not met",
-		"BIO_TYPE not supported",
-		"BIO_FORMAT not supported",
-		"Unable to process command record",
-	};
-
-	if (code < 0 || code >= OSDP_PD_NAK_SENTINEL) {
-		code = 0;
-	}
-	return osdp_nak_reasons[code];
-}
-
 static int osdp_phy_get_seq_number(struct osdp_pd *pd, int do_inc)
 {
 	/* pd->seq_num is set to -1 to reset phy cmd state */

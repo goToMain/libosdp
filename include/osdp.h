@@ -33,7 +33,7 @@ enum osdp_pd_cap_function_code_e {
 	/**
 	 * @brief Dummy.
 	 */
-	CAP_UNUSED,
+	OSDP_PD_CAP_UNUSED,
 
 	/**
 	 * @brief This function indicates the ability to monitor the status of a
@@ -46,7 +46,7 @@ enum osdp_pd_cap_function_code_e {
 	 * A supervised circuit is able to indicate circuit fault status in
 	 * addition to open/closed status.
 	 */
-	CAP_CONTACT_STATUS_MONITORING,
+	OSDP_PD_CAP_CONTACT_STATUS_MONITORING,
 
 	/**
 	 * @brief This function provides a switched output, typically in the
@@ -55,84 +55,84 @@ enum osdp_pd_cap_function_code_e {
 	 * supports timed operations, the CP can specify a time period for the
 	 * activation of the Output.
 	 */
-	CAP_OUTPUT_CONTROL,
+	OSDP_PD_CAP_OUTPUT_CONTROL,
 
 	/**
 	 * @brief This capability indicates the form of the card data is
 	 * presented to the Control Panel.
 	 */
-	CAP_CARD_DATA_FORMAT,
+	OSDP_PD_CAP_CARD_DATA_FORMAT,
 
 	/**
 	 * @brief This capability indicates the presence of and type of LEDs.
 	 */
-	CAP_READER_LED_CONTROL,
+	OSDP_PD_CAP_READER_LED_CONTROL,
 
 	/**
 	 * @brief This capability indicates the presence of and type of an
 	 * Audible Annunciator (buzzer or similar tone generator)
 	 */
-	CAP_READER_AUDIBLE_OUTPUT,
+	OSDP_PD_CAP_READER_AUDIBLE_OUTPUT,
 
 	/**
 	 * @brief This capability indicates that the PD supports a text display
 	 * emulating character-based display terminals.
 	 */
-	CAP_READER_TEXT_OUTPUT,
+	OSDP_PD_CAP_READER_TEXT_OUTPUT,
 
 	/**
 	 * @brief This capability indicates that the type of date and time
 	 * awareness or time keeping ability of the PD.
 	 */
-	CAP_TIME_KEEPING,
+	OSDP_PD_CAP_TIME_KEEPING,
 
 	/**
 	 * @brief All PDs must be able to support the checksum mode. This
 	 * capability indicates if the PD is capable of supporting CRC mode.
 	 */
-	CAP_CHECK_CHARACTER_SUPPORT,
+	OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT,
 
 	/**
 	 * @brief This capability indicates the extent to which the PD supports
 	 * communication security (Secure Channel Communication)
 	 */
-	CAP_COMMUNICATION_SECURITY,
+	OSDP_PD_CAP_COMMUNICATION_SECURITY,
 
 	/**
 	 * @brief This capability indicates the maximum size single message the
 	 * PD can receive.
 	 */
-	CAP_RECEIVE_BUFFERSIZE,
+	OSDP_PD_CAP_RECEIVE_BUFFERSIZE,
 
 	/**
 	 * @brief This capability indicates the maximum size multi-part message
 	 * which the PD can handle.
 	 */
-	CAP_LARGEST_COMBINED_MESSAGE_SIZE,
+	OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE,
 
 	/**
 	 * @brief This capability indicates whether the PD supports the
 	 * transparent mode used for communicating directly with a smart card.
 	 */
-	CAP_SMART_CARD_SUPPORT,
+	OSDP_PD_CAP_SMART_CARD_SUPPORT,
 
 	/**
 	 * @brief This capability indicates the number of credential reader
 	 * devices present. Compliance levels are bit fields to be assigned as
 	 * needed.
 	 */
-	CAP_READERS,
+	OSDP_PD_CAP_READERS,
 
 	/**
 	 * @brief This capability indicates the ability of the reader to handle
 	 * biometric input
 	 */
-	CAP_BIOMETRICS,
+	OSDP_PD_CAP_BIOMETRICS,
 
 	/**
 	 * @brief Capability Sentinel
 	 */
-	CAP_SENTINEL
+	OSDP_PD_CAP_SENTINEL
 };
 
 /**
@@ -144,7 +144,7 @@ enum osdp_pd_cap_function_code_e {
  *                         the PD can do with this capability.
  * @param num_items Number of such capability entities in PD.
  */
-struct pd_cap {
+struct osdp_pd_cap {
 	uint8_t function_code;
 	uint8_t compliance_level;
 	uint8_t num_items;
@@ -159,7 +159,7 @@ struct pd_cap {
  * @param serial_number 4-byte serial number for the PD
  * @param firmware_version 3-byte version (major, minor, build)
  */
-struct pd_id {
+struct osdp_pd_id {
 	int version;
 	int model;
 	uint32_t vendor_code;
@@ -225,14 +225,14 @@ typedef struct {
 	 * Static info that the PD reports to the CP when it received a `CMD_ID`.
 	 * This is used only in PD mode of operation.
 	 */
-	struct pd_id id;
+	struct osdp_pd_id id;
 
 	/**
 	 * This is a pointer to an array of structures containing the PD's
 	 * capabilities. Use { -1, 0, 0 } to terminate the array. This is used
 	 * only PD mode of operation.
 	 */
-	struct pd_cap *cap;
+	struct osdp_pd_cap *cap;
 
 	/**
 	 * Communication channel ops structure, containing send/recv function
@@ -300,7 +300,7 @@ enum osdp_led_color_e {
  * @param off_color Color to set during the OFF timer (enum osdp_led_color_e)
  * @param timer Time in units of 100 ms (only for temporary mode)
  */
-struct __osdp_cmd_led_params {
+struct osdp_cmd_led_params {
 	uint8_t control_code;
 	uint8_t on_count;
 	uint8_t off_count;
@@ -320,8 +320,8 @@ struct __osdp_cmd_led_params {
 struct osdp_cmd_led {
 	uint8_t reader;
 	uint8_t led_number;
-	struct __osdp_cmd_led_params temporary;
-	struct __osdp_cmd_led_params permanent;
+	struct osdp_cmd_led_params temporary;
+	struct osdp_cmd_led_params permanent;
 };
 
 /**

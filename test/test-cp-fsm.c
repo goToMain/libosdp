@@ -9,7 +9,7 @@
 #include <osdp.h>
 #include "test.h"
 
-int cp_state_update(struct osdp_pd *pd);
+extern int (*test_cp_state_update)(struct osdp_pd *);
 
 int test_fsm_resp = 0;
 
@@ -81,7 +81,7 @@ int test_cp_fsm_setup(struct test *t)
 		printf("   init failed!\n");
 		return -1;
 	}
-	// osdp_set_log_level(LOG_DEBUG);
+	osdp_set_log_level(LOG_INFO);
 	SET_CURRENT_PD(ctx, 0);
 	SET_FLAG(GET_CURRENT_PD(ctx), PD_FLAG_SKIP_SEQ_CHECK);
 	t->mock_data = (void *)ctx;
@@ -108,7 +108,7 @@ void run_cp_fsm_tests(struct test *t)
 
 	printf("    -- executing cp_state_update()\n");
 	while (1) {
-		cp_state_update(GET_CURRENT_PD(ctx));
+		test_cp_state_update(GET_CURRENT_PD(ctx));
 
 		if (GET_CURRENT_PD(ctx)->cp_state == OSDP_CP_STATE_OFFLINE) {
 			printf("    -- cp_state_update() CP went offline\n");

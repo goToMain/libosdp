@@ -7,9 +7,10 @@
 #include <osdp.h>
 #include "test.h"
 
-int cp_phy_state_update(struct osdp_pd *pd);
-void cp_enqueue_command(struct osdp_pd *p, struct osdp_cmd *cmd);
-int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd);
+extern int (*test_cp_alloc_command)(struct osdp_pd *, struct osdp_cmd **);
+extern void (*test_cp_enqueue_command)(struct osdp_pd *, struct osdp_cmd *);
+extern int (*test_cp_state_update)(struct osdp_pd *);
+extern int (*test_cp_phy_state_update)(struct osdp_pd *);
 
 int phy_fsm_resp_offset = 0;
 
@@ -84,7 +85,7 @@ int test_cp_phy_fsm_setup(struct test *t)
 		printf("   init failed!\n");
 		return -1;
 	}
-	osdp_set_log_level(LOG_DEBUG);
+	osdp_set_log_level(LOG_INFO);
 	SET_CURRENT_PD(ctx, 0);
 	t->mock_data = (void *)ctx;
 	return 0;
@@ -113,18 +114,18 @@ void run_cp_phy_fsm_tests(struct test *t)
 	ctx = t->mock_data;
 	p = GET_CURRENT_PD(ctx);
 
-	cp_alloc_command(p, &cmd_poll);
-	cp_alloc_command(p, &cmd_id);
+	test_cp_alloc_command(p, &cmd_poll);
+	test_cp_alloc_command(p, &cmd_id);
 
 	cmd_poll->id = CMD_POLL;
 	cmd_id->id = CMD_ID;
 
-	cp_enqueue_command(p, cmd_poll);
-	cp_enqueue_command(p, cmd_id);
+	test_cp_enqueue_command(p, cmd_poll);
+	test_cp_enqueue_command(p, cmd_id);
 
 	printf("    -- executing test_cp_phy_fsm()\n");
 	while (result) {
-		ret = cp_phy_state_update(p);
+		ret = test_cp_phy_state_update(p);
 		if (ret != 1 && ret != 2)
 			break;
 		/* continue when in command and between commands continue */

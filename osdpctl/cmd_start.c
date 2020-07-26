@@ -17,12 +17,12 @@
 
 struct msgbuf msgq_cmd;
 
-void pack_pd_capabilities(struct pd_cap *cap)
+void pack_pd_capabilities(struct osdp_pd_cap *cap)
 {
-	struct pd_cap c[CAP_SENTINEL];
+	struct osdp_pd_cap c[OSDP_PD_CAP_SENTINEL];
 	int i, j = 0;
 
-	for (i = 1; i < CAP_SENTINEL; i++) {
+	for (i = 1; i < OSDP_PD_CAP_SENTINEL; i++) {
 		if (cap[i].function_code == 0)
 			continue;
 		c[j].function_code = cap[i].function_code;
@@ -35,7 +35,7 @@ void pack_pd_capabilities(struct pd_cap *cap)
 	c[j].num_items = 0;
 	j++;
 
-	memcpy(cap, c, j * sizeof(struct pd_cap));
+	memcpy(cap, c, j * sizeof(struct osdp_pd_cap));
 }
 
 int load_scbk(struct config_pd_s *c, uint8_t *buf)
@@ -269,7 +269,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		if (c->mode == CONFIG_MODE_CP)
 			continue;
 
-		memcpy(&info->id, &pd->id, sizeof(struct pd_id));
+		memcpy(&info->id, &pd->id, sizeof(struct osdp_pd_id));
 		pack_pd_capabilities(pd->cap);
 		info->cap = pd->cap;
 	}

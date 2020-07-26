@@ -39,14 +39,14 @@
 #define REPLY_RMAC_I_LEN               17
 
 /* Implicit cababilities */
-static struct pd_cap libosdp_pd_capabilities[] = {
+static struct osdp_pd_cap libosdp_pd_capabilities[] = {
 	{
-		CAP_CHECK_CHARACTER_SUPPORT,
+		OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT,
 		1, /* The PD supports the 16-bit CRC-16 mode */
 		0, /* N/A */
 	},
 	{
-		CAP_COMMUNICATION_SECURITY,
+		OSDP_PD_CAP_COMMUNICATION_SECURITY,
 		1, /* (Bit-0) AES128 support */
 		1, /* (Bit-0) default AES128 key */
 	},
@@ -254,6 +254,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd_enqueue_command(pd, cmd);
 		pd->reply_id = REPLY_COM;
 		ret = 0;
+		break;
 	case CMD_KEYSET:
 		if (len != CMD_KEYSET_DATA_LEN) {
 			LOG_ERR(TAG "CMD_KEYSET length mismatch! %d/18", len);
@@ -292,7 +293,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	case CMD_CHLNG:
-		if (pd->cap[CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
+		if (pd->cap[OSDP_PD_CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
 			break;
@@ -333,8 +334,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
-		LOG_DBG(TAG "IN(CMD): 0x%02x[%d] -- OUT(REPLY): 0x%02x",
-		      pd->cmd_id, len, pd->reply_id);
+		LOG_DBG(TAG "CMD: %02x REPLY: %02x", pd->cmd_id, pd->reply_id);
 	}
 }
 
@@ -398,7 +398,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			break;
 		}
 		buf[len++] = pd->reply_id;
-		for (i = 0; i < CAP_SENTINEL; i++) {
+		for (i = 0; i < OSDP_PD_CAP_SENTINEL; i++) {
 			if (pd->cap[i].function_code != i) {
 				continue;
 			}
@@ -648,7 +648,7 @@ static int pd_receve_packet(struct osdp_pd *pd)
 	return 0;
 }
 
-void osdp_pd_update(struct osdp_pd *pd)
+static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
 
@@ -697,13 +697,13 @@ void osdp_pd_update(struct osdp_pd *pd)
 	}
 }
 
-static void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
-				   struct pd_id *id)
+static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
+				   struct osdp_pd_id *id)
 {
 	int fc;
 
 	while (cap && ((fc = cap->function_code) > 0)) {
-		if (fc >= CAP_SENTINEL) {
+		if (fc >= OSDP_PD_CAP_SENTINEL) {
 			break;
 		}
 		pd->cap[fc].function_code = cap->function_code;
@@ -712,7 +712,7 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct pd_cap *cap,
 		cap++;
 	}
 	if (id != NULL) {
-		memcpy(&pd->id, id, sizeof(struct pd_id));
+		memcpy(&pd->id, id, sizeof(struct osdp_pd_id));
 	}
 }
 
@@ -819,3 +819,12 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 	osdp_slab_free(pd->cmd_slab, f);
 	return 0;
 }
+
+#ifdef UNIT_TESTING
+
+/**
+ * Force export some private methods for testing.
+ */
+void (*test_osdp_pd_update)(struct osdp_pd *pd) = osdp_pd_update;
+
+#endif /* UNIT_TESTING */

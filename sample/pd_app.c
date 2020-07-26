@@ -39,14 +39,14 @@ int main()
 {
 	struct osdp_t *ctx;
 	struct osdp_cmd cmd;
-	struct pd_cap cap[] = {
+	struct osdp_pd_cap cap[] = {
 		{
-			.function_code = CAP_READER_LED_CONTROL,
+			.function_code = OSDP_PD_CAP_READER_LED_CONTROL,
 			.compliance_level = 1,
 			.num_items = 1
 		},
 		{
-			.function_code = CAP_READER_AUDIBLE_OUTPUT,
+			.function_code = OSDP_PD_CAP_READER_AUDIBLE_OUTPUT,
 			.compliance_level = 1,
 			.num_items = 1
 		},

@@ -9,8 +9,8 @@
 #include <osdp.h>
 #include "test.h"
 
-void osdp_pd_update(struct osdp_pd *pd);
-int cp_state_update(struct osdp_pd *pd);
+extern int (*test_cp_state_update)(struct osdp_pd *);
+extern void (*test_osdp_pd_update)(struct osdp_pd *pd);
 
 struct test_mixed {
 	struct osdp *cp_ctx;
@@ -95,13 +95,13 @@ int test_mixed_fsm_setup(struct test *t)
 		return -1;
 	}
 
-	struct pd_cap cap[] = {
+	struct osdp_pd_cap cap[] = {
 		{
-			.function_code = CAP_READER_LED_CONTROL,
+			.function_code = OSDP_PD_CAP_READER_LED_CONTROL,
 			.compliance_level = 1,
 			.num_items = 1
 		}, {
-			.function_code = CAP_COMMUNICATION_SECURITY,
+			.function_code = OSDP_PD_CAP_COMMUNICATION_SECURITY,
 			.compliance_level = 1,
 			.num_items = 1
 		},
@@ -129,7 +129,7 @@ int test_mixed_fsm_setup(struct test *t)
 		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
 		return -1;
 	}
-	osdp_set_log_level(LOG_DEBUG);
+	osdp_set_log_level(LOG_INFO);
 	t->mock_data = (void *)&test_data;
 	return 0;
 }
@@ -151,6 +151,8 @@ void run_mixed_fsm_tests(struct test *t)
 
 	printf("\nStarting CP - PD phy layer mixed tests\n");
 
+	printf("    -- setting up OSDP devices\n");
+
 	if (test_mixed_fsm_setup(t))
 		return;
 
@@ -161,8 +163,8 @@ void run_mixed_fsm_tests(struct test *t)
 	pd_cp = GET_CURRENT_PD(p->cp_ctx);
 	pd_pd = GET_CURRENT_PD(p->pd_ctx);
 	while (1) {
-		cp_state_update(pd_cp);
-		osdp_pd_update(pd_pd);
+		test_cp_state_update(pd_cp);
+		test_osdp_pd_update(pd_pd);
 		if (osdp_get_sc_status_mask(p->cp_ctx))
 			break;
 		if (pd_cp->cp_state == OSDP_CP_STATE_OFFLINE) {

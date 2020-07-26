@@ -106,7 +106,7 @@ int config_parse_key_capabilites(const char *val, void *data)
 				return INI_FAILURE;
 			tok2 = strtok_r(NULL, ", ", &rest2);
 		}
-		if (ival[0] <= 0 || ival[0] >= CAP_SENTINEL ||
+		if (ival[0] <= 0 || ival[0] >= OSDP_PD_CAP_SENTINEL ||
 		    ival[1] < 0 || ival[2] < 0)
 			return INI_FAILURE;
 		p->cap[ival[0]].function_code = ival[0];
@@ -328,22 +328,22 @@ const struct config_key_s g_config_key_pd[] = {
 	{ NULL, NULL }
 };
 
-const char *cap_names[CAP_SENTINEL] = {
-	[CAP_UNUSED]				= "NULL",
-	[CAP_CONTACT_STATUS_MONITORING]		= "contact_status_monitoring",
-	[CAP_OUTPUT_CONTROL]			= "output_control",
-	[CAP_CARD_DATA_FORMAT]			= "card_data_format",
-	[CAP_READER_LED_CONTROL]		= "reader_led_control",
-	[CAP_READER_AUDIBLE_OUTPUT]		= "reader_audible_control",
-	[CAP_READER_TEXT_OUTPUT]		= "reader_text_output",
-	[CAP_TIME_KEEPING]			= "time_keeping",
-	[CAP_CHECK_CHARACTER_SUPPORT]		= "check_character_support",
-	[CAP_COMMUNICATION_SECURITY]		= "communication_security",
-	[CAP_RECEIVE_BUFFERSIZE]		= "receive_buffersize",
-	[CAP_LARGEST_COMBINED_MESSAGE_SIZE]	= "largest_combined_message_size",
-	[CAP_SMART_CARD_SUPPORT]		= "smart_card_support",
-	[CAP_READERS]				= "readers",
-	[CAP_BIOMETRICS]			= "biometrics"
+const char *cap_names[OSDP_PD_CAP_SENTINEL] = {
+	[OSDP_PD_CAP_UNUSED]                        = "NULL",
+	[OSDP_PD_CAP_CONTACT_STATUS_MONITORING]     = "contact_status_monitoring",
+	[OSDP_PD_CAP_OUTPUT_CONTROL]                = "output_control",
+	[OSDP_PD_CAP_CARD_DATA_FORMAT]              = "card_data_format",
+	[OSDP_PD_CAP_READER_LED_CONTROL]            = "reader_led_control",
+	[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT]         = "reader_audible_control",
+	[OSDP_PD_CAP_READER_TEXT_OUTPUT]            = "reader_text_output",
+	[OSDP_PD_CAP_TIME_KEEPING]                  = "time_keeping",
+	[OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT]       = "check_character_support",
+	[OSDP_PD_CAP_COMMUNICATION_SECURITY]        = "communication_security",
+	[OSDP_PD_CAP_RECEIVE_BUFFERSIZE]            = "receive_buffersize",
+	[OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE] = "largest_combined_message_size",
+	[OSDP_PD_CAP_SMART_CARD_SUPPORT]            = "smart_card_support",
+	[OSDP_PD_CAP_READERS]                       = "readers",
+	[OSDP_PD_CAP_BIOMETRICS]                    = "biometrics"
 };
 
 int config_key_parse(const char *key, const char *val,
@@ -454,7 +454,7 @@ void config_print(struct config_s *config)
 		if (cp_mode)
 			continue;
 		printf("capabilities:\n");
-		for (j = 0; j < CAP_SENTINEL; j++) {
+		for (j = 0; j < OSDP_PD_CAP_SENTINEL; j++) {
 			if (pd->cap[j].function_code == 0)
 				continue;
 			printf("\tFC-%02d %s -- [ %d, %d, %d ]\n",

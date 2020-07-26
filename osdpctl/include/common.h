@@ -39,8 +39,8 @@ struct config_pd_s {
 	int is_pd_mode;
 	char *key_store;
 
-	struct pd_id id;
-	struct pd_cap cap[CAP_SENTINEL];
+	struct osdp_pd_id id;
+	struct osdp_pd_cap cap[OSDP_PD_CAP_SENTINEL];
 	struct osdp_channel channel;
 };
 

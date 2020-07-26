@@ -15,17 +15,14 @@ compiler:
   - gcc
   - clang
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc
-      - cmake3
+install: cmake
+
+before_script:
+  #- ${CC} -v && ${CXX} -v && cmake --version
+  - mkdir build
+  - cd build
+  - cmake ..
 
 script:
-    - gcc -v && g++ -v && cmake --version
-    - mkdir build && cd build
-    - cmake ..
-    - make
-    - make check
+  - make
+  - make check

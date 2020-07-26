@@ -412,7 +412,6 @@ enum osdp_cmd_e {
  *
  * @param __next INTERNAL. Don't use.
  * @param id used to select specific commands in union. Type: enum osdp_cmd_e
- * @param cmd_bytes INTERNAL. Don't use.
  * @param led LED command structure
  * @param buzzer buzzer command structure
  * @param text text command structure

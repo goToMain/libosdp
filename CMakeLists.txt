@@ -10,6 +10,8 @@ project(libosdp VERSION 1.1.0 LANGUAGES C)
 
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)
+set(PROJECT_URL https://github.com/cbsiddharth/libosdp)
+set(PROJECT_DESCRIPTION "Open Supervised Device Protocol (OSDP) Library")
 
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
@@ -39,6 +41,13 @@ include(GNUInstallDirs)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# pkg-config file
+configure_file(libosdp.pc.in libosdp.pc @ONLY)
+install(FILES
+	${CMAKE_BINARY_DIR}/libosdp.pc
+	DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
+)
 
 add_subdirectory(src)
 add_subdirectory(osdpctl)

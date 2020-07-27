@@ -4,7 +4,23 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-find_package(LibOSDP NO_MODULE REQUIRED HINTS ${CMAKE_BINARY_DIR})
+cmake_minimum_required(VERSION 3.0)
+project(osdp_sample)
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    # This sample is built individually so try to locate an installed version
+    # of libosdp.
+	find_package(LibOSDP NO_MODULE REQUIRED)
+	include(${LIBOSDP_USE_FILE})
+else()
+	# sample is build from within libosdp as a subdir so try to look
+	# inside build dirs
+	find_package(LibOSDP NO_MODULE REQUIRED HINTS ${CMAKE_BINARY_DIR})
+
+	add_definitions(${LIBOSDP_DEFINITIONS})
+	include_directories(${LIBOSDP_INCLUDE_DIR})
+	link_directories(${LIBOSDP_LIBRARY_DIR})
+endif()
 
 set(CP_SAMPLE cp_sample)
 set(PD_SAMPLE pd_sample)

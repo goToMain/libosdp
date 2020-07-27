@@ -18,7 +18,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 ## Options
-option(CONFIG_OSDP_BUILD_STATIC "Build static archive (in addition to shared library)" OFF)
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 
 if(NOT CONFIG_OSDP_BUILD_STATIC)
@@ -33,7 +32,6 @@ include(GitInfo)
 ## Global settings
 add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
-add_c_compiler_flag(-s RELEASE)
 
 list(APPEND ADDITIONAL_CLEAN_FILES ${CMAKE_SOURCE_DIR}/include/osdp_config.h)
 
@@ -42,14 +40,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# pkg-config file
-configure_file(libosdp.pc.in libosdp.pc @ONLY)
-install(FILES
-	${CMAKE_BINARY_DIR}/libosdp.pc
-	DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
-)
-
 add_subdirectory(src)
 add_subdirectory(osdpctl)
 add_subdirectory(test)
 add_subdirectory(sample)
+
+## uninstall target
+add_custom_target(uninstall
+	COMMAND xargs rm < ${CMAKE_BINARY_DIR}/install_manifest.txt
+)
+
+## include pacakge rules at last
+include(CreatePackages)

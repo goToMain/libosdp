@@ -34,13 +34,6 @@ target_include_directories(${BIN_OSDPCTL}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-## Strip binary for release builds
-if (CMAKE_BUILD_TYPE STREQUAL Release)
-	add_custom_command(TARGET ${BIN_OSDPCTL} POST_BUILD
-		COMMAND ${CMAKE_STRIP} "${CMAKE_BINARY_DIR}/bin/${BIN_OSDPCTL}"
-	)
-endif ()
-
 install(
 	TARGETS ${BIN_OSDPCTL}
 	DESTINATION "bin"

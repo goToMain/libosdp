@@ -6,7 +6,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
 
-project(libosdp VERSION 1.1.0 LANGUAGES C)
+project(libosdp VERSION 1.1.0)
 
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)
@@ -32,6 +32,7 @@ include(GitInfo)
 ## Global settings
 add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
+add_c_compiler_flag(-std=c99)
 
 list(APPEND ADDITIONAL_CLEAN_FILES ${CMAKE_SOURCE_DIR}/include/osdp_config.h)
 

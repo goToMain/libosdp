@@ -49,8 +49,12 @@ int (*log_printf)(const char *fmt, ...) = printf;
 
 void osdp_log_set_color(const char *color)
 {
+	int ret, len;
+
+	len = strlen(color);
 	if (isatty(fileno(stdout))) {
-		(void)write(fileno(stdout), color, strlen(color));
+		ret = write(fileno(stdout), color, len);
+		assert(ret == len);
 	}
 }
 

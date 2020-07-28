@@ -243,7 +243,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	default:
-		LOG_ERR(TAG "Unknown/Unsupported command! CMD: %02x", cmd->id);
+		LOG_ERR(TAG "Unknown/Unsupported command %02x", pd->cmd_id);
 		return -1;
 	}
 
@@ -258,7 +258,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 	if (ret < 0) {
-		LOG_ERR(TAG "Unable to build CMD: %02x", cmd->id);
+		LOG_ERR(TAG "Unable to build command %02x", pd->cmd_id);
 		return -1;
 	}
 
@@ -906,7 +906,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
 		LOG_ERR(TAG "failed to alloc struct osdp");
-		goto error;
+		return NULL;
 	}
 	ctx->magic = 0xDEADBEAF;
 	ctx->flags |= FLAG_CP_MODE;
@@ -921,13 +921,13 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	}
 	cp = TO_CP(ctx);
 	cp->__parent = ctx;
-	cp->num_pd = num_pd;
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
 		LOG_ERR(TAG "failed to alloc struct osdp_pd[]");
 		goto error;
 	}
+	cp->num_pd = num_pd;
 
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
@@ -951,7 +951,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	return (osdp_t *) ctx;
 
 error:
-	osdp_cp_teardown((osdp_t *) ctx);
+	osdp_cp_teardown((osdp_t *)ctx);
 	return NULL;
 }
 
@@ -960,7 +960,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 {
 	int i;
 
-	if (ctx != NULL) {
+	if (ctx == NULL || TO_CP(ctx) == NULL) {
 		return;
 	}
 

@@ -13,10 +13,6 @@ set(PROJECT_YEAR 2019)
 set(PROJECT_URL https://github.com/cbsiddharth/libosdp)
 set(PROJECT_DESCRIPTION "Open Supervised Device Protocol (OSDP) Library")
 
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif()
-
 ## Options
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 
@@ -28,11 +24,11 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
 include(GitInfo)
+include(BuildType)
 
 ## Global settings
 add_c_compiler_flag(-Wall)
 add_c_compiler_flag(-Wextra)
-add_c_compiler_flag(-std=c99)
 
 list(APPEND ADDITIONAL_CLEAN_FILES ${CMAKE_SOURCE_DIR}/include/osdp_config.h)
 

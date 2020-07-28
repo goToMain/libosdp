@@ -55,6 +55,7 @@ void osdp_log_set_color(const char *color)
 	if (isatty(fileno(stdout))) {
 		ret = write(fileno(stdout), color, len);
 		assert(ret == len);
+		ARG_UNUSED(ret); /* squash warning in Release builds */
 	}
 }
 

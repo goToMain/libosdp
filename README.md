@@ -17,11 +17,11 @@ a better idea.
 
 ## Salient Features of LibOSDP
 
-- Supports secure channel communication (AES-128).
-- Can be used to setup a PD or CP mode of operation.
-- Exposes a well defined contract though `include/osdp.h`.
-- No run-time memory allocation. All memory is allocated at init-time.
-- Well designed source code architecure.
+  - Supports secure channel communication (AES-128).
+  - Can be used to setup a PD or CP mode of operation.
+  - Exposes a well defined contract though `include/osdp.h`.
+  - No run-time memory allocation. All memory is allocated at init-time.
+  - Well designed source code architecture.
 
 ## Supported Commands and Replies
 
@@ -31,7 +31,7 @@ commands and replies and their support status in LibOSDP here][6].
 
 ## Dependencies
 
-* cmake3 (host)
+  * cmake3 (host)
 
 ## Compile LibOSDP
 
@@ -95,7 +95,7 @@ add_dependencies(${OSDP_APP} ext_libosdp)
 target_link_libraries(${OSDP_APP} osdp)
 ```
 
-## Cross Compiling:
+## Cross Compiling
 
 LibOSDP can be compiled with your cross compiler by passing a toolchain file to
 cmake. This can be done by invoking cmake with the command line argument
@@ -138,7 +138,7 @@ make
 
 This repository is a work in progress; read the `TODO` file for list of pending
 tasks. Patches in those areas are welcome; open an issue in the github page of
-this project (https://github.com/cbsiddharth/libosdp) if you face any issues.
+this project [https://github.com/cbsiddharth/libosdp][11] if you face any issues.
 
 [1]: https://travis-ci.org/cbsiddharth/libosdp.svg?branch=master
 [2]: https://travis-ci.org/cbsiddharth/libosdp
@@ -150,3 +150,4 @@ this project (https://github.com/cbsiddharth/libosdp) if you face any issues.
 [8]: https://app.codacy.com/manual/siddharth_6/libosdp?utm_source=github.com&utm_medium=referral&utm_content=cbsiddharth/libosdp&utm_campaign=Badge_Grade_Dashboard
 [9]: https://github.com/cbsiddharth/libosdp/workflows/Build%20CI/badge.svg
 [10]: https://github.com/cbsiddharth/libosdp/actions?query=workflow%3A%22Build+CI%22
+[11]: https://github.com/cbsiddharth/libosdp

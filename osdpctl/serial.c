@@ -58,7 +58,7 @@ struct serial *serial_open(const char *device, int baud, const char *mode)
 		return NULL;
 	}
 
-	tmp = strlen(mode);
+	tmp = strnlen(mode, 5);
 	if (tmp < 3 || tmp > 4) {
 		printf("invalid mode \"%s\"\n", mode);
 		return NULL;

@@ -51,7 +51,7 @@ void osdp_log_set_color(const char *color)
 {
 	int ret, len;
 
-	len = strlen(color);
+	len = strnlen(color, 8);
 	if (isatty(fileno(stdout))) {
 		ret = write(fileno(stdout), color, len);
 		assert(ret == len);
@@ -306,9 +306,9 @@ const char *osdp_get_version()
 OSDP_EXPORT
 const char *osdp_get_source_info()
 {
-	if (strlen(GIT_TAG) > 0) {
+	if (strnlen(GIT_TAG, 8) > 0) {
 		return GIT_BRANCH " (" GIT_TAG ")";
-	} else if (strlen(GIT_REV) > 0) {
+	} else if (strnlen(GIT_REV, 8) > 0) {
 		return GIT_BRANCH " (" GIT_REV GIT_DIFF ")";
 	} else {
 		return GIT_BRANCH;

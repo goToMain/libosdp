@@ -28,19 +28,6 @@ static inline char int2hex(int v)
 	return (v >= 0 && v <= 9) ? '0' + v : 'A' + (v - 10);
 }
 
-/*
- * atohstr - Array to Hex String
- *
- * Usage:
- *   uint8_t arr[4] = { 0xca, 0xfe, 0xba, 0xbe };
- *   char hstr[16];
- *   if (atohstr(hstr, arr, 4) == 0) {
- *       // hstr = "cafebabe\0";
- *   }
- *
- * Note:
- * The passed char *hstr, has to be 2 * arr_len + 1 (for null char).
- */
 int atohstr(char *hstr, const uint8_t *arr, const int arr_len)
 {
 	int i;
@@ -54,19 +41,6 @@ int atohstr(char *hstr, const uint8_t *arr, const int arr_len)
 	return 0;
 }
 
-/*
- * hstrtoa - Hex String to Array
- *
- * Usage:
- *   uint8_t arr[4];
- *   const char *hstr = "cafebabe";
- *   if (hstrtoa(arr, hstr) == 0) {
- *       // arr[4] = { 0xca, 0xfe, 0xba, 0xbe };
- *   }
- *
- * Note:
- * uint8_t *arr has to be atleast half of strlen(hstr)
- */
 int hstrtoa(uint8_t *arr, const char *hstr)
 {
 	int i, len, nib1, nib2;

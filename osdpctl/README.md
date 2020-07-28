@@ -64,9 +64,9 @@ them to actually get through.
 
 The following commands can be passed to a OSDP device that is setup as a CP. The
 PD to which these commands are being sent must have the capability of executing
-them. Refer to the [PD capabilities document][3] for more details.
+them. Refer to the [PD capabilities document][2] for more details.
 
-#### LED:
+#### LED
 
 This command is used to control LEDs in a PD. It is of the format:
 `led <led_no> <color> <blink|static> <count|state>`.
@@ -79,7 +79,7 @@ led 2 green static 1     # Turn on LED number 2 green color
 led 1 blue static 0      # Turn off LED number 1 blue color
 ```
 
-#### Buzzer:
+#### Buzzer
 
 This command is used to control Buzzers in a PD. It is of the format:
 `buzzer <blink|static> <count|state>`.
@@ -92,7 +92,7 @@ buzzer static 1         # turn off the buzzer
 buzzer static 0         # turn on the buzzer
 ```
 
-#### Output:
+#### Output
 
 This command is used to control LEDs in a PD. It is of the format:
 `output <output_number> <state>`.
@@ -103,7 +103,7 @@ output 0 1        # Set output number 0 high
 output 2 0        # Set output number 2 low
 ```
 
-#### Text:
+#### Text
 
 This command is used to control the text that is displayed on the PD. It is of
 the format: `text <string>`.
@@ -113,7 +113,7 @@ Examples:
 text 'Hello World'     # Set text "hello world" in display
 ```
 
-#### Communication Params set:
+#### Communication Params set
 
 This command is used to set the communication parameters of a connected PD. It
 is of the format: `comset <address> <baud_rate>`.
@@ -124,5 +124,4 @@ comset 12 115200  # Set PD address to 12 and baud rate to 115200
 ```
 
 [1]: /doc/osdpctl-configuration.md
-[2]: /doc/README.md
-[3]: /doc/osdp-pd-capabilities.md
+[2]: /doc/osdp-pd-capabilities.md

@@ -1,5 +1,8 @@
+#
 # Copyright (c) 2020 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
 name: Build CI
 
@@ -10,17 +13,26 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  Build:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
     - name: configure
-      run: cmake .
+      run: cmake -DCMAKE_BUILD_TYPE=Debug .
     - name: make
       run: make
+    - name: pacakge
+      run: |
+        make package
+        make package_source
+        rm -rf ./packages/_CPack_Packages/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Binaries
+        path: ./packages/
 
-  check:
+  Test:
     runs-on: ubuntu-latest
 
     steps:

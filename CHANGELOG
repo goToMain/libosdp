@@ -1,5 +1,5 @@
-v.1.1.0
--------
+v1.1.0
+------
 
 28 June 2020
 
@@ -23,8 +23,8 @@ Fixes:
   - Fix memory under-alloc due to operator precedence issues
 
 
-v.1.0.0
--------
+v1.0.0
+------
 
 29 May 2020
 

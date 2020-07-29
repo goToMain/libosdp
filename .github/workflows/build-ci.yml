@@ -15,6 +15,8 @@ on:
 jobs:
   Build:
     runs-on: ubuntu-latest
+    env:
+      SHORT_HASH: ${GITHUB_SHA::8}
 
     steps:
     - uses: actions/checkout@v2
@@ -29,7 +31,7 @@ jobs:
         rm -rf ./packages/_CPack_Packages/
     - uses: actions/upload-artifact@v2
       with:
-        name: libosdp-ci-binaries-${GITHUB_SHA::8}.zip
+        name: libosdp-ci-binaries-${SHORT_HASH}.zip
         path: ./packages/
 
   Test:

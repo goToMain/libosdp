@@ -56,6 +56,7 @@ generate_export_header(${LIB_OSDP}
 # Package Configuration
 include(CMakePackageConfigHelpers)
 set(LIBOSDP_CMAKE_CONFIG_DIR "lib/cmake/libosdp")
+set(LIBOSDP_PKG_CONFIG_DIR   "lib/pkgconfig")
 set(LIBOSDP_DEFINITIONS      "")
 set(LIBOSDP_INCLUDE_DIR      "include")
 set(LIBOSDP_LIBRARY          ${LIB_OSDP})
@@ -106,8 +107,13 @@ install(
 		${CMAKE_BINARY_DIR}/LibOSDPConfig.cmake
 		${CMAKE_BINARY_DIR}/LibOSDPConfigVersion.cmake
 		${CMAKE_SOURCE_DIR}/cmake/UseLibOSDP.cmake
-		${CMAKE_BINARY_DIR}/libosdp.pc
 	DESTINATION ${LIBOSDP_CMAKE_CONFIG_DIR}
+	COMPONENT config_files
+)
+install(
+	FILES
+		${CMAKE_BINARY_DIR}/libosdp.pc
+	DESTINATION ${LIBOSDP_PKG_CONFIG_DIR}
 	COMPONENT config_files
 )
 install(

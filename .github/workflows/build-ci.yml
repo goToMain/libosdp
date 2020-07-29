@@ -29,7 +29,7 @@ jobs:
         rm -rf ./packages/_CPack_Packages/
     - uses: actions/upload-artifact@v2
       with:
-        name: Binaries
+        name: libosdp-ci-binaries-${GITHUB_SHA::8}.zip
         path: ./packages/
 
   Test:

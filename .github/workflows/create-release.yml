@@ -18,7 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Produce Release Artifacts
         run: perl -e 'local $/; $_=<>; print $1 if (/-{4,}\n+\d+.*?\n+(.*?)\n+v\d+\./sg)' CHANGELOG > RELEASE.txt
       - name: Create Release

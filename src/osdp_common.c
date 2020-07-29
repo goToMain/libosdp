@@ -14,6 +14,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <utils/hexdump.h>
+
 #include "osdp_common.h"
 #include "osdp_aes.h"
 
@@ -115,34 +117,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 
 void osdp_dump(const char *head, uint8_t *buf, int len)
 {
-	int i;
-	char str[16 + 1] = { 0 };
-
-	osdp_log_set_color(RESET); /* no color for osdp_dump */
-	log_printf("%s [%d] =>\n    0000  %02x ", head ? head : "",
-		   len, len ? buf[0] : 0);
-	str[0] = isprint(buf[0]) ? buf[0] : '.';
-	for (i = 1; i < len; i++) {
-		if ((i & 0x0f) == 0) {
-			log_printf(" |%16s|", str);
-			log_printf("\n    %04d  ", i);
-		} else if ((i & 0x07) == 0) {
-			log_printf(" ");
-		}
-		log_printf("%02x ", buf[i]);
-		str[i & 0x0f] = isprint(buf[i]) ? buf[i] : '.';
-	}
-	if ((i &= 0x0f) != 0) {
-		if (i < 8) {
-			log_printf(" ");
-		}
-		for (; i < 16; i++) {
-			log_printf("   ");
-			str[i] = ' ';
-		}
-		log_printf(" |%16s|", str);
-	}
-	log_printf("\n");
+	hexdump(head, buf, len);
 }
 
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)

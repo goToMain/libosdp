@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#include <utils/procutils.h>
+
 #include "common.h"
 
 int cmd_handler_stop(int argc, char *argv[], void *data)

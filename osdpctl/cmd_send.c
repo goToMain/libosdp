@@ -12,6 +12,9 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 
+#include <utils/procutils.h>
+#include <utils/strutils.h>
+
 #include "common.h"
 
 int msgq_send_command(struct config_s *c, struct osdpctl_cmd *cmd)

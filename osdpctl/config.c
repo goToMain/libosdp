@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include <utils/strutils.h>
+
 #include "ini_parser.h"
 #include "common.h"
 
@@ -96,7 +98,7 @@ int config_parse_key_capabilites(const char *val, void *data)
 	struct config_pd_s *p = data;
 
 	safe_strncpy(str, val, sizeof(str));
-	remove_char(str, ' ');
+	remove_all(str, ' ');
 	tok1 = strtok_r(str, "[)]", &rest1);
 	while (tok1 != NULL) {
 		i = 0; ival[0] = 0;

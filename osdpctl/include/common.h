@@ -79,18 +79,6 @@ extern struct config_s g_config;
 void config_print(struct config_s *config);
 void config_parse(const char *filename, struct config_s *config);
 
-// from utils.c
-
-int atohstr(char *hstr, const uint8_t *arr, const int arr_len);
-int hstrtoa(uint8_t *arr, const char *hstr);
-int safe_atoi(const char *a, int *i);
-void remove_char(char *str, char c);
-char *safe_strncpy(char* dest, const char* src, size_t size);
-int read_pid(const char *file, int *pid);
-int write_pid(const char *file);
-int o_redirect(int mode, const char *file);
-void hexdump(const char *head, const uint8_t *data, size_t len);
-
 // command handlers
 
 void stop_cmd_server(struct config_s *c);

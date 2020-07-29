@@ -10,8 +10,6 @@ list(APPEND BIN_OSDPCTL_SRC
 	ini_parser.c
 	config.c
 	arg_parser.c
-	utils.c
-	serial.c
 	channel_uart.c
 	channel_msgq.c
 	channel_custom.c
@@ -25,12 +23,11 @@ list(APPEND BIN_OSDPCTL_SRC
 find_package(LibOSDP NO_MODULE REQUIRED HINTS ${CMAKE_BINARY_DIR})
 
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
-target_link_libraries(${BIN_OSDPCTL}
-	${LIBOSDP_LIBRARY}
-)
+target_link_libraries(${BIN_OSDPCTL} ${LIBOSDP_LIBRARY} utils)
 target_include_directories(${BIN_OSDPCTL}
 	PRIVATE
 		${LIBOSDP_INCLUDE_DIR}
+		${CMAKE_SOURCE_DIR}/utils/include
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 

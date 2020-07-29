@@ -13,6 +13,10 @@
 #include <sys/msg.h>
 #include <errno.h>
 
+#include <utils/strutils.h>
+#include <utils/hexdump.h>
+#include <utils/procutils.h>
+
 #include "common.h"
 
 struct msgbuf msgq_cmd;

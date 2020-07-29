@@ -19,11 +19,13 @@ list(APPEND LIB_OSDP_SRC
 	osdp_pd.c
 )
 add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
+target_link_libraries(${LIB_OSDP_STATIC} utils)
 # keep all symbols hidden by default (-fvisibility=hidden) for shared library
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_VISIBILITY_PRESET   hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 add_library(${LIB_OSDP} ${LIB_OSDP_SRC})
+target_link_libraries(${LIB_OSDP} utils)
 set_target_properties(${LIB_OSDP} PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
@@ -34,6 +36,7 @@ target_include_directories(${LIB_OSDP}
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
 	PRIVATE
+		${CMAKE_SOURCE_DIR}/utils/include
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${CMAKE_BINARY_DIR}/src/include
 )
@@ -42,6 +45,7 @@ target_include_directories(${LIB_OSDP_STATIC}
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
 	PRIVATE
+		${CMAKE_SOURCE_DIR}/utils/include
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${CMAKE_BINARY_DIR}/src/include
 )
@@ -96,7 +100,6 @@ configure_file(
 # Install targets
 install(
 	TARGETS ${LIB_OSDP} ${LIB_OSDP_STATIC}
-	EXPORT ${LIB_OSDP}-targets
 	LIBRARY DESTINATION ${LIBOSDP_LIBRARY_DIR}
 	ARCHIVE DESTINATION ${LIBOSDP_LIBRARY_DIR}
 	PUBLIC_HEADER DESTINATION ${LIBOSDP_INCLUDE_DIR}
@@ -114,11 +117,5 @@ install(
 	FILES
 		${CMAKE_BINARY_DIR}/libosdp.pc
 	DESTINATION ${LIBOSDP_PKG_CONFIG_DIR}
-	COMPONENT config_files
-)
-install(
-	EXPORT ${LIB_OSDP}-targets
-	FILE LibOSDPTargets.cmake
-	DESTINATION ${LIBOSDP_CMAKE_CONFIG_DIR}
 	COMPONENT config_files
 )

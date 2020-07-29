@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "serial.h"
+#include <utils/serial.h>
+
 #include "common.h"
 
 int channel_uart_send(void *data, uint8_t *buf, int len)

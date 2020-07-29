@@ -33,8 +33,13 @@ list(APPEND OSDP_UNIT_TEST_SRC
 
 add_executable(${OSDP_UNIT_TEST} EXCLUDE_FROM_ALL ${OSDP_UNIT_TEST_SRC})
 
-target_link_libraries(${OSDP_UNIT_TEST} ${LIB_OSDP_TEST})
-include_directories(${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(${OSDP_UNIT_TEST} ${LIB_OSDP_TEST} utils)
+
+include_directories(
+	${CMAKE_SOURCE_DIR}/include
+	${CMAKE_SOURCE_DIR}/utils/include
+)
+
 add_custom_target(check
 	COMMAND ${CMAKE_BINARY_DIR}/bin/${OSDP_UNIT_TEST}
 	COMMAND rm ${CMAKE_BINARY_DIR}/bin/${OSDP_UNIT_TEST}

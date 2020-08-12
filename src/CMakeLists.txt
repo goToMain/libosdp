@@ -13,11 +13,16 @@ set(LIB_OSDP_STATIC osdpstatic)
 list(APPEND LIB_OSDP_SRC
 	osdp_common.c
 	osdp_phy.c
-	osdp_sc.c
-	osdp_aes.c
 	osdp_cp.c
 	osdp_pd.c
 )
+if(CONFIG_OSDP_SC_ENABLED)
+	list(APPEND LIB_OSDP_SRC
+		osdp_sc.c
+		osdp_aes.c
+	)
+endif()
+
 add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
 target_link_libraries(${LIB_OSDP_STATIC} utils)
 # keep all symbols hidden by default (-fvisibility=hidden) for shared library

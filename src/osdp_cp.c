@@ -49,12 +49,14 @@
  */
 static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	uint8_t *smb;
 	struct osdp_cmd *cmd = NULL;
 	int data_off, i, ret = -1, len = 0;
 
 	data_off = osdp_phy_packet_get_data_offset(pd, buf);
-	smb = osdp_phy_packet_get_smb(pd, buf);
+
+#ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
+#endif
 
 	buf += data_off;
 	max_len -= data_off;
@@ -188,6 +190,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = 0;
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_COMSET:
 		if (max_len < CMD_COMSET_LEN) {
 			break;
@@ -242,11 +245,13 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			buf[len++] = pd->sc.cp_cryptogram[i];
 		ret = 0;
 		break;
+#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		LOG_ERR(TAG "Unknown/Unsupported command %02x", pd->cmd_id);
 		return -1;
 	}
 
+#ifdef CONFIG_OSDP_SC_ENABLED
 	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 		/**
 		 * When SC active and current cmd is not a handshake (<= SCS_14)
@@ -256,7 +261,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 	}
-
+#endif /* CONFIG_OSDP_SC_ENABLED */
 	if (ret < 0) {
 		LOG_ERR(TAG "Unable to build command %02x", pd->cmd_id);
 		return -1;
@@ -381,36 +386,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		SET_FLAG(pd, PD_FLAG_COMSET_INPROG);
 		ret = 0;
 		break;
-	case REPLY_CCRYPT:
-		if (len != REPLY_CCRYPT_DATA_LEN) {
-			break;
-		}
-		for (i=0; i<8; i++) {
-			pd->sc.pd_client_uid[i] = buf[pos++];
-		}
-		for (i=0; i<8; i++) {
-			pd->sc.pd_random[i] = buf[pos++];
-		}
-		for (i=0; i<16; i++) {
-			pd->sc.pd_cryptogram[i] = buf[pos++];
-		}
-		osdp_compute_session_keys(TO_CTX(pd));
-		if (osdp_verify_pd_cryptogram(pd) != 0) {
-			LOG_ERR(TAG "failed to verify PD_crypt");
-			return -1;
-		}
-		ret = 0;
-		break;
-	case REPLY_RMAC_I:
-		if (len != REPLY_RMAC_I_DATA_LEN) {
-			break;
-		}
-		for (i = 0; i < 16; i++) {
-			pd->sc.r_mac[i] = buf[pos++];
-		}
-		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		ret = 0;
-		break;
 	case REPLY_KEYPPAD:
 		if (len < REPLY_KEYPPAD_DATA_LEN) {
 			break;
@@ -467,6 +442,38 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		ret = 2;
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
+	case REPLY_CCRYPT:
+		if (len != REPLY_CCRYPT_DATA_LEN) {
+			break;
+		}
+		for (i=0; i<8; i++) {
+			pd->sc.pd_client_uid[i] = buf[pos++];
+		}
+		for (i=0; i<8; i++) {
+			pd->sc.pd_random[i] = buf[pos++];
+		}
+		for (i=0; i<16; i++) {
+			pd->sc.pd_cryptogram[i] = buf[pos++];
+		}
+		osdp_compute_session_keys(TO_CTX(pd));
+		if (osdp_verify_pd_cryptogram(pd) != 0) {
+			LOG_ERR(TAG "failed to verify PD_crypt");
+			return -1;
+		}
+		ret = 0;
+		break;
+	case REPLY_RMAC_I:
+		if (len != REPLY_RMAC_I_DATA_LEN) {
+			break;
+		}
+		for (i = 0; i < 16; i++) {
+			pd->sc.r_mac[i] = buf[pos++];
+		}
+		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		ret = 0;
+		break;
+#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		LOG_DBG(TAG "unexpected reply: 0x%02x", pd->reply_id);
 		return -1;
@@ -819,6 +826,7 @@ static int cp_state_update(struct osdp_pd *pd)
 		}
 		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CP_STATE_SC_INIT:
 		osdp_sc_init(pd);
 		cp_set_state(pd, OSDP_CP_STATE_SC_CHLNG);
@@ -883,6 +891,7 @@ static int cp_state_update(struct osdp_pd *pd)
 		cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 		pd->seq_number = -1;
 		break;
+#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		break;
 	}
@@ -910,9 +919,14 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	}
 	ctx->magic = 0xDEADBEAF;
 	ctx->flags |= FLAG_CP_MODE;
+
+#ifdef CONFIG_OSDP_SC_ENABLED
 	if (master_key != NULL) {
 		memcpy(ctx->sc_master_key, master_key, 16);
 	}
+#else
+	ARG_UNUSED(master_key);
+#endif
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
@@ -1116,6 +1130,7 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 OSDP_EXPORT
 int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 {
+#ifdef CONFIG_OSDP_SC_ENABLED
 	int i;
 	struct osdp_cmd *cmd;
 	struct osdp_pd *pd;
@@ -1142,6 +1157,11 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	}
 
 	return 0;
+#endif /* CONFIG_OSDP_SC_ENABLED */
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(p);
+	return -1;
 }
 
 #ifdef UNIT_TESTING

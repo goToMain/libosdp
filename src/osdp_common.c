@@ -17,7 +17,6 @@
 #include <utils/hexdump.h>
 
 #include "osdp_common.h"
-#include "osdp_aes.h"
 
 #define LOG_CTX_GLOBAL -153
 
@@ -150,6 +149,9 @@ int64_t osdp_millis_since(int64_t last)
 	return osdp_millis_now() - last;
 }
 
+#ifdef CONFIG_OSDP_SC_ENABLED
+#include "osdp_aes.h"
+
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 {
 	struct AES_ctx aes_ctx;
@@ -191,6 +193,7 @@ void osdp_fill_random(uint8_t *buf, int len)
 		buf[i] = (uint8_t)(((float)rnd) / RAND_MAX * 256);
 	}
 }
+#endif /* CONFIG_OSDP_SC_ENABLED */
 
 void safe_free(void *p)
 {

@@ -249,6 +249,7 @@ struct osdp_cp_notifiers {
 	int (*cardread) (int address, int format, uint8_t * data, int len);
 };
 
+#ifdef CONFIG_OSDP_SC_ENABLED
 struct osdp_secure_channel {
 	uint8_t scbk[16];
 	uint8_t s_enc[16];
@@ -262,6 +263,7 @@ struct osdp_secure_channel {
 	uint8_t cp_cryptogram[16];
 	uint8_t pd_cryptogram[16];
 };
+#endif
 
 struct osdp_pd {
 	void *__parent;
@@ -292,7 +294,9 @@ struct osdp_pd {
 
 	struct osdp_slab *cmd_slab;
 	struct osdp_channel channel;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	struct osdp_secure_channel sc;
+#endif
 	struct osdp_cmd_queue queue;
 };
 
@@ -312,9 +316,11 @@ struct osdp {
 	uint32_t flags;
 	struct osdp_cp_notifiers notifier;
 
-	uint8_t sc_master_key[16];
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
+#ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t sc_master_key[16];
+#endif
 };
 
 enum log_levels_e {

@@ -15,10 +15,7 @@ set(PROJECT_DESCRIPTION "Open Supervised Device Protocol (OSDP) Library")
 
 ## Options
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
-
-if(NOT CONFIG_OSDP_BUILD_STATIC)
-	set(BUILD_SHARED_LIBS on)
-endif()
+option(CONFIG_OSDP_SC_ENABLED "Enable Secure Channel" ON)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

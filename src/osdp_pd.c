@@ -47,8 +47,13 @@ static struct osdp_pd_cap libosdp_pd_capabilities[] = {
 	},
 	{
 		OSDP_PD_CAP_COMMUNICATION_SECURITY,
+#ifdef CONFIG_OSDP_SC_ENABLED
 		1, /* (Bit-0) AES128 support */
 		1, /* (Bit-0) default AES128 key */
+#else
+		0, /* SC not supported */
+		0, /* SC not supported */
+#endif
 	},
 };
 
@@ -255,6 +260,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_COM;
 		ret = 0;
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (len != CMD_KEYSET_DATA_LEN) {
 			LOG_ERR(TAG "CMD_KEYSET length mismatch! %d/18", len);
@@ -321,6 +327,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_RMAC_I;
 		ret = 0;
 		break;
+#endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
 		pd->reply_id = REPLY_NAK;
 		pd->cmd_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
@@ -347,13 +354,13 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
  */
 static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	uint8_t *smb;
 	int i, data_off, len = 0, ret = -1;
 	struct osdp_cmd *cmd;
 
 	data_off = osdp_phy_packet_get_data_offset(pd, buf);
-	smb = osdp_phy_packet_get_smb(pd, buf);
-
+#ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
+#endif
 	buf += data_off;
 	max_len -= data_off;
 	if (max_len <= 0) {
@@ -477,6 +484,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_data[0];
 		ret = 0;
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
 		if (smb == NULL)
 			break;
@@ -530,12 +538,15 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = 0;
 		break;
+#endif /* CONFIG_OSDP_SC_ENABLED */
 	}
 
+#ifdef CONFIG_OSDP_SC_ENABLED
 	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 		smb[0] = 2; /* length */
 		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
+#endif /* CONFIG_OSDP_SC_ENABLED */
 
 	if (ret != 0) {
 		/* catch all errors and report it as a RECORD error to CP */
@@ -772,6 +783,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	}
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 
+#ifdef CONFIG_OSDP_SC_ENABLED
 	if (scbk == NULL) {
 		LOG_WRN(TAG "SCBK not provided. PD is in INSTALL_MODE");
 		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
@@ -779,12 +791,14 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	else {
 		memcpy(pd->sc.scbk, scbk, 16);
 	}
-
+	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
+#else
+	ARG_UNUSED(scbk);
+#endif
 	osdp_pd_set_attributes(pd, info->cap, &info->id);
 	osdp_pd_set_attributes(pd, libosdp_pd_capabilities, NULL);
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
-	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 
 	LOG_INF(TAG "setup complete");
 	return (osdp_t *) ctx;

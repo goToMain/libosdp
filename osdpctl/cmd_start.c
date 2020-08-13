@@ -124,6 +124,8 @@ int pd_cmd_handler(struct osdp_cmd *cmd)
 		return pd_cmd_comset_handler(&cmd->comset);
 	case OSDP_CMD_KEYSET:
 		return pd_cmd_keyset_handler(&cmd->keyset);
+	default:
+		break;
 	}
 	return -1;
 }

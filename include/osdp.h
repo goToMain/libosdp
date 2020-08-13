@@ -421,7 +421,7 @@ enum osdp_cmd_e {
  */
 struct osdp_cmd {
 	void *__next;
-	int id;
+	enum osdp_cmd_e id;
 	union {
 		struct osdp_cmd_led    led;
 		struct osdp_cmd_buzzer buzzer;

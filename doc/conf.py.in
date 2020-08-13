@@ -5,6 +5,7 @@ copyright = '@PROJECT_YEAR@, @PROJECT_ORG@'
 author = '@PROJECT_AUTHOR@'
 release = '@PROJECT_VERSION@'
 
+master_doc = 'index'
 extensions = ['sphinx_rtd_theme']
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'conf.py.in']

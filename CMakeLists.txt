@@ -4,13 +4,16 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_policy(SET CMP0063 NEW)
 
 project(libosdp VERSION 1.1.0)
 
 set(PROJECT_AUTHOR "Siddharth Chandrasekran")
 set(PROJECT_YEAR 2019)
-set(PROJECT_URL https://github.com/cbsiddharth/libosdp)
+set(PROJECT_ORG "goToMain")
+set(PROJECT_URL "https://github.com/goToMain/libosdp/")
+set(PROJECT_HOMEPAGE "https://libosdp.gotomain.io/")
 set(PROJECT_DESCRIPTION "Open Supervised Device Protocol (OSDP) Library")
 
 ## Options
@@ -39,6 +42,7 @@ add_subdirectory(src)
 add_subdirectory(osdpctl)
 add_subdirectory(test)
 add_subdirectory(sample)
+add_subdirectory(doc)
 
 ## uninstall target
 add_custom_target(uninstall

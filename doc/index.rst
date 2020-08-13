@@ -5,7 +5,6 @@
    :maxdepth: 2
    :hidden:
 
-   protocol/command-structure
    protocol/commands-and-replies
    protocol/packet-structure
    protocol/pd-capabilities
@@ -17,6 +16,8 @@
 
    api/control-panel
    api/peripheral-device
+   api/miscellaneous
+   api/command-structure
 
 .. toctree::
    :caption: osdpctl

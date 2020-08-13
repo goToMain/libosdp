@@ -22,7 +22,7 @@ jobs:
         submodules: recursive
     - name: configure
       run: |
-        pip install -r requirements.txt
+        pip install -r doc/requirements.txt
         cmake -DCMAKE_BUILD_TYPE=Debug .
     - name: make
       run: make

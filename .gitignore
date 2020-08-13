@@ -58,5 +58,3 @@ build-*/
 xcode/
 *.patch
 
-# libosdp
-include/osdp_config.h

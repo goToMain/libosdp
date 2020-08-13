@@ -18,7 +18,6 @@ compiler:
 install: cmake
 
 before_script:
-  - pip install -r doc/requirements.txt
   - mkdir build
   - cd build
   - cmake ..

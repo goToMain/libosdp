@@ -1,4 +1,5 @@
-find_package(Sphinx REQUIRED)
+find_package(Sphinx)
+if(SPHINX_FOUND)
 
 # Generate osdp_config.h in build dir.
 configure_file(conf.py.in conf.py @ONLY)
@@ -11,3 +12,5 @@ add_custom_target(html_docs
 	WORKING_DIRECTORY ${SPHINX_SOURCE}
 	COMMENT "Generating documentation with Sphinx"
 )
+
+endif() # SPHINX_FOUND

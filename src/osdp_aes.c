@@ -35,7 +35,6 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 /*****************************************************************************/
 /* Includes:                                                                 */
 /*****************************************************************************/
-#include <stdint.h>
 #include <string.h> // CBC mode, for memset
 #include "osdp_aes.h"
 
@@ -417,19 +416,19 @@ static void Cipher(state_t* state, const uint8_t* RoundKey)
 
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
-  // These Nr-1 rounds are executed in the loop below.
-  for (round = 1; round < Nr; ++round)
+  // These Nr rounds are executed in the loop below.
+  // Last one without MixColumns()
+  for (round = 1; ; ++round)
   {
     SubBytes(state);
     ShiftRows(state);
+    if (round == Nr) {
+      break;
+    }
     MixColumns(state);
     AddRoundKey(round, state, RoundKey);
   }
-
-  // The last round is given below.
-  // The MixColumns function is not here in the last round.
-  SubBytes(state);
-  ShiftRows(state);
+  // Add round key to last round
   AddRoundKey(Nr, state, RoundKey);
 }
 
@@ -443,20 +442,19 @@ static void InvCipher(state_t* state, const uint8_t* RoundKey)
 
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
-  // These Nr-1 rounds are executed in the loop below.
-  for (round = (Nr - 1); round > 0; --round)
+  // These Nr rounds are executed in the loop below.
+  // Last one without InvMixColumn()
+  for (round = (Nr - 1); ; --round)
   {
     InvShiftRows(state);
     InvSubBytes(state);
     AddRoundKey(round, state, RoundKey);
+    if (round == 0) {
+      break;
+    }
     InvMixColumns(state);
   }
 
-  // The last round is given below.
-  // The MixColumns function is not here in the last round.
-  InvShiftRows(state);
-  InvSubBytes(state);
-  AddRoundKey(0, state, RoundKey);
 }
 #endif // #if (defined(CBC) && CBC == 1) || (defined(ECB) && ECB == 1)
 
@@ -507,7 +505,6 @@ void AES_CBC_encrypt_buffer(struct AES_ctx *ctx, uint8_t* buf, uint32_t length)
     Cipher((state_t*)buf, ctx->RoundKey);
     Iv = buf;
     buf += AES_BLOCKLEN;
-    //printf("Step %d - %d", i/16, i);
   }
   /* store Iv in ctx for next call */
   memcpy(ctx->Iv, Iv, AES_BLOCKLEN);

@@ -34,7 +34,6 @@
 #define OSDP_RESP_TOUT_MS                       (200)
 #define OSDP_CMD_RETRY_WAIT_MS                  (500)
 #define OSDP_PACKET_BUF_SIZE                    (512)
-#define OSDP_PD_CMD_QUEUE_SIZE                  (128)
 #define OSDP_CP_CMD_POOL_SIZE                   (32)
 
 #endif /* _OSDP_CONFIG_H_ */

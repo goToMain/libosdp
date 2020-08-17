@@ -383,7 +383,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_CRIT(TAG "COMSET responded with ID:%d baud:%d", t1, temp32);
 		pd->address = t1;
 		pd->baud_rate = temp32;
-		SET_FLAG(pd, PD_FLAG_COMSET_INPROG);
 		ret = 0;
 		break;
 	case REPLY_KEYPPAD:
@@ -782,6 +781,7 @@ static int cp_state_update(struct osdp_pd *pd)
 
 	switch (pd->cp_state) {
 	case OSDP_CP_STATE_ONLINE:
+#ifdef CONFIG_OSDP_SC_ENABLED
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)  == false &&
 		    ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) == true  &&
 		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_SEC) {
@@ -789,6 +789,7 @@ static int cp_state_update(struct osdp_pd *pd)
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
+#endif
 		if (osdp_millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS) {
 			break;
 		}

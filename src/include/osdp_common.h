@@ -124,15 +124,11 @@
 /* Global flags */
 #define FLAG_CP_MODE		0x00000001 /* Set when initialized as CP */
 
-/* CP flags */
-#define CP_FLAG_INIT_DONE	0x00000001 /* set after data is malloc-ed and initialized */
-
 /* PD Flags */
 #define PD_FLAG_SC_CAPABLE	0x00000001 /* PD secure channel capable */
 #define PD_FLAG_TAMPER		0x00000002 /* local tamper status */
 #define PD_FLAG_POWER		0x00000004 /* local power status */
 #define PD_FLAG_R_TAMPER	0x00000008 /* remote tamper status */
-#define PD_FLAG_COMSET_INPROG	0x00000010 /* set when comset is enabled */
 #define PD_FLAG_AWAIT_RESP	0x00000020 /* set after command is sent */
 #define PD_FLAG_SKIP_SEQ_CHECK	0x00000040 /* disable seq checks (debug) */
 #define PD_FLAG_SC_USE_SCBKD	0x00000080 /* in this SC attempt, use SCBKD */
@@ -244,7 +240,7 @@ struct osdp_cmd_queue {
 	struct osdp_cmd *back;
 };
 
-struct osdp_cp_notifiers {
+struct osdp_notifiers {
 	int (*keypress) (int address, uint8_t key);
 	int (*cardread) (int address, int format, uint8_t * data, int len);
 };
@@ -303,10 +299,7 @@ struct osdp_pd {
 struct osdp_cp {
 	void *__parent;
 	uint32_t flags;
-
 	int num_pd;
-	int state;
-
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
 };
@@ -314,10 +307,9 @@ struct osdp_cp {
 struct osdp {
 	int magic;
 	uint32_t flags;
-	struct osdp_cp_notifiers notifier;
-
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
+	struct osdp_notifiers notifier;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
 #endif

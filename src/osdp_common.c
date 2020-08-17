@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include <utils/hexdump.h>
+#include <utils/utils.h>
 
 #include "osdp_common.h"
 
@@ -194,13 +195,6 @@ void osdp_fill_random(uint8_t *buf, int len)
 	}
 }
 #endif /* CONFIG_OSDP_SC_ENABLED */
-
-void safe_free(void *p)
-{
-	if (p != NULL) {
-		free(p);
-	}
-}
 
 struct osdp_slab *osdp_slab_init(int block_size, int num_blocks)
 {

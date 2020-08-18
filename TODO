@@ -1,20 +1,22 @@
-List of pending tasks
----------------------
+To Do
+=====
+
+This file lists a number action items that would be nice to have in LibOSDP.
 
 CP Mode:
 
-[*] Implement worker threads for PD(s) in a given CP
-[*] Transparent mode support
+  - Implement worker threads for PD(s) in a given CP
+  - Transparent mode support
 
 PD Mode:
 
-[*] Transparent mode support
+  - Transparent mode support
 
 Documentation:
 
-[*] Master key-set process; a note on install mode
+  - Master key-set process; a note on install mode
 
 Tests/Emulations:
 
-[*] Add secure channel unit test cases
-[*] Create a python tkinter GUI tool that emulates a PD
+  - Add secure channel unit test cases
+  - Create a python tkinter GUI tool that emulates a PD

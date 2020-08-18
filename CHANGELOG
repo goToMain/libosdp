@@ -8,7 +8,7 @@ This release marks the first HEAD of initial PD support in Zephyr RTOS upstream
 were made to upstream the PD sources without too much variation to the one here.
 
 Enhancements:
-  - Add support for sphinx documentation builds see: libosdp.gotomain.io
+  - Add support for sphinx documentation builds see: https://libosdp.gotomain.io
   - Add a macro switch to disable Secure Channel
   - Add utils git-submodule and delete all copied ad-hoc utils from this repo
   - Add pkg-config file for libosdp

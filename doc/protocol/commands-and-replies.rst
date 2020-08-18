@@ -1,5 +1,5 @@
-Reserved Command and Reply Codes
-================================
+Command and Reply Codes
+=======================
 
 The following commands and replies are reserved by the protocol for various
 actions. The following tables show their descriptions and whether or not this

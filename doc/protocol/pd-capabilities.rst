@@ -4,29 +4,6 @@ PD Capabilities
 This section explodes the structure of OSDP capability response
 (REPLY\_PDCAP).
 
-Table of Contents:
-------------------
-
--  `Message Structure <#message-structure>`__
--  `1 - Contact Status
-   Monitoring <#function-code-1---contact-status-monitoring>`__
--  `2 - Output Control <#function-code-2---output-control>`__
--  `3 - Card Data Format <#function-code-3---card-data-format>`__
--  `4 - Reader LED Control <#function-code-4---reader-led-control>`__
--  `5 - Reader Audible
-   Output <#function-code-5---reader-audible-output>`__
--  `6 - Reader Text Output <#function-code-6---reader-text-output>`__
--  `7 - Time Keeping <#function-code-7---time-keeping>`__
--  `8 - Check Character
-   Support <#function-code-8---check-character-support>`__
--  `9 - Communication
-   Security <#function-code-9---communication-security>`__
--  `10 - Receive BufferSize <#function-code-10---receive-bufferSize>`__
--  `11 - Largest Combined Message
-   Size <#function-code-11---largest-combined-message-size>`__
--  `12 - Smart Card Support <#function-code-12---smart-card-support>`__
--  `13 - Readers <#function-code-13---readers>`__
-
 Message Structure
 -----------------
 

@@ -151,13 +151,13 @@ Command Buzzer
 +==============+==============================================================+
 | reader       | 0 = First Reader, 1 = Second Reader, etc.                    |
 +--------------+--------------------------------------------------------------+
-| tone_code   | 0: no tone, 1: off, 2: default tone, 3+ is TBD.               |
+| tone_code    | 0: no tone, 1: off, 2: default tone, 3+ is TBD.              |
 +--------------+--------------------------------------------------------------+
-| on_count    | The ON duration of the flash, in units of 100 ms              |
+| on_count     | The ON duration of the flash, in units of 100 ms             |
 +--------------+--------------------------------------------------------------+
-| off_count   | The OFF duration of the flash, in units of 100 ms             |
+| off_count    | The OFF duration of the flash, in units of 100 ms            |
 +--------------+--------------------------------------------------------------+
-| rep_count   | The number of times to repeat the ON/OFF cycle; 0: forever    |
+| rep_count    | The number of times to repeat the ON/OFF cycle; 0: forever   |
 +--------------+--------------------------------------------------------------+
 
 Command Text
@@ -182,11 +182,11 @@ Command Text
 +---------------+--------------------------------------------------------------------------------------+
 | cmd           | How to treat the text; see table below                                               |
 +---------------+--------------------------------------------------------------------------------------+
-| temp_time    | The duration to display temporary text, in seconds                                    |
+| temp_time     | The duration to display temporary text, in seconds                                   |
 +---------------+--------------------------------------------------------------------------------------+
-| offset_row   | The row where the first character will be displayed (1 is the top row)                |
+| offset_row    | The row where the first character will be displayed (1 is the top row)               |
 +---------------+--------------------------------------------------------------------------------------+
-| offset_col   | The column where the first character will be displayed (1 is the left-most column)    |
+| offset_col    | The column where the first character will be displayed (1 is the left-most column)   |
 +---------------+--------------------------------------------------------------------------------------+
 | length        | Number of characters in the string                                                   |
 +---------------+--------------------------------------------------------------------------------------+

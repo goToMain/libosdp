@@ -13,9 +13,11 @@ Fields indicated with a ``*`` are mandatory in each mode. Some times depending
 on the mode, some more keys are required. Such dependencies are listed below each
 table.
 
-Read mode about INI file format `here <https://en.wikipedia.org/wiki/INI_file>`__.
-You can see some sample configuration files in `libosdp/osdpctl/config/
-<https://github.com/cbsiddharth/libosdp/tree/master/osdpctl/config>`__.
+Read mode about `INI file format`_ and you can see some sample configuration
+files `here`_.
+
+.. _INI file format: https://en.wikipedia.org/wiki/INI_file
+.. _here: https://github.com/cbsiddharth/libosdp/tree/master/osdpctl/config
 
 Global Configuration Keys
 -------------------------
@@ -107,5 +109,7 @@ PD Capabilities key is expressed as a list of tuples (python-ish):
 -  C: Compliance
 -  NI: Number of Items
 
-Refer to the `capabilities document </doc/osdp-pd-capabilities.md>`__ for
-details on each of the fields and various function codes.
+Refer to the `capabilities document`_ for details on each of the fields and
+various function codes.
+
+.. _capabilities document: ../protocol/pd-capabilities.html

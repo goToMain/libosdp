@@ -1,5 +1,5 @@
-Control Panel API
-=================
+Control Panel
+=============
 
 The following functions are used when OSDP is to be used in CP mode.
 
@@ -107,5 +107,7 @@ populated when passed to ``osdp_cp_setup``.
 All of these methods are used to send a specific command to the PD with offset
 number ``int pd``. A return value of 0 indicates success.
 
-Refer to the `command structure <command-structure>`_ document for more
-information on how to populate the ``cmd`` structure for these function.
+Refer to the `command structure`_ document for more information on how to
+populate the ``cmd`` structure for these function.
+
+.. _command structure: command-structure.html

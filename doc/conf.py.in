@@ -8,7 +8,13 @@ release = '@PROJECT_VERSION@'
 master_doc = 'index'
 extensions = ['sphinx_rtd_theme']
 templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'conf.py.in']
+exclude_patterns = [
+	'_build',
+	'Thumbs.db',
+	'.DS_Store',
+	'conf.py.in',
+	'*.txt'
+]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -32,7 +38,7 @@ html_theme_options = {
     'style_external_links': False,
     # Toc options
     'collapse_navigation': True,
-    'sticky_navigation': True,
+    'sticky_navigation': False,
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False

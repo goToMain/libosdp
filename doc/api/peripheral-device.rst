@@ -1,5 +1,5 @@
-Peripheral Device API
-=====================
+Peripheral Device
+=================
 
 The following functions are used when OSDP is to be used in pd mode. The library
 returns a single opaque pointer of type ``osdp_t`` where it maintains all it's
@@ -103,6 +103,8 @@ osdp_pd_get_cmd
     int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd);
 
 This is a periodic poll method. Applications can use this method to pull
-commands that are queued to the PD from a CP. Refer to the `command structure
-<command-structure>`_ document for more information on how to use the ``cmd``
-pointer returned by this function.
+commands that are queued to the PD from a CP. Refer to the `command structure`_
+document for more information on how to use the ``cmd`` pointer returned by this
+function.
+
+.. _command structure: command-structure.html

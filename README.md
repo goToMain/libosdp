@@ -31,8 +31,8 @@ OSDP devices.
 ## Supported Commands and Replies
 
 OSDP has certain command and reply IDs pre-registered. This implementation of
-the protocol support only the most common among them. You can see
-[a list of commands and replies and their support status in LibOSDP here][22].
+the protocol support only the most common among them. You can see a list of
+commands and replies and their support status in LibOSDP [here][22].
 
 ## Dependencies
 
@@ -73,9 +73,9 @@ this project [https://github.com/goTomain/libosdp][24] if you face any issues.
 [8]: https://app.codacy.com/manual/siddharth_6/libosdp?utm_source=github.com&utm_medium=referral&utm_content=cbsiddharth/libosdp&utm_campaign=Badge_Grade_Dashboard
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
-[21]: https://libosdp.gotomain.io/protocol/overview.html
+[21]: https://libosdp.gotomain.io/protocol/
 [22]: https://libosdp.gotomain.io/protocol/commands-and-replies.html
-[23]: https://libosdp.gotomain.io/build-and-install.html
+[23]: https://libosdp.gotomain.io/libosdp/build-and-install.html
 [24]: https://github.com/goTomain/libosdp
 [25]: https://github.com/goTomain/c-utils
-[26]: https://libosdp.gotomain.io/api/overview.html
+[26]: https://libosdp.gotomain.io/api/

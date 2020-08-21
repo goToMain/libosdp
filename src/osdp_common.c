@@ -196,34 +196,22 @@ void osdp_fill_random(uint8_t *buf, int len)
 }
 #endif /* CONFIG_OSDP_SC_ENABLED */
 
-struct osdp_slab *osdp_slab_init(int block_size, int num_blocks)
+int osdp_slab_init(struct osdp_slab *slab, int block_size, int num_blocks)
 {
-	struct osdp_slab *slab;
-
-	slab = calloc(1, sizeof(struct osdp_slab));
-	if (slab == NULL) {
-		goto cleanup;
-	}
 	slab->block_size = block_size + 2;
 	slab->num_blocks = num_blocks;
 	slab->free_blocks = num_blocks;
 	slab->blob = calloc(num_blocks, block_size + 2);
 	if (slab->blob == NULL) {
-		goto cleanup;
+		return -1;
 	}
-	return slab;
-
-cleanup:
-	osdp_slab_del(slab);
-	return NULL;
+	return 0;
 }
 
 void osdp_slab_del(struct osdp_slab *s)
 {
-	if (s != NULL) {
-		safe_free(s->blob);
-		safe_free(s);
-	}
+	safe_free(s->blob);
+	memset(s, 0, sizeof(struct osdp_slab));
 }
 
 void *osdp_slab_alloc(struct osdp_slab *s)
@@ -267,6 +255,64 @@ int osdp_slab_blocks(struct osdp_slab *s)
 	return (int)s->free_blocks;
 }
 
+struct osdp_cmd_node {
+	queue_node_t node;
+	struct osdp_cmd object;
+};
+
+struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd)
+{
+	struct osdp_cmd_node *cmd = NULL;
+
+	cmd = osdp_slab_alloc(&pd->cmd.slab);
+	if (cmd == NULL) {
+		LOG_ERR("Memory allocation failed");
+		return NULL;
+	}
+	return &cmd->object;
+}
+
+void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	struct osdp_cmd_node *n;
+
+	n = CONTAINER_OF(cmd, struct osdp_cmd_node, object);
+	osdp_slab_free(&pd->cmd.slab, n);
+}
+
+void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	struct osdp_cmd_node *n;
+
+	n = CONTAINER_OF(cmd, struct osdp_cmd_node, object);
+	queue_enqueue(&pd->cmd.queue, &n->node);
+}
+
+int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
+{
+	struct osdp_cmd_node *n;
+	queue_node_t *node;
+
+	if (queue_dequeue(&pd->cmd.queue, &node)) {
+		return -1;
+	}
+	n = CONTAINER_OF(node, struct osdp_cmd_node, node);
+	*cmd = &n->object;
+	return 0;
+}
+
+struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd)
+{
+	struct osdp_cmd_node *tmp;
+	queue_node_t *node;
+
+	if (queue_peek_last(&pd->cmd.queue, &node)) {
+		return NULL;
+	}
+	tmp = CONTAINER_OF(node, struct osdp_cmd_node, node);
+	return &tmp->object;
+}
+
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
@@ -299,7 +345,7 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
 		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
 			pd = TO_PD(ctx, i);
-			if (pd->cp_state == OSDP_CP_STATE_ONLINE &&
+			if (pd->state == OSDP_CP_STATE_ONLINE &&
 			    ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 				mask |= 1 << i;
 			}
@@ -326,7 +372,7 @@ uint32_t osdp_get_status_mask(osdp_t *ctx)
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
 		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
 			pd = TO_PD(ctx, i);
-			if (pd->cp_state == OSDP_CP_STATE_ONLINE) {
+			if (pd->state == OSDP_CP_STATE_ONLINE) {
 				mask |= 1 << i;
 			}
 		}

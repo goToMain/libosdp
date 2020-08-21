@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <utils/utils.h>
 
 #include "osdp_common.h"
 
@@ -56,27 +57,6 @@ static struct osdp_pd_cap libosdp_pd_capabilities[] = {
 #endif
 	},
 };
-
-static void pd_enqueue_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
-{
-	struct osdp_cmd_queue *q = &pd->queue;
-
-	cmd->__next = NULL;
-	if (q->front == NULL) {
-		q->front = q->back = cmd;
-	} else {
-		assert(q->back);
-		q->back->__next = cmd;
-		q->back = cmd;
-	}
-}
-
-static struct osdp_cmd *pd_get_last_command(struct osdp_pd *pd)
-{
-	struct osdp_cmd_queue *q = &pd->queue;
-
-	return q->back;
-}
 
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
@@ -143,7 +123,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_OUT_DATA_LEN) {
 			break;
 		}
-		cmd = osdp_slab_alloc(pd->cmd_slab);
+		cmd = osdp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -153,7 +133,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->output.control_code = buf[pos++];
 		cmd->output.tmr_count    = buf[pos++];
 		cmd->output.tmr_count   |= buf[pos++] << 8;
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -161,7 +141,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_LED_DATA_LEN) {
 			break;
 		}
-		cmd = osdp_slab_alloc(pd->cmd_slab);
+		cmd = osdp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -183,7 +163,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->led.permanent.off_count    = buf[pos++];
 		cmd->led.permanent.on_color     = buf[pos++];
 		cmd->led.permanent.off_color    = buf[pos++];
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -191,7 +171,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_BUZ_DATA_LEN) {
 			break;
 		}
-		cmd = osdp_slab_alloc(pd->cmd_slab);
+		cmd = osdp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -202,7 +182,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->buzzer.on_count  = buf[pos++];
 		cmd->buzzer.off_count = buf[pos++];
 		cmd->buzzer.rep_count = buf[pos++];
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -210,7 +190,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len < CMD_TEXT_DATA_LEN) {
 			break;
 		}
-		cmd = osdp_slab_alloc(pd->cmd_slab);
+		cmd = osdp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -225,13 +205,13 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (cmd->text.length > OSDP_CMD_TEXT_MAX_LEN ||
 		    ((len - CMD_TEXT_DATA_LEN) < cmd->text.length) ||
 		    cmd->text.length > OSDP_CMD_TEXT_MAX_LEN) {
-			osdp_slab_free(pd->cmd_slab, cmd);
+			osdp_cmd_free(pd, cmd);
 			break;
 		}
 		for (i = 0; i < cmd->text.length; i++) {
 			cmd->text.data[i] = buf[pos++];
 		}
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -239,7 +219,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_COMSET_DATA_LEN) {
 			break;
 		}
-		cmd = osdp_slab_alloc(pd->cmd_slab);
+		cmd = osdp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -256,7 +236,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd->comset.addr = pd->address;
 			cmd->comset.baud = pd->baud_rate;
 		}
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_COM;
 		ret = 0;
 		break;
@@ -282,7 +262,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			      buf[pos], buf[pos + 1]);
 			break;
 		}
-		cmd = osdp_slab_alloc(pd->cmd_slab);
+		cmd = osdp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			LOG_ERR(TAG "cmd alloc error");
 			break;
@@ -292,7 +272,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->keyset.len = buf[pos++];
 		memcpy(cmd->keyset.data, buf + pos, 16);
 		memcpy(pd->sc.scbk, buf + pos, 16);
-		pd_enqueue_command(pd, cmd);
+		osdp_cmd_enqueue(pd, cmd);
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 		pd->reply_id = REPLY_ACK;
@@ -456,7 +436,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		 * TODO: Persist pd->address and pd->baud_rate via
 		 * subsys/settings
 		 */
-		cmd = pd_get_last_command(pd);
+		cmd = osdp_cmd_get_last(pd);
 		if (cmd == NULL || cmd->id != OSDP_CMD_COMSET) {
 			LOG_ERR(TAG "Failed to fetch queue tail for COMSET");
 			break;
@@ -595,11 +575,11 @@ static int pd_send_reply(struct osdp_pd *pd)
 
 	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
 
-#ifdef CONFIG_OSDP_PACKET_TRACE
-	if (pd->cmd_id != CMD_POLL) {
-		osdp_dump("PD sent", pd->rx_buf, len);
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		if (pd->cmd_id != CMD_POLL) {
+			osdp_dump("PD sent", pd->rx_buf, len);
+		}
 	}
-#endif
 
 	return (ret == len) ? 0 : -1;
 }
@@ -631,17 +611,17 @@ static int pd_receve_packet(struct osdp_pd *pd)
 	}
 	pd->rx_buf_len += rec_bytes;
 
-#ifdef CONFIG_OSDP_PACKET_TRACE
-	/**
-	 * A crude way of identifying and not printing poll messages
-	 * when CONFIG_OSDP_PACKET_TRACE is enabled. This is an early
-	 * print to catch errors so keeping it simple.
-	 */
-	if (pd->rx_buf_len > 8 &&
-		pd->rx_buf[6] != CMD_POLL && pd->rx_buf[8] != CMD_POLL) {
-		osdp_dump("PD received", pd->rx_buf, pd->rx_buf_len);
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		/**
+		 * A crude way of identifying and not printing poll messages
+		 * when CONFIG_OSDP_PACKET_TRACE is enabled. This is an early
+		 * print to catch errors so keeping it simple.
+		 */
+		if (pd->rx_buf_len > 8 &&
+		    pd->rx_buf[6] != CMD_POLL && pd->rx_buf[8] != CMD_POLL) {
+			osdp_dump("PD received", pd->rx_buf, pd->rx_buf_len);
+		}
 	}
-#endif
 
 	pd->reply_id = 0;    /* reset past reply ID so phy can send NAK */
 	pd->cmd_data[0] = 0; /* reset past NAK reason */
@@ -670,7 +650,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
 
-	switch (pd->pd_state) {
+	switch (pd->state) {
 	case OSDP_PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
 		if (ret == 1) {
@@ -683,21 +663,21 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			 * any established secure channel must be discarded.
 			 */
 			LOG_ERR(TAG "receive errors/timeout");
-			pd->pd_state = OSDP_PD_STATE_ERR;
+			pd->state = OSDP_PD_STATE_ERR;
 			break;
 		}
 		if (ret == 0) {
 			pd_decode_command(pd, pd->rx_buf, pd->rx_buf_len);
 		}
-		pd->pd_state = OSDP_PD_STATE_SEND_REPLY;
+		pd->state = OSDP_PD_STATE_SEND_REPLY;
 		/* FALLTHRU */
 	case OSDP_PD_STATE_SEND_REPLY:
 		if (pd_send_reply(pd) == -1) {
-			pd->pd_state = OSDP_PD_STATE_ERR;
+			pd->state = OSDP_PD_STATE_ERR;
 			break;
 		}
 		pd->rx_buf_len = 0;
-		pd->pd_state = OSDP_PD_STATE_IDLE;
+		pd->state = OSDP_PD_STATE_IDLE;
 		break;
 	case OSDP_PD_STATE_ERR:
 		/**
@@ -710,7 +690,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		if (pd->channel.flush) {
 			pd->channel.flush(pd->channel.data);
 		}
-		pd->pd_state = OSDP_PD_STATE_IDLE;
+		pd->state = OSDP_PD_STATE_IDLE;
 		break;
 	}
 }
@@ -775,9 +755,8 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	pd->address = info->address;
 	pd->flags = info->flags;
 	pd->seq_number = -1;
-	pd->cmd_slab = osdp_slab_init(sizeof(struct osdp_cmd),
-				      OSDP_CP_CMD_POOL_SIZE);
-	if (pd->cmd_slab == NULL) {
+	if (osdp_slab_init(&pd->cmd.slab, sizeof(struct osdp_cmd),
+			   OSDP_CP_CMD_POOL_SIZE)) {
 		LOG_ERR(TAG "failed to alloc struct osdp_cp_cmd_slab");
 		goto error;
 	}
@@ -815,7 +794,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 
 	if (ctx != NULL) {
 		if (TO_PD(ctx, 0)) {
-			osdp_slab_del(TO_PD(ctx, 0)->cmd_slab);
+			osdp_slab_del(&TO_PD(ctx, 0)->cmd.slab);
 		}
 		safe_free(TO_PD(ctx, 0));
 		safe_free(TO_CP(ctx));
@@ -839,13 +818,9 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 	struct osdp_cmd *f;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	f = pd->queue.front;
-	if (f == NULL)
-		return -1;
-
+	osdp_cmd_dequeue(pd, &f);
 	memcpy(cmd, f, sizeof(struct osdp_cmd));
-	pd->queue.front = pd->queue.front->__next;
-	osdp_slab_free(pd->cmd_slab, f);
+	osdp_cmd_free(pd, f);
 	return 0;
 }
 

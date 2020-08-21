@@ -9,7 +9,7 @@
 
 extern int (*test_cp_alloc_command)(struct osdp_pd *, struct osdp_cmd **);
 extern void (*test_cp_enqueue_command)(struct osdp_pd *, struct osdp_cmd *);
-extern int (*test_cp_state_update)(struct osdp_pd *);
+extern int (*test_state_update)(struct osdp_pd *);
 extern int (*test_cp_phy_state_update)(struct osdp_pd *);
 
 int phy_fsm_resp_offset = 0;
@@ -126,7 +126,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 	printf("    -- executing test_cp_phy_fsm()\n");
 	while (result) {
 		ret = test_cp_phy_state_update(p);
-		if (ret != 1 && ret != 2)
+		if (ret != 3 && ret != 4)
 			break;
 		/* continue when in command and between commands continue */
 	}

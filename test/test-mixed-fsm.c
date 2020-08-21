@@ -9,7 +9,7 @@
 #include <osdp.h>
 #include "test.h"
 
-extern int (*test_cp_state_update)(struct osdp_pd *);
+extern int (*test_state_update)(struct osdp_pd *);
 extern void (*test_osdp_pd_update)(struct osdp_pd *pd);
 
 struct test_mixed {
@@ -163,7 +163,7 @@ void run_mixed_fsm_tests(struct test *t)
 	pd_cp = GET_CURRENT_PD(p->cp_ctx);
 	pd_pd = GET_CURRENT_PD(p->pd_ctx);
 	while (1) {
-		test_cp_state_update(pd_cp);
+		test_state_update(pd_cp);
 		test_osdp_pd_update(pd_pd);
 #ifdef CONFIG_OSDP_SC_ENABLED
 		if (osdp_get_sc_status_mask(p->cp_ctx))
@@ -172,12 +172,12 @@ void run_mixed_fsm_tests(struct test *t)
 		if (osdp_get_status_mask(p->cp_ctx))
 			break;
 #endif
-		if (pd_cp->cp_state == OSDP_CP_STATE_OFFLINE) {
+		if (pd_cp->state == OSDP_CP_STATE_OFFLINE) {
 			printf("    -- CP went offline!\n");
 			result = false;
 			break;
 		}
-		if (pd_pd->pd_state == OSDP_PD_STATE_ERR) {
+		if (pd_pd->state == OSDP_PD_STATE_ERR) {
 			printf("    -- PD state error!\n");
 			result = false;
 			break;

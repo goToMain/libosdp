@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <utils/queue.h>
 
 #include <osdp.h>
 #include "osdp_config.h"  /* generated */
@@ -210,7 +211,7 @@ enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_CLEANUP,
 };
 
-enum osdp_cp_state_e {
+enum osdp_state_e {
 	OSDP_CP_STATE_INIT,
 	OSDP_CP_STATE_IDREQ,
 	OSDP_CP_STATE_CAPDET,
@@ -235,11 +236,6 @@ struct osdp_slab {
 	uint8_t *blob;
 };
 
-struct osdp_cmd_queue {
-	struct osdp_cmd *front;
-	struct osdp_cmd *back;
-};
-
 struct osdp_notifiers {
 	int (*keypress) (int address, uint8_t key);
 	int (*cardread) (int address, int format, uint8_t * data, int len);
@@ -261,6 +257,11 @@ struct osdp_secure_channel {
 };
 #endif
 
+struct osdp_cmd_queue {
+	queue_t queue;
+	struct osdp_slab slab;
+};
+
 struct osdp_pd {
 	void *__parent;
 	int offset;
@@ -274,9 +275,8 @@ struct osdp_pd {
 	struct osdp_pd_id id;
 
 	/* PD state management */
-	enum osdp_pd_state_e pd_state;
-	enum osdp_cp_state_e cp_state;
-	enum osdp_cp_phy_state_e cp_phy_state;
+	int state;
+	int phy_state;
 
 	int64_t tstamp;
 	int64_t sc_tstamp;
@@ -288,12 +288,11 @@ struct osdp_pd {
 	int reply_id;
 	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
 
-	struct osdp_slab *cmd_slab;
+	struct osdp_cmd_queue cmd;
 	struct osdp_channel channel;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	struct osdp_secure_channel sc;
 #endif
-	struct osdp_cmd_queue queue;
 };
 
 struct osdp_cp {
@@ -302,6 +301,7 @@ struct osdp_cp {
 	int num_pd;
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
+	struct osdp_notifiers notifier;
 };
 
 struct osdp {
@@ -309,7 +309,6 @@ struct osdp {
 	uint32_t flags;
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
-	struct osdp_notifiers notifier;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
 #endif
@@ -363,10 +362,13 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);
 void safe_free(void *p);
 
-struct osdp_slab *osdp_slab_init(int block_size, int num_blocks);
+int osdp_slab_init(struct osdp_slab *slab, int block_size, int num_blocks);
 void osdp_slab_del(struct osdp_slab *s);
-void *osdp_slab_alloc(struct osdp_slab *s);
-void osdp_slab_free(struct osdp_slab *s, void *block);
-int osdp_slab_blocks(struct osdp_slab *s);
+
+struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
+void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);
+void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd);
+int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd);
+struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
 
 #endif	/* _OSDP_COMMON_H_ */

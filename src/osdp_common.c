@@ -227,10 +227,10 @@ void *osdp_slab_alloc(struct osdp_slab *s)
 	if (p == NULL || i == s->num_blocks) {
 		return NULL;
 	}
-	*p = 1; // Mark as allocated.
-	*(p + s->block_size - 1) = 0x55;  // cookie.
+	*(p + s->block_size - 1) = 1; // Mark as allocated.
+	*(p + s->block_size - 2) = 0x55;  // cookie.
 	s->free_blocks -= 1;
-	return (void *)(p + 1);
+	return (void *)p;
 }
 
 void osdp_slab_free(struct osdp_slab *s, void *block)
@@ -241,13 +241,13 @@ void osdp_slab_free(struct osdp_slab *s, void *block)
 		LOG_EM("slab: fatal, cookie crushed!");
 		exit(0);
 	}
-	if (*(p - 1) != 1) {
+	if (*(p + s->block_size - 1) != 1) {
 		LOG_EM("slab: free called on unallocated block");
 		return;
 	}
 	s->free_blocks += 1;
-	*(p - 1) = 0; // Mark as free.
-	// memset(p - 1, 0, s->block_size);
+	*(p + s->block_size - 1) = 0; // Mark as free.
+	// memset(p, 0, s->block_size);
 }
 
 int osdp_slab_blocks(struct osdp_slab *s)

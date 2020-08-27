@@ -2,11 +2,10 @@
 
 [![Version][1]][2] [![Build CI][3]][4] [![Travis CI][5]][6] [![Codacy Badge][7]][8]
 
-This is an open source implementation of Open Supervised Device Protocol (OSDP)
-developed by [Security Industry Association (SIA)][20]. The protocol is intended
-to improve interoperability among access control and security products. OSDP
-is currently in-process to become a standard recognized by the American National
-Standards Institute (ANSI).
+This is an open source implementation of IEC 60839-11-5 Open Supervised Device
+Protocol (OSDP) developed by [Security Industry Association (SIA)][20]. The
+protocol is intended to improve interoperability among access control and
+security products.
 
 OSDP describes the communication protocol for interfacing one or more Peripheral
 Devices (PD) to a Control Panel (CP). The OSDP specification describes the
@@ -19,9 +18,9 @@ a better idea.
 
   - Supports secure channel communication (AES-128).
   - Can be used to setup a PD or CP mode of operation.
-  - Exposes a well defined contract though `include/osdp.h`.
+  - Exposes a well defined contract though a single header file (`include/osdp.h`).
   - No run-time memory allocation. All memory is allocated at init-time.
-  - Well designed source code architecture
+  - No external dependencies (for ease of cross compilation).
 
 ## API
 
@@ -48,7 +47,7 @@ these with your application as needed (-losdp or -losdpstatic). Have a look at
 `sample/* for a quick lookup on how to consume this library and structure your
 application.
 
-You can als read the [API documentation][26] for a comprehensive list of APIs
+You can also read the [API documentation][26] for a comprehensive list of APIs
 that are exposed by libosdp.
 
 ```sh
@@ -57,9 +56,9 @@ cd libosdp
 mkdir build && cd build
 cmake ..
 make
-make check
 
 # optionally
+make check
 make DESTDIR=/your/install/path install
 ```
 
@@ -68,9 +67,12 @@ compilation.
 
 ## Contributions and bugs
 
-This repository is a work in progress; read the `TODO` file for list of pending
-tasks. Patches in those areas are welcome; open an issue in the github page of
-this project [https://github.com/goTomain/libosdp][24] if you face any issues.
+The CP mode has achieved some level of maturity. OOH, the PD mode is still a
+work in progress. Have a look at `TODO` file for list of pending tasks. Patches
+in those directions are welcome.
+
+If you find bugs or other issues, please open an issue in the github page of
+this project [https://github.com/goTomain/libosdp][24].
 
 ## License
 

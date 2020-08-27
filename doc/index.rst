@@ -67,6 +67,7 @@ of the protocol support only the most common among them. You can see a
    protocol/commands-and-replies
    protocol/packet-structure
    protocol/pd-capabilities
+   protocol/faq
 
 .. toctree::
    :caption: API

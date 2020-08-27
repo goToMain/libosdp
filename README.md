@@ -1,4 +1,4 @@
-LibOSDP - Open Supervised Device Protocol Library
+# LibOSDP - Open Supervised Device Protocol Library
 
 [![Version][1]][2] [![Build CI][3]][4] [![Travis CI][5]][6] [![Codacy Badge][7]][8]
 
@@ -21,7 +21,7 @@ a better idea.
   - Can be used to setup a PD or CP mode of operation.
   - Exposes a well defined contract though `include/osdp.h`.
   - No run-time memory allocation. All memory is allocated at init-time.
-  - Well designed source code architecture.
+  - Well designed source code architecture
 
 ## API
 
@@ -38,30 +38,53 @@ commands and replies and their support status in LibOSDP [here][22].
 
   * cmake3 (host)
   * python (doc/requirements.txt) (host, optional)
-  * [C-Utils][25] (host)
+  * [goToMain/C-Utils][25] (host, submodule)
 
 ## Compile LibOSDP
 
 To build libosdp you must have cmake-3.0 (or above) and a C compiler installed.
 This repository produces a `libosdpstatic.a` and `libosdp.so`. You can link
 these with your application as needed (-losdp or -losdpstatic). Have a look at
-`sample/*` for details on how to consume this library.
+`sample/* for a quick lookup on how to consume this library and structure your
+application.
+
+You can als read the [API documentation][26] for a comprehensive list of APIs
+that are exposed by libosdp.
 
 ```sh
+git clone https://github.com/goToMain/libosdp --recurse-submodules
+cd libosdp
 mkdir build && cd build
 cmake ..
 make
 make check
+
+# optionally
 make DESTDIR=/your/install/path install
 ```
 
-Refer to [this document][23] for more information on cross compilation and
+Refer to [this document][23] for more information on build and cross
+compilation.
 
 ## Contributions and bugs
 
 This repository is a work in progress; read the `TODO` file for list of pending
 tasks. Patches in those areas are welcome; open an issue in the github page of
 this project [https://github.com/goTomain/libosdp][24] if you face any issues.
+
+## License
+
+This software is distributed under the terms of Apache-2.0 license. If you don't
+know what that means/implies, you can consider it is as "free as in beer".
+
+OSDP protocol is also open for consumption into any product. There is no need
+to,
+ - obtain permission from SIA
+ - pay royalty to SIA
+ - become SIA member
+
+The OSDP specification can be obtained from SIA for a cost. Read more at our
+[FAQ page][27].
 
 [1]: https://img.shields.io/github/v/release/goToMain/libosdp
 [2]: https://github.com/goToMain/libosdp/releases
@@ -79,3 +102,4 @@ this project [https://github.com/goTomain/libosdp][24] if you face any issues.
 [24]: https://github.com/goTomain/libosdp
 [25]: https://github.com/goTomain/c-utils
 [26]: https://libosdp.gotomain.io/api/
+[27]: https://libosdp.gotomain.io/protocol/faq.html

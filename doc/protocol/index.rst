@@ -8,3 +8,4 @@ Protocol Description
    commands-and-replies
    packet-structure
    pd-capabilities
+   faq

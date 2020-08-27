@@ -755,9 +755,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	pd->address = info->address;
 	pd->flags = info->flags;
 	pd->seq_number = -1;
-	if (osdp_slab_init(&pd->cmd.slab, sizeof(struct osdp_cmd),
-			   OSDP_CP_CMD_POOL_SIZE)) {
-		LOG_ERR(TAG "failed to alloc struct osdp_cp_cmd_slab");
+	if (osdp_cmd_queue_init(pd)) {
 		goto error;
 	}
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
@@ -794,7 +792,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 
 	if (ctx != NULL) {
 		if (TO_PD(ctx, 0)) {
-			osdp_slab_del(&TO_PD(ctx, 0)->cmd.slab);
+			osdp_cmd_queue_del(TO_PD(ctx, 0));
 		}
 		safe_free(TO_PD(ctx, 0));
 		safe_free(TO_CP(ctx));

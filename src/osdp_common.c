@@ -14,9 +14,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <utils/hexdump.h>
-#include <utils/utils.h>
-
 #include "osdp_common.h"
 
 #define LOG_CTX_GLOBAL -153
@@ -196,76 +193,32 @@ void osdp_fill_random(uint8_t *buf, int len)
 }
 #endif /* CONFIG_OSDP_SC_ENABLED */
 
-int osdp_slab_init(struct osdp_slab *slab, int block_size, int num_blocks)
-{
-	slab->block_size = block_size + 2;
-	slab->num_blocks = num_blocks;
-	slab->free_blocks = num_blocks;
-	slab->blob = calloc(num_blocks, block_size + 2);
-	if (slab->blob == NULL) {
-		return -1;
-	}
-	return 0;
-}
-
-void osdp_slab_del(struct osdp_slab *s)
-{
-	safe_free(s->blob);
-	memset(s, 0, sizeof(struct osdp_slab));
-}
-
-void *osdp_slab_alloc(struct osdp_slab *s)
-{
-	int i;
-	uint8_t *p = NULL;
-
-	for (i = 0; i < s->num_blocks; i++) {
-		p = s->blob + (s->block_size * i);
-		if (*p == 0)
-			break;
-	}
-	if (p == NULL || i == s->num_blocks) {
-		return NULL;
-	}
-	*(p + s->block_size - 1) = 1; // Mark as allocated.
-	*(p + s->block_size - 2) = 0x55;  // cookie.
-	s->free_blocks -= 1;
-	return (void *)p;
-}
-
-void osdp_slab_free(struct osdp_slab *s, void *block)
-{
-	uint8_t *p = block;
-
-	if (*(p + s->block_size - 2) != 0x55) {
-		LOG_EM("slab: fatal, cookie crushed!");
-		exit(0);
-	}
-	if (*(p + s->block_size - 1) != 1) {
-		LOG_EM("slab: free called on unallocated block");
-		return;
-	}
-	s->free_blocks += 1;
-	*(p + s->block_size - 1) = 0; // Mark as free.
-	// memset(p, 0, s->block_size);
-}
-
-int osdp_slab_blocks(struct osdp_slab *s)
-{
-	return (int)s->free_blocks;
-}
-
 struct osdp_cmd_node {
 	queue_node_t node;
 	struct osdp_cmd object;
 };
 
+int osdp_cmd_queue_init(struct osdp_pd *pd)
+{
+	if (slab_init(&pd->cmd.slab, sizeof(struct osdp_cmd_node),
+		      OSDP_CP_CMD_POOL_SIZE)) {
+		LOG_ERR("Failed to initialize command slab");
+		return -1;
+	}
+	queue_init(&pd->cmd.queue);
+	return 0;
+}
+
+void osdp_cmd_queue_del(struct osdp_pd *pd)
+{
+	slab_del(&pd->cmd.slab);
+}
+
 struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd)
 {
 	struct osdp_cmd_node *cmd = NULL;
 
-	cmd = osdp_slab_alloc(&pd->cmd.slab);
-	if (cmd == NULL) {
+	if (slab_alloc(&pd->cmd.slab, (void **)&cmd)) {
 		LOG_ERR("Memory allocation failed");
 		return NULL;
 	}
@@ -277,7 +230,7 @@ void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	struct osdp_cmd_node *n;
 
 	n = CONTAINER_OF(cmd, struct osdp_cmd_node, object);
-	osdp_slab_free(&pd->cmd.slab, n);
+	slab_free(&pd->cmd.slab, n);
 }
 
 void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)

@@ -5,10 +5,9 @@
  */
 
 #include <osdp.h>
+
 #include "test.h"
 
-extern int (*test_cp_alloc_command)(struct osdp_pd *, struct osdp_cmd **);
-extern void (*test_cp_enqueue_command)(struct osdp_pd *, struct osdp_cmd *);
 extern int (*test_state_update)(struct osdp_pd *);
 extern int (*test_cp_phy_state_update)(struct osdp_pd *);
 
@@ -114,14 +113,19 @@ void run_cp_phy_fsm_tests(struct test *t)
 	ctx = t->mock_data;
 	p = GET_CURRENT_PD(ctx);
 
-	test_cp_alloc_command(p, &cmd_poll);
-	test_cp_alloc_command(p, &cmd_id);
+	cmd_poll = osdp_cmd_alloc(p);
+	cmd_id = osdp_cmd_alloc(p);
+
+	if (cmd_poll == NULL || cmd_id == NULL) {
+		printf("    -- cmd alloc failed\n");
+		return;
+	}
 
 	cmd_poll->id = CMD_POLL;
 	cmd_id->id = CMD_ID;
 
-	test_cp_enqueue_command(p, cmd_poll);
-	test_cp_enqueue_command(p, cmd_id);
+	osdp_cmd_enqueue(p, cmd_poll);
+	osdp_cmd_enqueue(p, cmd_id);
 
 	printf("    -- executing test_cp_phy_fsm()\n");
 	while (result) {

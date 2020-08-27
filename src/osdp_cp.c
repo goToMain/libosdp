@@ -570,19 +570,6 @@ static int cp_process_reply(struct osdp_pd *pd)
 	return cp_decode_response(pd, pd->rx_buf, pd->rx_buf_len);
 }
 
-static int cp_alloc_command(struct osdp_pd *pd, struct osdp_cmd **cmd)
-{
-	void *p;
-
-	p = osdp_cmd_alloc(pd);
-	if (p == NULL) {
-		LOG_WRN(TAG "Failed to alloc cmd");
-		return -1;
-	}
-	*cmd = p;
-	return 0;
-}
-
 static void cp_flush_command_queue(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
@@ -704,7 +691,8 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 		return 0;
 	}
 
-	if (cp_alloc_command(pd, &c)) {
+	c = osdp_cmd_alloc(pd);
+	if (c == NULL) {
 		return OSDP_CP_ERR_GENERIC;
 	}
 
@@ -909,9 +897,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		pd->address = p->address;
 		pd->flags = p->flags;
 		pd->seq_number = -1;
-		if (osdp_slab_init(&pd->cmd.slab, sizeof(struct osdp_cmd),
-				   OSDP_CP_CMD_POOL_SIZE)) {
-			LOG_ERR(TAG "failed to alloc struct osdp_cp_cmd_slab");
+		if (osdp_cmd_queue_init(pd)) {
 			goto error;
 		}
 		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
@@ -935,7 +921,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 	}
 
 	for (i = 0; i < TO_CP(ctx)->num_pd; i++) {
-		osdp_slab_del(&TO_PD(ctx, i)->cmd.slab);
+		osdp_cmd_queue_del(TO_PD(ctx, i));
 	}
 	safe_free(TO_PD(ctx, 0));
 	safe_free(TO_CP(ctx));
@@ -1106,7 +1092,8 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = TO_PD(ctx, i);
-		if (cp_alloc_command(pd, &cmd)) {
+		cmd = osdp_cmd_alloc(pd);
+		if (cmd == NULL) {
 			return -1;
 		}
 		cmd->id = CMD_KEYSET;
@@ -1127,8 +1114,6 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 /**
  * Force export some private methods for testing.
  */
-int (*test_cp_alloc_command)(struct osdp_pd *, struct osdp_cmd **) = cp_alloc_command;
-void (*test_cp_enqueue_command)(struct osdp_pd *, struct osdp_cmd *) = osdp_cmd_enqueue;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
 

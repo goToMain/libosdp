@@ -14,7 +14,7 @@
 #include <errno.h>
 
 #include <utils/strutils.h>
-#include <utils/hexdump.h>
+#include <utils/utils.h>
 #include <utils/procutils.h>
 
 #include "common.h"

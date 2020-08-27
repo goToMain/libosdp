@@ -10,7 +10,10 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
+
+#include <utils/utils.h>
 #include <utils/queue.h>
+#include <utils/slab.h>
 
 #include <osdp.h>
 #include "osdp_config.h"  /* generated */
@@ -259,7 +262,7 @@ struct osdp_secure_channel {
 
 struct osdp_cmd_queue {
 	queue_t queue;
-	struct osdp_slab slab;
+	slab_t slab;
 };
 
 struct osdp_pd {
@@ -362,8 +365,8 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);
 void safe_free(void *p);
 
-int osdp_slab_init(struct osdp_slab *slab, int block_size, int num_blocks);
-void osdp_slab_del(struct osdp_slab *s);
+int osdp_cmd_queue_init(struct osdp_pd *pd);
+void osdp_cmd_queue_del(struct osdp_pd *pd);
 
 struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
 void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);

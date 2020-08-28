@@ -29,7 +29,7 @@ target_link_libraries(${LIB_OSDP_STATIC} utils)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_VISIBILITY_PRESET   hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
-add_library(${LIB_OSDP} ${LIB_OSDP_SRC})
+add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SRC})
 target_link_libraries(${LIB_OSDP} utils)
 set_target_properties(${LIB_OSDP} PROPERTIES
 	VERSION ${PROJECT_VERSION}

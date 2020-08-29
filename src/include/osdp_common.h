@@ -240,8 +240,9 @@ struct osdp_slab {
 };
 
 struct osdp_notifiers {
-	int (*keypress) (int address, uint8_t key);
-	int (*cardread) (int address, int format, uint8_t * data, int len);
+	void *data;
+	keypress_callback_t keypress;
+	cardread_callback_t cardread;
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED

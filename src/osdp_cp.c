@@ -400,7 +400,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (cp->notifier.keypress) {
 			for (i = 0; i < t1; i++) {
 				t2 = buf[pos + i]; /* key data */
-				cp->notifier.keypress(pd->offset, t2);
+				cp->notifier.keypress(cp->notifier.data,
+						      pd->offset, t2);
 			}
 		}
 		ret = 0;
@@ -417,7 +418,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (cp->notifier.cardread) {
-			cp->notifier.cardread(pd->offset, t1, buf + pos, t2);
+			cp->notifier.cardread(cp->notifier.data, pd->offset,
+					      t1, buf + pos, t2);
 		}
 		ret = 0;
 		break;
@@ -432,7 +434,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (cp->notifier.cardread) {
-			cp->notifier.cardread(pd->offset, OSDP_CARD_FMT_ASCII,
+			cp->notifier.cardread(cp->notifier.data, pd->offset,
+					      OSDP_CARD_FMT_ASCII,
 					      buf + pos, t1);
 		}
 		ret = 0;
@@ -943,8 +946,15 @@ void osdp_cp_refresh(osdp_t *ctx)
 }
 
 OSDP_EXPORT
-int osdp_cp_set_callback_key_press(osdp_t *ctx,
-	int (*cb) (int address, uint8_t key))
+void osdp_cp_set_callback_data(osdp_t *ctx, void *data)
+{
+	assert(ctx && data);
+
+	TO_CP(ctx)->notifier.data = data;
+}
+
+OSDP_EXPORT
+int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb)
 {
 	assert(ctx);
 
@@ -954,8 +964,7 @@ int osdp_cp_set_callback_key_press(osdp_t *ctx,
 }
 
 OSDP_EXPORT
-int osdp_cp_set_callback_card_read(osdp_t *ctx,
-	int (*cb) (int address, int format, uint8_t *data, int len))
+int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb)
 {
 	assert(ctx);
 

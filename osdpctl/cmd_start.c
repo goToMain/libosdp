@@ -130,19 +130,22 @@ int pd_cmd_handler(struct osdp_cmd *cmd)
 	return -1;
 }
 
-int cp_keypress_handler(int pd, uint8_t key)
+int cp_keypress_handler(void *data, int pd, uint8_t key)
 {
+	ARG_UNUSED(data);
+
 	printf("CP: PD[%d]: keypressed: 0x%02x\n", pd, key);
 	return 0;
 }
 
-int cp_card_read_handler(int pd, int format, uint8_t * data, int len)
+int cp_card_read_handler(void *data, int pd, int format, uint8_t * card_data, int len)
 {
 	int i;
 
+	ARG_UNUSED(data);
 	printf("CP: PD[%d]: cardRead: FMT: %d Data[%d]: { ", pd, format, len);
 	for (i = 0; i < len; i++)
-		printf("%02x ", data[i]);
+		printf("%02x ", card_data[i]);
 	printf("}\n");
 
 	return 0;

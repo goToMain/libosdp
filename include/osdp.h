@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
+#define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
 
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
@@ -390,7 +391,7 @@ struct osdp_cmd_comset {
 struct osdp_cmd_keyset {
 	uint8_t key_type;
 	uint8_t len;
-	uint8_t data[32];
+	uint8_t data[OSDP_CMD_KEYSET_KEY_MAX_LEN];
 };
 
 /**
@@ -410,7 +411,6 @@ enum osdp_cmd_e {
  * @brief OSDP Command Structure. This is a wrapper for all individual OSDP
  * commands.
  *
- * @param __next INTERNAL. Don't use.
  * @param id used to select specific commands in union. Type: enum osdp_cmd_e
  * @param led LED command structure
  * @param buzzer buzzer command structure
@@ -420,7 +420,6 @@ enum osdp_cmd_e {
  * @param keyset keyset command structure
  */
 struct osdp_cmd {
-	void *__next;
 	enum osdp_cmd_e id;
 	union {
 		struct osdp_cmd_led    led;
@@ -432,14 +431,19 @@ struct osdp_cmd {
 	};
 };
 
+typedef int (*keypress_callback_t) (void *data, int address, uint8_t key);
+typedef int (*cardread_callback_t) (void *data, int address, int format,
+				    uint8_t *card_data, int len);
+
 /* =============================== CP Methods =============================== */
 
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 void osdp_cp_refresh(osdp_t *ctx);
 void osdp_cp_teardown(osdp_t *ctx);
 
-int osdp_cp_set_callback_key_press(osdp_t *ctx, int (*cb) (int address, uint8_t key));
-int osdp_cp_set_callback_card_read(osdp_t *ctx, int (*cb) (int address, int format, uint8_t * data, int len));
+void osdp_cp_set_callback_data(osdp_t *ctx, void *data);
+int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb);
+int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb);
 
 int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p);
 int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p);

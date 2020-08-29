@@ -16,6 +16,7 @@ set(PROJECT_ORG "goToMain")
 set(PROJECT_URL "https://github.com/goToMain/libosdp/")
 set(PROJECT_HOMEPAGE "https://libosdp.gotomain.io/")
 set(PROJECT_DESCRIPTION "Open Supervised Device Protocol (OSDP) Library")
+set(PROJECT_LICENSE "Apache-2.0")
 
 ## Options
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
@@ -44,6 +45,7 @@ add_subdirectory(osdpctl)
 add_subdirectory(test)
 add_subdirectory(sample)
 add_subdirectory(doc)
+add_subdirectory(python)
 
 ## uninstall target
 add_custom_target(uninstall

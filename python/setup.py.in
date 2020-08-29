@@ -1,0 +1,74 @@
+#
+#  Copyright (c) 2019 Siddharth Chandrasekaran <siddharth@embedjournal.com>
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+
+import os
+import setuptools
+
+sources = [
+    # utils sources
+    '@CMAKE_SOURCE_DIR@/utils/src/utils.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/strutils.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/list.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/queue.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/slab.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/serial.c',
+
+    # LibOSDP sources
+    '@CMAKE_SOURCE_DIR@/src/osdp_cp.c',
+    '@CMAKE_SOURCE_DIR@/src/osdp_pd.c',
+    '@CMAKE_SOURCE_DIR@/src/osdp_phy.c',
+    '@CMAKE_SOURCE_DIR@/src/osdp_aes.c',
+    '@CMAKE_SOURCE_DIR@/src/osdp_sc.c',
+    '@CMAKE_SOURCE_DIR@/src/osdp_common.c',
+
+    # py-osdp sources
+    '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp.c',
+    '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_cp.c',
+    '@CMAKE_CURRENT_SOURCE_DIR@/common.c',
+]
+
+compile_args = [
+    # Utils Includes
+    '-I@CMAKE_SOURCE_DIR@/utils/include',
+
+    # LibOSDP includes
+    '-I@CMAKE_SOURCE_DIR@/include',
+    '-I@CMAKE_SOURCE_DIR@/src/include',
+    '-I@CMAKE_BINARY_DIR@/src/include',
+]
+
+link_args = [
+]
+
+if os.path.exists('@CMAKE_CURRENT_SOURCE_DIR@/README.md'):
+    with open('@CMAKE_CURRENT_SOURCE_DIR@/README.md', 'r') as f:
+        long_description = f.read()
+else:
+    long_description = ''
+
+osdp_module = setuptools.Extension('@OSDP_PYTHON_PACKAGE_NAME@',
+    sources            = sources,
+    extra_compile_args = compile_args,
+    extra_link_args    = link_args
+)
+
+setuptools.setup(
+    name         = '@OSDP_PYTHON_PACKAGE_NAME@',
+    version      = '@OSDP_PYTHON_PACKAGE_VERSION@',
+    author       = '@PROJECT_AUTHOR@',
+    author_email = '@PROJECT_AUTHOR_EMAIL@',
+    description  = 'Python bindings for @PROJECT_NAME@',
+    url          = '@PROJECT_URL@',
+    ext_modules  = [ osdp_module ],
+    classifiers  = [
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: @PROJECT_LICENSE@",
+        "Operating System :: OS Independent",
+    ],
+    long_description              = long_description,
+    long_description_content_type = "text/markdown",
+    python_requires               = '>=3.6',
+)

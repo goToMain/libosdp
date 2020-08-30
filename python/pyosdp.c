@@ -4,7 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common.h"
+#include "pyosdp.h"
+
+int pyosdp_module_add_type(PyObject *module, const char *name,
+			   PyTypeObject *type)
+{
+	if (PyType_Ready(type)) {
+		return -1;
+	}
+	Py_INCREF(type);
+	if (PyModule_AddObject(module, name, (PyObject *)type)) {
+		Py_DECREF(type);
+		return -1;
+	}
+	return 0;
+}
 
 static PyMethodDef osdp_funcs[] = {
 	{ NULL, NULL, 0, NULL } /* sentinel */

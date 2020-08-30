@@ -34,9 +34,9 @@ key = '01020304050607080910111213141516'
 
 ## populate osdp_pd_info_t from python
 pd_info = [
-    # PD Address,   Baud Rate,   Device
-    ( 101,          115200,      '/dev/ttyUSB0'),  # PD-0
-    ( 102,          115200,      '/dev/ttyUSB1'),  # PD-1
+    # PD Address,  Type,     Baud Rate,   Device
+    ( 101,         'uart',   115200,      '/dev/ttyUSB0'),  # PD-0
+    ( 102,         'uart',   115200,      '/dev/ttyUSB1'),  # PD-1
 ]
 
 ## Setup OSDP device in control panel mode

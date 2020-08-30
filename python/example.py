@@ -5,14 +5,15 @@
 #
 
 import time
-import sys
 import threading
 import osdp
 
 key = '01020304050607080910111213141516'
+
 pd_info = [
-    (101, 115200, '/dev/tty.usbserial-AHYJSSFN')
+    (101, 'uart', 115200, '/dev/tty.usbserial-AHYJSSFN')
 ]
+
 cp = osdp.ControlPanel(pd_info, master_key=key)
 
 def osdp_refresh_thread():

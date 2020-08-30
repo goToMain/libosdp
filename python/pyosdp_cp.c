@@ -6,7 +6,7 @@
 
 #include <utils/strutils.h>
 
-#include "common.h"
+#include "pyosdp.h"
 
 static const char pyosdp_cp_tp_doc[] =
 "\n"
@@ -270,10 +270,7 @@ static PyObject *pyosdp_cp_tp_new(PyTypeObject *type, PyObject *args,
 static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 {
 	osdp_cp_teardown(self->ctx);
-	if (self->info) {
-		pyosdp_close_channel(&self->info->channel);
-		free(self->info);
-	}
+	channel_manager_teardown(&self->chn_mgr);
 	pyosdp_cp_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -294,18 +291,16 @@ int pyosdp_parse_int(PyObject *obj, int *res)
 
 static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
-	int i, address, baud_rate;
-	char *device, *master_key_str = NULL;
-	osdp_pd_info_t *info = NULL;
+	enum channel_type channel_type;
+	int i, ret, address, baud_rate;
+	char *device, *channel_type_str, *master_key_str = NULL;
+	osdp_pd_info_t *info, *info_list = NULL;
 	PyObject *py_info_list, *py_info;
 	uint8_t master_key[16] = {};
 	osdp_t *ctx;
 	static char *kwlist[] = {
 		"pd_info", "master_key", NULL
 	};
-
-	self->info = NULL;
-	self->ctx = NULL;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$s", kwlist,
 					 &PyList_Type, &py_info_list,
@@ -320,33 +315,56 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		}
 	}
 
+	channel_manager_init(&self->chn_mgr);
+
 	self->num_pd = (int)PyList_Size(py_info_list);
 	if (self->num_pd == 0)
 		return -1;
-	info = calloc(self->num_pd, sizeof(osdp_pd_info_t));
-	if (info == NULL) {
+	info_list = calloc(self->num_pd, sizeof(osdp_pd_info_t));
+	if (info_list == NULL) {
 		PyErr_SetString(PyExc_MemoryError, "pd_info alloc error");
 		return -1;
 	}
 	for (i = 0; i < self->num_pd; i++) {
 		py_info = PyList_GetItem(py_info_list, i);
-
-		if (!PyArg_ParseTuple(py_info, "iis", &address,
-				      &baud_rate, &device))
+		info = info_list + i;
+		if (!PyArg_ParseTuple(py_info, "isis", &address,
+				      &channel_type_str, &baud_rate, &device))
 			goto error;
 
-		if (pyosdp_build_pd_info(&info[i], address, baud_rate))
-			goto error;
+		info->flags = 0;
+		info->address = address;
+		info->baud_rate = baud_rate;
+		info->cap = NULL;
 
-		if (pyosdp_open_channel(&info->channel, device, baud_rate))
+		channel_type = channel_guess_type(channel_type_str);
+		if (channel_type == CHANNEL_TYPE_ERR) {
+			PyErr_SetString(PyExc_ValueError,
+					"unable to guess channel type");
 			goto error;
+		}
+
+		ret = channel_open(&self->chn_mgr, channel_type, device,
+				   baud_rate, 0);
+		if (ret != CHANNEL_ERR_NONE &&
+		    ret != CHANNEL_ERR_ALREADY_OPEN) {
+			PyErr_SetString(PyExc_PermissionError,
+					"Unable to open channel");
+			goto error;
+		}
+
+		channel_get(&self->chn_mgr, device,
+			    &info->channel.data,
+			    &info->channel.send,
+			    &info->channel.recv,
+			    &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info,
+	ctx = osdp_cp_setup(self->num_pd, info_list,
 			    master_key_str ? master_key : NULL);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
-		return -1;
+		goto error;
 	}
 
 	osdp_cp_set_callback_data(ctx, (void *)self);
@@ -354,10 +372,11 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	osdp_cp_set_callback_key_press(ctx, pyosdp_cp_keypress_cb);
 
 	self->ctx = ctx;
-	self->info = info;
+	free(info_list);
 	return 0;
+
 error:
-	free(info);
+	free(info_list);
 	return -1;
 }
 

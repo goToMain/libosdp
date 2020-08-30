@@ -269,8 +269,6 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
 
-		printf("Opening channel: %s\n", pd->channel_device);
-
 		ret = channel_open(&c->chn_mgr, pd->channel_type, pd->channel_device,
 				   pd->channel_speed, pd->is_pd_mode);
 		if (ret != CHANNEL_ERR_NONE && ret != CHANNEL_ERR_ALREADY_OPEN) {

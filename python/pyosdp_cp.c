@@ -63,7 +63,7 @@ static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args,
 		"keypress", "cardread", NULL
 	};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "$|OO", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "$OO", kwlist,
 					 &keypress_cb, &cardread_cb))
 		return NULL;
 
@@ -191,10 +191,10 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args,
 	char *kwlist[] = {
 	/* common */ "pd", "command", "reader", "number", "control_code",
 	/* LED */    "on_color", "off_color", "timer", "temporary", "permanent",
-	/* Buzzer */ "tone_code", "on_count", "off_count", "rep_count",
-	/* Text */   "row", "col", "data",
+	/* Buzzer */ "on_count", "off_count", "rep_count",
+	/* Text */   "row", "col",
 	/* comset */ "address", "baud_rate",
-	/* Keyset */ "key_type", "key_data", NULL
+	/* Keyset */ "type", "data", NULL
 	};
 
 	/* required arguments */
@@ -204,16 +204,16 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args,
 	int reader=-1, number=-1, control_code=-1,
 	on_color=-1, off_color=-1, timer=-1, temporary=-1, permanent=-1,
 	on_count=-1, off_count=-1, rep_count=-1,
-	row=-1, col=-1, address=-1, baud_rate=-1, key_type=-1;
+	row=-1, col=-1, address=-1, baud_rate=-1, type=-1;
 
-	char *key_data=NULL, *data=NULL;
+	char *data=NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "$II|IIIIIIIIIIIIIIIIss", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "II|IIIIIIIIIIIIIIIIs", kwlist,
 					 &pd, &command, &reader, &number, &control_code,
 					 &on_color, &off_color, &timer, &temporary, &permanent,
 					 &on_count, &off_count, &rep_count,
-					 &row, &col, &address, &baud_rate, &key_type,
-					 &key_data, &data))
+					 &row, &col, &address, &baud_rate, &type,
+					 &data))
 		return NULL;
 
 	if (pd < 0 || pd >= self->num_pd)
@@ -237,7 +237,7 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args,
 				       row, col, data);
 		break;
 	case OSDP_CMD_KEYSET:
-		pyosdp_handle_cmd_keyset(self, key_type, key_data);
+		pyosdp_handle_cmd_keyset(self, type, data);
 		break;
 	case OSDP_CMD_COMSET:
 		pyosdp_handle_cmd_comset(self, pd, address, baud_rate);
@@ -432,25 +432,25 @@ static PyMemberDef pyosdp_cp_tp_members[] = {
 
 PyTypeObject ControlPanelTypeObject = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
-	"ControlPanel",					/*tp_name*/
-	sizeof(pyosdp_t),				/*tp_basicsize*/
-	0,						/*tp_itemsize*/
-	(destructor)pyosdp_cp_tp_dealloc,		/*tp_dealloc*/
-	0,						/*tp_print*/
-	0,						/*tp_getattr*/
-	0,						/*tp_setattr*/
-	0,						/*tp_compare*/
-	pyosdp_cp_tp_repr,				/*tp_repr*/
-	0,						/*tp_as_number*/
-	0,						/*tp_as_sequence*/
-	0,						/*tp_as_mapping*/
-	0,						/*tp_hash */
-	0,						/*tp_call*/
-	pyosdp_cp_tp_str,				/*tp_str*/
-	0,						/*tp_getattro*/
-	0,						/*tp_setattro*/
-	0,						/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,	/*tp_flags*/
+	"ControlPanel",					/* tp_name */
+	sizeof(pyosdp_t),				/* tp_basicsize */
+	0,						/* tp_itemsize */
+	(destructor)pyosdp_cp_tp_dealloc,		/* tp_dealloc */
+	0,						/* tp_print */
+	0,						/* tp_getattr */
+	0,						/* tp_setattr */
+	0,						/* tp_compare */
+	pyosdp_cp_tp_repr,				/* tp_repr */
+	0,						/* tp_as_number */
+	0,						/* tp_as_sequence */
+	0,						/* tp_as_mapping */
+	0,						/* tp_hash */
+	0,						/* tp_call */
+	pyosdp_cp_tp_str,				/* tp_str */
+	0,						/* tp_getattro */
+	0,						/* tp_setattro */
+	0,						/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,	/* tp_flags */
 	pyosdp_cp_tp_doc,				/* tp_doc */
 	(traverseproc)pyosdp_cp_tp_traverse,		/* tp_traverse */
 	(inquiry)pyosdp_cp_tp_clear,			/* tp_clear */

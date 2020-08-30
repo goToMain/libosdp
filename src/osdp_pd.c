@@ -56,6 +56,7 @@ static struct osdp_pd_cap libosdp_pd_capabilities[] = {
 		0, /* SC not supported */
 #endif
 	},
+	{ 0, 0, 0 }, /* sentinel */
 };
 
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
@@ -816,7 +817,9 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 	struct osdp_cmd *f;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	osdp_cmd_dequeue(pd, &f);
+	if (osdp_cmd_dequeue(pd, &f)) {
+		return -1;
+	}
 	memcpy(cmd, f, sizeof(struct osdp_cmd));
 	osdp_cmd_free(pd, f);
 	return 0;

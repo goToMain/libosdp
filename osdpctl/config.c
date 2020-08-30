@@ -124,13 +124,8 @@ int config_parse_key_channel_type(const char *val, void *data)
 {
 	struct config_pd_s *p = data;
 
-	if (strcmp(val, "uart") == 0)
-		p->channel_type = CONFIG_CHANNEL_TYPE_UART;
-	else if (strcmp(val, "msgq") == 0)
-		p->channel_type = CONFIG_CHANNEL_TYPE_MSGQ;
-	else if (strcmp(val, "custom") == 0)
-		p->channel_type = CONFIG_CHANNEL_TYPE_CUSTOM;
-	else
+	p->channel_type = channel_guess_type(val);
+	if (p->channel_type == CHANNEL_TYPE_ERR)
 		return INI_FAILURE;
 
 	return INI_SUCCESS;
@@ -163,7 +158,7 @@ int config_parse_key_channel_device(const char *val, void *data)
 	}
 
 	if (val[0] == '/')
-		p->channel_device = strdup(val);
+		p->channel_device = safe_strdup(val);
 	else
 		p->channel_device = realpath(val, NULL);
 
@@ -417,14 +412,13 @@ void config_parse(const char *filename, struct config_s *config)
 		}
 		config->config_file = rp;
 	} else {
-		config->config_file = strdup(filename);
+		config->config_file = safe_strdup(filename);
 	}
 
-	if (config->pd->channel_type == CONFIG_CHANNEL_TYPE_MSGQ) {
+	if (config->pd->channel_type == CHANNEL_TYPE_MSGQ) {
 		if (config->mode == CONFIG_MODE_PD) {
-			if (config->pd->channel_device)
-				free(config->pd->channel_device);
-			config->pd->channel_device = strdup(config->config_file);
+			safe_free(config->pd->channel_device);
+			config->pd->channel_device = safe_strdup(config->config_file);
 		}
 	}
 }

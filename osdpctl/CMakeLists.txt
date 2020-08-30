@@ -10,10 +10,6 @@ list(APPEND BIN_OSDPCTL_SRC
 	ini_parser.c
 	config.c
 	arg_parser.c
-	channel_uart.c
-	channel_msgq.c
-	channel_custom.c
-	channel.c
 	osdpctl.c
 	cmd_start.c
 	cmd_send.c

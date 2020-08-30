@@ -16,10 +16,11 @@
 #include <utils/strutils.h>
 #include <utils/utils.h>
 #include <utils/procutils.h>
+#include <utils/channel.h>
 
 #include "common.h"
 
-struct msgbuf msgq_cmd;
+struct osdpctl_msgbuf msgq_cmd;
 
 void pack_pd_capabilities(struct osdp_pd_cap *cap)
 {
@@ -230,7 +231,7 @@ int process_commands(struct config_s *c)
 
 int cmd_handler_start(int argc, char *argv[], void *data)
 {
-	int i;
+	int i, ret;
 	osdp_pd_info_t *info_arr, *info;
 	struct config_pd_s *pd;
 	uint8_t *scbk, scbk_buf[16];
@@ -267,13 +268,21 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		pd = c->pd + i;
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
-		if (channel_setup(pd)) {
+
+		printf("Opening channel: %s\n", pd->channel_device);
+
+		ret = channel_open(&c->chn_mgr, pd->channel_type, pd->channel_device,
+				   pd->channel_speed, pd->is_pd_mode);
+		if (ret != CHANNEL_ERR_NONE && ret != CHANNEL_ERR_ALREADY_OPEN) {
 			printf("Failed to setup channel\n");
 			exit (-1);
 		}
-		if (pd->channel.flush)
-			pd->channel.flush(pd->channel.data);
-		memcpy(&info->channel, &pd->channel, sizeof(struct osdp_channel));
+
+		channel_get(&c->chn_mgr, pd->channel_device,
+			    &info->channel.data,
+			    &info->channel.send,
+			    &info->channel.recv,
+			    &info->channel.flush);
 
 		if (c->mode == CONFIG_MODE_CP)
 			continue;

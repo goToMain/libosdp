@@ -78,13 +78,13 @@ static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args,
 	if (keypress_cb)
 		self->keypress_cb = keypress_cb;
 
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
 {
 	osdp_cp_refresh(self->ctx);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 static int pyosdp_handle_cmd_output(pyosdp_t *self, int pd, int output_no,
@@ -161,14 +161,15 @@ static int pyosdp_handle_cmd_text(pyosdp_t *self, int pd, int reader,
 static int pyosdp_handle_cmd_keyset(pyosdp_t *self, int key_type,
 				    const char *key_data)
 {
+	int ret;
 	struct osdp_cmd_keyset cmd;
 
 	cmd.key_type = key_type;
 	cmd.len = strlen(key_data);
 	if (cmd.len > (OSDP_CMD_KEYSET_KEY_MAX_LEN * 2))
 		return -1;
-	cmd.len = hstrtoa(cmd.data, key_data);
-	if (cmd.len < 0)
+	cmd.len = ret = hstrtoa(cmd.data, key_data);
+	if (ret < 0)
 		return -1;
 
 	return osdp_cp_send_cmd_keyset(self->ctx, &cmd);
@@ -246,7 +247,7 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args,
 		return NULL;
 	}
 
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 static int pyosdp_cp_tp_clear(pyosdp_t *self)

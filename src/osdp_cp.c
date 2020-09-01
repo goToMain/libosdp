@@ -979,6 +979,10 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1001,6 +1005,10 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1023,6 +1031,10 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1045,6 +1057,10 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1067,6 +1083,10 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;

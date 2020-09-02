@@ -43,7 +43,7 @@ add_subdirectory(utils)
 add_subdirectory(src)
 add_subdirectory(osdpctl)
 add_subdirectory(test)
-add_subdirectory(sample)
+add_subdirectory(samples)
 add_subdirectory(doc)
 add_subdirectory(python)
 

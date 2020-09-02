@@ -114,5 +114,5 @@ pd.set_command_callback(handle_command)
 see [samples/pd_app.py][3] for more details.
 
 [1]: https://libosdp.gotomain.io/api/
-[2]: https://github.com/goToMain/libosdp/blob/master/sample/cp_app.py
-[3]: https://github.com/goToMain/libosdp/blob/master/sample/pd_app.py
+[2]: https://github.com/goToMain/libosdp/blob/master/samples/cp_app.py
+[3]: https://github.com/goToMain/libosdp/blob/master/samples/pd_app.py

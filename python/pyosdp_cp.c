@@ -522,7 +522,7 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"set_callback",
 		(PyCFunction)pyosdp_cp_set_callback,
 		METH_VARARGS,
-	  	"Set osdp event callbacks"
+		"Set osdp event callbacks"
 	},
 	{
 		"send",
@@ -534,13 +534,13 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"set_loglevel",
 		(PyCFunction)pyosdp_cp_set_loglevel,
 		METH_VARARGS,
-	  	"Set osdp event callbacks"
+		"Set osdp event callbacks"
 	},
-	{NULL, NULL, 0, NULL} /* Sentinel */
+	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 
 static PyMemberDef pyosdp_cp_tp_members[] = {
-	{NULL} /* Sentinel */
+	{ NULL } /* Sentinel */
 };
 
 PyTypeObject ControlPanelTypeObject = {

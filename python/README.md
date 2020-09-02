@@ -23,8 +23,7 @@ If you want to undo this install, you can run `make python_uninstall`.
 
 ## How to use this module?
 
-This module is still a work in progress and supports only Control Panel mode of
-operation. Please create an issue if you face any issues.
+### Control Panel Mode
 
 ```python
 import osdp
@@ -34,22 +33,86 @@ key = '01020304050607080910111213141516'
 
 ## populate osdp_pd_info_t from python
 pd_info = [
-    # PD Address,  Type,     Baud Rate,   Device
-    ( 101,         'uart',   115200,      '/dev/ttyUSB0'),  # PD-0
-    ( 102,         'uart',   115200,      '/dev/ttyUSB1'),  # PD-1
+    {
+        "address": 101,
+        "channel_type": "uart",
+        "channel_speed": 115200,
+        "channel_device": '/dev/ttyUSB0',
+    },
+    {
+        "address": 102,
+        "channel_type": "uart",
+        "channel_speed": 115200,
+        "channel_device": '/dev/ttyUSB1',
+    }
 ]
 
-## Setup OSDP device in control panel mode
+## Setup OSDP device in Control Panel mode
 cp = osdp.ControlPanel(pd_info, master_key=key)
 
 ## call this refresh method once every 50ms
 cp.refresh()
 
-## send a command to PD
-cp.send(pd=1, command=osdp.CMD_COMSET, address=110, baud_rate=9600)
+## create and output command
+output_cmd = {
+    "command": osdp.CMD_OUTPUT,
+    "output_no": 0,
+    "control_code": 1,
+    "timer_count": 10
+}
+
+## send a output command to PD-1
+cp.send(1, output_cmd)
 ```
 
-See `pyosdp_cp_send_command()` in pyosdp_cp.c for more information on
-`cp.send()`.
+see [samples/cp_app.py][2] for more details.
+
+### Peripheral Device mode:
+
+```python
+## Describe the PD
+pd_info = {
+    "address": 101,
+    "channel_type": "uart",
+    "channel_speed": 115200,
+    "channel_device": '/dev/ttyUSB0',
+
+    "version": 1,
+    "model": 1,
+    "vendor_code": 0xCAFEBABE,
+    "serial_number": 0xDEADBEAF,
+    "firmware_version": 0x0000F00D
+}
+
+## Indicate the PD's capabilities to LibOSDP.
+pd_cap = [
+    {
+        # PD is capable of handling output commands
+        "function_code": osdp.CAP_OUTPUT_CONTROL,
+        "compliance_level": 1,
+        "num_items": 1
+    },
+]
+
+## Setup OSDP device in Peripheral Device mode
+pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
+
+## call this refresh method once every 50ms
+pd.refresh()
+
+## Define a callback handler. Must return 0 on success, -ve on failures.
+def handle_command(address, command):
+    if address != pd_info['address']:
+        return -1 # error
+    print("PD received command: ", command)
+    return 0 # success
+
+## Set a handler for incoming commands from CP
+pd.set_command_callback(handle_command)
+```
+
+see [samples/pd_app.py][3] for more details.
 
 [1]: https://libosdp.gotomain.io/api/
+[2]: https://github.com/goToMain/libosdp/blob/master/sample/cp_app.py
+[3]: https://github.com/goToMain/libosdp/blob/master/sample/pd_app.py

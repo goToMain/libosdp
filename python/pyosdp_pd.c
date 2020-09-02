@@ -36,103 +36,99 @@ static int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val)
 	return ret;
 }
 
-static PyObject *pyosdp_pd_get_command(pyosdp_t *self, PyObject *args)
+PyObject *pyosdp_command_make_dict(struct osdp_cmd *cmd)
 {
 	char buf[64];
 	int is_temporary = 0;
-	PyObject *command;
-	struct osdp_cmd cmd;
-	struct osdp_cmd_led_params *p = &cmd.led.permanent;
+	PyObject *obj;
+	struct osdp_cmd_led_params *p = &cmd->led.permanent;
 
-	if (osdp_pd_get_cmd(self->ctx, &cmd))
-		Py_RETURN_NONE;
-
-	command = PyDict_New();
-	if (command == NULL)
+	obj = PyDict_New();
+	if (obj == NULL)
 		return NULL;
 
-	if (pyosdp_dict_add_int(command, "command", cmd.id))
+	if (pyosdp_dict_add_int(obj, "command", cmd->id))
 		return NULL;
 
-	switch (cmd.id) {
+	switch (cmd->id) {
 	case OSDP_CMD_OUTPUT:
-		if (pyosdp_dict_add_int(command, "control_code", cmd.output.control_code))
+		if (pyosdp_dict_add_int(obj, "control_code", cmd->output.control_code))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "output_no", cmd.output.output_no))
+		if (pyosdp_dict_add_int(obj, "output_no", cmd->output.output_no))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "timer_count", cmd.output.timer_count))
+		if (pyosdp_dict_add_int(obj, "timer_count", cmd->output.timer_count))
 			return NULL;
 		break;
 	case OSDP_CMD_LED:
-		if (cmd.led.temporary.control_code != 0) {
-			p = &cmd.led.temporary;
+		if (cmd->led.temporary.control_code != 0) {
+			p = &cmd->led.temporary;
 			is_temporary = 1;
 		}
 		if (is_temporary) {
-			if (pyosdp_dict_add_int(command, "temporary", 1))
+			if (pyosdp_dict_add_int(obj, "temporary", 1))
 				return NULL;
 		}
-		if (pyosdp_dict_add_int(command, "led_number", cmd.led.led_number))
+		if (pyosdp_dict_add_int(obj, "led_number", cmd->led.led_number))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "reader", cmd.led.reader))
+		if (pyosdp_dict_add_int(obj, "reader", cmd->led.reader))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "control_code", p->control_code))
+		if (pyosdp_dict_add_int(obj, "control_code", p->control_code))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "off_color", p->off_color))
+		if (pyosdp_dict_add_int(obj, "off_color", p->off_color))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "on_color", p->on_color))
+		if (pyosdp_dict_add_int(obj, "on_color", p->on_color))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "on_count", p->on_count))
+		if (pyosdp_dict_add_int(obj, "on_count", p->on_count))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "off_count", p->off_count))
+		if (pyosdp_dict_add_int(obj, "off_count", p->off_count))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "timer_count", p->timer_count))
+		if (pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
 			return NULL;
 		break;
 	case OSDP_CMD_BUZZER:
-		if (pyosdp_dict_add_int(command, "control_code", cmd.buzzer.control_code))
+		if (pyosdp_dict_add_int(obj, "control_code", cmd->buzzer.control_code))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "on_count", cmd.buzzer.on_count))
+		if (pyosdp_dict_add_int(obj, "on_count", cmd->buzzer.on_count))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "off_count", cmd.buzzer.off_count))
+		if (pyosdp_dict_add_int(obj, "off_count", cmd->buzzer.off_count))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "reader", cmd.buzzer.reader))
+		if (pyosdp_dict_add_int(obj, "reader", cmd->buzzer.reader))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "rep_count", cmd.buzzer.rep_count))
+		if (pyosdp_dict_add_int(obj, "rep_count", cmd->buzzer.rep_count))
 			return NULL;
 		break;
 	case OSDP_CMD_TEXT:
-		if (pyosdp_dict_add_int(command, "control_code", cmd.text.control_code))
+		if (pyosdp_dict_add_int(obj, "control_code", cmd->text.control_code))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "offset_col", cmd.text.offset_col))
+		if (pyosdp_dict_add_int(obj, "offset_col", cmd->text.offset_col))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "offset_row", cmd.text.offset_row))
+		if (pyosdp_dict_add_int(obj, "offset_row", cmd->text.offset_row))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "reader", cmd.text.reader))
+		if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "reader", cmd.text.reader))
+		if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
 			return NULL;
-		if (cmd.text.length > (sizeof(buf)-1))
+		if (cmd->text.length > (sizeof(buf)-1))
 			return NULL;
-		memcpy(buf, cmd.text.data, cmd.text.length);
-		buf[cmd.text.length] = '\0';
-		if (pyosdp_dict_add_str(command, "data", buf))
+		memcpy(buf, cmd->text.data, cmd->text.length);
+		buf[cmd->text.length] = '\0';
+		if (pyosdp_dict_add_str(obj, "data", buf))
 			return NULL;
 		break;
 	case OSDP_CMD_KEYSET:
-		if (pyosdp_dict_add_int(command, "type", cmd.keyset.type))
+		if (pyosdp_dict_add_int(obj, "type", cmd->keyset.type))
 			return NULL;
-		if (cmd.keyset.length > 16)
+		if (cmd->keyset.length > 16)
 			return NULL;
-		if (atohstr(buf, cmd.keyset.data, cmd.keyset.length))
+		if (atohstr(buf, cmd->keyset.data, cmd->keyset.length))
 			return NULL;
-		if (pyosdp_dict_add_str(command, "data", buf))
+		if (pyosdp_dict_add_str(obj, "data", buf))
 			return NULL;
 		break;
 	case OSDP_CMD_COMSET:
-		if (pyosdp_dict_add_int(command, "address", cmd.comset.address))
+		if (pyosdp_dict_add_int(obj, "address", cmd->comset.address))
 			return NULL;
-		if (pyosdp_dict_add_int(command, "baud_rate", cmd.comset.baud_rate))
+		if (pyosdp_dict_add_int(obj, "baud_rate", cmd->comset.baud_rate))
 			return NULL;
 		break;
 	default:
@@ -141,7 +137,57 @@ static PyObject *pyosdp_pd_get_command(pyosdp_t *self, PyObject *args)
 		return NULL;
 	}
 
-	return command;
+	return obj;
+}
+
+static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
+{
+	int ret_val = -1;
+	pyosdp_t *self = arg;
+	PyObject *dict, *arglist, *result;
+
+	dict = pyosdp_command_make_dict(cmd);
+	if (dict == NULL)
+		return -1;
+
+	arglist = Py_BuildValue("(IO)", address, dict);
+	result = PyEval_CallObject(self->command_cb, arglist);
+
+	if (result && PyLong_Check(result)) {
+		ret_val = (int)PyLong_AsLong(result);
+	}
+
+	Py_XDECREF(dict);
+	Py_XDECREF(result);
+	Py_DECREF(arglist);
+	return ret_val;
+}
+
+static PyObject *pyosdp_pd_set_command_callback(pyosdp_t *self, PyObject *args)
+{
+	PyObject *callable = NULL;
+
+	if (!PyArg_ParseTuple(args, "O", &callable))
+		return NULL;
+
+	if (callable == NULL || !PyCallable_Check(callable)) {
+		PyErr_SetString(PyExc_TypeError, "Need a callable object!");
+		return NULL;
+	}
+
+	self->command_cb = callable;
+	osdp_pd_set_command_callback(self->ctx, pd_command_cb, (void *)self);
+	Py_RETURN_NONE;
+}
+
+static PyObject *pyosdp_pd_get_command(pyosdp_t *self, PyObject *args)
+{
+	struct osdp_cmd cmd;
+
+	if (osdp_pd_get_cmd(self->ctx, &cmd))
+		Py_RETURN_NONE;
+
+	return pyosdp_command_make_dict(&cmd);
 }
 
 static PyObject *pyosdp_pd_set_loglevel(pyosdp_t *self, PyObject *args)
@@ -348,19 +394,25 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 		"set_loglevel",
 		(PyCFunction)pyosdp_pd_set_loglevel,
 		METH_VARARGS,
-	  	"Set osdp event callbacks"
+		"Set loglevel"
 	},
 	{
 		"get_command",
 		(PyCFunction)pyosdp_pd_get_command,
 		METH_VARARGS,
-	  	"Set osdp event callbacks"
+		"Get pending command"
 	},
-	{NULL, NULL, 0, NULL} /* Sentinel */
+	{
+		"set_command_callback",
+		(PyCFunction)pyosdp_pd_set_command_callback,
+		METH_VARARGS,
+		"Set osdp command callback"
+	},
+	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 
 static PyMemberDef pyosdp_pd_tp_members[] = {
-	{NULL} /* Sentinel */
+	{ NULL } /* Sentinel */
 };
 
 PyTypeObject PeripheralDeviceTypeObject = {

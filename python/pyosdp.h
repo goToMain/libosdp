@@ -19,6 +19,7 @@
 
 typedef struct {
 	PyObject_HEAD
+	PyObject *command_cb;
 	PyObject *keypress_cb;
 	PyObject *cardread_cb;
 	osdp_t *ctx;

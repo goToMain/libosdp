@@ -11,7 +11,7 @@ pd_info = {
     "address": 101,
     "channel_type": "message_queue",
     "channel_speed": 115200,
-    "channel_device": '/tmp/a.p',
+    "channel_device": '/tmp/osdp_mq',
 
     "version": 1,
     "model": 1,
@@ -28,16 +28,19 @@ pd_cap = [
     },
 ]
 
+def handle_command(address, command):
+    if address != pd_info['address']:
+        return -1 # error
+    print("PD received command: ", command)
+    return 0 # success
+
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
+pd.set_command_callback(handle_command)
 pd.set_loglevel(6)
 
 count = 0
 while True:
     pd.refresh()
-
-    if count % 50 == 0:
-        cmd = pd.get_command()
-        if cmd: print(cmd)
 
     time.sleep(0.05)
     count += 1

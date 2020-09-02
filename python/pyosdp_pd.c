@@ -10,9 +10,138 @@ static const char pyosdp_pd_tp_doc[] =
 "\n"
 ;
 
+static int pyosdp_dict_add_int(PyObject *dict, const char *key, int val)
+{
+	int ret;
+	PyObject *val_obj;
+
+	val_obj = PyLong_FromLong((long)val);
+	if (val_obj == NULL)
+		return -1;
+	ret = PyDict_SetItemString(dict, key, val_obj);
+	Py_DECREF(val_obj);
+	return ret;
+}
+
+static int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val)
+{
+	int ret;
+	PyObject *val_obj;
+
+	val_obj = PyUnicode_FromString(val);
+	if (val_obj == NULL)
+		return -1;
+	ret = PyDict_SetItemString(dict, key, val_obj);
+	Py_DECREF(val_obj);
+	return ret;
+}
+
 static PyObject *pyosdp_pd_get_command(pyosdp_t *self, PyObject *args)
 {
-	Py_RETURN_NONE;
+	char buf[64];
+	int is_temporary = 0;
+	PyObject *command;
+	struct osdp_cmd cmd;
+	struct osdp_cmd_led_params *p = &cmd.led.permanent;
+
+	if (osdp_pd_get_cmd(self->ctx, &cmd))
+		Py_RETURN_NONE;
+
+	command = PyDict_New();
+	if (command == NULL)
+		return NULL;
+
+	if (pyosdp_dict_add_int(command, "command", cmd.id))
+		return NULL;
+
+	switch (cmd.id) {
+	case OSDP_CMD_OUTPUT:
+		if (pyosdp_dict_add_int(command, "control_code", cmd.output.control_code))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "output_no", cmd.output.output_no))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "timer_count", cmd.output.timer_count))
+			return NULL;
+		break;
+	case OSDP_CMD_LED:
+		if (cmd.led.temporary.control_code != 0) {
+			p = &cmd.led.temporary;
+			is_temporary = 1;
+		}
+		if (is_temporary) {
+			if (pyosdp_dict_add_int(command, "temporary", 1))
+				return NULL;
+		}
+		if (pyosdp_dict_add_int(command, "led_number", cmd.led.led_number))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "reader", cmd.led.reader))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "control_code", p->control_code))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "off_color", p->off_color))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "on_color", p->on_color))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "on_count", p->on_count))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "off_count", p->off_count))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "timer_count", p->timer_count))
+			return NULL;
+		break;
+	case OSDP_CMD_BUZZER:
+		if (pyosdp_dict_add_int(command, "control_code", cmd.buzzer.control_code))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "on_count", cmd.buzzer.on_count))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "off_count", cmd.buzzer.off_count))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "reader", cmd.buzzer.reader))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "rep_count", cmd.buzzer.rep_count))
+			return NULL;
+		break;
+	case OSDP_CMD_TEXT:
+		if (pyosdp_dict_add_int(command, "control_code", cmd.text.control_code))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "offset_col", cmd.text.offset_col))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "offset_row", cmd.text.offset_row))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "reader", cmd.text.reader))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "reader", cmd.text.reader))
+			return NULL;
+		if (cmd.text.length > (sizeof(buf)-1))
+			return NULL;
+		memcpy(buf, cmd.text.data, cmd.text.length);
+		buf[cmd.text.length] = '\0';
+		if (pyosdp_dict_add_str(command, "data", buf))
+			return NULL;
+		break;
+	case OSDP_CMD_KEYSET:
+		if (pyosdp_dict_add_int(command, "type", cmd.keyset.type))
+			return NULL;
+		if (cmd.keyset.length > 16)
+			return NULL;
+		if (atohstr(buf, cmd.keyset.data, cmd.keyset.length))
+			return NULL;
+		if (pyosdp_dict_add_str(command, "data", buf))
+			return NULL;
+		break;
+	case OSDP_CMD_COMSET:
+		if (pyosdp_dict_add_int(command, "address", cmd.comset.address))
+			return NULL;
+		if (pyosdp_dict_add_int(command, "baud_rate", cmd.comset.baud_rate))
+			return NULL;
+		break;
+	default:
+		PyErr_SetString(PyExc_NotImplementedError,
+				"command not implemented");
+		return NULL;
+	}
+
+	return command;
 }
 
 static PyObject *pyosdp_pd_set_loglevel(pyosdp_t *self, PyObject *args)

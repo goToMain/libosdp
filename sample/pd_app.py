@@ -29,11 +29,15 @@ pd_cap = [
 ]
 
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
-pd.set_loglevel(7)
+pd.set_loglevel(6)
 
 count = 0
 while True:
     pd.refresh()
+
+    if count % 50 == 0:
+        cmd = pd.get_command()
+        if cmd: print(cmd)
 
     time.sleep(0.05)
     count += 1

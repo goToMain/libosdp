@@ -84,7 +84,7 @@ commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd ]
 
 cp = osdp.ControlPanel(pd_info, master_key=key)
 cp.set_callback(callbacks)
-cp.set_loglevel(7)
+cp.set_loglevel(6)
 
 count = 0
 while True:

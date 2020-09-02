@@ -246,7 +246,7 @@ static int pyosdp_handle_cmd_text(pyosdp_t *self, int pd, PyObject *dict)
 
 	if (osdp_cp_send_cmd_text(self->ctx, pd, &cmd)) {
 		PyErr_SetString(PyExc_KeyError, "cmd_text enqueue failed");
-		return -1;
+		goto error;
 	}
 
 	safe_free(data);
@@ -258,7 +258,6 @@ error:
 
 static int pyosdp_handle_cmd_keyset(pyosdp_t *self, PyObject *dict)
 {
-	int ret;
 	struct osdp_cmd_keyset cmd;
 	int type;
 	char *data = NULL;
@@ -279,7 +278,7 @@ static int pyosdp_handle_cmd_keyset(pyosdp_t *self, PyObject *dict)
 
 	if (osdp_cp_send_cmd_keyset(self->ctx, &cmd)) {
 		PyErr_SetString(PyExc_KeyError, "cmd_keyset enqueue failed");
-		return -1;
+		goto error;
 	}
 
 	safe_free(data);

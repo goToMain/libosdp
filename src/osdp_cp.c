@@ -976,9 +976,9 @@ int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb)
 OSDP_EXPORT
 int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 {
+	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	assert(ctx);
 	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN(TAG "PD not online");
 		return -1;
@@ -1002,9 +1002,9 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 OSDP_EXPORT
 int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 {
+	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	assert(ctx);
 	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN(TAG "PD not online");
 		return -1;
@@ -1028,9 +1028,9 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 OSDP_EXPORT
 int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 {
+	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	assert(ctx);
 	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN(TAG "PD not online");
 		return -1;
@@ -1054,9 +1054,9 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 OSDP_EXPORT
 int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 {
+	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	assert(ctx);
 	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN(TAG "PD not online");
 		return -1;
@@ -1080,9 +1080,9 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 OSDP_EXPORT
 int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 {
+	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	assert(ctx);
 	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN(TAG "PD not online");
 		return -1;

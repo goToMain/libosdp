@@ -431,9 +431,10 @@ struct osdp_cmd {
 	};
 };
 
-typedef int (*keypress_callback_t) (void *data, int address, uint8_t key);
-typedef int (*cardread_callback_t) (void *data, int address, int format,
-				    uint8_t *card_data, int len);
+typedef int (*keypress_callback_t)(void *data, int address, uint8_t key);
+typedef int (*cardread_callback_t)(void *data, int address, int format,
+				   uint8_t *card_data, int len);
+typedef int (*command_callback_t)(void *arg, int address, struct osdp_cmd *cmd);
 
 /* =============================== CP Methods =============================== */
 
@@ -457,6 +458,7 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 void osdp_pd_teardown(osdp_t *ctx);
 void osdp_pd_refresh(osdp_t *ctx);
+void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg);
 
 /**
  * @param ctx pointer to osdp context

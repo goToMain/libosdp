@@ -297,6 +297,8 @@ struct osdp_pd {
 #ifdef CONFIG_OSDP_SC_ENABLED
 	struct osdp_secure_channel sc;
 #endif
+	void *command_callback_arg;
+	command_callback_t command_callback;
 };
 
 struct osdp_cp {

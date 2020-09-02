@@ -56,7 +56,7 @@ static struct osdp_pd_cap libosdp_pd_capabilities[] = {
 		0, /* SC not supported */
 #endif
 	},
-	{ 0, 0, 0 }, /* sentinel */
+	{ -1, 0, 0 } /* Sentinel */
 };
 
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
@@ -134,7 +134,19 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->output.control_code = buf[pos++];
 		cmd->output.timer_count  = buf[pos++];
 		cmd->output.timer_count |= buf[pos++] << 8;
-		osdp_cmd_enqueue(pd, cmd);
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg,
+						   pd->address, cmd);
+			osdp_cmd_free(pd, cmd);
+			if (ret != 0) {
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+				ret = 0;
+				break;
+			}
+		} else {
+			osdp_cmd_enqueue(pd, cmd);
+		}
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -164,7 +176,19 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->led.permanent.off_count    = buf[pos++];
 		cmd->led.permanent.on_color     = buf[pos++];
 		cmd->led.permanent.off_color    = buf[pos++];
-		osdp_cmd_enqueue(pd, cmd);
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg,
+						   pd->address, cmd);
+			osdp_cmd_free(pd, cmd);
+			if (ret != 0) {
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+				ret = 0;
+				break;
+			}
+		} else {
+			osdp_cmd_enqueue(pd, cmd);
+		}
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -183,7 +207,19 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->buzzer.on_count     = buf[pos++];
 		cmd->buzzer.off_count    = buf[pos++];
 		cmd->buzzer.rep_count    = buf[pos++];
-		osdp_cmd_enqueue(pd, cmd);
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg,
+						   pd->address, cmd);
+			osdp_cmd_free(pd, cmd);
+			if (ret != 0) {
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+				ret = 0;
+				break;
+			}
+		} else {
+			osdp_cmd_enqueue(pd, cmd);
+		}
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -212,7 +248,19 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd->text.length; i++) {
 			cmd->text.data[i] = buf[pos++];
 		}
-		osdp_cmd_enqueue(pd, cmd);
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg,
+						   pd->address, cmd);
+			osdp_cmd_free(pd, cmd);
+			if (ret != 0) {
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+				ret = 0;
+				break;
+			}
+		} else {
+			osdp_cmd_enqueue(pd, cmd);
+		}
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -239,6 +287,20 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd->comset.address = pd->address;
 			cmd->comset.baud_rate = pd->baud_rate;
 		}
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg,
+						   pd->address, cmd);
+			if (ret != 0) {
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+				ret = 0;
+				break;
+			}
+		}
+		/**
+		 * For comset alone, we must enqueue the command regardless of
+		 * callback notify. See comment in REPLY_COM there for reasons.
+		 */
 		osdp_cmd_enqueue(pd, cmd);
 		pd->reply_id = REPLY_COM;
 		ret = 0;
@@ -275,7 +337,19 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->keyset.length = buf[pos++];
 		memcpy(cmd->keyset.data, buf + pos, 16);
 		memcpy(pd->sc.scbk, buf + pos, 16);
-		osdp_cmd_enqueue(pd, cmd);
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg,
+						   pd->address, cmd);
+			osdp_cmd_free(pd, cmd);
+			if (ret != 0) {
+				pd->reply_id = REPLY_NAK;
+				pd->cmd_data[0] = OSDP_PD_NAK_RECORD;
+				ret = 0;
+				break;
+			}
+		} else {
+			osdp_cmd_enqueue(pd, cmd);
+		}
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 		pd->reply_id = REPLY_ACK;
@@ -456,6 +530,18 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		pd->baud_rate = (int)cmd->comset.baud_rate;
 		LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
 			pd->address, pd->baud_rate);
+		if (pd->command_callback) {
+			/**
+			 * If callbacks are registered, COMSET should be the
+			 * only command in queue. So dequeue and free it as the
+			 * app won't call osdp_pd_get_cmd().
+			 */
+			if (osdp_cmd_dequeue(pd, &cmd)) {
+				LOG_ERR(TAG "Failed to dequeue COMSET");
+				break;
+			}
+			osdp_cmd_free(pd, cmd);
+		}
 		ret = 0;
 		break;
 	case REPLY_NAK:
@@ -825,6 +911,16 @@ int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
 	memcpy(cmd, f, sizeof(struct osdp_cmd));
 	osdp_cmd_free(pd, f);
 	return 0;
+}
+
+OSDP_EXPORT
+void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
+{
+	assert(ctx);
+	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+
+	pd->command_callback_arg = arg;
+	pd->command_callback = cb;
 }
 
 #ifdef UNIT_TESTING

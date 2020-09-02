@@ -56,7 +56,7 @@ led_cmd = {
 
 comset_cmd = {
     "command": osdp.CMD_COMSET,
-    "address": 1,
+    "address": 101,
     "baud_rate": 9600
 }
 

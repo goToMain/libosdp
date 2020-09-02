@@ -68,7 +68,7 @@ int pd_cmd_keyset_handler(struct osdp_cmd_keyset *p)
 	struct config_pd_s *c;
 
 	c = g_config.pd;
-	atohstr(hstr, p->data, p->len);
+	atohstr(hstr, p->data, p->length);
 	fd = fopen(c->key_store, "w");
 	if (fd == NULL) {
 		perror("Error opening store_scbk file");

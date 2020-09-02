@@ -139,8 +139,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->output.output_no;
 		buf[len++] = cmd->output.control_code;
-		buf[len++] = BYTE_0(cmd->output.tmr_count);
-		buf[len++] = BYTE_1(cmd->output.tmr_count);
+		buf[len++] = BYTE_0(cmd->output.timer_count);
+		buf[len++] = BYTE_1(cmd->output.timer_count);
 		ret = 0;
 		break;
 	case CMD_LED:
@@ -157,8 +157,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->led.temporary.off_count;
 		buf[len++] = cmd->led.temporary.on_color;
 		buf[len++] = cmd->led.temporary.off_color;
-		buf[len++] = BYTE_0(cmd->led.temporary.timer);
-		buf[len++] = BYTE_1(cmd->led.temporary.timer);
+		buf[len++] = BYTE_0(cmd->led.temporary.timer_count);
+		buf[len++] = BYTE_1(cmd->led.temporary.timer_count);
 
 		buf[len++] = cmd->led.permanent.control_code;
 		buf[len++] = cmd->led.permanent.on_count;
@@ -174,7 +174,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->buzzer.reader;
-		buf[len++] = cmd->buzzer.tone_code;
+		buf[len++] = cmd->buzzer.control_code;
 		buf[len++] = cmd->buzzer.on_count;
 		buf[len++] = cmd->buzzer.off_count;
 		buf[len++] = cmd->buzzer.rep_count;
@@ -187,7 +187,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->text.reader;
-		buf[len++] = cmd->text.cmd;
+		buf[len++] = cmd->text.control_code;
 		buf[len++] = cmd->text.temp_time;
 		buf[len++] = cmd->text.offset_row;
 		buf[len++] = cmd->text.offset_col;
@@ -204,11 +204,11 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
-		buf[len++] = cmd->comset.addr;
-		buf[len++] = BYTE_0(cmd->comset.baud);
-		buf[len++] = BYTE_1(cmd->comset.baud);
-		buf[len++] = BYTE_2(cmd->comset.baud);
-		buf[len++] = BYTE_3(cmd->comset.baud);
+		buf[len++] = cmd->comset.address;
+		buf[len++] = BYTE_0(cmd->comset.baud_rate);
+		buf[len++] = BYTE_1(cmd->comset.baud_rate);
+		buf[len++] = BYTE_2(cmd->comset.baud_rate);
+		buf[len++] = BYTE_3(cmd->comset.baud_rate);
 		ret = 0;
 		break;
 	case CMD_KEYSET:

@@ -81,8 +81,9 @@ Key press and Card read notifiers
 
 .. code:: c
 
-    int osdp_cp_set_callback_key_press(osdp_t *ctx, int (*cb) (int address, uint8_t key));
-    int osdp_cp_set_callback_card_read(osdp_t *ctx, int (*cb) (int address, int format, uint8_t * data, int len));
+    void osdp_cp_set_callback_data(void *data);
+    int osdp_cp_set_callback_key_press(osdp_t *ctx, int (*cb) (void *data, int address, uint8_t key));
+    int osdp_cp_set_callback_card_read(osdp_t *ctx, int (*cb) (void *data, int address, int format, uint8_t * data, int len));
 
 Both these functions are used to register a callback function for key press and
 card read event. libosdp will invoke these callback methods when the

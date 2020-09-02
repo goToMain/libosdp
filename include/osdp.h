@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
+#define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
 
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
@@ -262,12 +263,12 @@ typedef void osdp_t;
  *   4 - set the permanent state to ON, allow timed operation to complete
  *   5 - set the temporary state to ON, resume perm state on timeout
  *   6 - set the temporary state to OFF, resume permanent state on timeout
- * @param tmr_count Time in units of 100 ms
+ * @param timer_count Time in units of 100 ms
  */
 struct osdp_cmd_output {
 	uint8_t output_no;
 	uint8_t control_code;
-	uint16_t tmr_count;
+	uint16_t timer_count;
 };
 
 /**
@@ -298,7 +299,7 @@ enum osdp_led_color_e {
  * @param off_count The OFF duration of the flash, in units of 100 ms
  * @param on_color Color to set during the ON timer (enum osdp_led_color_e)
  * @param off_color Color to set during the OFF timer (enum osdp_led_color_e)
- * @param timer Time in units of 100 ms (only for temporary mode)
+ * @param timer_count Time in units of 100 ms (only for temporary mode)
  */
 struct osdp_cmd_led_params {
 	uint8_t control_code;
@@ -306,7 +307,7 @@ struct osdp_cmd_led_params {
 	uint8_t off_count;
 	uint8_t on_color;
 	uint8_t off_color;
-	uint16_t timer;
+	uint16_t timer_count;
 };
 
 /**
@@ -328,14 +329,14 @@ struct osdp_cmd_led {
  * @brief Sent from CP to control the behaviour of a buzzer in the PD.
  *
  * @param reader 0 = First Reader, 1 = Second Reader, etc.
- * @param tone_code 0: no tone, 1: off, 2: default tone, 3+ is TBD.
+ * @param control_code 0: no tone, 1: off, 2: default tone, 3+ is TBD.
  * @param on_count The ON duration of the flash, in units of 100 ms
  * @param off_count The OFF duration of the flash, in units of 100 ms
  * @param rep_count The number of times to repeat the ON/OFF cycle; 0: forever
  */
 struct osdp_cmd_buzzer {
 	uint8_t reader;
-	uint8_t tone_code;
+	uint8_t control_code;
 	uint8_t on_count;
 	uint8_t off_count;
 	uint8_t rep_count;
@@ -345,7 +346,7 @@ struct osdp_cmd_buzzer {
  * @brief Command to manuplate any display units that the PD supports.
  *
  * @param reader 0 = First Reader, 1 = Second Reader, etc.
- * @param cmd  One of the following:
+ * @param control_code One of the following:
  *   1 - permanent text, no wrap
  *   2 - permanent text, with wrap
  *   3 - temp text, no wrap
@@ -358,7 +359,7 @@ struct osdp_cmd_buzzer {
  */
 struct osdp_cmd_text {
 	uint8_t reader;
-	uint8_t cmd;
+	uint8_t control_code;
 	uint8_t temp_time;
 	uint8_t offset_row;
 	uint8_t offset_col;
@@ -370,27 +371,27 @@ struct osdp_cmd_text {
  * @brief Sent in response to a COMSET command. Set communication parameters to
  * PD. Must be stored in PD non-volatile memory.
  *
- * @param addr Unit ID to which this PD will respond after the change takes
+ * @param address Unit ID to which this PD will respond after the change takes
  *             effect.
- * @param baud baud rate value 9600/38400/115200
+ * @param baud_rate baud rate value 9600/38400/115200
  */
 struct osdp_cmd_comset {
-	uint8_t addr;
-	uint32_t baud;
+	uint8_t address;
+	uint32_t baud_rate;
 };
 
 /**
  * @brief This command transfers an encryption key from the CP to a PD.
  *
- * @param key_type Type of keys:
- *                  - 0x01 – Secure Channel Base Key
- * @param len Number of bytes of key data - (Key Length in bits + 7) / 8
+ * @param type Type of keys:
+ *   - 0x01 – Secure Channel Base Key
+ * @param length Number of bytes of key data - (Key Length in bits + 7) / 8
  * @param data Key data
  */
 struct osdp_cmd_keyset {
-	uint8_t key_type;
-	uint8_t len;
-	uint8_t data[32];
+	uint8_t type;
+	uint8_t length;
+	uint8_t data[OSDP_CMD_KEYSET_KEY_MAX_LEN];
 };
 
 /**
@@ -410,7 +411,6 @@ enum osdp_cmd_e {
  * @brief OSDP Command Structure. This is a wrapper for all individual OSDP
  * commands.
  *
- * @param __next INTERNAL. Don't use.
  * @param id used to select specific commands in union. Type: enum osdp_cmd_e
  * @param led LED command structure
  * @param buzzer buzzer command structure
@@ -420,7 +420,6 @@ enum osdp_cmd_e {
  * @param keyset keyset command structure
  */
 struct osdp_cmd {
-	void *__next;
 	enum osdp_cmd_e id;
 	union {
 		struct osdp_cmd_led    led;
@@ -432,14 +431,19 @@ struct osdp_cmd {
 	};
 };
 
+typedef int (*keypress_callback_t) (void *data, int address, uint8_t key);
+typedef int (*cardread_callback_t) (void *data, int address, int format,
+				    uint8_t *card_data, int len);
+
 /* =============================== CP Methods =============================== */
 
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 void osdp_cp_refresh(osdp_t *ctx);
 void osdp_cp_teardown(osdp_t *ctx);
 
-int osdp_cp_set_callback_key_press(osdp_t *ctx, int (*cb) (int address, uint8_t key));
-int osdp_cp_set_callback_card_read(osdp_t *ctx, int (*cb) (int address, int format, uint8_t * data, int len));
+void osdp_cp_set_callback_data(osdp_t *ctx, void *data);
+int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb);
+int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb);
 
 int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p);
 int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p);

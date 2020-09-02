@@ -36,7 +36,7 @@ commands and replies and their support status in LibOSDP [here][22].
 ## Dependencies
 
   * cmake3 (host)
-  * python (doc/requirements.txt) (host, optional)
+  * python3 (host)
   * [goToMain/C-Utils][25] (host, submodule)
 
 ## Compile LibOSDP

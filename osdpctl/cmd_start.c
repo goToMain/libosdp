@@ -16,10 +16,11 @@
 #include <utils/strutils.h>
 #include <utils/utils.h>
 #include <utils/procutils.h>
+#include <utils/channel.h>
 
 #include "common.h"
 
-struct msgbuf msgq_cmd;
+struct osdpctl_msgbuf msgq_cmd;
 
 void pack_pd_capabilities(struct osdp_pd_cap *cap)
 {
@@ -67,7 +68,7 @@ int pd_cmd_keyset_handler(struct osdp_cmd_keyset *p)
 	struct config_pd_s *c;
 
 	c = g_config.pd;
-	atohstr(hstr, p->data, p->len);
+	atohstr(hstr, p->data, p->length);
 	fd = fopen(c->key_store, "w");
 	if (fd == NULL) {
 		perror("Error opening store_scbk file");
@@ -130,19 +131,22 @@ int pd_cmd_handler(struct osdp_cmd *cmd)
 	return -1;
 }
 
-int cp_keypress_handler(int pd, uint8_t key)
+int cp_keypress_handler(void *data, int pd, uint8_t key)
 {
+	ARG_UNUSED(data);
+
 	printf("CP: PD[%d]: keypressed: 0x%02x\n", pd, key);
 	return 0;
 }
 
-int cp_card_read_handler(int pd, int format, uint8_t * data, int len)
+int cp_card_read_handler(void *data, int pd, int format, uint8_t * card_data, int len)
 {
 	int i;
 
+	ARG_UNUSED(data);
 	printf("CP: PD[%d]: cardRead: FMT: %d Data[%d]: { ", pd, format, len);
 	for (i = 0; i < len; i++)
-		printf("%02x ", data[i]);
+		printf("%02x ", card_data[i]);
 	printf("}\n");
 
 	return 0;
@@ -227,7 +231,7 @@ int process_commands(struct config_s *c)
 
 int cmd_handler_start(int argc, char *argv[], void *data)
 {
-	int i;
+	int i, ret;
 	osdp_pd_info_t *info_arr, *info;
 	struct config_pd_s *pd;
 	uint8_t *scbk, scbk_buf[16];
@@ -264,13 +268,19 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		pd = c->pd + i;
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
-		if (channel_setup(pd)) {
+
+		ret = channel_open(&c->chn_mgr, pd->channel_type, pd->channel_device,
+				   pd->channel_speed, pd->is_pd_mode);
+		if (ret != CHANNEL_ERR_NONE && ret != CHANNEL_ERR_ALREADY_OPEN) {
 			printf("Failed to setup channel\n");
 			exit (-1);
 		}
-		if (pd->channel.flush)
-			pd->channel.flush(pd->channel.data);
-		memcpy(&info->channel, &pd->channel, sizeof(struct osdp_channel));
+
+		channel_get(&c->chn_mgr, pd->channel_device,
+			    &info->channel.data,
+			    &info->channel.send,
+			    &info->channel.recv,
+			    &info->channel.flush);
 
 		if (c->mode == CONFIG_MODE_CP)
 			continue;

@@ -67,8 +67,10 @@ void cleanup()
 
 	for (i = 0; i < g_config.num_pd; i++) {
 		pd = g_config.pd + i;
-		channel_teardown(pd);
+		channel_close(&g_config.chn_mgr, pd->channel_device);
 	}
+
+	channel_manager_teardown(&g_config.chn_mgr);
 }
 
 void osdpctl_process_init()
@@ -94,6 +96,8 @@ int main(int argc, char *argv[])
 		printf("Error: must provide a config file!\n");
 		exit(-1);
 	}
+
+	channel_manager_init(&g_config.chn_mgr);
 
 	config_parse(argv[1], &g_config);
 

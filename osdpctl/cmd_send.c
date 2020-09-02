@@ -79,7 +79,7 @@ int handle_cmd_led(int argc, char *argv[], struct osdp_cmd_led *c)
 		c->temporary.off_count = 5;
 		c->temporary.on_color = color;
 		c->temporary.off_color = OSDP_LED_COLOR_NONE;
-		c->temporary.timer = (uint16_t)(10 * count);
+		c->temporary.timer_count = (uint16_t)(10 * count);
 	} else {
 		// infinite sequence.
 		c->permanent.control_code = 1;
@@ -125,12 +125,12 @@ int handle_cmd_buzzer(int argc, char *argv[], struct osdp_cmd_buzzer *c)
 	}
 
 	if (blink) {
-		c->tone_code = 2; // default tone
+		c->control_code = 2; // default tone
 		c->on_count = 5;
 		c->off_count = 5;
 		c->rep_count = count;
 	} else {
-		c->tone_code = (state == 0) ? 0 : 2; // no tone or default
+		c->control_code = (state == 0) ? 0 : 2; // no tone or default
 		c->on_count = 5;
 		c->off_count = 0;
 		c->rep_count = 0;
@@ -155,7 +155,7 @@ int handle_cmd_output(int argc, char *argv[], struct osdp_cmd_output *c)
 
 	c->output_no = out_no;
 	c->control_code = (state == 0) ? 1 : 2;
-	c->tmr_count = 0;
+	c->timer_count = 0;
 
 	return 0;
 }
@@ -173,7 +173,7 @@ int handle_cmd_text(int argc, char *argv[], struct osdp_cmd_text *c)
 	if (len > 32)
 		return -1;
 
-	c->cmd = 1;
+	c->control_code = 1;
 	c->length = len;
 	memcpy(c->data, argv[0], len);
 	return 0;
@@ -197,8 +197,8 @@ int handle_cmd_comset(int argc, char *argv[], struct osdp_cmd_comset *c)
 	    (baud != 9600 && baud != 38400 && baud != 115200))
 		return -1;
 
-	c->addr = (uint8_t)address;
-	c->baud = (uint32_t)baud;
+	c->address = (uint8_t)address;
+	c->baud_rate = (uint32_t)baud;
 
 	return 0;
 }

@@ -47,7 +47,7 @@
 		TO_CP(p)->pd_offset = i;                        \
 	} while (0)
 #define PD_MASK(ctx) \
-	(uint32_t)((1 << (TO_CP(ctx)->num_pd + 1)) - 1)
+	(uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
 #define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
@@ -240,8 +240,9 @@ struct osdp_slab {
 };
 
 struct osdp_notifiers {
-	int (*keypress) (int address, uint8_t key);
-	int (*cardread) (int address, int format, uint8_t * data, int len);
+	void *data;
+	keypress_callback_t keypress;
+	cardread_callback_t cardread;
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED

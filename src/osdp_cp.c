@@ -139,8 +139,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->output.output_no;
 		buf[len++] = cmd->output.control_code;
-		buf[len++] = BYTE_0(cmd->output.tmr_count);
-		buf[len++] = BYTE_1(cmd->output.tmr_count);
+		buf[len++] = BYTE_0(cmd->output.timer_count);
+		buf[len++] = BYTE_1(cmd->output.timer_count);
 		ret = 0;
 		break;
 	case CMD_LED:
@@ -157,8 +157,8 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->led.temporary.off_count;
 		buf[len++] = cmd->led.temporary.on_color;
 		buf[len++] = cmd->led.temporary.off_color;
-		buf[len++] = BYTE_0(cmd->led.temporary.timer);
-		buf[len++] = BYTE_1(cmd->led.temporary.timer);
+		buf[len++] = BYTE_0(cmd->led.temporary.timer_count);
+		buf[len++] = BYTE_1(cmd->led.temporary.timer_count);
 
 		buf[len++] = cmd->led.permanent.control_code;
 		buf[len++] = cmd->led.permanent.on_count;
@@ -174,7 +174,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->buzzer.reader;
-		buf[len++] = cmd->buzzer.tone_code;
+		buf[len++] = cmd->buzzer.control_code;
 		buf[len++] = cmd->buzzer.on_count;
 		buf[len++] = cmd->buzzer.off_count;
 		buf[len++] = cmd->buzzer.rep_count;
@@ -187,7 +187,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->text.reader;
-		buf[len++] = cmd->text.cmd;
+		buf[len++] = cmd->text.control_code;
 		buf[len++] = cmd->text.temp_time;
 		buf[len++] = cmd->text.offset_row;
 		buf[len++] = cmd->text.offset_col;
@@ -204,11 +204,11 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		cmd = (struct osdp_cmd *)pd->cmd_data;
 		buf[len++] = pd->cmd_id;
-		buf[len++] = cmd->comset.addr;
-		buf[len++] = BYTE_0(cmd->comset.baud);
-		buf[len++] = BYTE_1(cmd->comset.baud);
-		buf[len++] = BYTE_2(cmd->comset.baud);
-		buf[len++] = BYTE_3(cmd->comset.baud);
+		buf[len++] = cmd->comset.address;
+		buf[len++] = BYTE_0(cmd->comset.baud_rate);
+		buf[len++] = BYTE_1(cmd->comset.baud_rate);
+		buf[len++] = BYTE_2(cmd->comset.baud_rate);
+		buf[len++] = BYTE_3(cmd->comset.baud_rate);
 		ret = 0;
 		break;
 	case CMD_KEYSET:
@@ -400,7 +400,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (cp->notifier.keypress) {
 			for (i = 0; i < t1; i++) {
 				t2 = buf[pos + i]; /* key data */
-				cp->notifier.keypress(pd->offset, t2);
+				cp->notifier.keypress(cp->notifier.data,
+						      pd->offset, t2);
 			}
 		}
 		ret = 0;
@@ -417,7 +418,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (cp->notifier.cardread) {
-			cp->notifier.cardread(pd->offset, t1, buf + pos, t2);
+			cp->notifier.cardread(cp->notifier.data, pd->offset,
+					      t1, buf + pos, t2);
 		}
 		ret = 0;
 		break;
@@ -432,7 +434,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (cp->notifier.cardread) {
-			cp->notifier.cardread(pd->offset, OSDP_CARD_FMT_ASCII,
+			cp->notifier.cardread(cp->notifier.data, pd->offset,
+					      OSDP_CARD_FMT_ASCII,
 					      buf + pos, t1);
 		}
 		ret = 0;
@@ -943,8 +946,15 @@ void osdp_cp_refresh(osdp_t *ctx)
 }
 
 OSDP_EXPORT
-int osdp_cp_set_callback_key_press(osdp_t *ctx,
-	int (*cb) (int address, uint8_t key))
+void osdp_cp_set_callback_data(osdp_t *ctx, void *data)
+{
+	assert(ctx && data);
+
+	TO_CP(ctx)->notifier.data = data;
+}
+
+OSDP_EXPORT
+int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb)
 {
 	assert(ctx);
 
@@ -954,8 +964,7 @@ int osdp_cp_set_callback_key_press(osdp_t *ctx,
 }
 
 OSDP_EXPORT
-int osdp_cp_set_callback_card_read(osdp_t *ctx,
-	int (*cb) (int address, int format, uint8_t *data, int len))
+int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb)
 {
 	assert(ctx);
 
@@ -970,6 +979,10 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -992,6 +1005,10 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1014,6 +1031,10 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1036,6 +1057,10 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;
@@ -1058,6 +1083,10 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	struct osdp_cmd *cmd;
 
 	assert(ctx);
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
 		return -1;

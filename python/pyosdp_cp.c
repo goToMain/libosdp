@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <utils/strutils.h>
-
 #include "pyosdp.h"
 
 static const char pyosdp_cp_tp_doc[] =
@@ -55,17 +53,15 @@ int pyosdp_cp_cardread_cb(void *data, int address, int format, uint8_t *card_dat
 	return ret_val;
 }
 
-static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args,
-					PyObject *kwargs)
+static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args)
 {
-	PyObject *keypress_cb = NULL, *cardread_cb = NULL;
-	static char *kwlist[] = {
-		"keypress", "cardread", NULL
-	};
+	PyObject *dict, *keypress_cb = NULL, *cardread_cb = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "$OO", kwlist,
-					 &keypress_cb, &cardread_cb))
+	if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
 		return NULL;
+
+	keypress_cb = PyDict_GetItemString(dict, "keypress");
+	cardread_cb = PyDict_GetItemString(dict, "cardread");
 
 	if ((keypress_cb && !PyCallable_Check(keypress_cb)) ||
 	    (cardread_cb && !PyCallable_Check(cardread_cb))) {
@@ -73,10 +69,25 @@ static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args,
 		return NULL;
 	}
 
-	if (cardread_cb)
-		self->cardread_cb = cardread_cb;
-	if (keypress_cb)
-		self->keypress_cb = keypress_cb;
+	if (keypress_cb) self->keypress_cb = keypress_cb;
+	if (cardread_cb) self->cardread_cb = cardread_cb;
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *pyosdp_cp_set_loglevel(pyosdp_t *self, PyObject *args)
+{
+	int log_level;
+
+	if (!PyArg_ParseTuple(args, "I", &log_level))
+		return NULL;
+
+	if (log_level <= 0 || log_level > 7) {
+		PyErr_SetString(PyExc_KeyError, "invalid log level");
+		return NULL;
+	}
+
+	osdp_set_log_level(log_level);
 
 	Py_RETURN_NONE;
 }
@@ -84,166 +95,264 @@ static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args,
 static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
 {
 	osdp_cp_refresh(self->ctx);
+
 	Py_RETURN_NONE;
 }
 
-static int pyosdp_handle_cmd_output(pyosdp_t *self, int pd, int output_no,
-				    int control_code, int tmr_count)
+static int pyosdp_handle_cmd_output(pyosdp_t *self, int pd, PyObject *dict)
 {
 	struct osdp_cmd_output cmd;
+	int output_no, control_code, timer_count;
 
-	cmd.output_no = output_no;
-	cmd.control_code = control_code;
-	cmd.tmr_count = tmr_count;
-	return osdp_cp_send_cmd_output(self->ctx, pd, &cmd);
+	if (pyosdp_dict_get_int(dict, "output_no", &output_no))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "control_code", &control_code))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "timer_count", &timer_count))
+		return -1;
+
+	cmd.output_no = (uint8_t)output_no;
+	cmd.control_code = (uint8_t)control_code;
+	cmd.timer_count = (uint8_t)timer_count;
+
+	if (osdp_cp_send_cmd_output(self->ctx, pd, &cmd)) {
+		PyErr_SetString(PyExc_KeyError, "cmd_output enqueue failed");
+		return -1;
+	}
+
+	return 0;
 }
 
-static int pyosdp_handle_cmd_led(pyosdp_t *self, int pd, int control_code,
-				 int on_count, int off_count, int on_color,
-				 int off_color, int timer, int reader,
-				 int led_number, int is_permanent)
+static int pyosdp_handle_cmd_led(pyosdp_t *self, int pd, PyObject *dict)
 {
+	int led_number, reader, off_color, on_color,
+	    off_count, on_count, timer_count, control_code;
 	struct osdp_cmd_led cmd;
-	struct osdp_cmd_led_params *p;
+	struct osdp_cmd_led_params *p = &cmd.permanent;
 
-	cmd.led_number = led_number;
-	cmd.reader = reader;
+	if (pyosdp_dict_get_int(dict, "led_number", &led_number))
+		return -1;
 
-	p = (is_permanent) ? &cmd.permanent : &cmd.temporary;
-	p->control_code = control_code;
-	p->off_color = off_color;
-	p->on_color = on_color;
-	p->off_count = off_count;
-	p->on_count = on_count;
-	p->timer = timer;
+	if (pyosdp_dict_get_int(dict, "reader", &reader))
+		return -1;
 
-	return osdp_cp_send_cmd_led(self->ctx, pd, &cmd);
+	if (PyDict_GetItemString(dict, "temporary"))
+		p = &cmd.temporary;
+
+	if (pyosdp_dict_get_int(dict, "control_code", &control_code))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "off_color", &off_color))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "on_color", &on_color))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "off_count", &off_count))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "on_count", &on_count))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "timer_count", &timer_count))
+		return -1;
+
+	cmd.led_number = (uint8_t)led_number;
+	cmd.reader = (uint8_t)reader;
+	p->control_code = (uint8_t)control_code;
+	p->off_color = (uint8_t)off_color;
+	p->on_color = (uint8_t)on_color;
+	p->on_count = (uint8_t)on_count;
+	p->off_count = (uint8_t)off_count;
+	p->timer_count = (uint8_t)timer_count;
+
+	if (osdp_cp_send_cmd_led(self->ctx, pd, &cmd)) {
+		PyErr_SetString(PyExc_KeyError, "cmd_led enqueue failed");
+		return -1;
+	}
+	return 0;
 }
 
-static int pyosdp_handle_cmd_buzzer(pyosdp_t *self, int pd, int reader,
-				    int control_code, int on_count, int off_count,
-				    int rep_count)
+static int pyosdp_handle_cmd_buzzer(pyosdp_t *self, int pd, PyObject *dict)
 {
 	struct osdp_cmd_buzzer cmd;
+	int reader, on_count, off_count, rep_count, control_code;
 
-	cmd.reader = reader;
-	cmd.on_count = on_count;
-	cmd.off_count = off_count;
-	cmd.rep_count = rep_count;
-	cmd.tone_code = control_code;
+	if (pyosdp_dict_get_int(dict, "reader", &reader))
+		return -1;
 
-	return osdp_cp_send_cmd_buzzer(self->ctx, pd, &cmd);
+	if (pyosdp_dict_get_int(dict, "on_count", &on_count))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "off_count", &off_count))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "rep_count", &rep_count))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "control_code", &control_code))
+		return -1;
+
+	cmd.reader = (uint8_t)reader;
+	cmd.on_count = (uint8_t)on_count;
+	cmd.off_count = (uint8_t)off_count;
+	cmd.rep_count = (uint8_t)rep_count;
+	cmd.control_code = (uint8_t)control_code;
+
+	if (osdp_cp_send_cmd_buzzer(self->ctx, pd, &cmd)) {
+		PyErr_SetString(PyExc_KeyError, "cmd_buzzer enqueue failed");
+		return -1;
+	}
+	return 0;
 }
 
-static int pyosdp_handle_cmd_text(pyosdp_t *self, int pd, int reader,
-				  int control_code, int temp_time,
-				  int offset_row, int offset_col,
-				  const char *data)
+static int pyosdp_handle_cmd_text(pyosdp_t *self, int pd, PyObject *dict)
 {
-	int length;
+	char *data = NULL;
 	struct osdp_cmd_text cmd;
+	int length, reader, control_code, offset_row, offset_col, temp_time;
+
+	if (pyosdp_dict_get_str(dict, "data", &data))
+		goto error;
 
 	length = strlen(data);
 	if (length > OSDP_CMD_TEXT_MAX_LEN)
-		return -1;
+		goto error;
 
-	cmd.reader = reader;
-	cmd.cmd = control_code;
-	cmd.length = length;
-	cmd.offset_col = offset_col;
-	cmd.offset_row = offset_row;
-	cmd.temp_time = temp_time;
+	if (pyosdp_dict_get_int(dict, "reader", &reader))
+		goto error;
+
+	if (pyosdp_dict_get_int(dict, "control_code", &control_code))
+		goto error;
+
+	if (pyosdp_dict_get_int(dict, "offset_col", &offset_col))
+		goto error;
+
+	if (pyosdp_dict_get_int(dict, "offset_row", &offset_row))
+		goto error;
+
+	if (pyosdp_dict_get_int(dict, "temp_time", &temp_time))
+		goto error;
+
+	cmd.reader = (uint8_t)reader;
+	cmd.control_code = (uint8_t)control_code;
+	cmd.length = (uint8_t)length;
+	cmd.offset_col = (uint8_t)offset_col;
+	cmd.offset_row = (uint8_t)offset_row;
+	cmd.temp_time = (uint8_t)temp_time;
 	memcpy(cmd.data, data, length);
 
-	return osdp_cp_send_cmd_text(self->ctx, pd, &cmd);
+	if (osdp_cp_send_cmd_text(self->ctx, pd, &cmd)) {
+		PyErr_SetString(PyExc_KeyError, "cmd_text enqueue failed");
+		return -1;
+	}
+
+	safe_free(data);
+	return 0;
+error:
+	safe_free(data);
+	return -1;
 }
 
-static int pyosdp_handle_cmd_keyset(pyosdp_t *self, int key_type,
-				    const char *key_data)
+static int pyosdp_handle_cmd_keyset(pyosdp_t *self, PyObject *dict)
 {
 	int ret;
 	struct osdp_cmd_keyset cmd;
+	int type;
+	char *data = NULL;
 
-	cmd.key_type = key_type;
-	cmd.len = strlen(key_data);
-	if (cmd.len > (OSDP_CMD_KEYSET_KEY_MAX_LEN * 2))
-		return -1;
-	cmd.len = ret = hstrtoa(cmd.data, key_data);
-	if (ret < 0)
-		return -1;
+	if (pyosdp_dict_get_int(dict, "type", &type))
+		goto error;
 
-	return osdp_cp_send_cmd_keyset(self->ctx, &cmd);
+	if (pyosdp_dict_get_str(dict, "data", &data))
+		goto error;
+
+	cmd.type = (uint8_t)type;
+	cmd.length = strlen(data);
+	if (cmd.length > (OSDP_CMD_KEYSET_KEY_MAX_LEN * 2))
+		goto error;
+	cmd.length = hstrtoa(cmd.data, data);
+	if (cmd.length < 0)
+		goto error;
+
+	if (osdp_cp_send_cmd_keyset(self->ctx, &cmd)) {
+		PyErr_SetString(PyExc_KeyError, "cmd_keyset enqueue failed");
+		return -1;
+	}
+
+	safe_free(data);
+	return 0;
+error:
+	safe_free(data);
+	return -1;
 }
 
-static int pyosdp_handle_cmd_comset(pyosdp_t *self, int pd, int address,
-				    int baud_rate)
+static int pyosdp_handle_cmd_comset(pyosdp_t *self, int pd, PyObject *dict)
 {
 	struct osdp_cmd_comset cmd;
+	int address, baud_rate;
 
-	cmd.addr = address;
-	cmd.baud = baud_rate;
+	if (pyosdp_dict_get_int(dict, "address", &address))
+		return -1;
 
-	return osdp_cp_send_cmd_comset(self->ctx, pd, &cmd);
+	if (pyosdp_dict_get_int(dict, "baud_rate", &baud_rate))
+		return -1;
+
+	cmd.address = (uint8_t)address;
+	cmd.baud_rate = (uint32_t)baud_rate;
+
+	if (osdp_cp_send_cmd_comset(self->ctx, pd, &cmd)) {
+		PyErr_SetString(PyExc_KeyError, "cmd_comset enqueue failed");
+		return -1;
+	}
+	return 0;
 }
 
-static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args,
-					PyObject *kwargs)
+static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 {
-	char *kwlist[] = {
-	/* common */ "pd", "command", "reader", "number", "control_code",
-	/* LED */    "on_color", "off_color", "timer", "temporary", "permanent",
-	/* Buzzer */ "on_count", "off_count", "rep_count",
-	/* Text */   "row", "col",
-	/* comset */ "address", "baud_rate",
-	/* Keyset */ "type", "data", NULL
-	};
-
-	/* required arguments */
-	int command=-1, pd=-1;
-
-	/* optional arguments */
-	int reader=-1, number=-1, control_code=-1,
-	on_color=-1, off_color=-1, timer=-1, temporary=-1, permanent=-1,
-	on_count=-1, off_count=-1, rep_count=-1,
-	row=-1, col=-1, address=-1, baud_rate=-1, type=-1;
-
-	char *data=NULL;
-
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "II|IIIIIIIIIIIIIIIIs", kwlist,
-					 &pd, &command, &reader, &number, &control_code,
-					 &on_color, &off_color, &timer, &temporary, &permanent,
-					 &on_count, &off_count, &rep_count,
-					 &row, &col, &address, &baud_rate, &type,
-					 &data))
+	int pd, cmd_id;
+	PyObject *cmd;
+	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd))
 		return NULL;
 
-	if (pd < 0 || pd >= self->num_pd)
+	if (pd < 0 || pd >= self->num_pd) {
+		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
+		return NULL;
+	}
+
+	if (pyosdp_dict_get_int(cmd, "command", &cmd_id))
 		return NULL;
 
-	switch(command) {
+	switch(cmd_id) {
 	case OSDP_CMD_OUTPUT:
-		pyosdp_handle_cmd_output(self, pd, number, control_code, timer);
+		if (pyosdp_handle_cmd_output(self, pd, cmd))
+			return NULL;
 		break;
 	case OSDP_CMD_LED:
-		pyosdp_handle_cmd_led(self, pd, control_code, on_count, off_count,
-				      on_color, off_color, timer, reader, number,
-				      (permanent || !temporary));
+		if (pyosdp_handle_cmd_led(self, pd, cmd))
+			return NULL;
 		break;
 	case OSDP_CMD_BUZZER:
-		pyosdp_handle_cmd_buzzer(self, pd, reader, control_code, on_count,
-					 off_count, rep_count);
+		if (pyosdp_handle_cmd_buzzer(self, pd, cmd))
+			return NULL;
 		break;
 	case OSDP_CMD_TEXT:
-		pyosdp_handle_cmd_text(self, pd, reader, control_code, timer,
-				       row, col, data);
+		if (pyosdp_handle_cmd_text(self, pd, cmd))
+			return NULL;
 		break;
 	case OSDP_CMD_KEYSET:
-		pyosdp_handle_cmd_keyset(self, type, data);
+		if (pyosdp_handle_cmd_keyset(self, cmd))
+			return NULL;
 		break;
 	case OSDP_CMD_COMSET:
-		pyosdp_handle_cmd_comset(self, pd, address, baud_rate);
+		if (pyosdp_handle_cmd_comset(self, pd, cmd))
+			return NULL;
 		break;
 	default:
+		PyErr_SetString(PyExc_NotImplementedError,
+				"command not implemented");
 		return NULL;
 	}
 
@@ -276,66 +385,63 @@ static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
-int pyosdp_parse_int(PyObject *obj, int *res)
-{
-	PyObject *tmp;
-	/* Check if obj is numeric */
-	if (PyNumber_Check(obj) != 1) {
-		PyErr_SetString(PyExc_TypeError, "Non-numeric argument.");
-		return -1;
-	}
-	tmp = PyNumber_Long(obj);
-	*res = (int)PyLong_AsUnsignedLong(tmp);
-	Py_DECREF(tmp);
-	return 0;
-}
-
 static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
+	int i, ret=-1, tmp;
+	uint8_t master_key[16];
 	enum channel_type channel_type;
-	int i, ret, address, baud_rate;
-	char *device, *channel_type_str, *master_key_str = NULL;
-	osdp_pd_info_t *info, *info_list = NULL;
 	PyObject *py_info_list, *py_info;
-	uint8_t master_key[16] = {};
+	static char *kwlist[] = { "", "master_key", NULL };
+	char *device = NULL, *channel_type_str = NULL, *master_key_str = NULL;
 	osdp_t *ctx;
-	static char *kwlist[] = {
-		"pd_info", "master_key", NULL
-	};
+	osdp_pd_info_t *info, *info_list = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$s", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$s:cp_init", kwlist,
 					 &PyList_Type, &py_info_list,
 					 &master_key_str))
-		return -1;
+		goto error;
 
-	if (master_key_str) {
-		if (strlen(master_key_str) != 32 ||
-		    hstrtoa(master_key, master_key_str) == -1) {
-			PyErr_SetString(PyExc_TypeError, "master_key parse error");
-			return -1;
-		}
+	if (master_key_str && (strlen(master_key_str) != 32 ||
+	    hstrtoa(master_key, master_key_str) == -1)) {
+		PyErr_SetString(PyExc_TypeError, "master_key parse error");
+		goto error;
 	}
 
 	channel_manager_init(&self->chn_mgr);
 
 	self->num_pd = (int)PyList_Size(py_info_list);
-	if (self->num_pd == 0)
-		return -1;
+	if (self->num_pd == 0 || self->num_pd > 127) {
+		PyErr_SetString(PyExc_ValueError, "Invalid num_pd");
+		goto error;
+	}
+
 	info_list = calloc(self->num_pd, sizeof(osdp_pd_info_t));
 	if (info_list == NULL) {
 		PyErr_SetString(PyExc_MemoryError, "pd_info alloc error");
-		return -1;
+		goto error;
 	}
+
 	for (i = 0; i < self->num_pd; i++) {
-		py_info = PyList_GetItem(py_info_list, i);
 		info = info_list + i;
-		if (!PyArg_ParseTuple(py_info, "isis", &address,
-				      &channel_type_str, &baud_rate, &device))
+		py_info = PyList_GetItem(py_info_list, i);
+		if (py_info == NULL) {
+			PyErr_SetString(PyExc_ValueError, "py_info_list extract error");
+			goto error;
+		}
+
+		if (pyosdp_dict_get_int(py_info, "address", &info->address))
+			goto error;
+
+		if (pyosdp_dict_get_int(py_info, "channel_speed", &info->baud_rate))
+			goto error;
+
+		if (pyosdp_dict_get_str(py_info, "channel_type", &channel_type_str))
+			goto error;
+
+		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
 			goto error;
 
 		info->flags = 0;
-		info->address = address;
-		info->baud_rate = baud_rate;
 		info->cap = NULL;
 
 		channel_type = channel_guess_type(channel_type_str);
@@ -345,10 +451,10 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			goto error;
 		}
 
-		ret = channel_open(&self->chn_mgr, channel_type, device,
-				   baud_rate, 0);
-		if (ret != CHANNEL_ERR_NONE &&
-		    ret != CHANNEL_ERR_ALREADY_OPEN) {
+		tmp = channel_open(&self->chn_mgr, channel_type, device,
+				   info->baud_rate, 0);
+		if (tmp != CHANNEL_ERR_NONE &&
+		    tmp != CHANNEL_ERR_ALREADY_OPEN) {
 			PyErr_SetString(PyExc_PermissionError,
 					"Unable to open channel");
 			goto error;
@@ -372,13 +478,13 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	osdp_cp_set_callback_card_read(ctx, pyosdp_cp_cardread_cb);
 	osdp_cp_set_callback_key_press(ctx, pyosdp_cp_keypress_cb);
 
+	ret = 0;
 	self->ctx = ctx;
-	free(info_list);
-	return 0;
-
 error:
-	free(info_list);
-	return -1;
+	safe_free(info_list);
+	safe_free(channel_type_str);
+	safe_free(device);
+	return ret;
 }
 
 PyObject *pyosdp_cp_tp_repr(PyObject *self)
@@ -411,18 +517,25 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"refresh",
 		(PyCFunction)pyosdp_cp_refresh,
 		METH_NOARGS,
-		"Periodic refresh hook" },
+		"Periodic refresh hook"
+	},
 	{
 		"set_callback",
 		(PyCFunction)pyosdp_cp_set_callback,
-		METH_VARARGS|METH_KEYWORDS,
+		METH_VARARGS,
 	  	"Set osdp event callbacks"
 	},
 	{
 		"send",
 		(PyCFunction)pyosdp_cp_send_command,
-		METH_VARARGS|METH_KEYWORDS,
+		METH_VARARGS,
 		"Send osdp commands"
+	},
+	{
+		"set_loglevel",
+		(PyCFunction)pyosdp_cp_set_loglevel,
+		METH_VARARGS,
+	  	"Set osdp event callbacks"
 	},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };

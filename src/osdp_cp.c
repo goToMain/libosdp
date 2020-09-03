@@ -1027,12 +1027,12 @@ int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p)
 	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
+		return -1;
+	}
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
 		return -1;
 	}
 
@@ -1053,12 +1053,12 @@ int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p)
 	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
+		return -1;
+	}
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
 		return -1;
 	}
 
@@ -1079,12 +1079,12 @@ int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p)
 	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
+		return -1;
+	}
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
 		return -1;
 	}
 
@@ -1105,12 +1105,12 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p)
 	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
+		return -1;
+	}
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
 		return -1;
 	}
 
@@ -1131,12 +1131,12 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 	assert(ctx);
 	struct osdp_cmd *cmd;
 
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN(TAG "PD not online");
-		return -1;
-	}
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
 		LOG_ERR(TAG "Invalid PD number");
+		return -1;
+	}
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
 		return -1;
 	}
 

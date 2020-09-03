@@ -25,7 +25,7 @@
 #define CMD_BUZ_LEN                    6
 #define CMD_TEXT_LEN                   7   /* variable length command */
 #define CMD_COMSET_LEN                 6
-#define CMD_MFG_LEN                    5   /* variable length command */
+#define CMD_MFG_LEN                    4   /* variable length command */
 #define CMD_KEYSET_LEN                 19
 #define CMD_CHLNG_LEN                  9
 #define CMD_SCRYPT_LEN                 17
@@ -37,7 +37,7 @@
 #define REPLY_RSTATR_DATA_LEN          1
 #define REPLY_COM_DATA_LEN             5
 #define REPLY_NAK_DATA_LEN             1
-#define REPLY_MFGREP_LEN               5   /* variable length command */
+#define REPLY_MFGREP_LEN               4   /* variable length command */
 #define REPLY_CCRYPT_DATA_LEN          32
 #define REPLY_RMAC_I_DATA_LEN          16
 #define REPLY_KEYPPAD_DATA_LEN         2   /* variable length command */
@@ -222,17 +222,9 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
 		buf[len++] = cmd->mfg.command;
-		/**
-		 * OSDP does not specify any length field here. This is a shame
-		 * (annoyance) and LibOSDP enforces that the first byte of the
-		 * the data block is length to be consistent with other such
-		 * length prefixed data formats defined in OSDP.
-		 */
-		buf[len++] = cmd->mfg.length;
 		for (i = 0; i < cmd->mfg.length; i++) {
 			buf[len++] = cmd->mfg.data[i];
 		}
-		hexdump("Data CP", cmd->mfg.data, OSDP_CMD_MFG_MAX_DATALEN );
 		ret = 0;
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -481,10 +473,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.mfg.vendor_code |= buf[pos++] << 8;
 		cmd.mfg.vendor_code |= buf[pos++] << 16;
 		cmd.mfg.command = buf[pos++];
-		cmd.mfg.length = buf[pos++];
-		if ((len - REPLY_MFGREP_LEN) != cmd.mfg.length) {
-			break;
-		}
+		cmd.mfg.length = len - REPLY_MFGREP_LEN;
 		for (i = 0; i < cmd.mfg.length; i++) {
 			cmd.mfg.data[i] = buf[len++];
 		}

@@ -102,7 +102,7 @@ while True:
     if (count % 100 == 99):
         # send a random command to the PD_0
         r = random.randint(0, len(commands)-1)
-        cp.send(0, commands[r])
+        cp.send(0, commands[-1])
 
     time.sleep(0.05)
     count += 1

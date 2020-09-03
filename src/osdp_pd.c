@@ -24,7 +24,7 @@
 #define CMD_BUZ_DATA_LEN               5
 #define CMD_TEXT_DATA_LEN              6   /* variable length command */
 #define CMD_COMSET_DATA_LEN            5
-#define CMD_MFG_DATA_LEN               5   /* variable length command */
+#define CMD_MFG_DATA_LEN               4   /* variable length command */
 #define CMD_KEYSET_DATA_LEN            18
 #define CMD_CHLNG_DATA_LEN             8
 #define CMD_SCRYPT_DATA_LEN            16
@@ -37,7 +37,7 @@
 #define REPLY_RSTATR_LEN               2
 #define REPLY_COM_LEN                  6
 #define REPLY_NAK_LEN                  2
-#define REPLY_MFGREP_LEN               5   /* variable length command */
+#define REPLY_MFGREP_LEN               4   /* variable length command */
 #define REPLY_CCRYPT_LEN               33
 #define REPLY_RMAC_I_LEN               17
 
@@ -321,9 +321,8 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd->mfg.vendor_code |= buf[pos++] << 8;
 		cmd->mfg.vendor_code |= buf[pos++] << 16;
 		cmd->mfg.command = buf[pos++];
-		cmd->mfg.length = buf[pos++];
-		if ((len - CMD_MFG_DATA_LEN) != cmd->mfg.length ||
-		    cmd->mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
+		cmd->mfg.length = len - CMD_MFG_DATA_LEN;
+		if (cmd->mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
 			LOG_ERR(TAG "cmd length error");
 			osdp_cmd_free(pd, cmd);
 			break;
@@ -332,7 +331,6 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd->mfg.data[i] = buf[pos++];
 		}
 		if (pd->command_callback) {
-			hexdump("Data Lib", cmd->mfg.data, OSDP_CMD_MFG_MAX_DATALEN );
 			ret = pd->command_callback(pd->command_callback_arg,
 						   pd->address, cmd);
 			if (ret > 0) {
@@ -607,10 +605,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = 0;
 		break;
 	case REPLY_MFGREP:
-		if (max_len < REPLY_MFGREP_LEN) {
-			LOG_ERR(TAG "Fatal: insufficent space for sending NAK");
-			return -1;
-		}
 		cmd = osdp_cmd_get_last(pd);
 		if (cmd == NULL || cmd->id != OSDP_CMD_MFG) {
 			LOG_ERR(TAG "Failed to fetch queue tail for MFGREP");
@@ -620,18 +614,15 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			LOG_ERR(TAG "Failed to dequeue MFGREP");
 			return -1;
 		}
+		if (max_len < (REPLY_MFGREP_LEN + cmd->mfg.length)) {
+			LOG_ERR(TAG "Fatal: insufficent space for sending NAK");
+			return -1;
+		}
 		buf[len++] = pd->reply_id;
 		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
 		buf[len++] = cmd->mfg.command;
-		/**
-		 * OSDP does not specify any length field here. This is a shame
-		 * (annoyance) and LibOSDP enforces that the first byte of the
-		 * the data block is length to be consistent with other such
-		 * length prefixed data formats defined in OSDP.
-		 */
-		buf[len++] = cmd->mfg.length;
 		for (i = 0; i < cmd->mfg.length; i++) {
 			buf[len++] = cmd->mfg.data[i];
 		}

@@ -136,7 +136,6 @@ PyObject *pyosdp_command_make_dict(struct osdp_cmd *cmd)
 			return NULL;
 		if (pyosdp_dict_add_int(obj, "mfg_command", cmd->mfg.command))
 			return NULL;
-		hexdump("Data", cmd->mfg.data, OSDP_CMD_MFG_MAX_DATALEN );
 		tmp = Py_BuildValue("y#", cmd->mfg.data, cmd->mfg.length);
 		if (tmp == NULL)
 			return NULL;

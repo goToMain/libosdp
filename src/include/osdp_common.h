@@ -243,6 +243,7 @@ struct osdp_notifiers {
 	void *data;
 	keypress_callback_t keypress;
 	cardread_callback_t cardread;
+	command_callback_t  command_handler;
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED

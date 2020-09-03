@@ -15,6 +15,7 @@ extern "C" {
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
+#define OSDP_CMD_MFG_MAX_DATALEN       64
 
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
@@ -395,6 +396,22 @@ struct osdp_cmd_keyset {
 };
 
 /**
+ * @brief Manufacturer Specific Commands
+ *
+ * @param vendor_code 3-byte IEEE assigned OUI. Most Significat 8-bits are
+ *        unused.
+ * @param command 1-byte manufacturer defined osdp command
+ * @param length Length of command data
+ * @param data Command data
+ */
+struct osdp_cmd_mfg {
+	uint32_t vendor_code;
+	uint8_t command;
+	uint8_t length;
+	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
+};
+
+/**
  * @brief OSDP application exposed commands
  */
 enum osdp_cmd_e {
@@ -404,6 +421,7 @@ enum osdp_cmd_e {
 	OSDP_CMD_TEXT,
 	OSDP_CMD_KEYSET,
 	OSDP_CMD_COMSET,
+	OSDP_CMD_MFG,
 	OSDP_CMD_SENTINEL
 };
 
@@ -428,6 +446,7 @@ struct osdp_cmd {
 		struct osdp_cmd_output output;
 		struct osdp_cmd_comset comset;
 		struct osdp_cmd_keyset keyset;
+		struct osdp_cmd_mfg    mfg;
 	};
 };
 
@@ -445,6 +464,7 @@ void osdp_cp_teardown(osdp_t *ctx);
 void osdp_cp_set_callback_data(osdp_t *ctx, void *data);
 int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb);
 int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb);
+void osdp_cp_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg);
 
 int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p);
 int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
@@ -453,7 +473,22 @@ int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p);
 int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p);
 int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
 
-/* =============================== PD Methods ===================-=========== */
+/**
+ * @brief Generic command enqueue API.
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset number as in `pd_info_t *`.
+ * @param cmd command pointer. Must be filled by application.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ *
+ * @note Soon all the `osdp_cp_send_cmd_XXX()` methods will be deprecated in
+ * favour of `osdp_cp_send_command()`.
+ */
+int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
+
+/* =============================== PD Methods =============================== */
 
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 void osdp_pd_teardown(osdp_t *ctx);
@@ -462,7 +497,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
 
 /**
  * @param ctx pointer to osdp context
- * @param cmd pointer to a command structure that would be filled by the driver.
+ * @param cmd pointer to a command structure received by the driver.
  *
  * @retval 0 on success.
  * @retval -1 on failure.

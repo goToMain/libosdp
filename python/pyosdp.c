@@ -121,6 +121,7 @@ void pyosdp_add_module_constants(PyObject *module)
 	ADD_CONST("CMD_TEXT",   OSDP_CMD_TEXT);
 	ADD_CONST("CMD_COMSET", OSDP_CMD_COMSET);
 	ADD_CONST("CMD_KEYSET", OSDP_CMD_KEYSET);
+	ADD_CONST("CMD_MFG",    OSDP_CMD_MFG);
 
 	/* enum osdp_led_color_e */
 	ADD_CONST("LED_COLOR_NONE",  OSDP_LED_COLOR_NONE);

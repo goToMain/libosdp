@@ -40,7 +40,7 @@ PyObject *pyosdp_command_make_dict(struct osdp_cmd *cmd)
 {
 	char buf[64];
 	int is_temporary = 0;
-	PyObject *obj;
+	PyObject *obj, *tmp;
 	struct osdp_cmd_led_params *p = &cmd->led.permanent;
 
 	obj = PyDict_New();
@@ -130,6 +130,19 @@ PyObject *pyosdp_command_make_dict(struct osdp_cmd *cmd)
 			return NULL;
 		if (pyosdp_dict_add_int(obj, "baud_rate", cmd->comset.baud_rate))
 			return NULL;
+		break;
+	case OSDP_CMD_MFG:
+		if (pyosdp_dict_add_int(obj, "vendor_code", cmd->mfg.vendor_code))
+			return NULL;
+		if (pyosdp_dict_add_int(obj, "mfg_command", cmd->mfg.command))
+			return NULL;
+		hexdump("Data", cmd->mfg.data, OSDP_CMD_MFG_MAX_DATALEN );
+		tmp = Py_BuildValue("y#", cmd->mfg.data, cmd->mfg.length);
+		if (tmp == NULL)
+			return NULL;
+		if (PyDict_SetItemString(obj, "data", tmp))
+			return NULL;
+		Py_DECREF(tmp);
 		break;
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,

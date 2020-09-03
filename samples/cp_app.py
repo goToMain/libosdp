@@ -66,6 +66,13 @@ keyset_cmd = {
     "data": "01020304050607080910111213141517"
 }
 
+mfg_cmd = {
+    "command": osdp.CMD_MFG,
+    "vendor_code": 0x00030201,
+    "mfg_command": 13,
+    "data": bytes([9,1,9,2,6,3,1,7,7,0])
+}
+
 pd_info = [
     {
         "address": 101,
@@ -79,8 +86,10 @@ callbacks = {
     "keypress": keypress_event_handler,
     "cardread": cardread_event_handler
 }
+
 key = '01020304050607080910111213141516'
-commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd ]
+
+commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd, mfg_cmd ]
 
 cp = osdp.ControlPanel(pd_info, master_key=key)
 cp.set_callback(callbacks)

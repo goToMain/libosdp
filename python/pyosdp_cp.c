@@ -309,6 +309,48 @@ static int pyosdp_handle_cmd_comset(pyosdp_t *self, int pd, PyObject *dict)
 	return 0;
 }
 
+static int pyosdp_handle_cmd_mfg(pyosdp_t *self, int pd, PyObject *dict)
+{
+	int i, data_length;
+	struct osdp_cmd cmd;
+	uint8_t *data_bytes;
+	int vendor_code, mfg_command;
+	PyObject *data;
+
+	if (pyosdp_dict_get_int(dict, "vendor_code", &vendor_code))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "mfg_command", &mfg_command))
+		return -1;
+
+	data = PyDict_GetItemString(dict, "data");
+	if (data == NULL) {
+		PyErr_Format(PyExc_KeyError, "Key 'data' not found");
+		return -1;
+	}
+
+	if (!PyArg_Parse(data, "y#", &data_bytes, &data_length))
+		return -1;
+
+	if (data_bytes == NULL || data_length == 0) {
+		PyErr_Format(PyExc_ValueError, "Unable to extact data bytes");
+		return -1;
+	}
+
+	cmd.id = OSDP_CMD_MFG;
+	cmd.mfg.vendor_code = (uint32_t)vendor_code;
+	cmd.mfg.command = mfg_command;
+	cmd.mfg.length = data_length;
+	for (i = 0; i < cmd.mfg.length; i++)
+		cmd.mfg.data[i] = data_bytes[i];
+
+	if (osdp_cp_send_command(self->ctx, pd, &cmd)) {
+		PyErr_SetString(PyExc_RuntimeError, "cmd_mfg enqueue failed");
+		return -1;
+	}
+	return 0;
+}
+
 static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 {
 	int pd, cmd_id;
@@ -347,6 +389,10 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 		break;
 	case OSDP_CMD_COMSET:
 		if (pyosdp_handle_cmd_comset(self, pd, cmd))
+			return NULL;
+		break;
+	case OSDP_CMD_MFG:
+		if (pyosdp_handle_cmd_mfg(self, pd, cmd))
 			return NULL;
 		break;
 	default:

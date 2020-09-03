@@ -25,6 +25,7 @@
 #define CMD_BUZ_LEN                    6
 #define CMD_TEXT_LEN                   7   /* variable length command */
 #define CMD_COMSET_LEN                 6
+#define CMD_MFG_LEN                    5   /* variable length command */
 #define CMD_KEYSET_LEN                 19
 #define CMD_CHLNG_LEN                  9
 #define CMD_SCRYPT_LEN                 17
@@ -36,6 +37,7 @@
 #define REPLY_RSTATR_DATA_LEN          1
 #define REPLY_COM_DATA_LEN             5
 #define REPLY_NAK_DATA_LEN             1
+#define REPLY_MFGREP_LEN               5   /* variable length command */
 #define REPLY_CCRYPT_DATA_LEN          32
 #define REPLY_RMAC_I_DATA_LEN          16
 #define REPLY_KEYPPAD_DATA_LEN         2   /* variable length command */
@@ -210,6 +212,29 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_3(cmd->comset.baud_rate);
 		ret = 0;
 		break;
+	case CMD_MFG:
+		cmd = (struct osdp_cmd *)pd->cmd_data;
+		if (max_len < (CMD_MFG_LEN + cmd->mfg.length)) {
+			break;
+		}
+		buf[len++] = pd->cmd_id;
+		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
+		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
+		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
+		buf[len++] = cmd->mfg.command;
+		/**
+		 * OSDP does not specify any length field here. This is a shame
+		 * (annoyance) and LibOSDP enforces that the first byte of the
+		 * the data block is length to be consistent with other such
+		 * length prefixed data formats defined in OSDP.
+		 */
+		buf[len++] = cmd->mfg.length;
+		for (i = 0; i < cmd->mfg.length; i++) {
+			buf[len++] = cmd->mfg.data[i];
+		}
+		hexdump("Data CP", cmd->mfg.data, OSDP_CMD_MFG_MAX_DATALEN );
+		ret = 0;
+		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
@@ -282,6 +307,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	uint32_t temp32;
 	struct osdp_cp *cp = TO_CTX(pd)->cp;
 	int i, ret = OSDP_CP_ERR_GENERIC, pos = 0, t1, t2;
+	struct osdp_cmd cmd;
 
 	if (len < 1) {
 		LOG_ERR("response must have at least one byte");
@@ -446,6 +472,25 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		ret = OSDP_CP_ERR_RETRY_CMD;
+		break;
+	case REPLY_MFGREP:
+		if (len < REPLY_MFGREP_LEN || !cp->notifier.command_handler) {
+			break;
+		}
+		cmd.mfg.vendor_code  = buf[pos++]; /* vendor_code */
+		cmd.mfg.vendor_code |= buf[pos++] << 8;
+		cmd.mfg.vendor_code |= buf[pos++] << 16;
+		cmd.mfg.command = buf[pos++];
+		cmd.mfg.length = buf[pos++];
+		if ((len - REPLY_MFGREP_LEN) != cmd.mfg.length) {
+			break;
+		}
+		for (i = 0; i < cmd.mfg.length; i++) {
+			cmd.mfg.data[i] = buf[len++];
+		}
+		cp->notifier.command_handler(cp->notifier.data,
+					     pd->address, &cmd);
+		ret = 0;
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
@@ -964,6 +1009,20 @@ int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb)
 }
 
 OSDP_EXPORT
+void osdp_cp_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
+{
+	assert(ctx);
+	int i;
+	struct osdp_pd *pd;
+
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = TO_PD(ctx, i);
+		pd->command_callback_arg = arg;
+		pd->command_callback = cb;
+	}
+}
+
+OSDP_EXPORT
 int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb)
 {
 	assert(ctx);
@@ -1099,6 +1158,60 @@ int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p)
 
 	cmd->id = CMD_COMSET;
 	memcpy(&cmd->text, p, sizeof(struct osdp_cmd_comset));
+	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
+	return 0;
+}
+
+OSDP_EXPORT
+int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
+{
+	assert(ctx);
+	struct osdp_cmd *cmd;
+	int cmd_id;
+
+	if (pd < 0 || pd >= NUM_PD(ctx)) {
+		LOG_ERR(TAG "Invalid PD number");
+		return -1;
+	}
+	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+		LOG_WRN(TAG "PD not online");
+		return -1;
+	}
+
+	switch(p->id) {
+	case OSDP_CMD_OUTPUT:
+		cmd_id = CMD_OUT;
+		break;
+	case OSDP_CMD_LED:
+		cmd_id = CMD_LED;
+		break;
+	case OSDP_CMD_BUZZER:
+		cmd_id = CMD_BUZ;
+		break;
+	case OSDP_CMD_TEXT:
+		cmd_id = CMD_TEXT;
+		break;
+	case OSDP_CMD_COMSET:
+		cmd_id = CMD_COMSET;
+		break;
+	case OSDP_CMD_MFG:
+		cmd_id = CMD_MFG;
+		break;
+	case OSDP_CMD_KEYSET:
+		LOG_ERR(TAG "Cannot send KEYSET; use the dedicated API");
+		return -1;
+	default:
+		LOG_ERR(TAG "Invalid command ID");
+		return -1;
+	}
+
+	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
+	if (cmd == NULL) {
+		return -1;
+	}
+
+	memcpy(cmd, p, sizeof(struct osdp_cmd));
+	cmd->id = cmd_id; /* translate to internal */
 	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
 	return 0;
 }

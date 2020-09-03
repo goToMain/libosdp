@@ -197,7 +197,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = 0;
 		break;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_COMSET:
 		if (max_len < CMD_COMSET_LEN) {
 			break;
@@ -211,6 +210,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_3(cmd->comset.baud_rate);
 		ret = 0;
 		break;
+#ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 			LOG_ERR(TAG "Cannot perform KEYSET without SC!");

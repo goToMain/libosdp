@@ -1187,8 +1187,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_KEYSET:
-		LOG_ERR(TAG "Cannot send KEYSET; use the dedicated API");
-		return -1;
+		return osdp_cp_send_cmd_keyset(ctx, &p->keyset);
 	default:
 		LOG_ERR(TAG "Invalid command ID");
 		return -1;

@@ -110,8 +110,20 @@ int pd_cmd_comset_handler(struct osdp_cmd_comset *p)
 	return 0;
 }
 
-int pd_cmd_handler(struct osdp_cmd *cmd)
+int cp_event_handler(void *data, int pd, struct osdp_event *event)
 {
+	ARG_UNUSED(data);
+
+	printf("CP: PD[%d]: event: %d\n", pd, event->type);
+	return 0;
+}
+
+int pd_command_handler(void *data, int pd, struct osdp_cmd *cmd)
+{
+	ARG_UNUSED(data);
+
+	printf("CP: PD[%d]: ID: %d ", pd, cmd->id);
+
 	switch(cmd->id) {
 	case OSDP_CMD_OUTPUT:
 		return pd_cmd_output_handler(&cmd->output);
@@ -129,13 +141,6 @@ int pd_cmd_handler(struct osdp_cmd *cmd)
 		break;
 	}
 	return -1;
-}
-
-void cp_event_handler(void *data, int pd, struct osdp_event *event)
-{
-	ARG_UNUSED(data);
-
-	printf("CP: PD[%d]: event: %d\n", pd, event->type);
 }
 
 void start_cmd_server(struct config_s *c)
@@ -212,7 +217,6 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	struct config_pd_s *pd;
 	uint8_t *scbk, scbk_buf[16];
 	struct config_s *c = data;
-	struct osdp_cmd cmd;
 
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argc);
@@ -284,6 +288,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			printf("Failed to setup PD context\n");
 			return -1;
 		}
+		osdp_pd_set_command_callback(c->cp_ctx, pd_command_handler, NULL);
 	}
 
 	free(info_arr);
@@ -293,9 +298,6 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			osdp_cp_refresh(c->cp_ctx);
 		} else {
 			osdp_pd_refresh(c->pd_ctx);
-			if (osdp_pd_get_command(c->pd_ctx, &cmd) == 0) {
-				pd_cmd_handler(&cmd);
-			}
 		}
 		process_commands(c);
 		usleep(20 * 1000);

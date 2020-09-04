@@ -35,10 +35,17 @@ int sample_pd_recv_func(void *data, uint8_t *buf, int len)
 	return 0;
 }
 
+int pd_command_handler(void *arg, int pd, struct osdp_cmd *cmd)
+{
+	(void)(arg);
+
+	printf("PD: %d CMD: %d\n", pd, cmd->id);
+	return 0;
+}
+
 int main()
 {
 	struct osdp_t *ctx;
-	struct osdp_cmd cmd;
 	struct osdp_pd_cap cap[] = {
 		{
 			.function_code = OSDP_PD_CAP_READER_LED_CONTROL,
@@ -74,11 +81,10 @@ int main()
 		return -1;
 	}
 
+	osdp_pd_set_command_callback(ctx, pd_command_handler, NULL);
+
 	while (1) {
 		osdp_pd_refresh(ctx);
-		if (osdp_pd_get_command(ctx, &cmd) == 0) {
-			// do something with command.
-		}
 
 		// your application code.
 		usleep(1000);

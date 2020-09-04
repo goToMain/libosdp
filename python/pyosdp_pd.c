@@ -50,20 +50,6 @@ static PyObject *pyosdp_pd_set_command_callback(pyosdp_t *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-static PyObject *pyosdp_pd_get_command(pyosdp_t *self, PyObject *args)
-{
-	struct osdp_cmd cmd;
-	PyObject *cmd_dict;
-
-	if (osdp_pd_get_command(self->ctx, &cmd))
-		Py_RETURN_NONE;
-
-	if (pyosdp_cmd_make_dict(&cmd_dict, &cmd))
-		return NULL;
-
-	return cmd_dict;
-}
-
 static PyObject *pyosdp_pd_set_loglevel(pyosdp_t *self, PyObject *args)
 {
 	int log_level;
@@ -273,12 +259,6 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 		(PyCFunction)pyosdp_pd_set_loglevel,
 		METH_VARARGS,
 		"Set loglevel"
-	},
-	{
-		"get_command",
-		(PyCFunction)pyosdp_pd_get_command,
-		METH_VARARGS,
-		"Get pending command"
 	},
 	{
 		"set_command_callback",

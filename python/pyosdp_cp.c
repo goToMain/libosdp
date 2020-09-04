@@ -10,13 +10,13 @@ static const char pyosdp_cp_tp_doc[] =
 "\n"
 ;
 
-void pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
+int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 {
 	pyosdp_t *self = data;
 	PyObject *arglist, *result, *event_dict;
 
 	if (pyosdp_make_event_dict(&event_dict, event))
-		return;
+		return -1;
 
 	arglist = Py_BuildValue("(IO)", address, event_dict);
 
@@ -24,6 +24,7 @@ void pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 
 	Py_XDECREF(result);
 	Py_DECREF(arglist);
+	return 0;
 }
 
 static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
@@ -273,7 +274,7 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"set_loglevel",
 		(PyCFunction)pyosdp_cp_set_loglevel,
 		METH_VARARGS,
-		"Set osdp event callbacks"
+		"Set logging level"
 	},
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };

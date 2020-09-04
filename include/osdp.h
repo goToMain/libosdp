@@ -493,8 +493,8 @@ struct osdp_event {
 
 typedef int (*pd_command_callback_t)(void *arg, int address,
 				     struct osdp_cmd *cmd);
-typedef void (*cp_event_callback_t)(void *arg, int address,
-				    struct osdp_event *event);
+typedef int (*cp_event_callback_t)(void *arg, int address,
+				   struct osdp_event *event);
 
 /* =============================== CP Methods =============================== */
 
@@ -542,15 +542,6 @@ void osdp_pd_refresh(osdp_t *ctx);
  */
 void osdp_pd_set_command_callback(osdp_t *ctx,
 				  pd_command_callback_t cb, void *arg);
-
-/**
- * @param ctx pointer to osdp context
- * @param cmd pointer to a command structure received by the driver.
- *
- * @retval 0 on success.
- * @retval -1 on failure.
- */
-int osdp_pd_get_command(osdp_t *ctx, struct osdp_cmd *cmd);
 
 /* ============================= Common Methods ============================= */
 

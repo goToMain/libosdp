@@ -114,16 +114,4 @@ function must return:
 
     void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb, void *arg);
 
-osdp_pd_get_command
-~~~~~~~~~~~~~~~~~~~
-
-.. code:: c
-
-    int osdp_pd_get_command(osdp_t *ctx, struct osdp_cmd *cmd);
-
-This is a periodic poll method. Applications can use this method to pull
-commands that are queued to the PD from a CP. Refer to the `command structure`_
-document for more information on how to use the ``cmd`` pointer returned by this
-function.
-
 .. _command structure: command-structure.html

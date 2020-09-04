@@ -76,7 +76,7 @@ int main()
 
 	while (1) {
 		osdp_pd_refresh(ctx);
-		if (osdp_pd_get_cmd(ctx, &cmd) == 0) {
+		if (osdp_pd_get_command(ctx, &cmd) == 0) {
 			// do something with command.
 		}
 

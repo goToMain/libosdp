@@ -466,13 +466,6 @@ int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb);
 int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb);
 void osdp_cp_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg);
 
-int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p);
-int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
-int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p);
-int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p);
-int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p);
-int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
-
 /**
  * @brief Generic command enqueue API.
  *
@@ -482,9 +475,6 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
  *
  * @retval 0 on success
  * @retval -1 on failure
- *
- * @note Soon all the `osdp_cp_send_cmd_XXX()` methods will be deprecated in
- * favour of `osdp_cp_send_command()`.
  */
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
 
@@ -502,7 +492,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
  * @retval 0 on success.
  * @retval -1 on failure.
  */
-int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd);
+int osdp_pd_get_command(osdp_t *ctx, struct osdp_cmd *cmd);
 
 /* ============================= Common Methods ============================= */
 

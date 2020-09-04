@@ -92,20 +92,16 @@ corresponding event occurs.
 CP Commands Workflow
 --------------------
 
-For the CP application it's connected PDs are referenced by the offset number.
-this offset corresponds to the order in which the ``osdp_pd_info_t`` was
+For the CP application, it's connected PDs are referenced by the offset number.
+This offset corresponds to the order in which the ``osdp_pd_info_t`` was
 populated when passed to ``osdp_cp_setup``.
 
 .. code:: c
 
-    int osdp_cp_send_cmd_led(osdp_t *ctx, int pd, struct osdp_cmd_led *p);
-    int osdp_cp_send_cmd_buzzer(osdp_t *ctx, int pd, struct osdp_cmd_buzzer *p);
-    int osdp_cp_send_cmd_output(osdp_t *ctx, int pd, struct osdp_cmd_output *p);
-    int osdp_cp_send_cmd_text(osdp_t *ctx, int pd, struct osdp_cmd_text *p);
-    int osdp_cp_send_cmd_comset(osdp_t *ctx, int pd, struct osdp_cmd_comset *p);
-    int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p);
+    int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p);
 
-All of these methods are used to send a specific command to the PD with offset
+The PD application must populate ``struct osdp_cmd`` and pass a point to
+``osdp_cp_send_command()``to send a specific command to the PD with offset
 number ``int pd``. A return value of 0 indicates success.
 
 Refer to the `command structure`_ document for more information on how to

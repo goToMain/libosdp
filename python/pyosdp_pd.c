@@ -55,7 +55,7 @@ static PyObject *pyosdp_pd_get_command(pyosdp_t *self, PyObject *args)
 	struct osdp_cmd cmd;
 	PyObject *cmd_dict;
 
-	if (osdp_pd_get_cmd(self->ctx, &cmd))
+	if (osdp_pd_get_command(self->ctx, &cmd))
 		Py_RETURN_NONE;
 
 	if (pyosdp_cmd_make_dict(&cmd_dict, &cmd))

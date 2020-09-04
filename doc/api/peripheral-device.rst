@@ -95,12 +95,31 @@ and the ``osdp_t`` context pointer can be discarded after this call.
 PD Commands Workflow
 --------------------
 
-osdp_pd_get_cmd
-~~~~~~~~~~~~~~~
+osdp_pd_set_command_callback
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This method is is used to set a callback function for handling commands. This
+callback (if set) is invoked when the PD receives a command from the CP. This
+function must return:
+
+ - 0 if LibOSDP must send a ``osdp_ACK`` response.
+ - -ve if LibOSDP must send a ``osdp_NAK`` response.
+ - +ve and modify the passed ``struct osdp_cmd *cmd`` if LibOSDP must send a
+   specific response. This is useful for sending manufacturer specific reply
+   ``osdp_MFGREP``.
 
 .. code:: c
 
-    int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd);
+    typedef int (*command_callback_t)(void *arg, int address, struct osdp_cmd *cmd);
+
+    void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg);
+
+osdp_pd_get_command
+~~~~~~~~~~~~~~~~~~~
+
+.. code:: c
+
+    int osdp_pd_get_command(osdp_t *ctx, struct osdp_cmd *cmd);
 
 This is a periodic poll method. Applications can use this method to pull
 commands that are queued to the PD from a CP. Refer to the `command structure`_

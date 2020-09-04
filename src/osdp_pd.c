@@ -587,7 +587,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			/**
 			 * If callbacks are registered, COMSET should be the
 			 * only command in queue. So dequeue and free it as the
-			 * app won't call osdp_pd_get_cmd().
+			 * app won't call osdp_pd_get_command().
 			 */
 			if (osdp_cmd_dequeue(pd, &cmd)) {
 				LOG_ERR(TAG "Failed to dequeue COMSET");
@@ -977,7 +977,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 }
 
 OSDP_EXPORT
-int osdp_pd_get_cmd(osdp_t *ctx, struct osdp_cmd *cmd)
+int osdp_pd_get_command(osdp_t *ctx, struct osdp_cmd *cmd)
 {
 	assert(ctx);
 	struct osdp_cmd *f;

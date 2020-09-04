@@ -186,22 +186,12 @@ void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 
 	switch(p->id) {
 	case OSDPCTL_CP_CMD_LED:
-		osdp_cp_send_cmd_led(c->cp_ctx, p->offset, &p->cmd.led);
-		break;
 	case OSDPCTL_CP_CMD_BUZZER:
-		osdp_cp_send_cmd_buzzer(c->cp_ctx, p->offset, &p->cmd.buzzer);
-		break;
 	case OSDPCTL_CP_CMD_TEXT:
-		osdp_cp_send_cmd_text(c->cp_ctx, p->offset, &p->cmd.text);
-		break;
 	case OSDPCTL_CP_CMD_OUTPUT:
-		osdp_cp_send_cmd_output(c->cp_ctx, p->offset, &p->cmd.output);
-		break;
 	case OSDPCTL_CP_CMD_KEYSET:
-		osdp_cp_send_cmd_keyset(c->cp_ctx, &p->cmd.keyset);
-		break;
 	case OSDPCTL_CP_CMD_COMSET:
-		osdp_cp_send_cmd_comset(c->cp_ctx, p->offset, &p->cmd.comset);
+		osdp_cp_send_command(c->cp_ctx, p->offset, &p->cmd);
 		break;
 	case OSDPCTL_CMD_STATUS:
 		printf("SC Status: 0x%08x\n", osdp_get_sc_status_mask(c->cp_ctx));
@@ -318,7 +308,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			osdp_cp_refresh(c->cp_ctx);
 		} else {
 			osdp_pd_refresh(c->pd_ctx);
-			if (osdp_pd_get_cmd(c->pd_ctx, &cmd) == 0) {
+			if (osdp_pd_get_command(c->pd_ctx, &cmd) == 0) {
 				pd_cmd_handler(&cmd);
 			}
 		}

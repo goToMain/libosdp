@@ -51,6 +51,67 @@
 #define OSDP_CP_ERR_CAN_YIELD          3
 #define OSDP_CP_ERR_INPROG             4
 
+struct osdp_cp_cmd_node {
+	queue_node_t node;
+	struct osdp_cmd object;
+};
+
+static int osdp_cp_cmd_queue_init(struct osdp_pd *pd)
+{
+	if (slab_init(&pd->cmd.slab, sizeof(struct osdp_cp_cmd_node),
+		      OSDP_CP_CMD_POOL_SIZE)) {
+		LOG_ERR("Failed to initialize command slab");
+		return -1;
+	}
+	queue_init(&pd->cmd.queue);
+	return 0;
+}
+
+static void osdp_cp_cmd_queue_del(struct osdp_pd *pd)
+{
+	slab_del(&pd->cmd.slab);
+}
+
+static struct osdp_cmd *osdp_cp_cmd_alloc(struct osdp_pd *pd)
+{
+	struct osdp_cp_cmd_node *cmd = NULL;
+
+	if (slab_alloc(&pd->cmd.slab, (void **)&cmd)) {
+		LOG_ERR("Memory allocation failed");
+		return NULL;
+	}
+	return &cmd->object;
+}
+
+static void osdp_cp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	struct osdp_cp_cmd_node *n;
+
+	n = CONTAINER_OF(cmd, struct osdp_cp_cmd_node, object);
+	slab_free(&pd->cmd.slab, n);
+}
+
+static void osdp_cp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	struct osdp_cp_cmd_node *n;
+
+	n = CONTAINER_OF(cmd, struct osdp_cp_cmd_node, object);
+	queue_enqueue(&pd->cmd.queue, &n->node);
+}
+
+static int osdp_cp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
+{
+	struct osdp_cp_cmd_node *n;
+	queue_node_t *node;
+
+	if (queue_dequeue(&pd->cmd.queue, &node)) {
+		return -1;
+	}
+	n = CONTAINER_OF(node, struct osdp_cp_cmd_node, node);
+	*cmd = &n->object;
+	return 0;
+}
+
 /**
  * Returns:
  * +ve: length of command
@@ -601,8 +662,8 @@ static void cp_flush_command_queue(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
 
-	while (osdp_cmd_dequeue(pd, &cmd) == 0) {
-		osdp_cmd_free(pd, cmd);
+	while (osdp_cp_cmd_dequeue(pd, &cmd) == 0) {
+		osdp_cp_cmd_free(pd, cmd);
 	}
 }
 
@@ -638,13 +699,13 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		ret = OSDP_CP_ERR_GENERIC;
 		break;
 	case OSDP_CP_PHY_STATE_IDLE:
-		if (osdp_cmd_dequeue(pd, &cmd)) {
+		if (osdp_cp_cmd_dequeue(pd, &cmd)) {
 			ret = 0;
 			break;
 		}
 		pd->cmd_id = cmd->id;
 		memcpy(pd->cmd_data, cmd, sizeof(struct osdp_cmd));
-		osdp_cmd_free(pd, cmd);
+		osdp_cp_cmd_free(pd, cmd);
 		/* fall-thru */
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		if ((cp_send_command(pd)) < 0) {
@@ -718,13 +779,13 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 		return 0;
 	}
 
-	c = osdp_cmd_alloc(pd);
+	c = osdp_cp_cmd_alloc(pd);
 	if (c == NULL) {
 		return OSDP_CP_ERR_GENERIC;
 	}
 
 	c->id = cmd;
-	osdp_cmd_enqueue(pd, c);
+	osdp_cp_cmd_enqueue(pd, c);
 	SET_FLAG(pd, PD_FLAG_AWAIT_RESP);
 	return OSDP_CP_ERR_INPROG;
 }
@@ -888,13 +949,13 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = TO_PD(ctx, i);
-		cmd = osdp_cmd_alloc(pd);
+		cmd = osdp_cp_cmd_alloc(pd);
 		if (cmd == NULL) {
 			return -1;
 		}
 		cmd->id = CMD_KEYSET;
 		memcpy(&cmd->keyset, p, sizeof(struct osdp_cmd_keyset));
-		osdp_cmd_enqueue(pd, cmd);
+		osdp_cp_cmd_enqueue(pd, cmd);
 	}
 
 	return 0;
@@ -958,7 +1019,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		pd->address = p->address;
 		pd->flags = p->flags;
 		pd->seq_number = -1;
-		if (osdp_cmd_queue_init(pd)) {
+		if (osdp_cp_cmd_queue_init(pd)) {
 			goto error;
 		}
 		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
@@ -981,8 +1042,8 @@ void osdp_cp_teardown(osdp_t *ctx)
 		return;
 	}
 
-	for (i = 0; i < TO_CP(ctx)->num_pd; i++) {
-		osdp_cmd_queue_del(TO_PD(ctx, i));
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		osdp_cp_cmd_queue_del(TO_PD(ctx, i));
 	}
 	safe_free(TO_PD(ctx, 0));
 	safe_free(TO_CP(ctx));
@@ -1056,14 +1117,14 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		return -1;
 	}
 
-	cmd = osdp_cmd_alloc(TO_PD(ctx, pd));
+	cmd = osdp_cp_cmd_alloc(TO_PD(ctx, pd));
 	if (cmd == NULL) {
 		return -1;
 	}
 
 	memcpy(cmd, p, sizeof(struct osdp_cmd));
 	cmd->id = cmd_id; /* translate to internal */
-	osdp_cmd_enqueue(TO_PD(ctx, pd), cmd);
+	osdp_cp_cmd_enqueue(TO_PD(ctx, pd), cmd);
 	return 0;
 }
 

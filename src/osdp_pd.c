@@ -852,9 +852,6 @@ void osdp_pd_teardown(osdp_t *ctx)
 	assert(ctx);
 
 	if (ctx != NULL) {
-		if (TO_PD(ctx, 0)) {
-			osdp_cmd_queue_del(TO_PD(ctx, 0));
-		}
 		safe_free(TO_PD(ctx, 0));
 		safe_free(TO_CP(ctx));
 		safe_free(ctx);

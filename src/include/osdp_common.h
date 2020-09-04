@@ -370,13 +370,4 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);
 void safe_free(void *p);
 
-int osdp_cmd_queue_init(struct osdp_pd *pd);
-void osdp_cmd_queue_del(struct osdp_pd *pd);
-
-struct osdp_cmd *osdp_cmd_alloc(struct osdp_pd *pd);
-void osdp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd);
-void osdp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd);
-int osdp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd);
-struct osdp_cmd *osdp_cmd_get_last(struct osdp_pd *pd);
-
 #endif	/* _OSDP_COMMON_H_ */

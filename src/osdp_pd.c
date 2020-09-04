@@ -42,7 +42,8 @@
 #define REPLY_RMAC_I_LEN               17
 
 /* Implicit cababilities */
-static struct osdp_pd_cap libosdp_pd_capabilities[] = {
+static struct osdp_pd_cap osdp_pd_cap[] = {
+	/* Driver Implicit cababilities */
 	{
 		OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT,
 		1, /* The PD supports the 16-bit CRC-16 mode */
@@ -63,7 +64,7 @@ static struct osdp_pd_cap libosdp_pd_capabilities[] = {
 
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
-	int i, ret = -1, pos = 0;
+	int i, ret = -1, pos = 0, tmp;
 	struct osdp_cmd *cmd;
 
 	pd->reply_id = 0;
@@ -407,7 +408,8 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	case CMD_CHLNG:
-		if (pd->cap[OSDP_PD_CAP_COMMUNICATION_SECURITY].compliance_level == 0) {
+		tmp = OSDP_PD_CAP_COMMUNICATION_SECURITY;
+		if (pd->cap[tmp].compliance_level == 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->cmd_data[0] = OSDP_PD_NAK_SC_UNSUP;
 			break;
@@ -938,7 +940,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 	ARG_UNUSED(scbk);
 #endif
 	osdp_pd_set_attributes(pd, info->cap, &info->id);
-	osdp_pd_set_attributes(pd, libosdp_pd_capabilities, NULL);
+	osdp_pd_set_attributes(pd, osdp_pd_cap, NULL);
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 

@@ -144,12 +144,12 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	pkt->len_msb = BYTE_1(len - 1 + 2);
 
 #ifdef CONFIG_OSDP_SC_ENABLED
+	uint8_t *data;
+	int i, is_cmd, data_len;
+
 	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
 	    pkt->control & PKT_CONTROL_SCB &&
-	    pkt->data[1] >= SCS_15)
-	{
-		uint8_t *data;
-		int i, is_cmd, data_len;
+	    pkt->data[1] >= SCS_15) {
 		is_cmd = !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
@@ -356,9 +356,8 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-		pkt->control & PKT_CONTROL_SCB &&
-		pkt->data[1] >= SCS_15)
-	{
+	    pkt->control & PKT_CONTROL_SCB &&
+	    pkt->data[1] >= SCS_15) {
 		/* validate MAC */
 		is_cmd = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 		osdp_compute_mac(pd, is_cmd, buf + 1, mac_offset);

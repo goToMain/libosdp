@@ -486,13 +486,13 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_CCRYPT_DATA_LEN) {
 			break;
 		}
-		for (i=0; i<8; i++) {
+		for (i = 0; i < 8; i++) {
 			pd->sc.pd_client_uid[i] = buf[pos++];
 		}
-		for (i=0; i<8; i++) {
+		for (i = 0; i < 8; i++) {
 			pd->sc.pd_random[i] = buf[pos++];
 		}
-		for (i=0; i<16; i++) {
+		for (i = 0; i < 16; i++) {
 			pd->sc.pd_cryptogram[i] = buf[pos++];
 		}
 		osdp_compute_session_keys(TO_CTX(pd));
@@ -765,7 +765,7 @@ static int state_update(struct osdp_pd *pd)
 #ifdef CONFIG_OSDP_SC_ENABLED
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)  == false &&
 		    ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) == true  &&
-		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_SEC) {
+		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS) {
 			LOG_INF("retry SC after retry timeout");
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
@@ -802,10 +802,12 @@ static int state_update(struct osdp_pd *pd)
 		if (pd->reply_id != REPLY_PDCAP) {
 			cp_set_offline(pd);
 		}
+#ifdef CONFIG_OSDP_SC_ENABLED
 		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
+#endif /* CONFIG_OSDP_SC_ENABLED */
 		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -854,7 +856,7 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_state(pd, OSDP_CP_STATE_SET_SCBK);
 			break;
 		}
-		LOG_INF(TAG "SC ACtive");
+		LOG_INF(TAG "SC Active");
 		pd->sc_tstamp = osdp_millis_now();
 		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 		break;
@@ -1167,7 +1169,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		return -1;
 	}
 
-	switch(p->id) {
+	switch (p->id) {
 	case OSDP_CMD_OUTPUT:
 		cmd_id = CMD_OUT;
 		break;
@@ -1212,11 +1214,9 @@ int osdp_cp_send_cmd_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	struct osdp_cmd *cmd;
 	struct osdp_pd *pd;
 
-	assert(ctx);
-
-	if (osdp_get_status_mask(ctx) != PD_MASK(ctx)) {
+	if (osdp_get_sc_status_mask(ctx) != PD_MASK(ctx)) {
 		LOG_WRN(TAG "CMD_KEYSET can be sent only when all PDs are "
-		          "ONLINE and SC_ACTIVE.");
+			"ONLINE and SC_ACTIVE.");
 		return 1;
 	}
 

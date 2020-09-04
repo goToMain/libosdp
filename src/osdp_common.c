@@ -296,7 +296,7 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 	assert(ctx);
 
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
-		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
+		for (i = 0; i < NUM_PD(ctx); i++) {
 			pd = TO_PD(ctx, i);
 			if (pd->state == OSDP_CP_STATE_ONLINE &&
 			    ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {

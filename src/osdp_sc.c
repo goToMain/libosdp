@@ -80,7 +80,7 @@ void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
  *    0: if memory pointed to by s1 and and s2 are identical.
  *  +ve: if the they are different.
  */
-int osdp_ct_compare(const void *s1, const void *s2, size_t len)
+static int osdp_ct_compare(const void *s1, const void *s2, size_t len)
 {
 	size_t i, ret = 0;
 	const uint8_t *_s1 = s1;
@@ -211,7 +211,7 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 	if (pad_len > 16) {
 		/* N-1 blocks -- encrypted with SMAC-1 */
 		osdp_encrypt(pd->sc.s_mac1, iv, buf, pad_len - 16);
-		/* N-1 th block is the IV the N th block */
+		/* N-1 th block is the IV for N th block */
 		memcpy(iv, buf + pad_len - 32, 16);
 	}
 

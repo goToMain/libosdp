@@ -32,6 +32,19 @@ int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val)
 	return ret;
 }
 
+int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data, int len)
+{
+	int ret;
+	PyObject *obj;
+
+	obj = Py_BuildValue("y#", data, len);
+	if (obj == NULL)
+		return -1;
+	ret = PyDict_SetItemString(dict, key, obj);
+	Py_DECREF(obj);
+	return 0;
+}
+
 int pyosdp_module_add_type(PyObject *module, const char *name,
 			   PyTypeObject *type)
 {
@@ -118,4 +131,24 @@ int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res)
 	}
 
 	return pyosdp_parse_int(tmp, res);
+}
+
+int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t * const *buf, int *len)
+{
+	PyObject *obj;
+
+	obj = PyDict_GetItemString(dict, key);
+	if (obj == NULL) {
+		PyErr_Format(PyExc_KeyError, "Key '%s' not found", key);
+		return -1;
+	}
+
+	if (!PyArg_Parse(obj, "y#", buf, len))
+		return -1;
+
+	if (buf == NULL || *len == 0) {
+		PyErr_Format(PyExc_ValueError, "Unable to extact data bytes");
+		return -1;
+	}
+	return 0;
 }

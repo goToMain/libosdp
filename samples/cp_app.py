@@ -8,13 +8,6 @@ import time
 import random
 import osdp
 
-def keypress_event_handler(address, key):
-    print("Got keypress event. address: ", address, " Key: ", key)
-
-def cardread_event_handler(address, fmt, card_data):
-    print("Got cardread event. address: ", address, " format: ", fmt,
-          "card data: ", card_data)
-
 output_cmd = {
     "command": osdp.CMD_OUTPUT,
     "output_no": 0,
@@ -82,17 +75,15 @@ pd_info = [
     }
 ]
 
-callbacks = {
-    "keypress": keypress_event_handler,
-    "cardread": cardread_event_handler
-}
-
 key = '01020304050607080910111213141516'
 
 commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd, mfg_cmd ]
 
+def event_handler(address, event):
+    print("Address: ", address, " Event: ", event)
+
 cp = osdp.ControlPanel(pd_info, master_key=key)
-cp.set_callback(callbacks)
+cp.set_event_callback(event_handler)
 cp.set_loglevel(6)
 
 count = 0
@@ -102,7 +93,7 @@ while True:
     if (count % 100 == 99):
         # send a random command to the PD_0
         r = random.randint(0, len(commands)-1)
-        cp.send(0, commands[-1])
+        cp.send_command(0, commands[r])
 
     time.sleep(0.05)
     count += 1

@@ -10,77 +10,37 @@ static const char pyosdp_cp_tp_doc[] =
 "\n"
 ;
 
-int pyosdp_cp_keypress_cb(void *data, int address, uint8_t key)
+void pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 {
-	int ret_val = -1;
 	pyosdp_t *self = data;
-	PyObject *arglist, *result;
+	PyObject *arglist, *result, *event_dict;
 
-	arglist = Py_BuildValue("(II)", address, (int)key);
+	if (pyosdp_make_event_dict(&event_dict, event))
+		return;
 
-	result = PyEval_CallObject(self->cardread_cb, arglist);
+	arglist = Py_BuildValue("(IO)", address, event_dict);
 
-	if (result && PyLong_Check(result)) {
-		ret_val = (int)PyLong_AsLong(result);
-	}
+	result = PyEval_CallObject(self->event_cb, arglist);
+
 	Py_XDECREF(result);
 	Py_DECREF(arglist);
-
-	return ret_val;
 }
 
-int pyosdp_cp_cardread_cb(void *data, int address, int format, uint8_t *card_data, int len)
+static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
 {
-	int i, ret_val = -1;
-	pyosdp_t *self = data;
-	PyObject *arglist, *result, *py_list, *tmp;
+	PyObject *event_cb = NULL;
 
-	py_list = PyList_New(len);
-	for (i = 0; i < len; i++) {
-		tmp = PyLong_FromLong((long)card_data[i]);
-		PyList_SetItem(py_list, i, tmp);
-	}
-	arglist = Py_BuildValue("(IIO)", address, format, py_list);
-
-	result = PyEval_CallObject(self->keypress_cb, arglist);
-
-	if (result && PyLong_Check(result)) {
-		ret_val = (int)PyLong_AsLong(result);
-	}
-	Py_XDECREF(result);
-	Py_DECREF(arglist);
-
-	return ret_val;
-}
-
-static PyObject *pyosdp_cp_set_callback(pyosdp_t *self, PyObject *args)
-{
-	PyObject *dict, *keypress_cb = NULL, *cardread_cb = NULL;
-
-	if (!PyArg_ParseTuple(args, "O!", &PyDict_Type, &dict))
+	if (!PyArg_ParseTuple(args, "O", &event_cb))
 		return NULL;
 
-	keypress_cb = PyDict_GetItemString(dict, "keypress");
-	cardread_cb = PyDict_GetItemString(dict, "cardread");
-
-	if ((keypress_cb && !PyCallable_Check(keypress_cb)) ||
-	    (cardread_cb && !PyCallable_Check(cardread_cb))) {
+	if (!event_cb || !PyCallable_Check(event_cb)) {
 		PyErr_SetString(PyExc_TypeError, "Need a callable object!");
 		return NULL;
 	}
 
-	if (keypress_cb) {
-		Py_XDECREF(self->keypress_cb); /* if set_callback was called earlier */
-		self->keypress_cb = keypress_cb;
-		Py_INCREF(self->keypress_cb);
-	}
-
-	if (cardread_cb) {
-		Py_XDECREF(self->cardread_cb); /* if set_callback was called earlier */
-		self->cardread_cb = cardread_cb;
-		Py_INCREF(self->cardread_cb);
-	}
-
+	Py_XDECREF(self->event_cb); /* if set_callback was called earlier */
+	self->event_cb = event_cb;
+	Py_INCREF(self->event_cb);
 	Py_RETURN_NONE;
 }
 
@@ -136,13 +96,12 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 
 static int pyosdp_cp_tp_clear(pyosdp_t *self)
 {
-	Py_XDECREF(self->cardread_cb);
-	Py_XDECREF(self->keypress_cb);
+	Py_XDECREF(self->event_cb);
 	return 0;
 }
 
 static PyObject *pyosdp_cp_tp_new(PyTypeObject *type, PyObject *args,
-			          PyObject *kwargs)
+				  PyObject *kwargs)
 {
 	pyosdp_t *self = NULL;
 
@@ -151,6 +110,9 @@ static PyObject *pyosdp_cp_tp_new(PyTypeObject *type, PyObject *args,
 		return NULL;
 	}
 	self->ctx = NULL;
+	self->event_cb = NULL;
+	self->command_cb = NULL;
+	self->num_pd = 0;
 	return (PyObject *)self;
 }
 
@@ -202,7 +164,8 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		info = info_list + i;
 		py_info = PyList_GetItem(py_info_list, i);
 		if (py_info == NULL) {
-			PyErr_SetString(PyExc_ValueError, "py_info_list extract error");
+			PyErr_SetString(PyExc_ValueError,
+					"py_info_list extract error");
 			goto error;
 		}
 
@@ -251,9 +214,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		goto error;
 	}
 
-	osdp_cp_set_callback_data(ctx, (void *)self);
-	osdp_cp_set_callback_card_read(ctx, pyosdp_cp_cardread_cb);
-	osdp_cp_set_callback_key_press(ctx, pyosdp_cp_keypress_cb);
+	osdp_cp_set_event_callback(ctx, pyosdp_cp_event_cb, self);
 
 	ret = 0;
 	self->ctx = ctx;
@@ -297,13 +258,13 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"Periodic refresh hook"
 	},
 	{
-		"set_callback",
-		(PyCFunction)pyosdp_cp_set_callback,
+		"set_event_callback",
+		(PyCFunction)pyosdp_cp_set_event_callback,
 		METH_VARARGS,
 		"Set osdp event callbacks"
 	},
 	{
-		"send",
+		"send_command",
 		(PyCFunction)pyosdp_cp_send_command,
 		METH_VARARGS,
 		"Send osdp commands"

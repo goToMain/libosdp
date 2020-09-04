@@ -243,7 +243,7 @@ struct osdp_notifiers {
 	void *data;
 	keypress_callback_t keypress;
 	cardread_callback_t cardread;
-	command_callback_t  command_handler;
+	pd_command_callback_t  command_handler;
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -299,7 +299,7 @@ struct osdp_pd {
 	struct osdp_secure_channel sc;
 #endif
 	void *command_callback_arg;
-	command_callback_t command_callback;
+	pd_command_callback_t command_callback;
 };
 
 struct osdp_cp {
@@ -308,7 +308,8 @@ struct osdp_cp {
 	int num_pd;
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
-	struct osdp_notifiers notifier;
+	void *event_callback_arg;
+	cp_event_callback_t event_callback;
 };
 
 struct osdp {

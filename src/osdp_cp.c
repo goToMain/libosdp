@@ -299,7 +299,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	uint32_t temp32;
 	struct osdp_cp *cp = TO_CTX(pd)->cp;
 	int i, ret = OSDP_CP_ERR_GENERIC, pos = 0, t1, t2;
-	struct osdp_cmd cmd;
+	struct osdp_event event;
 
 	if (len < 1) {
 		LOG_ERR("response must have at least one byte");
@@ -407,55 +407,47 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	case REPLY_KEYPPAD:
-		if (len < REPLY_KEYPPAD_DATA_LEN) {
+		if (len < REPLY_KEYPPAD_DATA_LEN || !cp->event_callback) {
 			break;
 		}
-		pos++;	         /* reader number; skip */
-		t1 = buf[pos++]; /* key length */
-		if ((len - REPLY_KEYPPAD_DATA_LEN) != t1) {
+		event.type = OSDP_EVENT_KEYPRESS;
+		event.keypress.reader_no = buf[pos++];
+		event.keypress.length    = buf[pos++]; /* key length */
+		if ((len - REPLY_KEYPPAD_DATA_LEN) != event.keypress.length) {
 			break;
 		}
-		if (cp->notifier.keypress) {
-			for (i = 0; i < t1; i++) {
-				t2 = buf[pos + i]; /* key data */
-				cp->notifier.keypress(cp->notifier.data,
-						      pd->offset, t2);
-			}
-		}
+		event.cardread.data = buf + pos;
+		cp->event_callback(cp->event_callback_arg, pd->address, &event);
 		ret = 0;
 		break;
 	case REPLY_RAW:
-		if (len < REPLY_RAW_DATA_LEN) {
+		if (len < REPLY_RAW_DATA_LEN || !cp->event_callback) {
 			break;
 		}
-		pos++;	                /* reader number; skip */
-		t1 = buf[pos++];        /* format */
-		t2 = buf[pos++];        /* length LSB */
-		t2 |= buf[pos++] << 8; /* length MSB */
-		if ((len - REPLY_RAW_DATA_LEN) != t2) {
-			break;
-		}
-		if (cp->notifier.cardread) {
-			cp->notifier.cardread(cp->notifier.data, pd->offset,
-					      t1, buf + pos, t2);
-		}
+		event.type = OSDP_EVENT_CARDREAD;
+		event.cardread.reader_no = buf[pos++];
+		event.cardread.format    = buf[pos++];
+		event.cardread.length    = buf[pos++];       /* bits LSB */
+		event.cardread.length   |= buf[pos++] << 8;  /* bits MSB */
+		event.cardread.data      = buf + pos;
+		event.cardread.direction = 0;                /* un-specified */
+		cp->event_callback(cp->event_callback_arg, pd->address, &event);
 		ret = 0;
 		break;
 	case REPLY_FMT:
-		if (len < REPLY_FMT_DATA_LEN) {
+		if (len < REPLY_FMT_DATA_LEN || !cp->event_callback) {
 			break;
 		}
-		pos++;	/* reader number; skip */
-		pos++;	/* skip one byte -- TODO: handle reader direction */
-		t1 = buf[pos++]; /* Key length */
-		if ((len - REPLY_FMT_DATA_LEN) != t1) {
+		event.type = OSDP_EVENT_CARDREAD;
+		event.cardread.reader_no = buf[pos++];
+		event.cardread.direction = buf[pos++];
+		event.cardread.length    = buf[pos++];
+		event.cardread.format    = OSDP_CARD_FMT_ASCII;
+		event.cardread.data      = buf + pos;
+		if ((len - REPLY_FMT_DATA_LEN) != event.cardread.length) {
 			break;
 		}
-		if (cp->notifier.cardread) {
-			cp->notifier.cardread(cp->notifier.data, pd->offset,
-					      OSDP_CARD_FMT_ASCII,
-					      buf + pos, t1);
-		}
+		cp->event_callback(cp->event_callback_arg, pd->address, &event);
 		ret = 0;
 		break;
 	case REPLY_BUSY:
@@ -466,19 +458,17 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_RETRY_CMD;
 		break;
 	case REPLY_MFGREP:
-		if (len < REPLY_MFGREP_LEN || !cp->notifier.command_handler) {
+		if (len < REPLY_MFGREP_LEN || !cp->event_callback) {
 			break;
 		}
-		cmd.mfg.vendor_code  = buf[pos++]; /* vendor_code */
-		cmd.mfg.vendor_code |= buf[pos++] << 8;
-		cmd.mfg.vendor_code |= buf[pos++] << 16;
-		cmd.mfg.command = buf[pos++];
-		cmd.mfg.length = len - REPLY_MFGREP_LEN;
-		for (i = 0; i < cmd.mfg.length; i++) {
-			cmd.mfg.data[i] = buf[len++];
-		}
-		cp->notifier.command_handler(cp->notifier.data,
-					     pd->address, &cmd);
+		event.type = OSDP_EVENT_MFGREP;
+		event.mfgrep.vendor_code  = buf[pos++];
+		event.mfgrep.vendor_code |= buf[pos++] << 8;
+		event.mfgrep.vendor_code |= buf[pos++] << 16;
+		event.mfgrep.command      = buf[pos++];
+		event.mfgrep.length       = len - REPLY_MFGREP_LEN;
+		event.mfgrep.data         = buf + pos;
+		cp->event_callback(cp->event_callback_arg, pd->address, &event);
 		ret = 0;
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -1013,46 +1003,13 @@ void osdp_cp_refresh(osdp_t *ctx)
 	}
 }
 
-OSDP_EXPORT
-void osdp_cp_set_callback_data(osdp_t *ctx, void *data)
-{
-	assert(ctx && data);
-
-	TO_CP(ctx)->notifier.data = data;
-}
-
-OSDP_EXPORT
-int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb)
+OSDP_EXPORT void
+osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 {
 	assert(ctx);
 
-	TO_CP(ctx)->notifier.keypress = cb;
-
-	return 0;
-}
-
-OSDP_EXPORT
-void osdp_cp_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
-{
-	assert(ctx);
-	int i;
-	struct osdp_pd *pd;
-
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = TO_PD(ctx, i);
-		pd->command_callback_arg = arg;
-		pd->command_callback = cb;
-	}
-}
-
-OSDP_EXPORT
-int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb)
-{
-	assert(ctx);
-
-	TO_CP(ctx)->notifier.cardread = cb;
-
-	return 0;
+	TO_CP(ctx)->event_callback = cb;
+	TO_CP(ctx)->event_callback_arg = arg;
 }
 
 OSDP_EXPORT

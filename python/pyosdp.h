@@ -20,8 +20,7 @@
 typedef struct {
 	PyObject_HEAD
 	PyObject *command_cb;
-	PyObject *keypress_cb;
-	PyObject *cardread_cb;
+	PyObject *event_cb;
 	osdp_t *ctx;
 	struct channel_manager chn_mgr;
 	int num_pd;
@@ -36,9 +35,11 @@ int pyosdp_parse_str(PyObject *obj, char **str);
 
 int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res);
 int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str);
+int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t * const *buf, int *len);
 
 int pyosdp_dict_add_int(PyObject *dict, const char *key, int val);
 int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val);
+int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data, int len);
 
 /* from pyosdp_cp.c */
 
@@ -52,5 +53,6 @@ int pyosdp_add_type_pd(PyObject *module);
 
 int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict);
 int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd);
+int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event);
 
 #endif /* _PYOSDP_H_ */

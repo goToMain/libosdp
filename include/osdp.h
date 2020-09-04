@@ -18,17 +18,6 @@ extern "C" {
 #define OSDP_CMD_MFG_MAX_DATALEN       64
 
 /**
- * @brief Various card formats that a PD can support. This is sent to CP
- * when a PD must report a card read.
- */
-enum osdp_card_formats_e {
-	OSDP_CARD_FMT_RAW_UNSPECIFIED,
-	OSDP_CARD_FMT_RAW_WIEGAND,
-	OSDP_CARD_FMT_ASCII,
-	OSDP_CARD_FMT_SENTINEL
-};
-
-/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {
@@ -453,18 +442,68 @@ struct osdp_cmd {
 typedef int (*keypress_callback_t)(void *data, int address, uint8_t key);
 typedef int (*cardread_callback_t)(void *data, int address, int format,
 				   uint8_t *card_data, int len);
-typedef int (*command_callback_t)(void *arg, int address, struct osdp_cmd *cmd);
+
+/**
+ * @brief Various card formats that a PD can support. This is sent to CP
+ * when a PD must report a card read.
+ */
+enum osdp_event_cardread_format_e {
+	OSDP_CARD_FMT_RAW_UNSPECIFIED,
+	OSDP_CARD_FMT_RAW_WIEGAND,
+	OSDP_CARD_FMT_ASCII,
+	OSDP_CARD_FMT_SENTINEL
+};
+
+struct osdp_event_cardread {
+	int reader_no;
+	enum osdp_event_cardread_format_e format;
+	int direction;
+	int length;
+	const uint8_t *data;
+};
+
+struct osdp_event_keypress {
+	int reader_no;
+	int length;
+	const uint8_t *data;
+};
+
+struct osdp_event_mfgrep {
+	uint32_t vendor_code;
+	int command;
+	int length;
+	const uint8_t *data;
+};
+
+enum osdp_event_type {
+	OSDP_EVENT_CARDREAD,
+	OSDP_EVENT_KEYPRESS,
+	OSDP_EVENT_MFGREP,
+	OSDP_EVENT_SENTINEL
+};
+
+struct osdp_event {
+	enum osdp_event_type type;
+	union {
+		struct osdp_event_keypress keypress;
+		struct osdp_event_cardread cardread;
+		struct osdp_event_mfgrep mfgrep;
+	};
+};
+
+typedef int (*pd_command_callback_t)(void *arg, int address,
+				     struct osdp_cmd *cmd);
+typedef void (*cp_event_callback_t)(void *arg, int address,
+				    struct osdp_event *event);
 
 /* =============================== CP Methods =============================== */
+
+void osdp_cp_set_event_callback(osdp_t *ctx,
+				cp_event_callback_t cb, void *arg);
 
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 void osdp_cp_refresh(osdp_t *ctx);
 void osdp_cp_teardown(osdp_t *ctx);
-
-void osdp_cp_set_callback_data(osdp_t *ctx, void *data);
-int osdp_cp_set_callback_key_press(osdp_t *ctx, keypress_callback_t cb);
-int osdp_cp_set_callback_card_read(osdp_t *ctx, cardread_callback_t cb);
-void osdp_cp_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg);
 
 /**
  * @brief Generic command enqueue API.
@@ -475,6 +514,9 @@ void osdp_cp_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
  *
  * @retval 0 on success
  * @retval -1 on failure
+ *
+ * @note This method only enques the command on to a particular PD. The command
+ * itself can fail due to various reasons.
  */
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
 
@@ -483,7 +525,23 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 void osdp_pd_teardown(osdp_t *ctx);
 void osdp_pd_refresh(osdp_t *ctx);
-void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg);
+
+/**
+ * @brief Set callback method for PD command notification. This callback is
+ * invoked when the PD receives a command from the CP. This function must
+ * return:
+ *   - 0 if LibOSDP must send a `osdp_ACK` response
+ *   - -ve if LibOSDP must send a `osdp_NAK` response
+ *   - +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send a
+ *     specific response. This is useful for sending manufacturer specific reply
+ *     ``osdp_MFGREP``.
+ *
+ * @param ctx OSDP context
+ * @param cb The callback function's pointer
+ * @param arg A pointer that will be passed as the first argument of `cb`
+ */
+void osdp_pd_set_command_callback(osdp_t *ctx,
+				  pd_command_callback_t cb, void *arg);
 
 /**
  * @param ctx pointer to osdp context

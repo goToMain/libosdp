@@ -10,7 +10,7 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 {
 	char buf[64];
 	int is_temporary = 0;
-	PyObject *obj, *tmp;
+	PyObject *obj;
 	struct osdp_cmd_led_params *p = &cmd->led.permanent;
 
 	obj = PyDict_New();
@@ -106,12 +106,8 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 			return -1;
 		if (pyosdp_dict_add_int(obj, "mfg_command", cmd->mfg.command))
 			return -1;
-		tmp = Py_BuildValue("y#", cmd->mfg.data, cmd->mfg.length);
-		if (tmp == NULL)
+		if (pyosdp_dict_add_bytes(obj, "data", cmd->mfg.data, cmd->mfg.length))
 			return -1;
-		if (PyDict_SetItemString(obj, "data", tmp))
-			return -1;
-		Py_DECREF(tmp);
 		break;
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
@@ -377,5 +373,54 @@ int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
 				"command not implemented");
 		return -1;
 	}
+	return 0;
+}
+
+int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
+{
+	PyObject *obj;
+
+	obj = PyDict_New();
+	if (obj == NULL)
+		return -1;
+
+	if (pyosdp_dict_add_int(obj, "event", event->type))
+		return -1;
+
+	switch (event->type) {
+	case OSDP_EVENT_CARDREAD:
+		if (pyosdp_dict_add_int(obj, "reader_no", event->cardread.reader_no))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "format", event->cardread.format))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "direction", event->cardread.direction))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "length", event->cardread.length))
+			return -1;
+		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, event->cardread.length))
+			return -1;
+		break;
+	case OSDP_EVENT_KEYPRESS:
+		if (pyosdp_dict_add_int(obj, "reader_no", event->keypress.reader_no))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "length", event->keypress.length))
+			return -1;
+		if (pyosdp_dict_add_bytes(obj, "data", event->keypress.data, event->keypress.length))
+			return -1;
+		break;
+	case OSDP_EVENT_MFGREP:
+		if (pyosdp_dict_add_int(obj, "vendor_code", event->mfgrep.vendor_code))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "mfg_command", event->mfgrep.command))
+			return -1;
+		if (pyosdp_dict_add_bytes(obj, "data", event->mfgrep.data, event->mfgrep.length))
+			return -1;
+		break;
+	default:
+		PyErr_SetString(PyExc_NotImplementedError,
+				"event cannot be handled");
+		return -1;
+	}
+	*dict = obj;
 	return 0;
 }

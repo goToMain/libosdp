@@ -38,7 +38,7 @@ void pyosdp_add_module_constants(PyObject *module)
 	ADD_CONST("LED_COLOR_AMBER", OSDP_LED_COLOR_AMBER);
 	ADD_CONST("LED_COLOR_BLUE",  OSDP_LED_COLOR_BLUE);
 
-	/* enum osdp_card_formats_e */
+	/* enum osdp_event_cardread_format_e */
 	ADD_CONST("CARD_FMT_RAW_UNSPECIFIED", OSDP_CARD_FMT_RAW_UNSPECIFIED);
 	ADD_CONST("CARD_FMT_RAW_WIEGAND",     OSDP_CARD_FMT_RAW_WIEGAND);
 	ADD_CONST("CARD_FMT_ASCII",           OSDP_CARD_FMT_ASCII);

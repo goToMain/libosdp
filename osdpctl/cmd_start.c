@@ -131,25 +131,11 @@ int pd_cmd_handler(struct osdp_cmd *cmd)
 	return -1;
 }
 
-int cp_keypress_handler(void *data, int pd, uint8_t key)
+void cp_event_handler(void *data, int pd, struct osdp_event *event)
 {
 	ARG_UNUSED(data);
 
-	printf("CP: PD[%d]: keypressed: 0x%02x\n", pd, key);
-	return 0;
-}
-
-int cp_card_read_handler(void *data, int pd, int format, uint8_t * card_data, int len)
-{
-	int i;
-
-	ARG_UNUSED(data);
-	printf("CP: PD[%d]: cardRead: FMT: %d Data[%d]: { ", pd, format, len);
-	for (i = 0; i < len; i++)
-		printf("%02x ", card_data[i]);
-	printf("}\n");
-
-	return 0;
+	printf("CP: PD[%d]: event: %d\n", pd, event->type);
 }
 
 void start_cmd_server(struct config_s *c)
@@ -288,8 +274,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			printf("Failed to setup CP context\n");
 			return -1;
 		}
-		osdp_cp_set_callback_key_press(c->cp_ctx, cp_keypress_handler);
-		osdp_cp_set_callback_card_read(c->cp_ctx, cp_card_read_handler);
+		osdp_cp_set_event_callback(c->cp_ctx, cp_event_handler, NULL);
 	} else {
 		scbk = NULL;
 		if (load_scbk(c->pd, scbk_buf) == 0)

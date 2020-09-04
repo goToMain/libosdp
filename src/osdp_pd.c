@@ -992,7 +992,7 @@ int osdp_pd_get_command(osdp_t *ctx, struct osdp_cmd *cmd)
 }
 
 OSDP_EXPORT
-void osdp_pd_set_command_callback(osdp_t *ctx, command_callback_t cb, void *arg)
+void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb, void *arg)
 {
 	assert(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);

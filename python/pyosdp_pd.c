@@ -104,8 +104,7 @@ static PyObject *pyosdp_pd_tp_new(PyTypeObject *type, PyObject *args,
 		return NULL;
 	}
 	self->ctx = NULL;
-	self->cardread_cb = NULL;
-	self->keypress_cb = NULL;
+	self->event_cb = NULL;
 	self->command_cb = NULL;
 	self->num_pd = 0;
 	return (PyObject *)self;

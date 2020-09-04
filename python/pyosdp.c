@@ -6,108 +6,16 @@
 
 #include "pyosdp.h"
 
-int pyosdp_module_add_type(PyObject *module, const char *name,
-			   PyTypeObject *type)
-{
-	if (PyType_Ready(type)) {
-		return -1;
-	}
-	Py_INCREF(type);
-	if (PyModule_AddObject(module, name, (PyObject *)type)) {
-		Py_DECREF(type);
-		return -1;
-	}
-	return 0;
-}
-
-int pyosdp_parse_int(PyObject *obj, int *res)
-{
-	PyObject *tmp;
-
-	/* Check if obj is numeric */
-	if (PyNumber_Check(obj) != 1) {
-		PyErr_SetString(PyExc_TypeError, "Expected number");
-		return -1;
-	}
-
-	tmp = PyNumber_Long(obj);
-	*res = (int)PyLong_AsUnsignedLong(tmp);
-	Py_DECREF(tmp);
-	return 0;
-}
-
-int pyosdp_parse_str(PyObject *obj, char **str)
-{
-	char *s;
-	PyObject *str_ref;
-
-	str_ref = PyUnicode_AsEncodedString(obj, "UTF-8", "strict");
-	if (str_ref == NULL) {
-		PyErr_SetString(PyExc_TypeError, "Expected string");
-		return -1;
-	}
-
-	s = PyBytes_AsString(str_ref);
-	if (s == NULL) {
-		PyErr_SetString(PyExc_TypeError, "Expected string");
-		Py_DECREF(str_ref);
-		return -1;
-	}
-	*str = strdup(s);
-	Py_DECREF(str_ref);
-	return 0;
-}
-
-int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str)
-{
-	PyObject *tmp;
-
-	if (!PyDict_Check(dict)) {
-		PyErr_SetString(PyExc_TypeError, "arg is not a dict");
-		return -1;
-	}
-
-	tmp = PyDict_GetItemString(dict, key);
-	if (tmp == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key '%s' not found", key);
-		return -1;
-	}
-
-	return pyosdp_parse_str(tmp, str);
-}
-
-int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res)
-{
-	PyObject *tmp;
-
-	if (!PyDict_Check(dict)) {
-		PyErr_SetString(PyExc_TypeError, "arg is not a dict");
-		return -1;
-	}
-
-	tmp = PyDict_GetItemString(dict, key);
-	if (tmp == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key '%s' not found", key);
-		return -1;
-	}
-
-	return pyosdp_parse_int(tmp, res);
-}
-
 static PyMethodDef osdp_funcs[] = {
 	{ NULL, NULL, 0, NULL } /* sentinel */
 };
 
 static PyModuleDef osdp_module = {
 	PyModuleDef_HEAD_INIT,
-	"osdp", /* Module name */
-	"Open Supervised Device Protocol", /* Docstring for the module */
-	-1,   /* Optional size of the module state memory */
-	osdp_funcs, /* pointer to a table of module-level functions */
-	NULL, /* Optional slot definitions */
-	NULL, /* Optional traversal function */
-	NULL, /* Optional clear function */
-	NULL  /* Optional module deallocation function */
+	.m_name    = "osdp",
+	.m_doc     = "Open Supervised Device Protocol",
+	.m_size    = -1,
+	.m_methods = osdp_funcs,
 };
 
 void pyosdp_add_module_constants(PyObject *module)

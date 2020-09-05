@@ -31,9 +31,23 @@ pd_cap = [
 
 def handle_command(address, command):
     if address != pd_info['address']:
-        return -1 # error
+        return { "return_code": -1 }
+
     print("PD received command: ", command)
-    return 0 # success
+
+    if command['command'] == osdp.CMD_MFG:
+        # For MFG commands, repply wth MFGREP. Notice that the "command"
+        # is still set be osdp.CMD_MFG. This is because the structure for both
+        # MFG and MFGREP are the same.
+        return {
+            "return_code": 1,
+            "command": osdp.CMD_MFG,
+            "vendor_code": 0x00030201,
+            "mfg_command": 14,
+            "data": bytes([1,2,3,4,5,6,7,8])
+        }
+
+    return { "return_code": 0 }
 
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
 pd.set_command_callback(handle_command)

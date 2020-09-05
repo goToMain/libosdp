@@ -41,8 +41,21 @@ static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
 	arglist = Py_BuildValue("(IO)", address, dict);
 	result = PyEval_CallObject(self->command_cb, arglist);
 
-	if (result && PyLong_Check(result)) {
-		ret_val = (int)PyLong_AsLong(result);
+	if (result && PyDict_Check(result)) {
+		if (pyosdp_dict_get_int(result, "return_code", &ret_val) == 0) {
+			/**
+			 * If ret_val > 0 and we can make a MFGREP command
+			 * out of the dict from python, we will reply with it.
+			 * If not, reply with NAK.
+			 */
+			if (ret_val > 0) {
+				memset(cmd, 0, sizeof(struct osdp_cmd));
+				if (pyosdp_cmd_make_struct(cmd, result) < 0)
+					ret_val = -1;
+				else if (cmd->id != OSDP_CMD_MFG)
+					ret_val = -1;
+			}
+		}
 	}
 
 	Py_XDECREF(dict);

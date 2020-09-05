@@ -10,6 +10,8 @@
 
 extern int (*test_state_update)(struct osdp_pd *);
 extern int (*test_cp_phy_state_update)(struct osdp_pd *);
+extern void (*test_cp_cmd_enqueue)(struct osdp_pd *, struct osdp_cmd *);
+extern struct osdp_cmd * (*test_cp_cmd_alloc)(struct osdp_pd *);
 
 int phy_fsm_resp_offset = 0;
 
@@ -113,8 +115,8 @@ void run_cp_phy_fsm_tests(struct test *t)
 	ctx = t->mock_data;
 	p = GET_CURRENT_PD(ctx);
 
-	cmd_poll = osdp_cmd_alloc(p);
-	cmd_id = osdp_cmd_alloc(p);
+	cmd_poll = test_cp_cmd_alloc(p);
+	cmd_id = test_cp_cmd_alloc(p);
 
 	if (cmd_poll == NULL || cmd_id == NULL) {
 		printf("    -- cmd alloc failed\n");
@@ -124,8 +126,8 @@ void run_cp_phy_fsm_tests(struct test *t)
 	cmd_poll->id = CMD_POLL;
 	cmd_id->id = CMD_ID;
 
-	osdp_cmd_enqueue(p, cmd_poll);
-	osdp_cmd_enqueue(p, cmd_id);
+	test_cp_cmd_enqueue(p, cmd_poll);
+	test_cp_cmd_enqueue(p, cmd_id);
 
 	printf("    -- executing test_cp_phy_fsm()\n");
 	while (result) {

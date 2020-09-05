@@ -1149,6 +1149,8 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 /**
  * Force export some private methods for testing.
  */
+void (*test_cp_cmd_enqueue)(struct osdp_pd *, struct osdp_cmd *) = cp_cmd_enqueue;
+struct osdp_cmd * (*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
 

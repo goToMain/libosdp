@@ -10,6 +10,48 @@ static const char pyosdp_cp_tp_doc[] =
 "\n"
 ;
 
+static PyObject *pyosdp_cp_pd_is_online(pyosdp_t *self, PyObject *args)
+{
+	int pd;
+	uint32_t mask;
+
+	if (!PyArg_ParseTuple(args, "I", &pd))
+		return NULL;
+
+	if (pd < 0 || pd > self->num_pd) {
+		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
+		return NULL;
+	}
+
+	mask = osdp_get_status_mask(self->ctx);
+
+	if (mask & 1 << pd)
+		Py_RETURN_TRUE;
+	else
+		Py_RETURN_FALSE;
+}
+
+static PyObject *pyosdp_cp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
+{
+	int pd;
+	uint32_t mask;
+
+	if (!PyArg_ParseTuple(args, "I", &pd))
+		return NULL;
+
+	if (pd < 0 || pd > self->num_pd) {
+		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
+		return NULL;
+	}
+
+	mask = osdp_get_sc_status_mask(self->ctx);
+
+	if (mask & 1 << pd)
+		Py_RETURN_TRUE;
+	else
+		Py_RETURN_FALSE;
+}
+
 int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 {
 	pyosdp_t *self = data;
@@ -262,19 +304,31 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"set_event_callback",
 		(PyCFunction)pyosdp_cp_set_event_callback,
 		METH_VARARGS,
-		"Set osdp event callbacks"
+		"Set osdp event callback. Args: (PyObject callable)"
 	},
 	{
 		"send_command",
 		(PyCFunction)pyosdp_cp_send_command,
 		METH_VARARGS,
-		"Send osdp commands"
+		"Send a osdp command. Args: (int pd, PyDict command)"
 	},
 	{
 		"set_loglevel",
 		(PyCFunction)pyosdp_cp_set_loglevel,
 		METH_VARARGS,
-		"Set logging level"
+		"Set logging level. Args: (int log_level)"
+	},
+	{
+		"is_online",
+		(PyCFunction)pyosdp_cp_pd_is_online,
+		METH_VARARGS,
+		"Check if PD is online. Args: (int pd), Return: Bool"
+	},
+	{
+		"sc_active",
+		(PyCFunction)pyosdp_cp_pd_is_sc_active,
+		METH_VARARGS,
+		"Check if PD has an active secure channel. Args: (int pd), Return: Bool"
 	},
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };

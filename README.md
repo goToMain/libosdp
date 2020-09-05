@@ -3,29 +3,61 @@
 [![Version][1]][2] [![Build CI][3]][4] [![Travis CI][5]][6] [![Codacy Badge][7]][8]
 
 This is an open source implementation of IEC 60839-11-5 Open Supervised Device
-Protocol (OSDP) developed by [Security Industry Association (SIA)][20]. The
-protocol is intended to improve interoperability among access control and
-security products.
+Protocol (OSDP). The protocol is intended to improve interoperability among
+access control and security products. It supports Secure Channel (SC) for
+encrypted and authenticated communication between configured devices.
 
 OSDP describes the communication protocol for interfacing one or more Peripheral
-Devices (PD) to a Control Panel (CP). The OSDP specification describes the
-protocol implementation over a two-wire RS-485 multi-drop serial communication
-channel. Nevertheless, this protocol can be used to transfer secure data over
-any physical channel. Have a look at our [protocol design documents][21] to get
-a better idea.
+Devices (PD) to a Control Panel (CP) over a two-wire RS-485 multi-drop serial
+communication channel. Nevertheless, this protocol can be used to transfer
+secure data over any stream based physical channel. Read more about OSDP
+[here][21].
+
+This protocol is developed and maintained by [Security Industry Association][20]
+(SIA).
 
 ## Salient Features of LibOSDP
 
   - Supports secure channel communication (AES-128).
   - Can be used to setup a PD or CP mode of operation.
-  - Exposes a well defined contract though a single header file (`include/osdp.h`).
+  - Exposes a well defined contract though a single header file.
   - No run-time memory allocation. All memory is allocated at init-time.
   - No external dependencies (for ease of cross compilation).
+  - Fully non-blocking, asynchronous design.
+  - Provides Python3 bindings for the C library for faster testing/integration.
 
-## API
+## C API
 
 LibOSDP exposes a [minimal set of API][26] to setup and manage the lifecycle of
-OSDP devices.
+OSDP devices. See `include/osdp.h` for more details.
+
+## Python API
+
+To setup a device as a Control Panel in Python, you'd do something like this:
+
+```python
+import osdp
+
+## Setup OSDP device in Control Panel mode
+cp = osdp.ControlPanel(pd_info, master_key=key)
+
+## send a output command to PD-1
+cp.send_command(1, output_cmd)
+```
+
+Similarly, for Peripheral Device,
+
+```python
+import osdp
+
+## Setup OSDP device in Peripheral Device mode
+pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
+
+## Set a handler for incoming commands from CP
+pd.set_command_callback(command_handler_fn)
+```
+
+For more details, look at [cp_app.py][29] and [pd_app.py][30].
 
 ## Supported Commands and Replies
 
@@ -71,8 +103,8 @@ The CP mode has achieved some level of maturity. OOH, the PD mode is still a
 work in progress. Have a look at `TODO` file for list of pending tasks. Patches
 in those directions are welcome.
 
-If you find bugs or other issues, please open an issue in the github page of
-this project [https://github.com/goTomain/libosdp][24].
+If you find bugs or other issues, please [open an issue][28] in the github page
+of this project here: [https://github.com/goTomain/libosdp][24].
 
 ## License
 
@@ -105,3 +137,6 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [25]: https://github.com/goTomain/c-utils
 [26]: https://libosdp.gotomain.io/api/
 [27]: https://libosdp.gotomain.io/protocol/faq.html
+[28]: https://github.com/goToMain/libosdp/issues
+[29]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
+[30]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py

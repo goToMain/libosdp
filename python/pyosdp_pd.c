@@ -10,6 +10,18 @@ static const char pyosdp_pd_tp_doc[] =
 "\n"
 ;
 
+static PyObject *pyosdp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
+{
+	uint32_t mask;
+
+	mask = osdp_get_sc_status_mask(self->ctx);
+
+	if (mask & 1)
+		Py_RETURN_TRUE;
+	else
+		Py_RETURN_FALSE;
+}
+
 static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
 {
 	PyObject *event_dict;
@@ -22,11 +34,10 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
 		return NULL;
 
 	if (osdp_pd_notify_event(self->ctx, &event)) {
-		PyErr_SetString(PyExc_RuntimeError, "Event notify failed");
-		return NULL;
+		Py_RETURN_FALSE;
 	}
 
-	Py_RETURN_NONE;
+	Py_RETURN_TRUE;
 }
 
 static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
@@ -290,19 +301,25 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 		"set_loglevel",
 		(PyCFunction)pyosdp_pd_set_loglevel,
 		METH_VARARGS,
-		"Set loglevel"
+		"Set OSDP loglevel. Args: (int log_level)"
 	},
 	{
 		"set_command_callback",
 		(PyCFunction)pyosdp_pd_set_command_callback,
 		METH_VARARGS,
-		"Set osdp command callback"
+		"Set osdp command callback. Args: (PyObject callable)"
 	},
 	{
 		"notify_event",
 		(PyCFunction)pyosdp_pd_notify_event,
 		METH_VARARGS,
-		"Set osdp command callback"
+		"Set osdp command callback. Return: Bool"
+	},
+	{
+		"sc_active",
+		(PyCFunction)pyosdp_pd_is_sc_active,
+		METH_NOARGS,
+		"Secure Channel status. Return: Bool"
 	},
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };

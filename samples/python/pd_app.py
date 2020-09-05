@@ -49,9 +49,13 @@ def handle_command(address, command):
 
     return { "return_code": 0 }
 
+# Print LibOSDP version and source info
+print("pyosdp", "Version:", osdp.get_version(),
+                "Info:", osdp.get_source_info())
+
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
 pd.set_command_callback(handle_command)
-pd.set_loglevel(7)
+pd.set_loglevel(6)
 
 card_read_event = {
     "event": osdp.EVENT_CARDREAD,
@@ -69,14 +73,15 @@ keypress_event = {
 
 events = [ card_read_event, keypress_event ]
 
-count = 0
+count = 0 # loop counter
+
 while True:
     pd.refresh()
 
-    if (count % 100 == 99):
+    if (count % 100 == 99) and pd.sc_active():
         # send a random event to the CP
         r = random.randint(0, len(events)-1)
         pd.notify_event(events[r])
 
-    time.sleep(0.05)
     count += 1
+    time.sleep(0.020) #sleep for 20ms

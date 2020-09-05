@@ -67,6 +67,7 @@ mfg_cmd = {
 }
 
 pd_info = [
+    # PD_0 info
     {
         "address": 101,
         "channel_type": "message_queue",
@@ -82,18 +83,24 @@ commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd, mfg_cmd ]
 def event_handler(address, event):
     print("Address: ", address, " Event: ", event)
 
+# Print LibOSDP version and source info
+print("pyosdp", "Version:", osdp.get_version(),
+                "Info:", osdp.get_source_info())
+
 cp = osdp.ControlPanel(pd_info, master_key=key)
 cp.set_event_callback(event_handler)
-cp.set_loglevel(7)
+cp.set_loglevel(6)
 
-count = 0
+count = 0  # loop counter
+PD_0 = 0   # PD offset number
+
 while True:
     cp.refresh()
 
-    if (count % 100 == 99):
+    if (count % 100) == 99 and cp.sc_active(PD_0):
         # send a random command to the PD_0
-        r = random.randint(0, len(commands)-1)
-        cp.send_command(0, commands[r])
+        r = random.randint(PD_0, len(commands)-1)
+        cp.send_command(PD_0, commands[r])
 
-    time.sleep(0.05)
     count += 1
+    time.sleep(0.020) #sleep for 20ms

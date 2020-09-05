@@ -62,7 +62,7 @@ output_cmd = {
 }
 
 ## send a output command to PD-1
-cp.send(1, output_cmd)
+cp.send_command(1, output_cmd)
 ```
 
 see [samples/cp_app.py][2] for more details.
@@ -97,15 +97,15 @@ pd_cap = [
 ## Setup OSDP device in Peripheral Device mode
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
 
-## call this refresh method once every 50ms
+## call this refresh method periodically (at lease once every 50ms)
 pd.refresh()
 
 ## Define a callback handler. Must return 0 on success, -ve on failures.
 def handle_command(address, command):
     if address != pd_info['address']:
-        return -1 # error
+        return { "return_code": -1 }
     print("PD received command: ", command)
-    return 0 # success
+    return { "return_code": 0 }
 
 ## Set a handler for incoming commands from CP
 pd.set_command_callback(handle_command)
@@ -114,5 +114,5 @@ pd.set_command_callback(handle_command)
 see [samples/pd_app.py][3] for more details.
 
 [1]: https://libosdp.gotomain.io/api/
-[2]: https://github.com/goToMain/libosdp/blob/master/samples/cp_app.py
-[3]: https://github.com/goToMain/libosdp/blob/master/samples/pd_app.py
+[2]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
+[3]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py

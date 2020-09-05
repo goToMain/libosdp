@@ -6,7 +6,45 @@
 
 #include "pyosdp.h"
 
+PyObject *pyosdp_get_version(pyosdp_t *self, PyObject *args)
+{
+	const char *version;
+	PyObject *obj;
+
+	version = osdp_get_version();
+	obj = Py_BuildValue("s", version);
+	if (obj == NULL)
+		return NULL;
+	Py_INCREF(obj);
+	return obj;
+}
+
+PyObject *pyosdp_get_source_info(pyosdp_t *self, PyObject *args)
+{
+	const char *info;
+	PyObject *obj;
+
+	info = osdp_get_source_info();
+	obj = Py_BuildValue("s", info);
+	if (obj == NULL)
+		return NULL;
+	Py_INCREF(obj);
+	return obj;
+}
+
 static PyMethodDef osdp_funcs[] = {
+	{
+		"get_version",
+		(PyCFunction)pyosdp_get_version,
+		METH_NOARGS,
+		"Get OSDP version as string"
+	},
+	{
+		"get_source_info",
+		(PyCFunction)pyosdp_get_source_info,
+		METH_NOARGS,
+		"Get LibOSDP source info string"
+	},
 	{ NULL, NULL, 0, NULL } /* sentinel */
 };
 

@@ -35,7 +35,7 @@ int pyosdp_parse_str(PyObject *obj, char **str);
 
 int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res);
 int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str);
-int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t * const *buf, int *len);
+int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **buf, int *len);
 
 int pyosdp_dict_add_int(PyObject *dict, const char *key, int val);
 int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val);
@@ -54,5 +54,6 @@ int pyosdp_add_type_pd(PyObject *module);
 int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict);
 int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd);
 int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event);
+int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict);
 
 #endif /* _PYOSDP_H_ */

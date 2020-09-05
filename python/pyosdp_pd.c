@@ -10,6 +10,25 @@ static const char pyosdp_pd_tp_doc[] =
 "\n"
 ;
 
+static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
+{
+	PyObject *event_dict;
+	struct osdp_event event;
+
+	if (!PyArg_ParseTuple(args, "O", &event_dict))
+		return NULL;
+
+	if (pyosdp_make_event_struct(&event, event_dict))
+		return NULL;
+
+	if (osdp_pd_notify_event(self->ctx, &event)) {
+		PyErr_SetString(PyExc_RuntimeError, "Event notify failed");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
 static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
 {
 	int ret_val = -1;
@@ -263,6 +282,12 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	{
 		"set_command_callback",
 		(PyCFunction)pyosdp_pd_set_command_callback,
+		METH_VARARGS,
+		"Set osdp command callback"
+	},
+	{
+		"notify_event",
+		(PyCFunction)pyosdp_pd_notify_event,
 		METH_VARARGS,
 		"Set osdp command callback"
 	},

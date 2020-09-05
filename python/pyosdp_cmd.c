@@ -314,7 +314,6 @@ static int pyosdp_handle_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
 	struct osdp_cmd_mfg *cmd = &p->mfg;
 	uint8_t *data_bytes;
 	int vendor_code, mfg_command;
-	PyObject *data;
 
 	p->id = OSDP_CMD_MFG;
 
@@ -324,19 +323,8 @@ static int pyosdp_handle_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
 	if (pyosdp_dict_get_int(dict, "mfg_command", &mfg_command))
 		return -1;
 
-	data = PyDict_GetItemString(dict, "data");
-	if (data == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key 'data' not found");
+	if (pyosdp_dict_get_bytes(dict, "data", &data_bytes, &data_length))
 		return -1;
-	}
-
-	if (!PyArg_Parse(data, "y#", &data_bytes, &data_length))
-		return -1;
-
-	if (data_bytes == NULL || data_length == 0) {
-		PyErr_Format(PyExc_ValueError, "Unable to extact data bytes");
-		return -1;
-	}
 
 	cmd->vendor_code = (uint32_t)vendor_code;
 	cmd->command = mfg_command;
@@ -422,5 +410,83 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 		return -1;
 	}
 	*dict = obj;
+	return 0;
+}
+
+static int pyosdp_make_cardread_event_struct(struct osdp_event *p, PyObject *dict)
+{
+	int i, data_length, reader_no, format, direction;
+	struct osdp_event_cardread *ev = &p->cardread;
+	uint8_t *data_bytes;
+
+	p->type = OSDP_EVENT_CARDREAD;
+
+	if (pyosdp_dict_get_int(dict, "reader_no", &reader_no))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "format", &format))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "direction", &direction))
+		return -1;
+
+	if (pyosdp_dict_get_bytes(dict, "data", &data_bytes, &data_length))
+		return -1;
+
+	if (data_length > OSDP_EVENT_MAX_DATALEN) {
+		PyErr_Format(PyExc_ValueError, "Data bytes too long");
+		return -1;
+	}
+
+	ev->reader_no = (uint8_t)reader_no;
+	ev->format = (uint8_t)format;
+	ev->direction = (uint8_t)direction;
+	ev->length = data_length;
+	for (i = 0; i < data_length; i++)
+		ev->data[i] = data_bytes[i];
+	return 0;
+}
+
+static int pyosdp_make_keypress_event_struct(struct osdp_event *p, PyObject *dict)
+{
+	int i, data_length, reader_no;
+	struct osdp_event_keypress *ev = &p->keypress;
+	uint8_t *data_bytes;
+
+	p->type = OSDP_EVENT_KEYPRESS;
+
+	if (pyosdp_dict_get_int(dict, "reader_no", &reader_no))
+		return -1;
+
+	if (pyosdp_dict_get_bytes(dict, "data", &data_bytes, &data_length))
+		return -1;
+
+	ev->reader_no = (uint8_t)reader_no;
+	ev->length = data_length;
+	for (i = 0; i < ev->length; i++)
+		ev->data[i] = data_bytes[i];
+	return 0;
+}
+
+int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
+{
+	int event_type;
+
+	if (pyosdp_dict_get_int(dict, "event", &event_type))
+		return -1;
+
+	switch (event_type) {
+	case OSDP_EVENT_CARDREAD:
+		if (pyosdp_make_cardread_event_struct(event, dict))
+			return -1;
+		break;
+	case OSDP_EVENT_KEYPRESS:
+		if (pyosdp_make_keypress_event_struct(event, dict))
+			return -1;
+		break;
+	default:
+		PyErr_Format(PyExc_ValueError, "Unknown event");
+		return -1;
+	}
 	return 0;
 }

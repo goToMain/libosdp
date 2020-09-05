@@ -50,7 +50,13 @@
 	(uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
-#define OSDP_COMMAND_DATA_MAX_LEN      sizeof(struct osdp_cmd)
+
+/* Unused type only to estmate ephemeral_data size */
+union osdp_ephemeral_data {
+	struct osdp_cmd cmd;
+	struct osdp_event event;
+};
+#define OSDP_EPHEMERAL_DATA_MAX_LEN      sizeof(union osdp_ephemeral_data)
 
 /**
  * @brief OSDP reserved commands
@@ -243,7 +249,7 @@ struct osdp_notifiers {
 	void *data;
 	keypress_callback_t keypress;
 	cardread_callback_t cardread;
-	pd_command_callback_t  command_handler;
+	pd_commnand_callback_t  command_handler;
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED
@@ -262,7 +268,7 @@ struct osdp_secure_channel {
 };
 #endif
 
-struct osdp_cmd_queue {
+struct osdp_queue {
 	queue_t queue;
 	slab_t slab;
 };
@@ -291,15 +297,19 @@ struct osdp_pd {
 
 	int cmd_id;
 	int reply_id;
-	uint8_t cmd_data[OSDP_COMMAND_DATA_MAX_LEN];
+	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];
 
-	struct osdp_cmd_queue cmd;
+	union {
+		struct osdp_queue cmd;
+		struct osdp_queue event;
+	};
+
 	struct osdp_channel channel;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	struct osdp_secure_channel sc;
 #endif
 	void *command_callback_arg;
-	pd_command_callback_t command_callback;
+	pd_commnand_callback_t command_callback;
 };
 
 struct osdp_cp {

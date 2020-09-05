@@ -110,8 +110,8 @@ function must return:
 
 .. code:: c
 
-    typedef int (*pd_command_callback_t)(void *arg, int address, struct osdp_cmd *cmd);
+    typedef int (*pd_commnand_callback_t)(void *arg, int address, struct osdp_cmd *cmd);
 
-    void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb, void *arg);
+    void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb, void *arg);
 
 .. _command structure: command-structure.html

@@ -84,7 +84,7 @@ def event_handler(address, event):
 
 cp = osdp.ControlPanel(pd_info, master_key=key)
 cp.set_event_callback(event_handler)
-cp.set_loglevel(6)
+cp.set_loglevel(7)
 
 count = 0
 while True:

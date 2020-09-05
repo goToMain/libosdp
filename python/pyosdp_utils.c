@@ -108,7 +108,7 @@ int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str)
 
 	tmp = PyDict_GetItemString(dict, key);
 	if (tmp == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key '%s' not found", key);
+		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: string expected", key);
 		return -1;
 	}
 
@@ -126,29 +126,33 @@ int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res)
 
 	tmp = PyDict_GetItemString(dict, key);
 	if (tmp == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key '%s' not found", key);
+		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: int expected", key);
 		return -1;
 	}
 
 	return pyosdp_parse_int(tmp, res);
 }
 
-int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t * const *buf, int *len)
+int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data, int *length)
 {
 	PyObject *obj;
+	uint8_t *buf;
+	int len;
 
 	obj = PyDict_GetItemString(dict, key);
 	if (obj == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key '%s' not found", key);
+		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: bytes expected", key);
 		return -1;
 	}
 
-	if (!PyArg_Parse(obj, "y#", buf, len))
+	if (!PyArg_Parse(obj, "y#", &buf, &len))
 		return -1;
 
-	if (buf == NULL || *len == 0) {
+	if (buf == NULL || len == 0) {
 		PyErr_Format(PyExc_ValueError, "Unable to extact data bytes");
 		return -1;
 	}
+	*data = buf;
+	*length = len;
 	return 0;
 }

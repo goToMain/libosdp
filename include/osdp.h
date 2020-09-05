@@ -16,6 +16,7 @@ extern "C" {
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
 #define OSDP_CMD_MFG_MAX_DATALEN       64
+#define OSDP_EVENT_MAX_DATALEN         64
 
 /**
  * @brief Various PD capability function codes.
@@ -459,20 +460,20 @@ struct osdp_event_cardread {
 	enum osdp_event_cardread_format_e format;
 	int direction;
 	int length;
-	const uint8_t *data;
+	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 
 struct osdp_event_keypress {
 	int reader_no;
 	int length;
-	const uint8_t *data;
+	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 
 struct osdp_event_mfgrep {
 	uint32_t vendor_code;
 	int command;
 	int length;
-	const uint8_t *data;
+	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 
 enum osdp_event_type {
@@ -491,15 +492,10 @@ struct osdp_event {
 	};
 };
 
-typedef int (*pd_command_callback_t)(void *arg, int address,
-				     struct osdp_cmd *cmd);
-typedef int (*cp_event_callback_t)(void *arg, int address,
-				   struct osdp_event *event);
+typedef int (*pd_commnand_callback_t)(void *arg, int addr, struct osdp_cmd *c);
+typedef int (*cp_event_callback_t)(void *arg, int addr, struct osdp_event *ev);
 
 /* =============================== CP Methods =============================== */
-
-void osdp_cp_set_event_callback(osdp_t *ctx,
-				cp_event_callback_t cb, void *arg);
 
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 void osdp_cp_refresh(osdp_t *ctx);
@@ -519,6 +515,8 @@ void osdp_cp_teardown(osdp_t *ctx);
  * itself can fail due to various reasons.
  */
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
+
+void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
 
 /* =============================== PD Methods =============================== */
 
@@ -540,8 +538,9 @@ void osdp_pd_refresh(osdp_t *ctx);
  * @param cb The callback function's pointer
  * @param arg A pointer that will be passed as the first argument of `cb`
  */
-void osdp_pd_set_command_callback(osdp_t *ctx,
-				  pd_command_callback_t cb, void *arg);
+void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb, void *arg);
+
+int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
 
 /* ============================= Common Methods ============================= */
 

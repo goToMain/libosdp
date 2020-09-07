@@ -6,10 +6,10 @@
 
 #include "pyosdp.h"
 
-static const char pyosdp_pd_tp_doc[] =
-"\n"
-;
-
+#define pyosdp_pd_is_sc_active_doc \
+	"Get Secure Channel status, (active/inactive)\n" \
+	"\n" \
+	"@return Secure Channel Status (Bool)"
 static PyObject *pyosdp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
 {
 	uint32_t mask;
@@ -22,6 +22,12 @@ static PyObject *pyosdp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
 		Py_RETURN_FALSE;
 }
 
+#define pyosdp_pd_notify_event_doc \
+	"Notify the CP of an OSDP event\n" \
+	"\n" \
+	"@param event A dict of event keys and values. See osdp.h for details\n" \
+	"\n" \
+	"@return None\n"
 static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
 {
 	PyObject *event_dict;
@@ -75,6 +81,12 @@ static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
 	return ret_val;
 }
 
+#define pyosdp_pd_set_command_callback_doc \
+	"Set OSDP command callback handler\n" \
+	"\n" \
+	"@param callback A function to call when a CP sends a command\n" \
+	"\n" \
+	"@return None"
 static PyObject *pyosdp_pd_set_command_callback(pyosdp_t *self, PyObject *args)
 {
 	PyObject *callable = NULL;
@@ -93,6 +105,12 @@ static PyObject *pyosdp_pd_set_command_callback(pyosdp_t *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+#define pyosdp_pd_set_loglevel_doc \
+	"Set OSDP logging level\n" \
+	"\n" \
+	"@param log_level OSDP log level (0 to 7)\n" \
+	"\n" \
+	"@return None"
 static PyObject *pyosdp_pd_set_loglevel(pyosdp_t *self, PyObject *args)
 {
 	int log_level;
@@ -110,6 +128,10 @@ static PyObject *pyosdp_pd_set_loglevel(pyosdp_t *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+#define pyosdp_pd_refresh_doc \
+	"OSDP periodic refresh hook. Must be called at least once every 50ms\n" \
+	"\n" \
+	"@return None\n"
 static PyObject *pyosdp_pd_refresh(pyosdp_t *self, PyObject *args)
 {
 	osdp_pd_refresh(self->ctx);
@@ -187,6 +209,14 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 	return 0;
 }
 
+#define pyosdp_pd_tp_init_doc \
+	"OSDP Peripheral Device Class\n" \
+	"\n" \
+	"@param pd_info A dict with osdp_pd_info_t keys and valuse. See osdp.h for more info.\n" \
+	"@param capabilities A list of osdp_pd_cap_t keys and valuse. See osdp.h for more details.\n" \
+	"@param scbk A hexadecimal string representation of the PD secure channel base key\n" \
+	"\n" \
+	"@return None"
 static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int ret;
@@ -295,31 +325,31 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 		"refresh",
 		(PyCFunction)pyosdp_pd_refresh,
 		METH_NOARGS,
-		"Periodic refresh hook"
+		pyosdp_pd_refresh_doc
 	},
 	{
 		"set_loglevel",
 		(PyCFunction)pyosdp_pd_set_loglevel,
 		METH_VARARGS,
-		"Set OSDP loglevel. Args: (int log_level)"
+		pyosdp_pd_set_loglevel_doc
 	},
 	{
 		"set_command_callback",
 		(PyCFunction)pyosdp_pd_set_command_callback,
 		METH_VARARGS,
-		"Set osdp command callback. Args: (PyObject callable)"
+		pyosdp_pd_set_command_callback_doc
 	},
 	{
 		"notify_event",
 		(PyCFunction)pyosdp_pd_notify_event,
 		METH_VARARGS,
-		"Set osdp command callback. Return: Bool"
+		pyosdp_pd_notify_event_doc
 	},
 	{
 		"sc_active",
 		(PyCFunction)pyosdp_pd_is_sc_active,
 		METH_NOARGS,
-		"Secure Channel status. Return: Bool"
+		pyosdp_pd_is_sc_active_doc
 	},
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
@@ -337,7 +367,7 @@ PyTypeObject PeripheralDeviceTypeObject = {
 	.tp_repr      = pyosdp_pd_tp_repr,
 	.tp_str       = pyosdp_pd_tp_str,
 	.tp_flags     = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-	.tp_doc       = pyosdp_pd_tp_doc,
+	.tp_doc       = pyosdp_pd_tp_init_doc,
 	.tp_traverse  = (traverseproc)pyosdp_pd_tp_traverse,
 	.tp_clear     = (inquiry)pyosdp_pd_tp_clear,
 	.tp_methods   = pyosdp_pd_tp_methods,

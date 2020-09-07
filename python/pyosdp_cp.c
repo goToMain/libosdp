@@ -6,10 +6,12 @@
 
 #include "pyosdp.h"
 
-static const char pyosdp_cp_tp_doc[] =
-"\n"
-;
-
+#define pyosdp_cp_pd_is_online_doc \
+	"Get PD status, (online/offline)\n" \
+	"\n" \
+	"@param pd PD offset number\n" \
+	"\n" \
+	"@return Secure Channel Status (Bool)"
 static PyObject *pyosdp_cp_pd_is_online(pyosdp_t *self, PyObject *args)
 {
 	int pd;
@@ -31,6 +33,12 @@ static PyObject *pyosdp_cp_pd_is_online(pyosdp_t *self, PyObject *args)
 		Py_RETURN_FALSE;
 }
 
+#define pyosdp_cp_pd_is_sc_active_doc \
+	"Get PD Secure Channel status, (active/inactive)\n" \
+	"\n" \
+	"@param pd PD offset number\n" \
+	"\n" \
+	"@return Secure Channel Status (Bool)"
 static PyObject *pyosdp_cp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
 {
 	int pd;
@@ -69,6 +77,12 @@ int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 	return 0;
 }
 
+#define pyosdp_cp_set_event_callback_doc \
+	"Set OSDP event callback handler\n" \
+	"\n" \
+	"@param callback A function to call when a PD reports an event\n" \
+	"\n" \
+	"@return None"
 static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
 {
 	PyObject *event_cb = NULL;
@@ -87,6 +101,12 @@ static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+#define pyosdp_cp_set_loglevel_doc \
+	"Set OSDP logging level\n" \
+	"\n" \
+	"@param log_level OSDP log level (0 to 7)\n" \
+	"\n" \
+	"@return None"
 static PyObject *pyosdp_cp_set_loglevel(pyosdp_t *self, PyObject *args)
 {
 	int log_level;
@@ -104,6 +124,10 @@ static PyObject *pyosdp_cp_set_loglevel(pyosdp_t *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
+#define pyosdp_cp_refresh_doc \
+	"OSDP periodic refresh hook. Must be called at least once every 50ms\n" \
+	"\n" \
+	"@return None\n"
 static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
 {
 	osdp_cp_refresh(self->ctx);
@@ -111,6 +135,13 @@ static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
 	Py_RETURN_NONE;
 }
 
+#define pyosdp_cp_send_command_doc \
+	"Send an OSDP command to a PD\n" \
+	"\n" \
+	"@param pd PD offset number\n" \
+	"@param command A dict of command keys and values. See osdp.h for details\n" \
+	"\n" \
+	"@return None\n"
 static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 {
 	int pd;
@@ -167,6 +198,13 @@ static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+#define pyosdp_cp_tp_init_doc \
+	"OSDP Control Panel Class\n" \
+	"\n" \
+	"@param pd_info List of PD info dicts. See osdp_pd_info_t in osdp.h for more info\n" \
+	"@param master_key A hexadecimal string representation of the master key\n" \
+	"\n" \
+	"@return None"
 static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int i, ret=-1, tmp;
@@ -298,37 +336,37 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		"refresh",
 		(PyCFunction)pyosdp_cp_refresh,
 		METH_NOARGS,
-		"Periodic refresh hook"
+		pyosdp_cp_refresh_doc
 	},
 	{
 		"set_event_callback",
 		(PyCFunction)pyosdp_cp_set_event_callback,
 		METH_VARARGS,
-		"Set osdp event callback. Args: (PyObject callable)"
+		pyosdp_cp_set_event_callback_doc
 	},
 	{
 		"send_command",
 		(PyCFunction)pyosdp_cp_send_command,
 		METH_VARARGS,
-		"Send a osdp command. Args: (int pd, PyDict command)"
+		pyosdp_cp_send_command_doc
 	},
 	{
 		"set_loglevel",
 		(PyCFunction)pyosdp_cp_set_loglevel,
 		METH_VARARGS,
-		"Set logging level. Args: (int log_level)"
+		pyosdp_cp_set_loglevel_doc
 	},
 	{
 		"is_online",
 		(PyCFunction)pyosdp_cp_pd_is_online,
 		METH_VARARGS,
-		"Check if PD is online. Args: (int pd), Return: Bool"
+		pyosdp_cp_pd_is_online_doc
 	},
 	{
 		"sc_active",
 		(PyCFunction)pyosdp_cp_pd_is_sc_active,
 		METH_VARARGS,
-		"Check if PD has an active secure channel. Args: (int pd), Return: Bool"
+		pyosdp_cp_pd_is_sc_active_doc
 	},
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
@@ -340,7 +378,7 @@ static PyMemberDef pyosdp_cp_tp_members[] = {
 static PyTypeObject ControlPanelTypeObject = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0)
 	.tp_name      = "ControlPanel",
-	.tp_doc       = pyosdp_cp_tp_doc,
+	.tp_doc       = pyosdp_cp_tp_init_doc,
 	.tp_basicsize = sizeof(pyosdp_t),
 	.tp_itemsize  = 0,
 	.tp_dealloc   = (destructor)pyosdp_cp_tp_dealloc,

@@ -865,9 +865,6 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	switch (pd->state) {
 	case OSDP_PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
-		if (ret == 1) {
-			break;
-		}
 		if (ret == -1 || (pd->rx_buf_len > 0 &&
 		    osdp_millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
 			/**
@@ -876,6 +873,9 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			 */
 			LOG_ERR(TAG "receive errors/timeout");
 			pd->state = OSDP_PD_STATE_ERR;
+			break;
+		}
+		if (ret == 1) {
 			break;
 		}
 		if (ret == 0) {

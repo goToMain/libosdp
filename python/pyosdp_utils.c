@@ -137,7 +137,7 @@ int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data, int *
 {
 	PyObject *obj;
 	uint8_t *buf;
-	int len;
+	Py_ssize_t len;
 
 	obj = PyDict_GetItemString(dict, key);
 	if (obj == NULL) {

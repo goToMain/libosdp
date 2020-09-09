@@ -975,6 +975,10 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 	if (scbk == NULL) {
+		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			LOG_ERR(TAG "SCBK must be provided in ENFORCE_SECURE");
+			goto error;
+		}
 		LOG_WRN(TAG "SCBK not provided. PD is in INSTALL_MODE");
 		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
 	}

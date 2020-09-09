@@ -833,7 +833,7 @@ static int state_update(struct osdp_pd *pd)
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)  == false &&
 		    ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) == true  &&
 		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS) {
-			LOG_INF("retry SC after retry timeout");
+			LOG_INF(TAG "Retry SC after retry timeout");
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
@@ -875,7 +875,13 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 #endif /* CONFIG_OSDP_SC_ENABLED */
-		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			LOG_INF(TAG "PD is not SC capable. Set PD offline due "
+				        "to ENFORCE_SECURE");
+			cp_set_offline(pd);
+		} else {
+			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+		}
 		break;
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case OSDP_CP_STATE_SC_INIT:
@@ -887,8 +893,14 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (phy_state < 0) {
+			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+				LOG_INF(TAG "SC Failed. Set PD offline due to "
+				        "ENFORCE_SECURE");
+				cp_set_offline(pd);
+				break;
+			}
 			if (ISSET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE)) {
-				LOG_INF(TAG "SC Failed; online without SC");
+				LOG_INF(TAG "SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
 				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 				break;
@@ -897,13 +909,20 @@ static int state_update(struct osdp_pd *pd)
 			SET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
-			LOG_WRN(TAG "SC Failed; retry with SCBK-D");
+			LOG_WRN(TAG "SC Failed. Retry with SCBK-D");
 			break;
 		}
 		if (pd->reply_id != REPLY_CCRYPT) {
-			LOG_ERR(TAG "CHLNG failed. Online without SC");
-			pd->sc_tstamp = osdp_millis_now();
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+				LOG_ERR(TAG "CHLNG failed. Set PD offline due to "
+				        "ENFORCE_SECURE");
+				cp_set_offline(pd);
+				break;
+			} else {
+				LOG_ERR(TAG "CHLNG failed. Online without SC");
+				pd->sc_tstamp = osdp_millis_now();
+				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			}
 			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_SC_SCRYPT);
@@ -919,7 +938,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-			LOG_WRN(TAG "SC ACtive with SCBK-D; Set SCBK");
+			LOG_WRN(TAG "SC ACtive with SCBK-D. Set SCBK");
 			cp_set_state(pd, OSDP_CP_STATE_SET_SCBK);
 			break;
 		}

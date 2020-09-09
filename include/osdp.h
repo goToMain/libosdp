@@ -19,6 +19,20 @@ extern "C" {
 #define OSDP_EVENT_MAX_DATALEN         64
 
 /**
+ * @brief OSDP setup flags. See osdp_pd_info_t::flags
+ */
+
+/**
+ * @brief ENFORCE_SECURE: Make security conscious assumptions (see below) where
+ * possible. Fail where these assumptions don't hold.
+ *   - Don't allow use of SCBK-D.
+ *   - Assume that a KEYSET was successful at an earlier time.
+ *
+ * @note This flag is recommended in production use.
+ */
+#define OSDP_FLAG_ENFORCE_SECURE       0x00010000
+
+/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {
@@ -202,7 +216,7 @@ struct osdp_channel {
  * @param address 7 bit PD address. the rest of the bits are ignored. The
  *                special address 0x7F is used for broadcast. So there can be
  *                2^7-1 devices on a multi-drop channel
- * @param flags Used to modify the way the context is setup
+ * @param flags Used to modify the way the context is setup. See `OSDP_FLAG_XXX`
  * @param id Static information that the PD reports to the CP when it received a
  *           `CMD_ID`. These information must be populated by a PD appliication.
  * @param cap This is a pointer to an array of structures containing the PD'

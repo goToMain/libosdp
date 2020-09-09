@@ -144,8 +144,8 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_USE_SCBKD	0x00000080 /* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE	0x00000100 /* secure channel is active */
 #define PD_FLAG_SC_SCBKD_DONE	0x00000200 /* indicated that SCBKD check is done */
-#define PD_FLAG_INSTALL_MODE	0x40000000 /* PD is in install mode */
-#define PD_FLAG_PD_MODE		0x80000000 /* device is setup as PD */
+#define PD_FLAG_INSTALL_MODE	0x00000400 /* PD is in install mode */
+#define PD_FLAG_PD_MODE		0x00000800 /* device is setup as PD */
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
@@ -243,13 +243,6 @@ struct osdp_slab {
 	int num_blocks;
 	int free_blocks;
 	uint8_t *blob;
-};
-
-struct osdp_notifiers {
-	void *data;
-	keypress_callback_t keypress;
-	cardread_callback_t cardread;
-	pd_commnand_callback_t  command_handler;
 };
 
 #ifdef CONFIG_OSDP_SC_ENABLED

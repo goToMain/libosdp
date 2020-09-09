@@ -195,41 +195,28 @@ struct osdp_channel {
 	void (*flush)(void *data);
 };
 
+/**
+ * @brief OSDP PD Information. This struct is used to describe a PD to LibOSDP.
+ *
+ * @param baud_rate Can be one of 9600/38400/115200
+ * @param address 7 bit PD address. the rest of the bits are ignored. The
+ *                special address 0x7F is used for broadcast. So there can be
+ *                2^7-1 devices on a multi-drop channel
+ * @param flags Used to modify the way the context is setup
+ * @param id Static information that the PD reports to the CP when it received a
+ *           `CMD_ID`. These information must be populated by a PD appliication.
+ * @param cap This is a pointer to an array of structures containing the PD'
+ *            capabilities. Use { -1, 0, 0 } to terminate the array. This is
+ *            used only PD mode of operation
+ * @param channel Communication channel ops structure, containing send/recv
+ *                function pointers.
+ */
 typedef struct {
-	/**
-	 * Can be one of 9600/38400/115200.
-	 */
 	int baud_rate;
-
-	/**
-	 * 7 bit PD address. the rest of the bits are ignored. The special address
-	 * 0x7F is used for broadcast. So there can be 2^7-1 devices on a multi-
-	 * drop channel.
-	 */
 	int address;
-
-	/**
-	 * Used to modify the way the context is setup.
-	 */
 	int flags;
-
-	/**
-	 * Static info that the PD reports to the CP when it received a `CMD_ID`.
-	 * This is used only in PD mode of operation.
-	 */
 	struct osdp_pd_id id;
-
-	/**
-	 * This is a pointer to an array of structures containing the PD's
-	 * capabilities. Use { -1, 0, 0 } to terminate the array. This is used
-	 * only PD mode of operation.
-	 */
 	struct osdp_pd_cap *cap;
-
-	/**
-	 * Communication channel ops structure, containing send/recv function
-	 * pointers.
-	 */
 	struct osdp_channel channel;
 } osdp_pd_info_t;
 
@@ -241,6 +228,10 @@ typedef struct {
  * time.
  */
 typedef void osdp_t;
+
+/* ------------------------------- */
+/*         OSDP Commands           */
+/* ------------------------------- */
 
 /**
  * @brief Command sent from CP to Control digital output of PD.
@@ -440,9 +431,9 @@ struct osdp_cmd {
 	};
 };
 
-typedef int (*keypress_callback_t)(void *data, int address, uint8_t key);
-typedef int (*cardread_callback_t)(void *data, int address, int format,
-				   uint8_t *card_data, int len);
+/* ------------------------------- */
+/*          OSDP Events            */
+/* ------------------------------- */
 
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
@@ -455,6 +446,17 @@ enum osdp_event_cardread_format_e {
 	OSDP_CARD_FMT_SENTINEL
 };
 
+/**
+ * @brief OSDP event cardread
+ *
+ * @param reader_no In context of readers attached to current PD, this number
+ *                  indicated this number. This is not supported by LibOSDP.
+ * @param format Format of the card being read.
+ *               see `enum osdp_event_cardread_format_e`
+ * @param direction Card read direction of PD 0 - Forward; 1 - Backward
+ * @param length Length of card data in bytes
+ * @param data Card data of `length` bytes
+ */
 struct osdp_event_cardread {
 	int reader_no;
 	enum osdp_event_cardread_format_e format;
@@ -463,12 +465,27 @@ struct osdp_event_cardread {
 	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 
+/**
+ * @brief OSDP Event Keypad
+ *
+ * @param reader_no In context of readers attached to current PD, this number
+ *                  indicated this number. This is not supported by LibOSDP.
+ * @param length Length of keypress data in bytes
+ * @param data keypress data of `length` bytes
+ */
 struct osdp_event_keypress {
 	int reader_no;
 	int length;
 	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 
+/**
+ * @brief OSDP Event Manufacturer Specific Command
+ *
+ * @param vendor_code 3-bytes IEEE assigned OUI of manufacturer
+ * @param length Length of manufacturer data in bytes
+ * @param data manufacturer data of `length` bytes
+ */
 struct osdp_event_mfgrep {
 	uint32_t vendor_code;
 	int command;
@@ -476,6 +493,9 @@ struct osdp_event_mfgrep {
 	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 
+/**
+ * @brief OSDP PD Events
+ */
 enum osdp_event_type {
 	OSDP_EVENT_CARDREAD,
 	OSDP_EVENT_KEYPRESS,
@@ -483,6 +503,14 @@ enum osdp_event_type {
 	OSDP_EVENT_SENTINEL
 };
 
+/**
+ * @brief OSDP Event structure.
+ *
+ * @param id used to select specific event in union. See: enum osdp_event_type
+ * @param keypress keypress event structure
+ * @param cardread cardread event structure
+ * @param mfgrep mfgrep event structure
+ */
 struct osdp_event {
 	enum osdp_event_type type;
 	union {
@@ -495,10 +523,40 @@ struct osdp_event {
 typedef int (*pd_commnand_callback_t)(void *arg, int addr, struct osdp_cmd *c);
 typedef int (*cp_event_callback_t)(void *arg, int addr, struct osdp_event *ev);
 
-/* =============================== CP Methods =============================== */
+/* ------------------------------- */
+/*            CP Methods           */
+/* ------------------------------- */
 
+/**
+ * @brief This method is used to setup a device in CP mode. Application must
+ * store the returned context poiter and pass it back to all OSDP functions
+ * intact.
+ *
+ * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
+ *               treated as an array of length num_pd.
+ * @param info Pointer to info struct populated by application.
+ * @param scbk 16 byte Secure Channel Base Key. If this field is NULL PD is set
+ *             to "Install Mode".
+ *
+ * @return OSDP Context on success
+ * @return NULL on errors
+ */
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
+
+/**
+ * @brief Periodic refresh method. Must be called by the application at least
+ * once every 50ms to meet OSDP timing requirements.
+ *
+ * @param ctx OSDP context
+ */
 void osdp_cp_refresh(osdp_t *ctx);
+
+/**
+ * @brief Cleanup all osdp resources. The context pointer is no longer valid
+ * after this call.
+ *
+ * @param ctx OSDP context
+ */
 void osdp_cp_teardown(osdp_t *ctx);
 
 /**
@@ -511,18 +569,54 @@ void osdp_cp_teardown(osdp_t *ctx);
  * @retval 0 on success
  * @retval -1 on failure
  *
- * @note This method only enques the command on to a particular PD. The command
- * itself can fail due to various reasons.
+ * @note This method only adds the command on to a particular PD's command
+ * queue. The command itself can fail due to various reasons.
  */
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
 
+/**
+ * @brief Set callback method for CP event notification. This callback is
+ * invoked when the CP receives an event from the PD.
+ *
+ * @param ctx OSDP context
+ * @param cb The callback function's pointer
+ * @param arg A pointer that will be passed as the first argument of `cb`
+ */
 void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
 
-/* =============================== PD Methods =============================== */
+/* ------------------------------- */
+/*            PD Methods           */
+/* ------------------------------- */
 
+/**
+ * @brief This method is used to setup a device in PD mode. Application must
+ * store the returned context poiter and pass it back to all OSDP functions
+ * intact.
+ *
+ * @param info Pointer to iinfo struct populated by application.
+ * @param scbk 16 byte Secure Channel Base Key. If this field is NULL PD is set
+ *             to "Install Mode".
+ *
+ * @return OSDP Context on success
+ * @return NULL on errors
+ */
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
-void osdp_pd_teardown(osdp_t *ctx);
+
+/**
+ * @brief Periodic refresh method. Must be called by the application at least
+ * once every 50ms to meet OSDP timing requirements.
+ *
+ * @param ctx OSDP context
+ */
 void osdp_pd_refresh(osdp_t *ctx);
+
+/**
+ * @brief Cleanup all osdp resources. The context pointer is no longer valid
+ * after this call.
+ *
+ * @param ctx OSDP context
+ */
+void osdp_pd_teardown(osdp_t *ctx);
 
 /**
  * @brief Set callback method for PD command notification. This callback is
@@ -540,16 +634,67 @@ void osdp_pd_refresh(osdp_t *ctx);
  */
 void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb, void *arg);
 
+/**
+ * @brief API to notify PD events to CP. These events are sent to the CP as an
+ * alternate response to a POLL command.
+ *
+ * @param ctx OSDP context
+ * @param event pointer to event struct. Must be filled by application.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
 int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
 
-/* ============================= Common Methods ============================= */
+/* ------------------------------- */
+/*          Common Methods         */
+/* ------------------------------- */
 
-#define osdp_set_log_level(l) osdp_logger_init(l, NULL)
+/**
+ * @brief Configure OSDP Logging.
+ *
+ * @param log_level OSDP log level of the range 0 to 7.
+ * @param log_fn A printf-like function that will be invoked to write the log
+ *               buffer. Can be handy if you want to log to file on a UART
+ *               device without putchar redirection.
+ */
 void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...));
+
+/**
+ * @brief A convenience macro for setting just the log level.
+ * see osdp_logger_init()
+ */
+#define osdp_set_log_level(l) osdp_logger_init(l, NULL)
+
+/**
+ * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.
+ *
+ * @return version string
+ */
 const char *osdp_get_version();
+
+/**
+ * @brief Get LibOSDP source identifier as a `const char *`. This string has
+ * info about the source tree from which this version of LibOSDP was built. Used
+ * in diagnostics.
+ *
+ * @return source identifier string
+ */
 const char *osdp_get_source_info();
 
+/**
+ * @brief Get a bit mask of number of PD that are online currently.
+ *
+ * @return Bit-Mask (max 32 PDs)
+ */
 uint32_t osdp_get_status_mask(osdp_t *ctx);
+
+/**
+ * @brief Get a bit mask of number of PD that are online and have an active
+ * secure channel currently.
+ *
+ * @return Bit-Mask (max 32 PDs)
+ */
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
 
 #ifdef __cplusplus

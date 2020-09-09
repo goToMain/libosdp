@@ -10,6 +10,7 @@ import random
 
 pd_info = {
     "address": 101,
+    "flags": 0,
     "channel_type": "message_queue",
     "channel_speed": 115200,
     "channel_device": '/tmp/osdp_mq',

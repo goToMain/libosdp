@@ -70,6 +70,7 @@ pd_info = [
     # PD_0 info
     {
         "address": 101,
+        "flags": 0, # osdp.FLAG_ENFORCE_SECURE
         "channel_type": "message_queue",
         "channel_speed": 115200,
         "channel_device": '/tmp/osdp_mq',

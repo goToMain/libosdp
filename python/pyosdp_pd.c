@@ -248,6 +248,9 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	if (pyosdp_dict_get_int(py_info, "address", &info.address))
 		goto error;
 
+	if (pyosdp_dict_get_int(py_info, "flags", &info.flags))
+		goto error;
+
 	if (pyosdp_dict_get_int(py_info, "channel_speed", &info.baud_rate))
 		goto error;
 

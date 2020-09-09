@@ -60,6 +60,9 @@ void pyosdp_add_module_constants(PyObject *module)
 {
 #define ADD_CONST(k,v) PyModule_AddIntConstant(module, k, v);
 
+	/* setup flags */
+	ADD_CONST("FLAG_ENFORCE_SECURE", OSDP_FLAG_ENFORCE_SECURE);
+
 	/* enum osdp_cmd_e */
 	ADD_CONST("CMD_OUTPUT", OSDP_CMD_OUTPUT);
 	ADD_CONST("CMD_LED",    OSDP_CMD_LED);

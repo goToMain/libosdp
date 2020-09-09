@@ -253,6 +253,9 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		if (pyosdp_dict_get_int(py_info, "address", &info->address))
 			goto error;
 
+		if (pyosdp_dict_get_int(py_info, "flags", &info->flags))
+			goto error;
+
 		if (pyosdp_dict_get_int(py_info, "channel_speed", &info->baud_rate))
 			goto error;
 
@@ -262,7 +265,6 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
 			goto error;
 
-		info->flags = 0;
 		info->cap = NULL;
 
 		channel_type = channel_guess_type(channel_type_str);

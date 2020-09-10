@@ -216,6 +216,8 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	osdp_t *ctx;
 	osdp_pd_info_t *info, *info_list = NULL;
 
+	srand(time(NULL));
+
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$s:cp_init", kwlist,
 					 &PyList_Type, &py_info_list,
 					 &master_key_str))

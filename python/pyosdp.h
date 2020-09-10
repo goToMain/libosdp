@@ -9,8 +9,10 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-
 #include <structmember.h>
+#include <stdlib.h>
+#include <time.h>
+
 #include <utils/utils.h>
 #include <utils/strutils.h>
 #include <utils/hashmap.h>

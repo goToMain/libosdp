@@ -228,6 +228,8 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	static char *kwlist[] = { "", "capabilities", "scbk", NULL };
 	PyObject *py_info, *py_pd_cap_list;
 
+	srand(time(NULL));
+
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!s", kwlist,
 					 &PyDict_Type, &py_info,
 					 &PyList_Type, &py_pd_cap_list,

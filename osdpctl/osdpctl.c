@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
 
 #include "arg_parser.h"
 #include "common.h"
@@ -88,6 +89,7 @@ void osdpctl_process_init()
 
 int main(int argc, char *argv[])
 {
+	srand(time(NULL));
 	osdpctl_process_init();
 
         ap_init("osdpctl", "Setup/Manage OSDP devices");

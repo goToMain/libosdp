@@ -5,9 +5,11 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <osdp.h>
-#include "osdp_common.h"
 
+#include "osdp_common.h"
 #include "test.h"
 
 void test_start(struct test *t)
@@ -43,6 +45,8 @@ int main(int argc, char *argv[])
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+
+	srand(time(NULL));
 
 	test_start(&t);
 

@@ -687,13 +687,7 @@ static inline void cp_set_offline(struct osdp_pd *pd)
 {
 	pd->state = OSDP_CP_STATE_OFFLINE;
 	pd->tstamp = osdp_millis_now();
-}
-
-static inline void cp_reset_state(struct osdp_pd *pd)
-{
-	pd->state = OSDP_CP_STATE_INIT;
-	osdp_phy_state_reset(pd);
-	pd->flags = 0;
+	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 }
 
 static inline void cp_set_state(struct osdp_pd *pd, enum osdp_state_e state)
@@ -847,7 +841,8 @@ static int state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_STATE_OFFLINE:
 		if (osdp_millis_since(pd->tstamp) > OSDP_CMD_RETRY_WAIT_MS) {
-			cp_reset_state(pd);
+			cp_set_state(pd, OSDP_CP_STATE_INIT);
+			osdp_phy_state_reset(pd);
 		}
 		break;
 	case OSDP_CP_STATE_INIT:
@@ -871,6 +866,8 @@ static int state_update(struct osdp_pd *pd)
 		}
 #ifdef CONFIG_OSDP_SC_ENABLED
 		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
+			CLEAR_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
+			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}

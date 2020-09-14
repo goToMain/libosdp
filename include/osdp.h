@@ -33,6 +33,16 @@ extern "C" {
 #define OSDP_FLAG_ENFORCE_SECURE       0x00010000
 
 /**
+ * @brief When set, the PD would allow one session of secure channel to be
+ * setup with SCBK-D.
+ *
+ * @note In this mode, the PD is in a vulnerable state, the application is
+ * responsible for making sure that the device enters this mode only during
+ * controlled/provisioning-time environments.
+ */
+#define OSDP_FLAG_INSTALL_MODE         0x00020000
+
+/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {

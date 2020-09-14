@@ -429,7 +429,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-		CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
+		CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 		pd->reply_id = REPLY_ACK;
 		ret = 0;
 		break;
@@ -980,7 +980,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 			goto error;
 		}
 		LOG_WRN(TAG "SCBK not provided. PD is in INSTALL_MODE");
-		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
+		SET_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 	}
 	else {
 		memcpy(pd->sc.scbk, scbk, 16);

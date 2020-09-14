@@ -338,11 +338,12 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			 * to 0. In CP, PD_FLAG_SC_USE_SCBKD comes from FSM; on
 			 * PD we extract it from the command itself. But this
 			 * usage of SCBKD is allowed only when the PD is in
-			 * install mode (indicated by PD_FLAG_INSTALL_MODE).
+			 * install mode (indicated by OSDP_FLAG_INSTALL_MODE).
 			 */
-			if (ISSET_FLAG(pd, PD_FLAG_INSTALL_MODE) &&
-			    pkt->data[2] == 0)
+			if (ISSET_FLAG(pd, OSDP_FLAG_INSTALL_MODE) &&
+			    pkt->data[2] == 0) {
 				SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+			}
 		}
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */

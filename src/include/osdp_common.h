@@ -132,20 +132,20 @@ union osdp_ephemeral_data {
 #define SCS_18                  0x18    /* PD -> CP -- packets w MAC w ENC*/
 
 /* Global flags */
-#define FLAG_CP_MODE		0x00000001 /* Set when initialized as CP */
+#define FLAG_CP_MODE            0x00000001 /* Set when initialized as CP */
 
-/* PD Flags */
-#define PD_FLAG_SC_CAPABLE	0x00000001 /* PD secure channel capable */
-#define PD_FLAG_TAMPER		0x00000002 /* local tamper status */
-#define PD_FLAG_POWER		0x00000004 /* local power status */
-#define PD_FLAG_R_TAMPER	0x00000008 /* remote tamper status */
-#define PD_FLAG_AWAIT_RESP	0x00000020 /* set after command is sent */
-#define PD_FLAG_SKIP_SEQ_CHECK	0x00000040 /* disable seq checks (debug) */
-#define PD_FLAG_SC_USE_SCBKD	0x00000080 /* in this SC attempt, use SCBKD */
-#define PD_FLAG_SC_ACTIVE	0x00000100 /* secure channel is active */
-#define PD_FLAG_SC_SCBKD_DONE	0x00000200 /* indicated that SCBKD check is done */
-#define PD_FLAG_INSTALL_MODE	0x00000400 /* PD is in install mode */
-#define PD_FLAG_PD_MODE		0x00000800 /* device is setup as PD */
+/* PD State Flags */
+#define PD_FLAG_MASK            0x0000FFFF /* only 16 bits are for flags */
+#define PD_FLAG_SC_CAPABLE      0x00000001 /* PD secure channel capable */
+#define PD_FLAG_TAMPER          0x00000002 /* local tamper status */
+#define PD_FLAG_POWER           0x00000004 /* local power status */
+#define PD_FLAG_R_TAMPER        0x00000008 /* remote tamper status */
+#define PD_FLAG_AWAIT_RESP      0x00000010 /* set after command is sent */
+#define PD_FLAG_SKIP_SEQ_CHECK  0x00000020 /* disable seq checks (debug) */
+#define PD_FLAG_SC_USE_SCBKD    0x00000040 /* in this SC attempt, use SCBKD */
+#define PD_FLAG_SC_ACTIVE       0x00000080 /* secure channel is active */
+#define PD_FLAG_SC_SCBKD_DONE   0x00000100 /* SCBKD check is done */
+#define PD_FLAG_PD_MODE         0x00000200 /* device is setup as PD */
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
@@ -307,7 +307,6 @@ struct osdp_pd {
 
 struct osdp_cp {
 	void *__parent;
-	uint32_t flags;
 	int num_pd;
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */

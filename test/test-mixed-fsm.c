@@ -165,13 +165,8 @@ void run_mixed_fsm_tests(struct test *t)
 	while (1) {
 		test_state_update(pd_cp);
 		test_osdp_pd_update(pd_pd);
-#ifdef CONFIG_OSDP_SC_ENABLED
 		if (osdp_get_sc_status_mask(p->cp_ctx))
 			break;
-#else
-		if (osdp_get_status_mask(p->cp_ctx))
-			break;
-#endif
 		if (pd_cp->state == OSDP_CP_STATE_OFFLINE) {
 			printf("    -- CP went offline!\n");
 			result = false;

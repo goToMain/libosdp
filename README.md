@@ -97,14 +97,16 @@ make DESTDIR=/your/install/path install
 Refer to [this document][23] for more information on build and cross
 compilation.
 
-## Contributions and bugs
+## Contributions, Issues and Bugs
 
-The CP mode has achieved some level of maturity. OOH, the PD mode is still a
-work in progress. Have a look at `TODO` file for list of pending tasks. Patches
-in those directions are welcome.
+The Github issue tracker doubles up as TODO list for this project. Have a look
+at the [open items][31], PRs in those directions are welcome.
 
-If you find bugs or other issues, please [open an issue][28] in the github page
-of this project here: [https://github.com/goTomain/libosdp][24].
+If you have a idea, find bugs, or other issues, please [open a new issue][28]
+in the github page of this project [https://github.com/goTomain/libosdp][24].
+
+For other private discussions, you can send an email to siddharth [at]
+embedjournal [dot] com.
 
 ## License
 
@@ -137,6 +139,7 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [25]: https://github.com/goTomain/c-utils
 [26]: https://libosdp.gotomain.io/api/
 [27]: https://libosdp.gotomain.io/protocol/faq.html
-[28]: https://github.com/goToMain/libosdp/issues
+[28]: https://github.com/goToMain/libosdp/issues/new/choose
 [29]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
 [30]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py
+[31]: https://github.com/goToMain/libosdp/issues

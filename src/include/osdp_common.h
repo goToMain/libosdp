@@ -245,7 +245,6 @@ struct osdp_slab {
 	uint8_t *blob;
 };
 
-#ifdef CONFIG_OSDP_SC_ENABLED
 struct osdp_secure_channel {
 	uint8_t scbk[16];
 	uint8_t s_enc[16];
@@ -259,7 +258,6 @@ struct osdp_secure_channel {
 	uint8_t cp_cryptogram[16];
 	uint8_t pd_cryptogram[16];
 };
-#endif
 
 struct osdp_queue {
 	queue_t queue;
@@ -298,9 +296,7 @@ struct osdp_pd {
 	};
 
 	struct osdp_channel channel;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	struct osdp_secure_channel sc;
-#endif
 	void *command_callback_arg;
 	pd_commnand_callback_t command_callback;
 };
@@ -319,9 +315,7 @@ struct osdp {
 	uint32_t flags;
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
-#ifdef CONFIG_OSDP_SC_ENABLED
 	uint8_t sc_master_key[16];
-#endif
 };
 
 enum log_levels_e {

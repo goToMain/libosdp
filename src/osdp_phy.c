@@ -128,8 +128,10 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			     int len, int max_len)
 {
+	uint8_t *data;
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
+	int i, is_cmd, data_len;
 
 	/* Do a sanity check only as we expect expect header to be prefilled */
 	if (buf[0] != OSDP_PKT_MARK || buf[1] != OSDP_PKT_SOM) {
@@ -142,10 +144,6 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	/* len: with 2 byte CRC; without 1 byte mark */
 	pkt->len_lsb = BYTE_0(len - 1 + 2);
 	pkt->len_msb = BYTE_1(len - 1 + 2);
-
-#ifdef CONFIG_OSDP_SC_ENABLED
-	uint8_t *data;
-	int i, is_cmd, data_len;
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
 	    pkt->control & PKT_CONTROL_SCB &&
@@ -192,7 +190,6 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		}
 		len += 4;
 	}
-#endif /* CONFIG_OSDP_SC_ENABLED */
 
 	/* fill crc16 */
 	if (len + 2 > max_len) {
@@ -213,9 +210,9 @@ out_of_space_error:
 
 int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 {
-	uint8_t *data;
+	uint8_t *data, *mac;
 	uint16_t comp, cur;
-	int pkt_len, pd_mode, pd_addr, mac_offset;
+	int pkt_len, pd_mode, pd_addr, mac_offset, is_cmd;
 	struct osdp_packet_header *pkt;
 
 	pd_mode = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
@@ -315,10 +312,6 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	data = pkt->data;
 
-#ifdef CONFIG_OSDP_SC_ENABLED
-	uint8_t *mac;
-	int is_cmd;
-
 	if (pkt->control & PKT_CONTROL_SCB) {
 		if (pd_mode && !ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
 			LOG_ERR(TAG "PD is not SC capable");
@@ -393,7 +386,6 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			len += 1; /* put back cmd/reply ID */
 		}
 	}
-#endif /* CONFIG_OSDP_SC_ENABLED */
 
 	memmove(buf, data, len);
 	return len;

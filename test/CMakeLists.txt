@@ -17,13 +17,9 @@ list(APPEND LIB_OSDP_TEST_SRC
 	${CMAKE_SOURCE_DIR}/src/osdp_phy.c
 	${CMAKE_SOURCE_DIR}/src/osdp_cp.c
 	${CMAKE_SOURCE_DIR}/src/osdp_pd.c
+	${CMAKE_SOURCE_DIR}/src/osdp_sc.c
+	${CMAKE_SOURCE_DIR}/src/osdp_aes.c
 )
-if (CONFIG_OSDP_SC_ENABLED)
-	list(APPEND LIB_OSDP_TEST_SRC
-		${CMAKE_SOURCE_DIR}/src/osdp_sc.c
-		${CMAKE_SOURCE_DIR}/src/osdp_aes.c
-	)
-endif()
 add_definitions(-DUNIT_TESTING)
 add_library(${LIB_OSDP_TEST} STATIC EXCLUDE_FROM_ALL ${LIB_OSDP_TEST_SRC})
 

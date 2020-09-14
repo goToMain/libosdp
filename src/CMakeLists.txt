@@ -14,13 +14,9 @@ list(APPEND LIB_OSDP_SRC
 	osdp_phy.c
 	osdp_cp.c
 	osdp_pd.c
+	osdp_sc.c
+	osdp_aes.c
 )
-if(CONFIG_OSDP_SC_ENABLED)
-	list(APPEND LIB_OSDP_SRC
-		osdp_sc.c
-		osdp_aes.c
-	)
-endif()
 
 ## build libosdpstatic.a
 

@@ -20,7 +20,6 @@ set(PROJECT_LICENSE "Apache-2.0")
 
 ## Options
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
-option(CONFIG_OSDP_SC_ENABLED "Enable Secure Channel" ON)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

@@ -163,7 +163,8 @@ static PyObject *pyosdp_pd_tp_new(PyTypeObject *type, PyObject *args,
 
 static void pyosdp_pd_tp_dealloc(pyosdp_t *self)
 {
-	osdp_pd_teardown(self->ctx);
+	if (self->ctx)
+		osdp_pd_teardown(self->ctx);
 	channel_manager_teardown(&self->chn_mgr);
 	pyosdp_pd_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
@@ -260,6 +261,21 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		goto error;
 
 	if (pyosdp_dict_get_str(py_info, "channel_device", &device))
+		goto error;
+
+	if (pyosdp_dict_get_int(py_info, "version", &info.id.version))
+		goto error;
+
+	if (pyosdp_dict_get_int(py_info, "model", &info.id.model))
+		goto error;
+
+	if (pyosdp_dict_get_int(py_info, "vendor_code", (int *)&info.id.vendor_code))
+		goto error;
+
+	if (pyosdp_dict_get_int(py_info, "firmware_version", (int *)&info.id.firmware_version))
+		goto error;
+
+	if (pyosdp_dict_get_int(py_info, "serial_number", (int *)&info.id.serial_number))
 		goto error;
 
 	info.flags = 0;

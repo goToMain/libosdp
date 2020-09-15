@@ -192,7 +192,8 @@ static PyObject *pyosdp_cp_tp_new(PyTypeObject *type, PyObject *args,
 
 static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 {
-	osdp_cp_teardown(self->ctx);
+	if (self->ctx)
+		osdp_cp_teardown(self->ctx);
 	channel_manager_teardown(&self->chn_mgr);
 	pyosdp_cp_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);

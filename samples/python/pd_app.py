@@ -4,9 +4,10 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+import os
 import time
-import osdp
 import random
+import osdp
 
 pd_info = {
     "address": 101,
@@ -15,6 +16,7 @@ pd_info = {
     "channel_speed": 115200,
     "channel_device": '/tmp/osdp_mq',
 
+    # PD_ID
     "version": 1,
     "model": 1,
     "vendor_code": 0xCAFEBABE,
@@ -30,11 +32,28 @@ pd_cap = [
     },
 ]
 
+keystore_file = "/tmp/pd_scbk"
+
+def store_scbk(key):
+    with open(keystore_file, "w") as f:
+        f.write(key.hex())
+
+def load_scbk():
+    key = bytes()
+    if os.path.exists(keystore_file):
+        with open(keystore_file, "r") as f:
+            key = bytes.fromhex(f.read())
+    return key
+
 def handle_command(address, command):
     if address != pd_info['address']:
         return { "return_code": -1 }
 
     print("PD received command: ", command)
+
+    if command['command'] == osdp.CMD_KEYSET:
+        if command['type'] == 1:
+            store_scbk(command['data'])
 
     if command['command'] == osdp.CMD_MFG:
         # For MFG commands, repply wth MFGREP. Notice that the "command"
@@ -54,7 +73,7 @@ def handle_command(address, command):
 print("pyosdp", "Version:", osdp.get_version(),
                 "Info:", osdp.get_source_info())
 
-pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
+pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap, scbk=load_scbk())
 pd.set_command_callback(handle_command)
 pd.set_loglevel(6)
 

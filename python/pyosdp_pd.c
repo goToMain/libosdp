@@ -224,24 +224,22 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	osdp_t *ctx;
 	osdp_pd_info_t info;
 	enum channel_type channel_type;
-	char *device = NULL, *channel_type_str = NULL, *scbk_str = NULL;
-	uint8_t scbk[16] = {0};
+	char *device = NULL, *channel_type_str = NULL;
 	static char *kwlist[] = { "", "capabilities", "scbk", NULL };
 	PyObject *py_info, *py_pd_cap_list;
+	Py_buffer scbk_buffer;
+	uint8_t *scbk = NULL;
 
 	srand(time(NULL));
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!s", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!y*", kwlist,
 					 &PyDict_Type, &py_info,
 					 &PyList_Type, &py_pd_cap_list,
-					 &scbk_str))
+					 &scbk_buffer))
 		goto error;
 
-	if (scbk_str && (strlen(scbk_str) != 32 ||
-	    hstrtoa(scbk, scbk_str) == -1)) {
-		PyErr_SetString(PyExc_TypeError, "master_key parse error");
-		goto error;
-	}
+	if (scbk_buffer.buf != NULL && scbk_buffer.len == 16)
+		scbk = scbk_buffer.buf;
 
 	if (py_pd_cap_list && pyosdp_add_pd_cap(py_pd_cap_list, &info))
 		goto error;
@@ -300,7 +298,7 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		&info.channel.recv,
 		&info.channel.flush);
 
-	ctx = osdp_pd_setup(&info, scbk_str ? scbk : NULL);
+	ctx = osdp_pd_setup(&info, scbk);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup pd");
 		goto error;

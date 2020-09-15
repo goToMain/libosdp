@@ -90,9 +90,7 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 			return -1;
 		if (cmd->keyset.length > 16)
 			return -1;
-		if (atohstr(buf, cmd->keyset.data, cmd->keyset.length))
-			return -1;
-		if (pyosdp_dict_add_str(obj, "data", buf))
+		if (pyosdp_dict_add_bytes(obj, "data", cmd->keyset.data, cmd->keyset.length))
 			return -1;
 		break;
 	case OSDP_CMD_COMSET:
@@ -265,29 +263,26 @@ exit:
 
 static int pyosdp_handle_cmd_keyset(struct osdp_cmd *p, PyObject *dict)
 {
-	int ret = -1, type;
+	int type, len;
 	struct osdp_cmd_keyset *cmd = &p->keyset;
 	char *data = NULL;
+	uint8_t *buf;
 
 	p->id = OSDP_CMD_KEYSET;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
-		goto exit;
+		return -1;
 
-	if (pyosdp_dict_get_str(dict, "data", &data))
-		goto exit;
+	if (pyosdp_dict_get_bytes(dict, "data", &buf, &len))
+		return -1;
 
 	cmd->type = (uint8_t)type;
 	cmd->length = strlen(data);
-	if (cmd->length > (OSDP_CMD_KEYSET_KEY_MAX_LEN * 2))
-		goto exit;
-	cmd->length = hstrtoa(cmd->data, data);
-	if (cmd->length < 0)
-		goto exit;
-	ret = 0;
-exit:
-	safe_free(data);
-	return ret;
+	if (len > OSDP_CMD_KEYSET_KEY_MAX_LEN)
+		return -1;
+	cmd->length = len;
+	memcpy(cmd->data, buf, len);
+	return 0;
 }
 
 static int pyosdp_handle_cmd_comset(struct osdp_cmd *p, PyObject *dict)

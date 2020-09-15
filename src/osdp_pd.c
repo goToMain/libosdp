@@ -230,8 +230,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.output.control_code = buf[pos++];
 		cmd.output.timer_count  = buf[pos++];
 		cmd.output.timer_count |= buf[pos++] << 8;
-		ret = pd->command_callback(pd->command_callback_arg,
-					   pd->address, &cmd);
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
@@ -262,8 +261,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.led.permanent.off_count    = buf[pos++];
 		cmd.led.permanent.on_color     = buf[pos++];
 		cmd.led.permanent.off_color    = buf[pos++];
-		ret = pd->command_callback(pd->command_callback_arg,
-					   pd->address, &cmd);
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
@@ -283,8 +281,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.buzzer.on_count     = buf[pos++];
 		cmd.buzzer.off_count    = buf[pos++];
 		cmd.buzzer.rep_count    = buf[pos++];
-		ret = pd->command_callback(pd->command_callback_arg,
-					   pd->address, &cmd);
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
@@ -313,8 +310,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd.text.length; i++) {
 			cmd.text.data[i] = buf[pos++];
 		}
-		ret = pd->command_callback(pd->command_callback_arg,
-					   pd->address, &cmd);
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
@@ -342,8 +338,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd.comset.address = pd->address;
 			cmd.comset.baud_rate = pd->baud_rate;
 		}
-		ret = pd->command_callback(pd->command_callback_arg,
-						pd->address, &cmd);
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
@@ -371,8 +366,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd.mfg.length; i++) {
 			cmd.mfg.data[i] = buf[pos++];
 		}
-		ret = pd->command_callback(pd->command_callback_arg,
-					   pd->address, &cmd);
+		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret > 0) { /* App wants to send a REPLY_MFGREP to the CP */
 			memcpy(pd->ephemeral_data, &cmd, sizeof(struct osdp_cmd));
 			pd->reply_id = REPLY_MFGREP;
@@ -412,7 +406,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		if (pd->command_callback) {
 			ret = pd->command_callback(pd->command_callback_arg,
-						   pd->address, &cmd);
+						   &cmd);
 		} else {
 			LOG_WRN(TAG "Keyset without command callback trigger");
 		}

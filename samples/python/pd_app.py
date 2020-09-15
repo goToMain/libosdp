@@ -45,10 +45,7 @@ def load_scbk():
             key = bytes.fromhex(f.read())
     return key
 
-def handle_command(address, command):
-    if address != pd_info['address']:
-        return { "return_code": -1 }
-
+def handle_command(command):
     print("PD received command: ", command)
 
     if command['command'] == osdp.CMD_KEYSET:

@@ -118,11 +118,11 @@ int cp_event_handler(void *data, int pd, struct osdp_event *event)
 	return 0;
 }
 
-int pd_command_handler(void *data, int pd, struct osdp_cmd *cmd)
+int pd_command_handler(void *data, struct osdp_cmd *cmd)
 {
 	ARG_UNUSED(data);
 
-	printf("CP: PD[%d]: ID: %d ", pd, cmd->id);
+	printf("CP: CMD_ID: %d ", cmd->id);
 
 	switch(cmd->id) {
 	case OSDP_CMD_OUTPUT:

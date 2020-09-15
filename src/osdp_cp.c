@@ -475,7 +475,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.keypress.length; i++) {
 			event.keypress.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->address, &event);
+		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
 		ret = 0;
 		break;
 	case REPLY_RAW:
@@ -495,7 +495,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < t1; i++) {
 			event.cardread.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->address, &event);
+		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
 		ret = 0;
 		break;
 	case REPLY_FMT:
@@ -514,7 +514,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.cardread.length; i++) {
 			event.cardread.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->address, &event);
+		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
 		ret = 0;
 		break;
 	case REPLY_BUSY:
@@ -540,7 +540,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.mfgrep.length; i++) {
 			event.mfgrep.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->address, &event);
+		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
 		ret = 0;
 		break;
 	case REPLY_CCRYPT:

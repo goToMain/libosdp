@@ -46,7 +46,7 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
 	Py_RETURN_TRUE;
 }
 
-static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
+static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 {
 	int ret_val = -1;
 	pyosdp_t *self = arg;
@@ -55,7 +55,7 @@ static int pd_command_cb(void *arg, int address, struct osdp_cmd *cmd)
 	if (pyosdp_cmd_make_dict(&dict, cmd))
 		return -1;
 
-	arglist = Py_BuildValue("(IO)", address, dict);
+	arglist = Py_BuildValue("(O)", dict);
 	result = PyEval_CallObject(self->command_cb, arglist);
 
 	if (result && PyDict_Check(result)) {

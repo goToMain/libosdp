@@ -35,11 +35,11 @@ int sample_pd_recv_func(void *data, uint8_t *buf, int len)
 	return 0;
 }
 
-int pd_command_handler(void *arg, int pd, struct osdp_cmd *cmd)
+int pd_command_handler(void *arg, struct osdp_cmd *cmd)
 {
 	(void)(arg);
 
-	printf("PD: %d CMD: %d\n", pd, cmd->id);
+	printf("PD: CMD: %d\n", cmd->id);
 	return 0;
 }
 

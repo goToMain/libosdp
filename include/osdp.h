@@ -544,7 +544,7 @@ struct osdp_event {
 	};
 };
 
-typedef int (*pd_commnand_callback_t)(void *arg, int addr, struct osdp_cmd *c);
+typedef int (*pd_commnand_callback_t)(void *arg, struct osdp_cmd *c);
 typedef int (*cp_event_callback_t)(void *arg, int addr, struct osdp_event *ev);
 
 /* ------------------------------- */

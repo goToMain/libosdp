@@ -105,8 +105,7 @@ at the [open items][31], PRs in those directions are welcome.
 If you have a idea, find bugs, or other issues, please [open a new issue][28]
 in the github page of this project [https://github.com/goTomain/libosdp][24].
 
-For other private discussions, you can send an email to siddharth [at]
-embedjournal [dot] com.
+You care read more on this [here](CONTRIBUTING.md).
 
 ## License
 

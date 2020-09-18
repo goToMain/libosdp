@@ -668,7 +668,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			LOG_ERR(TAG "Out of buffer space!");
 			return -1;
 		}
-		osdp_fill_random(pd->sc.pd_random, 8);
+		osdp_get_rand(pd->sc.pd_random, 8);
 		osdp_compute_session_keys(TO_CTX(pd));
 		osdp_compute_pd_cryptogram(pd);
 		buf[len++] = pd->reply_id;

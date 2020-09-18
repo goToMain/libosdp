@@ -24,6 +24,7 @@
  * -DCONFIG_XXX=on to cmake.
  */
 #cmakedefine CONFIG_OSDP_PACKET_TRACE           1
+#cmakedefine CONFIG_OSDP_USE_OPENSSL            1
 
 /**
  * @brief Other OSDP constants

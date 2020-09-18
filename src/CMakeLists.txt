@@ -4,30 +4,58 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+# static and shared library names
+set(LIB_OSDP osdp)
+set(LIB_OSDP_STATIC osdpstatic)
+
+# optionally, find and use OpenSSL
+find_package(OpenSSL)
+if (OpenSSL_FOUND)
+	set(CONFIG_OSDP_USE_OPENSSL true)
+	message(STATUS "Using OpenSSL ${OPENSSL_VERSION}")
+endif()
+
 # Generate osdp_config.h in build dir.
 configure_file(include/osdp_config.h.in include/osdp_config.h @ONLY)
 
-set(LIB_OSDP osdp)
-set(LIB_OSDP_STATIC osdpstatic)
-list(APPEND LIB_OSDP_SRC
-	osdp_common.c
-	osdp_phy.c
-	osdp_cp.c
-	osdp_pd.c
-	osdp_sc.c
-	osdp_aes.c
+list(APPEND LIB_OSDP_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/osdp_common.c
+	${CMAKE_CURRENT_SOURCE_DIR}/osdp_phy.c
+	${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
+	${CMAKE_CURRENT_SOURCE_DIR}/osdp_pd.c
+	${CMAKE_CURRENT_SOURCE_DIR}/osdp_sc.c
 )
+
+list(APPEND LIB_OSDP_INCLUDE_DIRS
+	${CMAKE_SOURCE_DIR}/utils/include
+)
+
+list(APPEND LIB_OSDP_LIBRARIES
+	utils
+)
+
+if (OpenSSL_FOUND)
+	list(APPEND LIB_OSDP_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
+	list(APPEND LIB_OSDP_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
+else()
+	list(APPEND LIB_OSDP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/osdp_aes.c)
+endif()
+
+set(LIB_OSDP_SOURCES ${LIB_OSDP_SOURCES} PARENT_SCOPE)
+set(LIB_OSDP_LIBRARIES ${LIB_OSDP_LIBRARIES} PARENT_SCOPE)
+set(LIB_OSDP_INCLUDE_DIRS ${LIB_OSDP_INCLUDE_DIRS} PARENT_SCOPE)
 
 ## build libosdpstatic.a
 
-add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SRC})
-target_link_libraries(${LIB_OSDP_STATIC} utils)
+add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SOURCES})
+target_link_libraries(${LIB_OSDP_STATIC} ${LIB_OSDP_LIBRARIES})
+
 target_include_directories(${LIB_OSDP_STATIC}
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
 	PRIVATE
-		${CMAKE_SOURCE_DIR}/utils/include
+		${LIB_OSDP_INCLUDE_DIRS}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${CMAKE_BINARY_DIR}/src/include
 )
@@ -55,19 +83,23 @@ list(APPEND LIB_OSDP_UTILS_SRC
 )
 
 # add source files of utils instead of linking it. See comment above.
-add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SRC} ${LIB_OSDP_UTILS_SRC})
+add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
+if (OpenSSL_FOUND)
+	target_link_libraries(${LIB_OSDP} ${OPENSSL_CRYPTO_LIBRARY})
+endif()
 
 set_target_properties(${LIB_OSDP} PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
 	PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/osdp.h
 )
+
 target_include_directories(${LIB_OSDP}
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
 	PRIVATE
-		${CMAKE_SOURCE_DIR}/utils/include
+		${LIB_OSDP_INCLUDE_DIRS}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 		${CMAKE_BINARY_DIR}/src/include
 )

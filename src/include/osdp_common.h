@@ -363,7 +363,7 @@ void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-void osdp_fill_random(uint8_t *buf, int len);
+void osdp_get_rand(uint8_t *buf, int len);
 void safe_free(void *p);
 
 #endif	/* _OSDP_COMMON_H_ */

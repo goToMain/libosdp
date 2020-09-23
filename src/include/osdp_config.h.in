@@ -19,14 +19,6 @@
 #define GIT_DIFF                       "@GIT_DIFF@"
 
 /**
- * @brief CONFIG_XXX macros are defined by the below cmakedefine statement by
- * cmake during project configuration. These options can be enabled by passing
- * -DCONFIG_XXX=on to cmake.
- */
-#cmakedefine CONFIG_OSDP_PACKET_TRACE           1
-#cmakedefine CONFIG_OSDP_USE_OPENSSL            1
-
-/**
  * @brief Other OSDP constants
  */
 #define OSDP_PD_SC_RETRY_MS                     (600 * 1000)

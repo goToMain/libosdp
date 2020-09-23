@@ -4,16 +4,19 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+## Options
+option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
+
+if (CONFIG_OSDP_PACKET_TRACE)
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_PACKET_TRACE")
+endif()
+
 # static and shared library names
-set(LIB_OSDP osdp)
+set(LIB_OSDP_SHARED osdp)
 set(LIB_OSDP_STATIC osdpstatic)
 
 # optionally, find and use OpenSSL
 find_package(OpenSSL)
-if (OpenSSL_FOUND)
-	set(CONFIG_OSDP_USE_OPENSSL true)
-	message(STATUS "Using OpenSSL ${OPENSSL_VERSION}")
-endif()
 
 # Generate osdp_config.h in build dir.
 configure_file(include/osdp_config.h.in include/osdp_config.h @ONLY)
@@ -28,6 +31,12 @@ list(APPEND LIB_OSDP_SOURCES
 
 list(APPEND LIB_OSDP_INCLUDE_DIRS
 	${CMAKE_SOURCE_DIR}/utils/include
+	${CMAKE_SOURCE_DIR}/include
+)
+
+list(APPEND LIB_OSDP_PRIVATE_INCLUDE_DIRS
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_BINARY_DIR}/src/include
 )
 
 list(APPEND LIB_OSDP_LIBRARIES
@@ -37,13 +46,21 @@ list(APPEND LIB_OSDP_LIBRARIES
 if (OpenSSL_FOUND)
 	list(APPEND LIB_OSDP_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
 	list(APPEND LIB_OSDP_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_USE_OPENSSL")
 else()
 	list(APPEND LIB_OSDP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/osdp_aes.c)
 endif()
 
+# These variables are used in other parts of this projects for rebuilding
+# LibOSDP as they see fit. For instance tests are built with -DUNIT_TESTING
+# and pyosdp is built by setuptools.
 set(LIB_OSDP_SOURCES ${LIB_OSDP_SOURCES} PARENT_SCOPE)
 set(LIB_OSDP_LIBRARIES ${LIB_OSDP_LIBRARIES} PARENT_SCOPE)
 set(LIB_OSDP_INCLUDE_DIRS ${LIB_OSDP_INCLUDE_DIRS} PARENT_SCOPE)
+set(LIB_OSDP_PRIVATE_INCLUDE_DIRS ${LIB_OSDP_PRIVATE_INCLUDE_DIRS} PARENT_SCOPE)
+set(LIB_OSDP_DEFINITIONS ${LIB_OSDP_DEFINITIONS} PARENT_SCOPE)
+
+add_definitions(${LIB_OSDP_DEFINITIONS})
 
 ## build libosdpstatic.a
 
@@ -54,10 +71,9 @@ target_include_directories(${LIB_OSDP_STATIC}
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
-	PRIVATE
 		${LIB_OSDP_INCLUDE_DIRS}
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${CMAKE_BINARY_DIR}/src/include
+	PRIVATE
+		${LIB_OSDP_PRIVATE_INCLUDE_DIRS}
 )
 
 ## build libosdp.so
@@ -81,33 +97,33 @@ list(APPEND LIB_OSDP_UTILS_SRC
 	${CMAKE_SOURCE_DIR}/utils/src/queue.c
 	${CMAKE_SOURCE_DIR}/utils/src/slab.c
 )
+set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 
 # add source files of utils instead of linking it. See comment above.
-add_library(${LIB_OSDP} SHARED ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
+add_library(${LIB_OSDP_SHARED} SHARED ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
 if (OpenSSL_FOUND)
-	target_link_libraries(${LIB_OSDP} ${OPENSSL_CRYPTO_LIBRARY})
+	target_link_libraries(${LIB_OSDP_SHARED} ${OPENSSL_CRYPTO_LIBRARY})
 endif()
 
-set_target_properties(${LIB_OSDP} PROPERTIES
+set_target_properties(${LIB_OSDP_SHARED} PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
 	PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/osdp.h
 )
 
-target_include_directories(${LIB_OSDP}
+target_include_directories(${LIB_OSDP_SHARED}
 	PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
-	PRIVATE
 		${LIB_OSDP_INCLUDE_DIRS}
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-		${CMAKE_BINARY_DIR}/src/include
+	PRIVATE
+		${LIB_OSDP_PRIVATE_INCLUDE_DIRS}
 )
 
 # generate osdp_export.h for OSDP_EXPORT() macro
 # must be placed after the target definitions.
 include(GenerateExportHeader)
-generate_export_header(${LIB_OSDP}
+generate_export_header(${LIB_OSDP_SHARED}
 	EXPORT_MACRO_NAME OSDP_EXPORT
 	EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/src/include/osdp_export.h
 )
@@ -117,9 +133,9 @@ generate_export_header(${LIB_OSDP}
 include(CMakePackageConfigHelpers)
 set(LIBOSDP_CMAKE_CONFIG_DIR "lib/cmake/libosdp")
 set(LIBOSDP_PKG_CONFIG_DIR   "lib/pkgconfig")
-set(LIBOSDP_DEFINITIONS      "")
+set(LIBOSDP_DEFINITIONS      ${LIB_OSDP_DEFINITIONS})
 set(LIBOSDP_INCLUDE_DIR      "include")
-set(LIBOSDP_LIBRARY          ${LIB_OSDP})
+set(LIBOSDP_LIBRARY          ${LIB_OSDP_SHARED})
 set(LIBOSDP_LIBRARY_STATIC   ${LIB_OSDP_STATIC})
 set(LIBOSDP_LIBRARY_DIR      "lib")
 set(LIBOSDP_USE_FILE         "lib/cmake/libosdp/UseLibOSDP.cmake")
@@ -156,7 +172,7 @@ configure_file(
 ## Install targets
 
 install(
-	TARGETS ${LIB_OSDP} ${LIB_OSDP_STATIC}
+	TARGETS ${LIB_OSDP_SHARED} ${LIB_OSDP_STATIC}
 	LIBRARY DESTINATION ${LIBOSDP_LIBRARY_DIR}
 	ARCHIVE DESTINATION ${LIBOSDP_LIBRARY_DIR}
 	PUBLIC_HEADER DESTINATION ${LIBOSDP_INCLUDE_DIR}

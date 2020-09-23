@@ -863,7 +863,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
 			LOG_INF(TAG "PD is not SC capable. Set PD offline due "
-				        "to ENFORCE_SECURE");
+				    "to ENFORCE_SECURE");
 			cp_set_offline(pd);
 		} else {
 			cp_set_state(pd, OSDP_CP_STATE_ONLINE);

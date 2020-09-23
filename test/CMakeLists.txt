@@ -13,7 +13,7 @@ include_directories(${LIB_OSDP_INCLUDE_DIRS})
 
 # rebuild libosdp with test flag
 set(LIB_OSDP_TEST osdptest)
-add_definitions(-DUNIT_TESTING)
+add_definitions(-DUNIT_TESTING ${LIB_OSDP_DEFINITIONS})
 add_library(${LIB_OSDP_TEST} STATIC EXCLUDE_FROM_ALL ${LIB_OSDP_SOURCES})
 
 list(APPEND OSDP_UNIT_TEST_SRC

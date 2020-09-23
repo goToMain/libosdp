@@ -8,8 +8,8 @@ cmake_minimum_required(VERSION 3.0)
 project(osdp_sample)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    # This sample is built individually so try to locate an installed version
-    # of libosdp.
+	# This sample is built individually so try to locate an installed
+	# version of libosdp.
 	find_package(LibOSDP NO_MODULE REQUIRED)
 	include(${LIBOSDP_USE_FILE})
 else()

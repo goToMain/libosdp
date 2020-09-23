@@ -7,26 +7,13 @@
 import os
 import setuptools
 
-sources = [
-    # utils sources
-    '@CMAKE_SOURCE_DIR@/utils/src/utils.c',
-    '@CMAKE_SOURCE_DIR@/utils/src/strutils.c',
-    '@CMAKE_SOURCE_DIR@/utils/src/list.c',
-    '@CMAKE_SOURCE_DIR@/utils/src/queue.c',
-    '@CMAKE_SOURCE_DIR@/utils/src/slab.c',
+utils_sources = '@LIB_OSDP_UTILS_SRC@'.split(';') + [
     '@CMAKE_SOURCE_DIR@/utils/src/serial.c',
-    '@CMAKE_SOURCE_DIR@/utils/src/hashmap.c',
     '@CMAKE_SOURCE_DIR@/utils/src/channel.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/hashmap.c',
+]
 
-    # LibOSDP sources
-    '@CMAKE_SOURCE_DIR@/src/osdp_cp.c',
-    '@CMAKE_SOURCE_DIR@/src/osdp_pd.c',
-    '@CMAKE_SOURCE_DIR@/src/osdp_phy.c',
-    '@CMAKE_SOURCE_DIR@/src/osdp_aes.c',
-    '@CMAKE_SOURCE_DIR@/src/osdp_sc.c',
-    '@CMAKE_SOURCE_DIR@/src/osdp_common.c',
-
-    # py-osdp sources
+pyosdp_sources = '@LIB_OSDP_SOURCES@'.split(';') + [
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp.c',
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_cp.c',
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_pd.c',
@@ -34,18 +21,21 @@ sources = [
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_utils.c',
 ]
 
-compile_args = [
-    # Utils Includes
-    '-I@CMAKE_SOURCE_DIR@/utils/include',
+sources = utils_sources + pyosdp_sources
 
-    # LibOSDP includes
-    '-I@CMAKE_SOURCE_DIR@/include',
-    '-I@CMAKE_SOURCE_DIR@/src/include',
-    '-I@CMAKE_BINARY_DIR@/src/include',
-]
+libosdp_include_dirs = ('@LIB_OSDP_INCLUDE_DIRS@'.split(';') +
+                        '@LIB_OSDP_PRIVATE_INCLUDE_DIRS@'.split(';'))
 
-link_args = [
-]
+libosdp_includes = [ '-I' + path for path in libosdp_include_dirs ]
+
+libosdp_definitions = '@LIB_OSDP_DEFINITIONS@'.split(';')
+
+libosdp_libraries = '@LIB_OSDP_LIBRARIES@'.split(';')
+libosdp_libraries = libosdp_libraries[1:] # remove utils
+
+compile_args = libosdp_includes + libosdp_definitions
+
+link_args = libosdp_libraries
 
 define_macros = [
     # ('CONFIG_OSDP_PACKET_TRACE', 1),

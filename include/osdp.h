@@ -474,12 +474,19 @@ enum osdp_event_cardread_format_e {
  * @brief OSDP event cardread
  *
  * @param reader_no In context of readers attached to current PD, this number
- *                  indicated this number. This is not supported by LibOSDP.
+ *        indicated this number. This is not supported by LibOSDP.
  * @param format Format of the card being read.
- *               see `enum osdp_event_cardread_format_e`
+ *        see `enum osdp_event_cardread_format_e`
  * @param direction Card read direction of PD 0 - Forward; 1 - Backward
- * @param length Length of card data in bytes
- * @param data Card data of `length` bytes
+ * @param length Length of card data in bytes or bits depending on `format`
+ *        (see note).
+ * @param data Card data of `length` bytes or bits bits depending on `format`
+ *        (see note).
+ *
+ * @note When `format` is set to OSDP_CARD_FMT_RAW_UNSPECIFIED or
+ * OSDP_CARD_FMT_RAW_WIEGAND, the length is expressed in bits. OTOH, when it is
+ * set to OSDP_CARD_FMT_ASCII, the length is in bytes. The number of bytes to
+ * read from the `data` field must be interpreted accordingly.
  */
 struct osdp_event_cardread {
 	int reader_no;

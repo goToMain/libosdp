@@ -361,6 +361,7 @@ int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
 
 int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 {
+	int tmp;
 	PyObject *obj;
 
 	obj = PyDict_New();
@@ -380,7 +381,12 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 			return -1;
 		if (pyosdp_dict_add_int(obj, "length", event->cardread.length))
 			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, event->cardread.length))
+		if (event->cardread.format == OSDP_CARD_FMT_RAW_UNSPECIFIED ||
+		    event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND)
+			tmp = (event->cardread.length + 7) / 8; // bits to bytes
+		else
+			tmp = event->cardread.length;
+		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, tmp))
 			return -1;
 		break;
 	case OSDP_EVENT_KEYPRESS:
@@ -410,7 +416,7 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 
 static int pyosdp_make_cardread_event_struct(struct osdp_event *p, PyObject *dict)
 {
-	int i, data_length, reader_no, format, direction;
+	int i, data_length, reader_no, format, direction, len_bytes;
 	struct osdp_event_cardread *ev = &p->cardread;
 	uint8_t *data_bytes;
 
@@ -428,7 +434,16 @@ static int pyosdp_make_cardread_event_struct(struct osdp_event *p, PyObject *dic
 	if (pyosdp_dict_get_bytes(dict, "data", &data_bytes, &data_length))
 		return -1;
 
-	if (data_length > OSDP_EVENT_MAX_DATALEN) {
+	if (format == OSDP_CARD_FMT_RAW_WIEGAND ||
+	    format == OSDP_CARD_FMT_RAW_UNSPECIFIED) {
+		if (pyosdp_dict_get_int(dict, "length", &data_length))
+			return -1;
+		len_bytes = (data_length + 7) / 8; // bits to bytes
+	} else {
+		len_bytes = data_length;
+	}
+
+	if (len_bytes > OSDP_EVENT_MAX_DATALEN) {
 		PyErr_Format(PyExc_ValueError, "Data bytes too long");
 		return -1;
 	}
@@ -437,7 +452,7 @@ static int pyosdp_make_cardread_event_struct(struct osdp_event *p, PyObject *dic
 	ev->format = (uint8_t)format;
 	ev->direction = (uint8_t)direction;
 	ev->length = data_length;
-	for (i = 0; i < data_length; i++)
+	for (i = 0; i < len_bytes; i++)
 		ev->data[i] = data_bytes[i];
 	return 0;
 }

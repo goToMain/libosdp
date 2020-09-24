@@ -157,7 +157,7 @@ enum osdp_pd_cap_function_code_e {
  *
  * @param function_code One of enum osdp_pd_cap_function_code_e.
  * @param compliance_level A function_code dependent number that indicates what
- *                         the PD can do with this capability.
+ *        the PD can do with this capability.
  * @param num_items Number of such capability entities in PD.
  */
 struct osdp_pd_cap {
@@ -224,16 +224,16 @@ struct osdp_channel {
  *
  * @param baud_rate Can be one of 9600/38400/115200
  * @param address 7 bit PD address. the rest of the bits are ignored. The
- *                special address 0x7F is used for broadcast. So there can be
- *                2^7-1 devices on a multi-drop channel
+ *        special address 0x7F is used for broadcast. So there can be 2^7-1
+ *        devices on a multi-drop channel
  * @param flags Used to modify the way the context is setup. See `OSDP_FLAG_XXX`
  * @param id Static information that the PD reports to the CP when it received a
- *           `CMD_ID`. These information must be populated by a PD appliication.
+ *        `CMD_ID`. These information must be populated by a PD appliication.
  * @param cap This is a pointer to an array of structures containing the PD'
- *            capabilities. Use { -1, 0, 0 } to terminate the array. This is
- *            used only PD mode of operation
+ *        capabilities. Use { -1, 0, 0 } to terminate the array. This is used
+ *        only PD mode of operation
  * @param channel Communication channel ops structure, containing send/recv
- *                function pointers.
+ *        function pointers.
  */
 typedef struct {
 	int baud_rate;
@@ -262,13 +262,13 @@ typedef void osdp_t;
  *
  * @param output_no 0 = First Output, 1 = Second Output, etc.
  * @param control_code One of the following:
- *   0 - NOP – do not alter this output
- *   1 - set the permanent state to OFF, abort timed operation (if any)
- *   2 - set the permanent state to ON, abort timed operation (if any)
- *   3 - set the permanent state to OFF, allow timed operation to complete
- *   4 - set the permanent state to ON, allow timed operation to complete
- *   5 - set the temporary state to ON, resume perm state on timeout
- *   6 - set the temporary state to OFF, resume permanent state on timeout
+ *        0 - NOP – do not alter this output
+ *        1 - set the permanent state to OFF, abort timed operation (if any)
+ *        2 - set the permanent state to ON, abort timed operation (if any)
+ *        3 - set the permanent state to OFF, allow timed operation to complete
+ *        4 - set the permanent state to ON, allow timed operation to complete
+ *        5 - set the temporary state to ON, resume perm state on timeout
+ *        6 - set the temporary state to OFF, resume permanent state on timeout
  * @param timer_count Time in units of 100 ms
  */
 struct osdp_cmd_output {
@@ -293,14 +293,14 @@ enum osdp_led_color_e {
  * @brief LED params sub-structure. Part of LED command. See struct osdp_cmd_led
  *
  * @param control_code One of the following:
- * Temporary Control Code:
- *   0 - NOP - do not alter this LED's temporary settings
- *   1 - Cancel any temporary operation and display this LED's permanent state
- *       immediately
- *   2 - Set the temporary state as given and start timer immediately
- * Permanent Control Code:
- *   0 - NOP - do not alter this LED's permanent settings
- *   1 - Set the permanent state as given
+ *        Temporary Control Code:
+ *           0 - NOP - do not alter this LED's temporary settings
+ *           1 - Cancel any temporary operation and display this LED's permanent
+ *               state immediately
+ *           2 - Set the temporary state as given and start timer immediately
+ *        Permanent Control Code:
+ *           0 - NOP - do not alter this LED's permanent settings
+ *           1 - Set the permanent state as given
  * @param on_count The ON duration of the flash, in units of 100 ms
  * @param off_count The OFF duration of the flash, in units of 100 ms
  * @param on_color Color to set during the ON timer (enum osdp_led_color_e)
@@ -353,10 +353,10 @@ struct osdp_cmd_buzzer {
  *
  * @param reader 0 = First Reader, 1 = Second Reader, etc.
  * @param control_code One of the following:
- *   1 - permanent text, no wrap
- *   2 - permanent text, with wrap
- *   3 - temp text, no wrap
- *   4 - temp text, with wrap
+ *        1 - permanent text, no wrap
+ *        2 - permanent text, with wrap
+ *        3 - temp text, no wrap
+ *        4 - temp text, with wrap
  * @param temp_time duration to display temporary text, in seconds
  * @param offset_row row to display the first character (1 indexed)
  * @param offset_col column to display the first character (1 indexed)
@@ -378,7 +378,7 @@ struct osdp_cmd_text {
  * PD. Must be stored in PD non-volatile memory.
  *
  * @param address Unit ID to which this PD will respond after the change takes
- *             effect.
+ *        effect.
  * @param baud_rate baud rate value 9600/38400/115200
  */
 struct osdp_cmd_comset {

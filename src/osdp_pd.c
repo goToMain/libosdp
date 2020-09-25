@@ -452,6 +452,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	default:
+		LOG_ERR(TAG "Unknown command ID 0x%02x", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
 		ret = 0;

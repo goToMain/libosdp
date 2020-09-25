@@ -36,8 +36,11 @@ int test_cp_build_packet_poll(struct osdp *ctx)
 	int len;
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[512] = { CMD_POLL };
-	uint8_t expected[] = { 0xff, 0x53, 0x65, 0x08, 0x00,
-		0x04, 0x60, 0x60, 0x90
+	uint8_t expected[] = {
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90
 	};
 
 	printf("Testing cp_build_packet(CMD_POLL) -- ");
@@ -54,8 +57,11 @@ int test_cp_build_packet_id(struct osdp *ctx)
 	int len;
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[512] = { CMD_ID, 0x00 };
-	uint8_t expected[] = { 0xff, 0x53, 0x65, 0x09, 0x00,
-		0x05, 0x61, 0x00, 0xe9, 0x4d
+	uint8_t expected[] = {
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0x65, 0x09, 0x00, 0x05, 0x61, 0x00, 0xe9, 0x4d
 	};
 
 	printf("Testing cp_build_packet(CMD_ID) -- ");
@@ -72,13 +78,17 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 {
 	int len;
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
-	uint8_t packet[128] = { 0xff, 0x53, 0xe5, 0x08, 0x00,
-		0x05, 0x40, 0xe3, 0xa5
+	uint8_t packet[] = {
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x08, 0x00, 0x05, 0x40, 0xe3, 0xa5
 	};
 	uint8_t expected[] = { REPLY_ACK };
 
 	printf("Testing phy_decode_packet(REPLY_ACK) -- ");
-	if ((len = osdp_phy_decode_packet(p, packet, 9)) < 0) {
+	if ((len = osdp_phy_decode_packet(p, packet, sizeof(packet))) < 0) {
+		printf("failed!\n");
 		return -1;
 	}
 	CHECK_ARRAY(packet, len, expected);
@@ -104,6 +114,7 @@ int test_cp_phy_setup(struct test *t)
 		return -1;
 	}
 	SET_CURRENT_PD(ctx, 0);
+	osdp_set_log_level(LOG_INFO);
 	t->mock_data = (void *)ctx;
 	return 0;
 }

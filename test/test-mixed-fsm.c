@@ -125,7 +125,7 @@ int test_mixed_fsm_setup(struct test *t)
 	};
 	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
 	if (test_data.pd_ctx == NULL) {
-		printf("   pd init failed!\n");
+		printf(SUB_1 "pd init failed!\n");
 		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
 		return -1;
 	}
@@ -149,16 +149,16 @@ void run_mixed_fsm_tests(struct test *t)
 	struct osdp_pd *pd_cp, *pd_pd;
 	int64_t start;
 
-	printf("\nStarting CP - PD phy layer mixed tests\n");
+	printf("\nBegin CP - PD phy layer mixed tests\n");
 
-	printf("    -- setting up OSDP devices\n");
+	printf(SUB_1 "setting up OSDP devices\n");
 
 	if (test_mixed_fsm_setup(t))
 		return;
 
 	p = t->mock_data;
 
-	printf("    -- executing CP - PD mixed tests\n");
+	printf(SUB_1 "executing CP - PD mixed tests\n");
 	start = osdp_millis_now();
 	pd_cp = GET_CURRENT_PD(p->cp_ctx);
 	pd_pd = GET_CURRENT_PD(p->pd_ctx);
@@ -168,22 +168,22 @@ void run_mixed_fsm_tests(struct test *t)
 		if (osdp_get_sc_status_mask(p->cp_ctx))
 			break;
 		if (pd_cp->state == OSDP_CP_STATE_OFFLINE) {
-			printf("    -- CP went offline!\n");
+			printf(SUB_1 "CP went offline!\n");
 			result = false;
 			break;
 		}
 		if (pd_pd->state == OSDP_PD_STATE_ERR) {
-			printf("    -- PD state error!\n");
+			printf(SUB_1 "PD state error!\n");
 			result = false;
 			break;
 		}
-		if (osdp_millis_since(start) > 5 * 1000) {
-			printf("    -- test timout!\n");
+		if (osdp_millis_since(start) > 2 * 1000) {
+			printf(SUB_1 "test timout!\n");
 			result = false;
 			break;
 		}
 	}
-	printf("    -- CP - PD mixed tests complete\n");
+	printf(SUB_1 "CP - PD mixed tests complete\n");
 
 	TEST_REPORT(t, result);
 

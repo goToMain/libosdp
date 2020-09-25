@@ -19,21 +19,29 @@ int test_cp_phy_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
-	uint8_t cmd_poll[] =
-	    { 0xff, 0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90 };
-	uint8_t cmd_id[] =
-	    { 0xff, 0x53, 0x65, 0x09, 0x00, 0x05, 0x61, 0x00, 0xe9, 0x4d };
+	uint8_t cmd_poll[] = {
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90
+	};
+	uint8_t cmd_id[] = {
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0x65, 0x09, 0x00, 0x05, 0x61, 0x00, 0xe9, 0x4d
+	};
 
 	switch (phy_fsm_resp_offset) {
 	case 0:
 		if (memcmp(buf, cmd_poll, len) != 0) {
-			printf("    -- poll buf Mismatch!\n");
+			printf(SUB_1 "poll buf Mismatch!\n");
 			osdp_dump("Attempt to send", buf, len);
 		}
 		break;
 	case 1:
 		if (memcmp(buf, cmd_id, len) != 0) {
-			printf("    -- id buf Mismatch!\n");
+			printf(SUB_1 "id buf Mismatch!\n");
 			osdp_dump("Attempt to send", buf, len);
 		}
 		break;
@@ -46,12 +54,18 @@ int test_cp_phy_fsm_receive(void *data, uint8_t *buf, int len)
 	ARG_UNUSED(data);
 
 	uint8_t resp_ack[] = {
-		0xff, 0x53, 0xe5, 0x08, 0x00, 0x04, 0x40, 0xd2, 0x96
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x08, 0x00, 0x04, 0x40, 0xd2, 0x96
 	};
 	uint8_t resp_id[] = {
-		0xff, 0x53, 0xe5, 0x14, 0x00, 0x05, 0x45, 0xa1, 0xa2,
-		0xa3, 0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2,
-		0xe3, 0x99, 0xa2
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x14, 0x00, 0x05, 0x45, 0xa1, 0xa2, 0xa3,
+		0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2, 0xe3,
+		0x99, 0xa2
 	};
 
 	ARG_UNUSED(len);
@@ -105,10 +119,10 @@ void run_cp_phy_fsm_tests(struct test *t)
 	struct osdp *ctx;
 	struct osdp_pd *p;
 
-	printf("\nStarting CP fsm state tests\n");
+	printf("\nBeginning CP fsm state tests\n");
 
 	if (test_cp_phy_fsm_setup(t)) {
-		printf("    -- error failed to setup cp_phy\n");
+		printf(SUB_1 "error failed to setup cp_phy\n");
 		return;
 	}
 
@@ -119,7 +133,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 	cmd_id = test_cp_cmd_alloc(p);
 
 	if (cmd_poll == NULL || cmd_id == NULL) {
-		printf("    -- cmd alloc failed\n");
+		printf(SUB_1 "cmd alloc failed\n");
 		return;
 	}
 
@@ -129,28 +143,31 @@ void run_cp_phy_fsm_tests(struct test *t)
 	test_cp_cmd_enqueue(p, cmd_poll);
 	test_cp_cmd_enqueue(p, cmd_id);
 
-	printf("    -- executing test_cp_phy_fsm()\n");
+	printf(SUB_1 "executing test_cp_phy_fsm()\n");
 	while (result) {
 		ret = test_cp_phy_state_update(p);
 		if (ret != 3 && ret != 4)
 			break;
 		/* continue when in command and between commands continue */
 	}
-	printf("    -- of text loop\n");
+	printf(SUB_1 "of text loop\n");
 	if (p->id.vendor_code != 0x00a3a2a1 ||
 	    p->id.model != 0xb1 ||
 	    p->id.version != 0xc1 ||
 	    p->id.serial_number != 0xd4d3d2d1 ||
 	    p->id.firmware_version != 0x00e1e2e3) {
-		printf( "    -- error ID mismatch! 0x%04x 0x%02x"
-			"0x%02x 0x%04x 0x%04x\n", p->id.vendor_code, p->id.model,
-			p->id.version, p->id.serial_number, p->id.firmware_version);
+		printf(SUB_1 "ID mismatch! VC:0x%04x MODEL:0x%02x "
+		       "VER:0x%02x SERIAL:0x%04x FW_VER:0x%04x\n",
+		       p->id.vendor_code, p->id.model,
+		       p->id.version, p->id.serial_number,
+		       p->id.firmware_version);
 		result = false;
 	}
 
 	TEST_REPORT(t, result);
 
-	printf("    -- test_cp_phy_fsm() complete -- %d\n", ret);
+	printf("Finished CP fsm state tests -- %s!\n",
+	       result ? "success" : "failure");
 
 	test_cp_phy_fsm_teardown(t);
 }

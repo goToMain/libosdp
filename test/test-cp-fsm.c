@@ -13,11 +13,17 @@ extern int (*test_state_update)(struct osdp_pd *);
 
 int test_fsm_resp = 0;
 
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#define ID_OFFSET 6
+#else
+#define ID_OFFSET 5
+#endif
+
 int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
-	switch (buf[6]) {
+	switch (buf[ID_OFFSET]) {
 	case 0x60:
 		test_fsm_resp = 1;
 		break;
@@ -27,6 +33,8 @@ int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 	case 0x62:
 		test_fsm_resp = 3;
 		break;
+	default:
+		printf(SUB_1 "invalid ID:0x%02x\n", buf[ID_OFFSET]);
 	}
 	return len;
 }
@@ -36,16 +44,25 @@ int test_cp_fsm_receive(void *data, uint8_t *buf, int len)
 	ARG_UNUSED(data);
 
 	uint8_t resp_id[] = {
-		0xff, 0x53, 0xe5, 0x14, 0x00, 0x04, 0x45, 0xa1, 0xa2,
-		0xa3, 0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2,
-		0xe3, 0xf8, 0xd9
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x14, 0x00, 0x04, 0x45, 0xa1, 0xa2, 0xa3,
+		0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2, 0xe3,
+		0xf8, 0xd9
 	};
 	uint8_t resp_cap[] = {
-		0xff, 0x53, 0xe5, 0x0b, 0x00, 0x05, 0x46, 0x04, 0x04,
-		0x01, 0xb3, 0xec
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x0b, 0x00, 0x05, 0x46, 0x04, 0x04, 0x01,
+		0xb3, 0xec
 	};
 	uint8_t resp_ack[] = {
-		0xff, 0x53, 0xe5, 0x08, 0x00, 0x06, 0x40, 0xb0, 0xf0
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x08, 0x00, 0x06, 0x40, 0xb0, 0xf0
 	};
 
 	ARG_UNUSED(len);
@@ -106,12 +123,12 @@ void run_cp_fsm_tests(struct test *t)
 
 	ctx = t->mock_data;
 
-	printf("    -- executing state_update()\n");
+	printf(SUB_1 "executing state_update()\n");
 	while (1) {
 		test_state_update(GET_CURRENT_PD(ctx));
 
 		if (GET_CURRENT_PD(ctx)->state == OSDP_CP_STATE_OFFLINE) {
-			printf("    -- state_update() CP went offline\n");
+			printf(SUB_2 "state_update() CP went offline\n");
 			result = false;
 			break;
 		}
@@ -119,7 +136,7 @@ void run_cp_fsm_tests(struct test *t)
 			break;
 		usleep(1000);
 	}
-	printf("    -- state_update() complete\n");
+	printf(SUB_1 "state_update() complete\n");
 
 	TEST_REPORT(t, result);
 

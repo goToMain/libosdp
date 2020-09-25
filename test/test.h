@@ -11,6 +11,9 @@
 #include <string.h>
 #include "osdp_common.h"
 
+#define SUB_1 "    -- "
+#define SUB_2 "        -- "
+
 #define DO_TEST(t, m) do {          \
         t->tests++;                 \
         if (m(t->mock_data)) {      \
@@ -31,7 +34,7 @@
 #define CHECK_ARRAY(a, l, e)    do {                        \
         if (l < 0)                                          \
             printf ("error! invalid length %d\n", len);     \
-        if (l != sizeof(e) || memcmp(a, e, sizeof(e))) {    \
+        else if (l != sizeof(e) || memcmp(a, e, sizeof(e))) { \
             printf("error! comparison failed!\n");          \
             osdp_dump("  Expected: ", e, sizeof(e));        \
             osdp_dump("  Got", a, l);                       \

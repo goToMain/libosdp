@@ -156,6 +156,7 @@ union osdp_ephemeral_data {
 #define LOG_WRN(...)	(osdp_log(LOG_WARNING, __VA_ARGS__))
 #define LOG_NOT(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
 #define LOG_DBG(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
+#define LOG_PRINT(...)	(osdp_log(-1, __VA_ARGS__))
 
 enum osdp_pd_nak_code_e {
 	/**

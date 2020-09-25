@@ -89,10 +89,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_list args;
 	char *buf;
 
-	if (log_level < LOG_EMERG || log_level >= LOG_MAX_LEVEL) {
-		return;
-	}
-	if (log_level > g_log_level) {
+	if (log_level >= LOG_MAX_LEVEL || log_level > g_log_level) {
 		return;
 	}
 	va_start(args, fmt);
@@ -101,6 +98,11 @@ void osdp_log(int log_level, const char *fmt, ...)
 		return;
 	}
 	va_end(args);
+	if (log_level < 0) {
+		log_printf("OSDP: %s\n", buf);
+		free(buf);
+		return;
+	}
 	osdp_log_set_color(log_level_colors[log_level]);
 	if (g_log_ctx == LOG_CTX_GLOBAL) {
 		log_printf("OSDP: %s: %s\n", log_level_names[log_level], buf);

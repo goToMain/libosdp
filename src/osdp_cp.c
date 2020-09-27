@@ -45,6 +45,7 @@
 #define REPLY_FMT_DATA_LEN             3   /* variable length command */
 #define REPLY_BUSY_DATA_LEN            0
 
+#define OSDP_CP_ERR_NONE               0
 #define OSDP_CP_ERR_GENERIC           -1
 #define OSDP_CP_ERR_NO_DATA            1
 #define OSDP_CP_ERR_RETRY_CMD          2
@@ -406,14 +407,14 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_ACK_DATA_LEN) {
 			break;
 		}
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_NAK:
 		if (len != REPLY_NAK_DATA_LEN) {
 			break;
 		}
 		LOG_ERR(TAG "PD replied with NAK code %d", buf[pos]);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_PDID:
 		if (len != REPLY_PDID_DATA_LEN) {
@@ -434,7 +435,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->id.firmware_version  = buf[pos++] << 16;
 		pd->id.firmware_version |= buf[pos++] << 8;
 		pd->id.firmware_version |= buf[pos++];
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_PDCAP:
 		if ((len % REPLY_PDCAP_ENTITY_LEN) != 0) {
@@ -455,7 +456,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 		else
 			CLEAR_FLAG(pd, PD_FLAG_SC_CAPABLE);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_LSTATR:
 		if (len != REPLY_LSTATR_DATA_LEN) {
@@ -471,7 +472,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		} else {
 			CLEAR_FLAG(pd, PD_FLAG_POWER);
 		}
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
 		if (len != REPLY_RSTATR_DATA_LEN) {
@@ -482,7 +483,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		} else {
 			CLEAR_FLAG(pd, PD_FLAG_R_TAMPER);
 		}
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_COM:
 		if (len != REPLY_COM_DATA_LEN) {
@@ -496,7 +497,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_WRN(TAG "COMSET responded with ID:%d baud:%d", t1, temp32);
 		pd->address = t1;
 		pd->baud_rate = temp32;
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_KEYPPAD:
 		if (len < REPLY_KEYPPAD_DATA_LEN || !cp->event_callback) {
@@ -512,7 +513,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.keypress.data[i] = buf[pos + i];
 		}
 		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RAW:
 		if (len < REPLY_RAW_DATA_LEN || !cp->event_callback) {
@@ -532,7 +533,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.cardread.data[i] = buf[pos + i];
 		}
 		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FMT:
 		if (len < REPLY_FMT_DATA_LEN || !cp->event_callback) {
@@ -551,7 +552,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.cardread.data[i] = buf[pos + i];
 		}
 		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_BUSY:
 		/* PD busy; signal upper layer to retry command */
@@ -577,7 +578,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.mfgrep.data[i] = buf[pos + i];
 		}
 		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_CCRYPT:
 		if (len != REPLY_CCRYPT_DATA_LEN) {
@@ -597,7 +598,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR(TAG "failed to verify PD_crypt");
 			return -1;
 		}
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RMAC_I:
 		if (len != REPLY_RMAC_I_DATA_LEN) {
@@ -607,7 +608,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			pd->sc.r_mac[i] = buf[pos++];
 		}
 		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		ret = 0;
+		ret = OSDP_CP_ERR_NONE;
 		break;
 	default:
 		LOG_DBG(TAG "unexpected reply: 0x%02x", pd->reply_id);
@@ -744,7 +745,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_PHY_STATE_IDLE:
 		if (cp_cmd_dequeue(pd, &cmd)) {
-			ret = 0;
+			ret = OSDP_CP_ERR_NONE; /* command queue is empty */
 			break;
 		}
 		pd->cmd_id = cmd->id;
@@ -765,7 +766,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
-		if (rc == 0) { /* success */
+		if (rc == OSDP_CP_ERR_NONE) {
 			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 			break;
 		}
@@ -797,19 +798,13 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	return ret;
 }
 
-/**
- * Returns:
- *   0: nothing done
- *   1: dispatched
- *  -1: error
- */
 static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 {
 	struct osdp_cmd *c;
 
 	if (ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
 		CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
-		return 0;
+		return OSDP_CP_ERR_NONE; /* nothing to be done here */
 	}
 
 	c = cp_cmd_alloc(pd);

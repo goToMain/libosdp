@@ -847,7 +847,8 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	switch (pd->state) {
 	case OSDP_PD_STATE_IDLE:
 		ret = pd_receve_packet(pd);
-		if (ret == -1 || (pd->rx_buf_len > 0 &&
+		if (ret == -1 || ((pd->rx_buf_len > 0 ||
+		    ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) &&
 		    osdp_millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
 			/**
 			 * When we receive a command from PD after a timeout,

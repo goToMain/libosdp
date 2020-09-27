@@ -107,7 +107,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 	if (g_log_ctx == LOG_CTX_GLOBAL) {
 		log_printf("OSDP: %s: %s\n", log_level_names[log_level], buf);
 	} else {
-		log_printf("OSDP: %s: PD[%d] %s\n", log_level_names[log_level],
+		log_printf("OSDP: %s: PD[%d]: %s\n", log_level_names[log_level],
 			   g_log_ctx, buf);
 	}
 	osdp_log_set_color(RESET);

@@ -7,9 +7,8 @@
 set(OSDP_UNIT_TEST osdp_unit_test)
 
 # tests can include private headers
-include_directories(${CMAKE_SOURCE_DIR}/src/include) # for osdp_common.h
-include_directories(${CMAKE_BINARY_DIR}/src/include) # for osdp_config.h
 include_directories(${LIB_OSDP_INCLUDE_DIRS})
+include_directories(${LIB_OSDP_PRIVATE_INCLUDE_DIRS})
 
 # rebuild libosdp with test flag
 set(LIB_OSDP_TEST osdptest)

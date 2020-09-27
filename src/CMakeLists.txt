@@ -24,7 +24,7 @@ set(LIB_OSDP_STATIC osdpstatic)
 find_package(OpenSSL)
 
 # Generate osdp_config.h in build dir.
-configure_file(include/osdp_config.h.in include/osdp_config.h @ONLY)
+configure_file(osdp_config.h.in osdp_config.h @ONLY)
 
 list(APPEND LIB_OSDP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_common.c
@@ -40,8 +40,8 @@ list(APPEND LIB_OSDP_INCLUDE_DIRS
 )
 
 list(APPEND LIB_OSDP_PRIVATE_INCLUDE_DIRS
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-	${CMAKE_BINARY_DIR}/src/include
+	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_BINARY_DIR}
 )
 
 list(APPEND LIB_OSDP_LIBRARIES
@@ -74,7 +74,6 @@ target_link_libraries(${LIB_OSDP_STATIC} ${LIB_OSDP_LIBRARIES})
 
 target_include_directories(${LIB_OSDP_STATIC}
 	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
 		${LIB_OSDP_INCLUDE_DIRS}
 	PRIVATE
@@ -118,7 +117,6 @@ set_target_properties(${LIB_OSDP_SHARED} PROPERTIES
 
 target_include_directories(${LIB_OSDP_SHARED}
 	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include>
 		${LIB_OSDP_INCLUDE_DIRS}
 	PRIVATE
@@ -130,7 +128,7 @@ target_include_directories(${LIB_OSDP_SHARED}
 include(GenerateExportHeader)
 generate_export_header(${LIB_OSDP_SHARED}
 	EXPORT_MACRO_NAME OSDP_EXPORT
-	EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/src/include/osdp_export.h
+	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
 )
 
 ## Package Configuration

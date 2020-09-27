@@ -245,11 +245,11 @@ typedef struct {
 } osdp_pd_info_t;
 
 /**
- * The keep the OSDP internal data strucutres from polluting the exposed headers,
- * they are typedefed to void before sending them to the upper layers. This
- * level of abstaction looked reasonable as _technically_ no one should attempt
- * to modify it outside fo the LibOSDP and their definition may change at any
- * time.
+ * The keep the OSDP internal data strucutres from polluting the exposed
+ * headers, they are typedefed to void before sending them to the upper layers.
+ * This level of abstaction looked reasonable as _technically_ no one should
+ * attempt to modify it outside fo the LibOSDP and their definition may change
+ * at any time.
  */
 typedef void osdp_t;
 
@@ -663,7 +663,8 @@ void osdp_pd_teardown(osdp_t *ctx);
  * @param cb The callback function's pointer
  * @param arg A pointer that will be passed as the first argument of `cb`
  */
-void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb, void *arg);
+void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb,
+				  void *arg);
 
 /**
  * @brief API to notify PD events to CP. These events are sent to the CP as an

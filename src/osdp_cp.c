@@ -844,7 +844,9 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDID) {
+			LOG_ERR(TAG "Unexpected reply for cmd " STR(CMD_ID));
 			cp_set_offline(pd);
+			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_CAPDET);
 		/* FALLTHRU */
@@ -853,7 +855,9 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDCAP) {
+			LOG_ERR(TAG "Unexpected reply for cmd " STR(CMD_CAP));
 			cp_set_offline(pd);
+			break;
 		}
 		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
 			CLEAR_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);

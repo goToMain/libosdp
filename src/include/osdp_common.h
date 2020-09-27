@@ -146,6 +146,7 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_ACTIVE       0x00000080 /* secure channel is active */
 #define PD_FLAG_SC_SCBKD_DONE   0x00000100 /* SCBKD check is done */
 #define PD_FLAG_PD_MODE         0x00000200 /* device is setup as PD */
+#define PD_FLAG_CHN_SHARED      0x00000400 /* PD's channel is shared */
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
@@ -217,8 +218,6 @@ enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_REPLY_WAIT,
 	OSDP_CP_PHY_STATE_WAIT,
 	OSDP_CP_PHY_STATE_ERR,
-	OSDP_CP_PHY_STATE_ERR_WAIT,
-	OSDP_CP_PHY_STATE_CLEANUP,
 };
 
 enum osdp_state_e {
@@ -307,6 +306,7 @@ struct osdp_cp {
 	int num_pd;
 	struct osdp_pd *current_pd;	/* current operational pd's pointer */
 	int pd_offset;			/* current pd's offset into ctx->pd */
+	int *channel_lock;
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
 };

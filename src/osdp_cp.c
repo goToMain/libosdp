@@ -112,6 +112,42 @@ static int cp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
 	return 0;
 }
 
+static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
+{
+	int i;
+	struct osdp *ctx = TO_CTX(pd);
+
+	if (ctx->cp->channel_lock[pd->offset] == pd->channel.id) {
+		return 0; /* already acquired! by current PD */
+	}
+	assert(ctx->cp->channel_lock[pd->offset] == 0);
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		if (ctx->cp->channel_lock[i] == pd->channel.id) {
+			/* some other PD has locked this channel */
+			if (owner != NULL) {
+				*owner = i;
+			}
+			return -1;
+		}
+	}
+	ctx->cp->channel_lock[pd->offset] = pd->channel.id;
+
+	return 0;
+}
+
+static int cp_channel_release(struct osdp_pd *pd)
+{
+	struct osdp *ctx = TO_CTX(pd);
+
+	if (ctx->cp->channel_lock[pd->offset] != pd->channel.id) {
+		LOG_ERR(TAG "Attempt to release another PD's channel lock");
+		return -1;
+	}
+	ctx->cp->channel_lock[pd->offset] = 0;
+
+	return 0;
+}
+
 /**
  * Returns:
  * +ve: length of command
@@ -650,7 +686,7 @@ static int cp_process_reply(struct osdp_pd *pd)
 	/* Valid OSDP packet in buffer */
 	ret = osdp_phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len);
 	if (ret == OSDP_ERR_PKT_FMT) {
-		return -1; /* fatal errors */
+		return OSDP_CP_ERR_GENERIC;
 	} else if (ret == OSDP_ERR_PKT_WAIT) {
 		/* rx_buf_len != pkt->len; wait for more data */
 		return OSDP_CP_ERR_NO_DATA;
@@ -689,16 +725,21 @@ static inline void cp_set_state(struct osdp_pd *pd, enum osdp_state_e state)
 	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 }
 
-/**
- * Note: This method must not dequeue cmd unless it reaches an invalid state.
- */
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
-	int ret = OSDP_CP_ERR_INPROG, tmp;
+	int64_t elapsed;
+	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
 	struct osdp_cmd *cmd = NULL;
 
 	switch (pd->phy_state) {
-	case OSDP_CP_PHY_STATE_ERR_WAIT:
+	case OSDP_CP_PHY_STATE_WAIT:
+		elapsed = osdp_millis_since(pd->phy_tstamp);
+		if (elapsed < OSDP_CMD_RETRY_WAIT_MS) {
+			break;
+		}
+		pd->phy_state = OSDP_CP_PHY_STATE_SEND_CMD;
+		break;
+	case OSDP_CP_PHY_STATE_ERR:
 		ret = OSDP_CP_ERR_GENERIC;
 		break;
 	case OSDP_CP_PHY_STATE_IDLE:
@@ -717,50 +758,39 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			ret = OSDP_CP_ERR_GENERIC;
 			break;
 		}
+		ret = OSDP_CP_ERR_INPROG;
 		pd->phy_state = OSDP_CP_PHY_STATE_REPLY_WAIT;
 		pd->rx_buf_len = 0; /* reset buf_len for next use */
 		pd->phy_tstamp = osdp_millis_now();
 		break;
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
-		tmp = cp_process_reply(pd);
-		if (tmp == 0) { /* success */
-			pd->phy_state = OSDP_CP_PHY_STATE_CLEANUP;
+		rc = cp_process_reply(pd);
+		if (rc == 0) { /* success */
+			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 			break;
 		}
-		if (tmp == OSDP_CP_ERR_RETRY_CMD) {
+		if (rc == OSDP_CP_ERR_RETRY_CMD) {
 			LOG_INF(TAG "PD busy; retry last command");
 			pd->phy_tstamp = osdp_millis_now();
 			pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
-			ret = 2;
 			break;
 		}
-		if (tmp == OSDP_CP_ERR_GENERIC) {
+		if (rc == OSDP_CP_ERR_GENERIC ||
+		    osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
+			if (rc != OSDP_CP_ERR_GENERIC) {
+				LOG_ERR(TAG "CMD: %02x - response timeout",
+					pd->cmd_id);
+			}
+			pd->rx_buf_len = 0;
+			if (pd->channel.flush) {
+				pd->channel.flush(pd->channel.data);
+			}
+			cp_flush_command_queue(pd);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
+			ret = OSDP_CP_ERR_GENERIC;
 			break;
 		}
-		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			LOG_ERR(TAG "CMD: %02x - response timeout", pd->cmd_id);
-			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
-		}
-		break;
-	case OSDP_CP_PHY_STATE_WAIT:
-		if (osdp_millis_since(pd->phy_tstamp) < OSDP_CMD_RETRY_WAIT_MS) {
-			break;
-		}
-		pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
-		break;
-	case OSDP_CP_PHY_STATE_ERR:
-		pd->rx_buf_len = 0;
-		if (pd->channel.flush) {
-			pd->channel.flush(pd->channel.data);
-		}
-		cp_flush_command_queue(pd);
-		pd->phy_state = OSDP_CP_PHY_STATE_ERR_WAIT;
-		ret = OSDP_CP_ERR_GENERIC;
-		break;
-	case OSDP_CP_PHY_STATE_CLEANUP:
-		pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
-		ret = OSDP_CP_ERR_CAN_YIELD; /* in between commands */
+		ret = OSDP_CP_ERR_INPROG;
 		break;
 	}
 
@@ -800,7 +830,7 @@ static int state_update(struct osdp_pd *pd)
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == OSDP_CP_ERR_INPROG ||
 	    phy_state == OSDP_CP_ERR_CAN_YIELD) {
-		return OSDP_CP_ERR_GENERIC;
+		return phy_state;
 	}
 
 	/* Certain states can fail without causing PD offline */
@@ -810,6 +840,7 @@ static int state_update(struct osdp_pd *pd)
 	if (pd->state != OSDP_CP_STATE_OFFLINE &&
 	    phy_state == OSDP_CP_ERR_GENERIC && soft_fail == 0) {
 		cp_set_offline(pd);
+		return OSDP_CP_ERR_CAN_YIELD;
 	}
 
 	/* command queue is empty and last command was successful */
@@ -954,7 +985,7 @@ static int state_update(struct osdp_pd *pd)
 		break;
 	}
 
-	return 0;
+	return OSDP_CP_ERR_CAN_YIELD;
 }
 
 static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
@@ -988,7 +1019,7 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 OSDP_EXPORT
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
-	int i;
+	int i, owner;
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
 	struct osdp *ctx;
@@ -1015,6 +1046,11 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	}
 	cp = TO_CP(ctx);
 	cp->__parent = ctx;
+	cp->channel_lock = calloc(1, sizeof(int) * num_pd);
+	if (cp->channel_lock == NULL) {
+		LOG_ERR(TAG "failed to alloc channel_lock[]");
+		goto error;
+	}
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
@@ -1036,7 +1072,12 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 			goto error;
 		}
 		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
+		if (cp_channel_acquire(pd, &owner) == -1) {
+			SET_FLAG(TO_PD(ctx, owner), PD_FLAG_CHN_SHARED);
+			SET_FLAG(pd, PD_FLAG_CHN_SHARED);
+		}
 	}
+	memset(cp->channel_lock, 0, sizeof(int) * num_pd);
 	SET_CURRENT_PD(ctx, 0);
 	LOG_INF(TAG "setup complete");
 	return (osdp_t *) ctx;
@@ -1059,6 +1100,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 		cp_cmd_queue_del(TO_PD(ctx, i));
 	}
 	safe_free(TO_PD(ctx, 0));
+	safe_free(TO_CP(ctx)->channel_lock);
 	safe_free(TO_CP(ctx));
 	safe_free(ctx);
 }
@@ -1066,14 +1108,28 @@ void osdp_cp_teardown(osdp_t *ctx)
 OSDP_EXPORT
 void osdp_cp_refresh(osdp_t *ctx)
 {
-	int i;
+	int i, rc;
+	struct osdp_pd *pd;
 
 	assert(ctx);
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		SET_CURRENT_PD(ctx, i);
 		osdp_log_ctx_set(i);
-		state_update(GET_CURRENT_PD(ctx));
+		pd = TO_PD(ctx, i);
+
+		if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
+		    cp_channel_acquire(pd, NULL)) {
+			/* failed to lock shared channel */
+			continue;
+		}
+
+		rc = state_update(pd);
+
+		if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
+		    rc == OSDP_CP_ERR_CAN_YIELD) {
+			cp_channel_release(pd);
+		}
 	}
 }
 

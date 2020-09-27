@@ -191,6 +191,14 @@ struct osdp_channel {
 	void *data;
 
 	/**
+	 * @brief on multi-drop networks, more than one PD can share the same
+	 * channel (read/write/flush pointers). On such networks, the channel_id
+	 * is used to lock a PD to a channel. On multi-drop networks, this `id`
+	 * must non-zero and be unique for each bus.
+	 */
+	int id;
+
+	/**
 	 * @brief pointer to function that copies received bytes into buffer
 	 * @param data for use by underlying layers. channel_s::data is passed
 	 * @param buf byte array copy incoming data

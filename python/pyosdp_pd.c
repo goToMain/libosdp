@@ -292,11 +292,8 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		goto error;
 	}
 
-	channel_get(&self->chn_mgr, device,
-		&info.channel.data,
-		&info.channel.send,
-		&info.channel.recv,
-		&info.channel.flush);
+	channel_get(&self->chn_mgr, device, &info.channel.id, &info.channel.data,
+		    &info.channel.send, &info.channel.recv, &info.channel.flush);
 
 	ctx = osdp_pd_setup(&info, scbk);
 	if (ctx == NULL) {

@@ -287,6 +287,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		}
 
 		channel_get(&self->chn_mgr, device,
+			    &info->channel.id,
 			    &info->channel.data,
 			    &info->channel.send,
 			    &info->channel.recv,

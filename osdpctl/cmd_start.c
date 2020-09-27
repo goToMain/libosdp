@@ -257,6 +257,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		}
 
 		channel_get(&c->chn_mgr, pd->channel_device,
+			    &info->channel.id,
 			    &info->channel.data,
 			    &info->channel.send,
 			    &info->channel.recv,

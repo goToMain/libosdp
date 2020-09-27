@@ -13,17 +13,11 @@ extern int (*test_state_update)(struct osdp_pd *);
 
 int test_fsm_resp = 0;
 
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-#define ID_OFFSET 6
-#else
-#define ID_OFFSET 5
-#endif
-
 int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
-	switch (buf[ID_OFFSET]) {
+	switch (buf[OSDP_CMD_ID_OFFSET]) {
 	case 0x60:
 		test_fsm_resp = 1;
 		break;
@@ -34,7 +28,7 @@ int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 		test_fsm_resp = 3;
 		break;
 	default:
-		printf(SUB_1 "invalid ID:0x%02x\n", buf[ID_OFFSET]);
+		printf(SUB_1 "invalid ID:0x%02x\n", buf[OSDP_CMD_ID_OFFSET]);
 	}
 	return len;
 }

@@ -808,9 +808,13 @@ static int pd_receve_packet(struct osdp_pd *pd)
 		 * A crude way of identifying and not printing poll messages
 		 * when CONFIG_OSDP_PACKET_TRACE is enabled. This is an early
 		 * print to catch errors so keeping it simple.
+		 * OSDP_CMD_ID_OFFSET + 2 is also checked as the CMD_ID can be
+		 * pushed back by 2 bytes if secure channel block is present in
+		 * header.
 		 */
-		if (pd->rx_buf_len > 8 &&
-		    pd->rx_buf[6] != CMD_POLL && pd->rx_buf[8] != CMD_POLL) {
+		if (pd->rx_buf_len > OSDP_CMD_ID_OFFSET + 2 &&
+		    pd->rx_buf[OSDP_CMD_ID_OFFSET] != CMD_POLL &&
+		    pd->rx_buf[OSDP_CMD_ID_OFFSET + 2] != CMD_POLL) {
 			osdp_dump("PD received", pd->rx_buf, pd->rx_buf_len);
 		}
 	}

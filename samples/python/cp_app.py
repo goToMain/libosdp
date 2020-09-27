@@ -87,10 +87,10 @@ def event_handler(address, event):
 # Print LibOSDP version and source info
 print("pyosdp", "Version:", osdp.get_version(),
                 "Info:", osdp.get_source_info())
+osdp.set_loglevel(6)
 
 cp = osdp.ControlPanel(pd_info, master_key=key)
 cp.set_event_callback(event_handler)
-cp.set_loglevel(6)
 
 count = 0  # loop counter
 PD_0 = 0   # PD offset number

@@ -6,6 +6,29 @@
 
 #include "pyosdp.h"
 
+#define pyosdp_set_loglevel_doc \
+	"Set OSDP logging level\n" \
+	"\n" \
+	"@param log_level OSDP log level (0 to 7)\n" \
+	"\n" \
+	"@return None"
+static PyObject *pyosdp_set_loglevel(pyosdp_t *self, PyObject *args)
+{
+	int log_level;
+
+	if (!PyArg_ParseTuple(args, "I", &log_level))
+		return NULL;
+
+	if (log_level <= 0 || log_level > 7) {
+		PyErr_SetString(PyExc_KeyError, "invalid log level");
+		return NULL;
+	}
+
+	osdp_set_log_level(log_level);
+
+	Py_RETURN_NONE;
+}
+
 PyObject *pyosdp_get_version(pyosdp_t *self, PyObject *args)
 {
 	const char *version;
@@ -44,6 +67,12 @@ static PyMethodDef osdp_funcs[] = {
 		(PyCFunction)pyosdp_get_source_info,
 		METH_NOARGS,
 		"Get LibOSDP source info string"
+	},
+	{
+		"set_loglevel",
+		(PyCFunction)pyosdp_set_loglevel,
+		METH_VARARGS,
+		pyosdp_set_loglevel_doc
 	},
 	{ NULL, NULL, 0, NULL } /* sentinel */
 };

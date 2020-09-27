@@ -101,29 +101,6 @@ static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-#define pyosdp_cp_set_loglevel_doc \
-	"Set OSDP logging level\n" \
-	"\n" \
-	"@param log_level OSDP log level (0 to 7)\n" \
-	"\n" \
-	"@return None"
-static PyObject *pyosdp_cp_set_loglevel(pyosdp_t *self, PyObject *args)
-{
-	int log_level;
-
-	if (!PyArg_ParseTuple(args, "I", &log_level))
-		return NULL;
-
-	if (log_level <= 0 || log_level > 7) {
-		PyErr_SetString(PyExc_KeyError, "invalid log level");
-		return NULL;
-	}
-
-	osdp_set_log_level(log_level);
-
-	Py_RETURN_NONE;
-}
-
 #define pyosdp_cp_refresh_doc \
 	"OSDP periodic refresh hook. Must be called at least once every 50ms\n" \
 	"\n" \
@@ -355,12 +332,6 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 		(PyCFunction)pyosdp_cp_send_command,
 		METH_VARARGS,
 		pyosdp_cp_send_command_doc
-	},
-	{
-		"set_loglevel",
-		(PyCFunction)pyosdp_cp_set_loglevel,
-		METH_VARARGS,
-		pyosdp_cp_set_loglevel_doc
 	},
 	{
 		"is_online",

@@ -69,10 +69,10 @@ def handle_command(command):
 # Print LibOSDP version and source info
 print("pyosdp", "Version:", osdp.get_version(),
                 "Info:", osdp.get_source_info())
+osdp.set_loglevel(6)
 
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap, scbk=load_scbk())
 pd.set_command_callback(handle_command)
-pd.set_loglevel(6)
 
 card_read_event = {
     "event": osdp.EVENT_CARDREAD,

@@ -114,11 +114,6 @@ void osdp_log(int log_level, const char *fmt, ...)
 	free(buf);
 }
 
-void osdp_dump(const char *head, uint8_t *buf, int len)
-{
-	hexdump(head, buf, len);
-}
-
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
 {
 	for (; len > 0; len--) {

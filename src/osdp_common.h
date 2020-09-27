@@ -159,6 +159,8 @@ union osdp_ephemeral_data {
 #define LOG_DBG(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
 #define LOG_PRINT(...)	(osdp_log(-1, __VA_ARGS__))
 
+#define osdp_dump(b, l, f, ...) hexdump(b, l, f, __VA_ARGS__)
+
 enum osdp_pd_nak_code_e {
 	/**
 	 * @brief Dummy
@@ -356,7 +358,6 @@ void osdp_sc_init(struct osdp_pd *p);
 /* from osdp_common.c */
 int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
-void osdp_dump(const char *head, uint8_t *buf, int len);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);

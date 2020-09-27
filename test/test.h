@@ -36,8 +36,8 @@
             printf ("error! invalid length %d\n", len);     \
         else if (l != sizeof(e) || memcmp(a, e, sizeof(e))) { \
             printf("error! comparison failed!\n");          \
-            osdp_dump("  Expected: ", e, sizeof(e));        \
-            osdp_dump("  Got", a, l);                       \
+            hexdump(e, sizeof(e), SUB_1 "Expected");        \
+            hexdump(a, l, SUB_1 "Found");                   \
             return -1;                                      \
         }                                                   \
     } while(0)

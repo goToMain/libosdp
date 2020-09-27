@@ -769,7 +769,8 @@ static int pd_send_reply(struct osdp_pd *pd)
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump("PD sent", pd->rx_buf, len);
+			osdp_dump(pd->rx_buf, pd->rx_buf_len,
+				  "OSDP: PD[%d]: Sent", pd->address);
 		}
 	}
 
@@ -815,7 +816,8 @@ static int pd_receve_packet(struct osdp_pd *pd)
 		if (pd->rx_buf_len > OSDP_CMD_ID_OFFSET + 2 &&
 		    pd->rx_buf[OSDP_CMD_ID_OFFSET] != CMD_POLL &&
 		    pd->rx_buf[OSDP_CMD_ID_OFFSET + 2] != CMD_POLL) {
-			osdp_dump("PD received", pd->rx_buf, pd->rx_buf_len);
+			osdp_dump(pd->rx_buf, pd->rx_buf_len,
+				  "OSDP: PD[%d]: Received", pd->address);
 		}
 	}
 

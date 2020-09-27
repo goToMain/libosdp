@@ -17,8 +17,6 @@
 #define INI_SUCCESS 1
 #define INI_FAILURE 0
 
-void osdp_dump(const char *head, const uint8_t *data, int len);
-
 int config_parse_key_mode(const char *val, void *data)
 {
 	struct config_s *p = data;

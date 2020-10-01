@@ -1,6 +1,6 @@
 # LibOSDP - Open Supervised Device Protocol Library
 
-[![Version][1]][2] [![Build CI][3]][4] [![Travis CI][5]][6] [![Codacy Badge][7]][8]
+[![Version][1]][2] [![Build CI][3]][4] ![CodeQL][9] [![Travis CI][5]][6] [![Codacy Badge][7]][8]
 
 This is an open source implementation of IEC 60839-11-5 Open Supervised Device
 Protocol (OSDP). The protocol is intended to improve interoperability among
@@ -68,7 +68,8 @@ commands and replies and their support status in LibOSDP [here][22].
 ## Dependencies
 
   * cmake3 (host)
-  * python3 (host)
+  * python3 (host, optional)
+  * OpenSSL (host and target, optional)
   * [goToMain/C-Utils][25] (host, submodule)
 
 ## Compile LibOSDP
@@ -129,6 +130,7 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [6]: https://travis-ci.org/goTomain/libosdp
 [7]: https://api.codacy.com/project/badge/Grade/7b6f389d4fbf46a692b64d3e82452af9
 [8]: https://app.codacy.com/manual/siddharth_6/libosdp?utm_source=github.com&utm_medium=referral&utm_content=cbsiddharth/libosdp&utm_campaign=Badge_Grade_Dashboard
+[9]: https://github.com/goToMain/libosdp/workflows/CodeQL/badge.svg?branch=master
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://libosdp.gotomain.io/protocol/

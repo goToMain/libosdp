@@ -150,6 +150,30 @@ static int pd_translate_event(struct osdp_event *event, uint8_t *data)
 	return reply_code;
 }
 
+static int pd_cmd_access_ok(struct osdp_pd *pd, int cmd_id)
+{
+	int outcome = 1;
+
+	if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE) &&
+	    !ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		/**
+		 * Only CMD_ID, CMD_CAP and SC handshake commands (CMD_CHLNG
+		 * and CMD_SCRYPT) are allowed when SC is inactive and
+		 * ENFORCE_SECURE was requested.
+		 */
+		if (cmd_id != CMD_ID && cmd_id != CMD_CAP &&
+		    cmd_id != CMD_CHLNG && cmd_id != CMD_SCRYPT) {
+			outcome = 0;
+		}
+	}
+
+	/**
+	 * TODO: Validate the cmd_id against a PD capabilities where applicable
+	 */
+
+	return outcome;
+}
+
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = -1, pos = 0, tmp;
@@ -159,6 +183,14 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	pd->reply_id = 0;
 	pd->cmd_id = buf[pos++];
 	len--;
+
+	if (!pd_cmd_access_ok(pd, pd->cmd_id)) {
+		LOG_ERR("Command 0x%02x not allowed due to ENFORCE_SECURE",
+			pd->cmd_id);
+		pd->reply_id = REPLY_NAK;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+		return;
+	}
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:

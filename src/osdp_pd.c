@@ -53,7 +53,7 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 	{
 		OSDP_PD_CAP_COMMUNICATION_SECURITY,
 		1, /* (Bit-0) AES128 support */
-		1, /* (Bit-0) default AES128 key */
+		0, /* N/A */
 	},
 	{ -1, 0, 0 } /* Sentinel */
 };
@@ -150,28 +150,61 @@ static int pd_translate_event(struct osdp_event *event, uint8_t *data)
 	return reply_code;
 }
 
-static int pd_cmd_access_ok(struct osdp_pd *pd, int cmd_id)
+static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
-	int outcome = 1;
+	struct osdp_pd_cap *cap = NULL;
 
-	if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE) &&
-	    !ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-		/**
-		 * Only CMD_ID, CMD_CAP and SC handshake commands (CMD_CHLNG
-		 * and CMD_SCRYPT) are allowed when SC is inactive and
-		 * ENFORCE_SECURE was requested.
-		 */
-		if (cmd_id != CMD_ID && cmd_id != CMD_CAP &&
-		    cmd_id != CMD_CHLNG && cmd_id != CMD_SCRYPT) {
-			outcome = 0;
+	/* Validate the cmd_id against a PD capabilities where applicable */
+	switch (pd->cmd_id) {
+	case CMD_ISTAT:
+		cap = &pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
 		}
+		return 0; /* Remove this when REPLY_ISTATR is supported */
+	case CMD_OSTAT:
+		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 0; /* Remove this when REPLY_OSTATR is supported */
+	case CMD_OUT:
+		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
+		if (cmd->output.output_no + 1 > cap->num_items) {
+			LOG_DBG("CAP check: output_no(%d) > cap->num_items(%d)",
+				cmd->output.output_no + 1, cap->num_items);
+			break;
+		}
+		if (cap->compliance_level == 0) {
+			break;
+		}
+		return 1;
+	case CMD_LED:
+		cap = &pd->cap[OSDP_PD_CAP_READER_LED_CONTROL];
+		if (cmd->led.led_number + 1 > cap->num_items) {
+			LOG_DBG("CAP check: LED(%d) > cap->num_items(%d)",
+				cmd->led.led_number + 1, cap->num_items);
+			break;
+		}
+		if (cap->compliance_level == 0) {
+			break;
+		}
+		return 1;
+	case CMD_BUZ:
+		cap = &pd->cap[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 1;
+	case CMD_TEXT:
+		cap = &pd->cap[OSDP_PD_CAP_READER_TEXT_OUTPUT];
+		if (cap->num_items == 0 || cap->compliance_level == 0) {
+			break;
+		}
+		return 1;
 	}
 
-	/**
-	 * TODO: Validate the cmd_id against a PD capabilities where applicable
-	 */
-
-	return outcome;
+	return 0;
 }
 
 static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
@@ -184,13 +217,33 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	pd->cmd_id = buf[pos++];
 	len--;
 
-	if (!pd_cmd_access_ok(pd, pd->cmd_id)) {
-		LOG_ERR("Command 0x%02x not allowed due to ENFORCE_SECURE",
-			pd->cmd_id);
-		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
-		return;
+	if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE) &&
+	    !ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		/**
+		 * Only CMD_ID, CMD_CAP and SC handshake commands (CMD_CHLNG
+		 * and CMD_SCRYPT) are allowed when SC is inactive and
+		 * ENFORCE_SECURE was requested.
+		 */
+		if (pd->cmd_id != CMD_ID    && pd->cmd_id != CMD_CAP &&
+		    pd->cmd_id != CMD_CHLNG && pd->cmd_id != CMD_SCRYPT) {
+			LOG_ERR("Command %02x not allowed due to "
+				"ENFORCE_SECURE", pd->cmd_id);
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+			return;
+		}
 	}
+
+	/* helper macro, can be called from switch cases below */
+	#define PD_CMD_CAP_CHECK(pd, cmd)                                    \
+		if (!pd_cmd_cap_ok(pd, cmd)) {                               \
+			LOG_INF("PD is not capable of handling CMD %02x; "   \
+				"Reply with NAK_CMD_UNKNOWN", pd->cmd_id);   \
+			pd->reply_id = REPLY_NAK;                            \
+			pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;     \
+			ret = 0;                                             \
+			break;                                               \
+		}
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
@@ -218,6 +271,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_ISTAT_DATA_LEN) {
 			break;
 		}
+		PD_CMD_CAP_CHECK(pd, NULL);
 		pd->reply_id = REPLY_ISTATR;
 		ret = 0;
 		break;
@@ -225,6 +279,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_OSTAT_DATA_LEN) {
 			break;
 		}
+		PD_CMD_CAP_CHECK(pd, NULL);
 		pd->reply_id = REPLY_OSTATR;
 		ret = 0;
 		break;
@@ -260,6 +315,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.output.control_code = buf[pos++];
 		cmd.output.timer_count  = buf[pos++];
 		cmd.output.timer_count |= buf[pos++] << 8;
+		PD_CMD_CAP_CHECK(pd, &cmd);
 		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -291,6 +347,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.led.permanent.off_count    = buf[pos++];
 		cmd.led.permanent.on_color     = buf[pos++];
 		cmd.led.permanent.off_color    = buf[pos++];
+		PD_CMD_CAP_CHECK(pd, &cmd);
 		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -311,6 +368,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.buzzer.on_count     = buf[pos++];
 		cmd.buzzer.off_count    = buf[pos++];
 		cmd.buzzer.rep_count    = buf[pos++];
+		PD_CMD_CAP_CHECK(pd, &cmd);
 		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -340,6 +398,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd.text.length; i++) {
 			cmd.text.data[i] = buf[pos++];
 		}
+		PD_CMD_CAP_CHECK(pd, &cmd);
 		ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -482,7 +541,7 @@ static void pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = 0;
 		break;
 	default:
-		LOG_ERR("Unknown command ID 0x%02x", pd->cmd_id);
+		LOG_ERR("Unknown command ID %02x", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
 		ret = 0;

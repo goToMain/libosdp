@@ -179,11 +179,11 @@ enum osdp_pd_nak_code_e {
 	 */
 	OSDP_PD_NAK_CMD_UNKNOWN,
 	/**
-	 * @brief Unexpected sequence number detected in the header
+	 * @brief This PD does not support the security block that was received
 	 */
 	OSDP_PD_NAK_SEQ_NUM,
 	/**
-	 * @brief Unexpected sequence number detected in the header
+	 * @brief Secure Channel is not supported by PD
 	 */
 	OSDP_PD_NAK_SC_UNSUP,
 	/**

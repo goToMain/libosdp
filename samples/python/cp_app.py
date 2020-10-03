@@ -37,7 +37,7 @@ text_cmd = {
 led_cmd = {
     "command": osdp.CMD_LED,
     "reader": 1,
-    "led_number": 1,
+    "led_number": 0,
     "control_code": 1,
     "on_count": 10,
     "off_count": 10,

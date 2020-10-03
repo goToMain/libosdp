@@ -30,6 +30,21 @@ pd_cap = [
         "compliance_level": 1,
         "num_items": 1
     },
+    {
+        "function_code": osdp.CAP_READER_LED_CONTROL,
+        "compliance_level": 1,
+        "num_items": 1
+    },
+    {
+        "function_code": osdp.CAP_READER_AUDIBLE_OUTPUT,
+        "compliance_level": 1,
+        "num_items": 1
+    },
+    {
+        "function_code": osdp.CAP_READER_TEXT_OUTPUT,
+        "compliance_level": 1,
+        "num_items": 1
+    },
 ]
 
 keystore_file = "/tmp/pd_scbk"

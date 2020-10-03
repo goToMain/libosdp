@@ -411,7 +411,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_NAK_DATA_LEN) {
 			break;
 		}
-		LOG_ERR("PD replied with NAK code %d", buf[pos]);
+		LOG_ERR("PD replied with NAK(%d) for command %02x",
+			buf[pos], pd->cmd_id);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_PDID:
@@ -609,7 +610,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	default:
-		LOG_DBG("unexpected reply: 0x%02x", pd->reply_id);
+		LOG_DBG("unexpected reply: %02x", pd->reply_id);
 		return OSDP_CP_ERR_GENERIC;
 	}
 

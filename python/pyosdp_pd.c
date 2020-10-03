@@ -153,7 +153,9 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 	int i, cap_list_size, function_code, compliance_level, num_items;
 
 	cap_list_size = (int)PyList_Size(obj);
-	if (cap_list_size == 0 || cap_list_size >= OSDP_PD_CAP_SENTINEL) {
+	if (cap_list_size == 0)
+		return 0;
+	if (cap_list_size >= OSDP_PD_CAP_SENTINEL) {
 		PyErr_SetString(PyExc_ValueError, "Invalid cap list size");
 		return -1;
 	}
@@ -209,6 +211,8 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 
 	srand(time(NULL));
 
+	info.cap = NULL;
+
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!y*", kwlist,
 					 &PyDict_Type, &py_info,
 					 &PyList_Type, &py_pd_cap_list,
@@ -253,9 +257,6 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	if (pyosdp_dict_get_int(py_info, "serial_number", (int *)&info.id.serial_number))
 		goto error;
 
-	info.flags = 0;
-	info.cap = NULL;
-
 	channel_type = channel_guess_type(channel_type_str);
 	if (channel_type == CHANNEL_TYPE_ERR) {
 		PyErr_SetString(PyExc_ValueError, "unable to guess channel type");
@@ -281,10 +282,12 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	self->ctx = ctx;
 	safe_free(channel_type_str);
 	safe_free(device);
+	safe_free(info.cap);
 	return 0;
 error:
 	safe_free(channel_type_str);
 	safe_free(device);
+	safe_free(info.cap);
 	return -1;
 }
 

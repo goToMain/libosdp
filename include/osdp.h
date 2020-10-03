@@ -658,6 +658,15 @@ void osdp_pd_refresh(osdp_t *ctx);
 void osdp_pd_teardown(osdp_t *ctx);
 
 /**
+ * @brief Set PD's capabilities
+ *
+ * @param ctx OSDP context
+ * @param cap pointer to array of cap (`struct osdp_pd_cap`) terminated by a
+ *        capability with cap->function_code set to 0.
+ */
+void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
+
+/**
  * @brief Set callback method for PD command notification. This callback is
  * invoked when the PD receives a command from the CP. This function must
  * return:

@@ -679,7 +679,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = (uint8_t)event->cardread.reader_no;
 		buf[len++] = (uint8_t)event->cardread.format;
 		buf[len++] = BYTE_0(event->cardread.length);
-		buf[len++] = BYTE_1(event->cardread.reader_no);
+		buf[len++] = BYTE_1(event->cardread.length);
 		for (i = 0; i < t1; i++) {
 			buf[len++] = event->cardread.data[i];
 		}

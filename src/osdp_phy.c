@@ -287,7 +287,6 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR(TAG "invalid pd address %d", pd_addr);
 			return OSDP_ERR_PKT_FMT;
 		}
-		LOG_DBG(TAG "cmd for PD[%d] discarded", pd_addr);
 		return OSDP_ERR_PKT_SKIP;
 	}
 
@@ -394,7 +393,8 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		osdp_compute_mac(pd, is_cmd, buf, mac_offset);
 		mac = is_cmd ? pd->sc.c_mac : pd->sc.r_mac;
 		if (memcmp(buf + mac_offset, mac, 4) != 0) {
-			LOG_ERR(TAG "invalid MAC");
+			LOG_ERR(TAG "invalid MAC; discarding SC");
+			CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_FMT;
@@ -415,7 +415,8 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			 */
 			len = osdp_decrypt_data(pd, is_cmd, data + 1, len - 1);
 			if (len <= 0) {
-				LOG_ERR(TAG "failed at decrypt");
+				LOG_ERR(TAG "failed at decrypt; discarding SC");
+				CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 				pd->reply_id = REPLY_NAK;
 				pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 				return OSDP_ERR_PKT_FMT;

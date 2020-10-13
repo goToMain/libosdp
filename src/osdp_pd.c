@@ -926,9 +926,6 @@ static int pd_receve_packet(struct osdp_pd *pd)
 	} else if (ret == OSDP_ERR_PKT_SKIP) {
 		/* soft fail - discard this message */
 		pd->rx_buf_len = 0;
-		if (pd->channel.flush) {
-			pd->channel.flush(pd->channel.data);
-		}
 		return 1;
 	}
 	pd->rx_buf_len = ret;

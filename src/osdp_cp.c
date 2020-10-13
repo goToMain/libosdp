@@ -693,9 +693,6 @@ static int cp_process_reply(struct osdp_pd *pd)
 	} else if (ret == OSDP_ERR_PKT_SKIP) {
 		/* soft fail - discard this message */
 		pd->rx_buf_len = 0;
-		if (pd->channel.flush) {
-			pd->channel.flush(pd->channel.data);
-		}
 		return OSDP_CP_ERR_NO_DATA;
 	}
 	pd->rx_buf_len = ret;

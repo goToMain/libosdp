@@ -4,8 +4,8 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-find_package(PythonInterp 3.6 REQUIRED)
-find_package(PythonLibs   3.6 REQUIRED)
+find_package(PythonInterp 3 REQUIRED)
+find_package(PythonLibs   3 REQUIRED)
 
 set(OSDP_PYTHON_PACKAGE_NAME osdp)
 set(OSDP_PYTHON_PACKAGE_VERSION ${PROJECT_VERSION})

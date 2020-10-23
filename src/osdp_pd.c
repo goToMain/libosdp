@@ -856,6 +856,11 @@ static int pd_send_reply(struct osdp_pd *pd)
 		return -1;
 	}
 
+	/* flush rx to remove any invalid data. */
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
+
 	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {

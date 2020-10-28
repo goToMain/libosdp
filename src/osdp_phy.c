@@ -335,8 +335,9 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		mac_offset = pkt_len - 4 - 2;
 		len -= 2; /* consume CRC */
 	} else {
+		cur = buf[pkt_len - 1];
 		comp = osdp_compute_checksum(buf, pkt_len - 1);
-		if (comp != buf[len - 1]) {
+		if (comp != cur) {
 			LOG_ERR(TAG "invalid checksum %02x/%02x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;

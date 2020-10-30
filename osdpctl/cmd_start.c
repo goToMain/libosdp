@@ -177,18 +177,30 @@ void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 
 	switch(p->id) {
 	case OSDPCTL_CP_CMD_LED:
+		p->cmd.id = OSDP_CMD_LED;
+		break;
 	case OSDPCTL_CP_CMD_BUZZER:
+		p->cmd.id = OSDP_CMD_BUZZER;
+		break;
 	case OSDPCTL_CP_CMD_TEXT:
+		p->cmd.id = OSDP_CMD_TEXT;
+		break;
 	case OSDPCTL_CP_CMD_OUTPUT:
+		p->cmd.id = OSDP_CMD_OUTPUT;
+		break;
 	case OSDPCTL_CP_CMD_KEYSET:
+		p->cmd.id = OSDP_CMD_KEYSET;
+		break;
 	case OSDPCTL_CP_CMD_COMSET:
-		osdp_cp_send_command(c->cp_ctx, p->offset, &p->cmd);
+		p->cmd.id = OSDP_CMD_COMSET;
 		break;
 	case OSDPCTL_CMD_STATUS:
 		printf("SC Status: 0x%08x\n", osdp_get_sc_status_mask(c->cp_ctx));
 		printf("   Status: 0x%08x\n", osdp_get_status_mask(c->cp_ctx));
-		break;
+		return;
 	}
+
+	osdp_cp_send_command(c->cp_ctx, p->offset, &p->cmd);
 }
 
 int process_commands(struct config_s *c)

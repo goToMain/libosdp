@@ -289,7 +289,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			printf("Failed to setup PD context\n");
 			return -1;
 		}
-		osdp_pd_set_command_callback(c->cp_ctx, pd_command_handler, NULL);
+		osdp_pd_set_command_callback(c->pd_ctx, pd_command_handler, NULL);
 	}
 
 	free(info_arr);

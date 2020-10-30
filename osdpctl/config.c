@@ -214,7 +214,7 @@ int config_parse_key_address(const char *val, void *data)
 	if (safe_atoi(val, &addr))
 		return INI_FAILURE;
 
-	if (addr == 0 || addr > 127)
+	if (addr < 0 || addr > 127)
 		return INI_FAILURE;
 	p->address = addr;
 

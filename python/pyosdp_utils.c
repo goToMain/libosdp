@@ -42,7 +42,7 @@ int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data, 
 		return -1;
 	ret = PyDict_SetItemString(dict, key, obj);
 	Py_DECREF(obj);
-	return 0;
+	return ret;
 }
 
 int pyosdp_module_add_type(PyObject *module, const char *name,

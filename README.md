@@ -72,6 +72,12 @@ commands and replies and their support status in LibOSDP [here][22].
   * OpenSSL (host and target, optional)
   * [goToMain/C-Utils][25] (host, submodule)
 
+### For ubuntu
+
+```sh
+sudo apt install cmake python3-dev libssl-dev
+```
+
 ## Compile LibOSDP
 
 To build libosdp you must have cmake-3.0 (or above) and a C compiler installed.
@@ -85,6 +91,7 @@ that are exposed by libosdp.
 
 ```sh
 git clone https://github.com/goToMain/libosdp --recurse-submodules
+# git submodule update --init (if you missed doing --recurse-submodules earlier)
 cd libosdp
 mkdir build && cd build
 cmake ..

@@ -236,11 +236,11 @@ out_of_space_error:
 	return OSDP_ERR_PKT_FMT;
 }
 
-int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
+int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
+			  int *one_pkt_len)
 {
-	uint8_t *data, *mac, *buf_start = buf;
 	uint16_t comp, cur;
-	int pkt_len, pd_mode, pd_addr, mac_offset, is_cmd;
+	int pd_addr, pkt_len, mark_byte_len = 0;
 	struct osdp_packet_header *pkt;
 
 	/* wait till we have the header */
@@ -254,9 +254,9 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_ERR(TAG "Invalid MARK 0x%02x", buf[0]);
 		return OSDP_ERR_PKT_FMT;
 	}
-	/* Consume mark byte */
 	buf += 1;
 	len -= 1;
+	mark_byte_len = 1;
 #endif
 
 	pkt = (struct osdp_packet_header *)buf;
@@ -266,61 +266,19 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_ERR(TAG "Invalid SOM 0x%02x", pkt->som);
 		return OSDP_ERR_PKT_FMT;
 	}
-	pd_mode = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
-	if (!pd_mode && !(pkt->pd_address & 0x80)) {
+	if (!ISSET_FLAG(pd, PD_FLAG_PD_MODE) && !(pkt->pd_address & 0x80)) {
 		LOG_ERR(TAG "reply without MSB set 0x%02x", pkt->pd_address);
 		return OSDP_ERR_PKT_FMT;
 	}
 
 	/* validate packet length */
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-	if (pkt_len != len) {
+	if (len < pkt_len) {
 		/* wait for more data? */
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-	/* validate PD address */
-	pd_addr = pkt->pd_address & 0x7F;
-	if (pd_addr != pd->address && pd_addr != 0x7F) {
-		/* not addressed to us and was not broadcasted */
-		if (!pd_mode) {
-			LOG_ERR(TAG "invalid pd address %d", pd_addr);
-			return OSDP_ERR_PKT_FMT;
-		}
-		return OSDP_ERR_PKT_SKIP;
-	}
-
-	/* validate sequence number */
-	cur = pkt->control & PKT_CONTROL_SQN;
-	if (pd_mode && cur == 0) {
-		/**
-		 * CP is trying to restart communication by sending a 0. The
-		 * current PD implementation does not hold any state between
-		 * commands so we can just set seq_number to -1 (so it gets
-		 * incremented to 0 with a call to phy_get_seq_number()) and
-		 * invalidate any established secure channels.
-		 */
-		pd->seq_number = -1;
-		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
-	}
-	if (pd_mode && cur == pd->seq_number) {
-		/**
-		 * TODO: PD must resend the last response if CP send the same
-		 * sequence number again.
-		 */
-		LOG_ERR(TAG "seq-repeat reply-resend feature not supported!");
-		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
-		return OSDP_ERR_PKT_FMT;
-	}
-	comp = osdp_phy_get_seq_number(pd, pd_mode);
-	if (comp != cur && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
-		LOG_ERR(TAG "packet seq mismatch %d/%d", comp, cur);
-		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
-		return OSDP_ERR_PKT_FMT;
-	}
-	len -= sizeof(struct osdp_packet_header); /* consume header */
+	*one_pkt_len = pkt_len + mark_byte_len;
 
 	/* validate CRC/checksum */
 	if (pkt->control & PKT_CONTROL_CRC) {
@@ -330,10 +288,8 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR(TAG "invalid crc 0x%04x/0x%04x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
-			return OSDP_ERR_PKT_FMT;
+			return OSDP_ERR_PKT_CHECK;
 		}
-		mac_offset = pkt_len - 4 - 2;
-		len -= 2; /* consume CRC */
 	} else {
 		cur = buf[pkt_len - 1];
 		comp = osdp_compute_checksum(buf, pkt_len - 1);
@@ -341,16 +297,80 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR(TAG "invalid checksum %02x/%02x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
+			return OSDP_ERR_PKT_CHECK;
+		}
+	}
+	
+	/* validate PD address */
+	pd_addr = pkt->pd_address & 0x7F;
+	if (pd_addr != pd->address && pd_addr != 0x7F) {
+		/* not addressed to us and was not broadcasted */
+		if (!ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+			LOG_ERR(TAG "invalid pd address %d", pd_addr);
 			return OSDP_ERR_PKT_FMT;
 		}
-		mac_offset = pkt_len - 4 - 1;
-		len -= 1; /* consume checksum */
+		return OSDP_ERR_PKT_SKIP;
 	}
 
+	/* validate sequence number */
+	comp = pkt->control & PKT_CONTROL_SQN;
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+		if (comp == 0) {
+			/**
+			* CP is trying to restart communication by sending a 0.
+			* The current PD implementation does not hold any state
+			* between commands so we can just set seq_number to -1
+			* (so it gets incremented to 0 with a call to
+			* phy_get_seq_number()) and invalidate any established
+			* secure channels.
+			*/
+			pd->seq_number = -1;
+			CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		}
+		if (comp == pd->seq_number) {
+			/**
+			* TODO: PD must resend the last response if CP send the
+			* same sequence number again.
+			*/
+			LOG_ERR(TAG "seq-repeat reply-resend not supported!");
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
+			return OSDP_ERR_PKT_FMT;
+		}
+	}
+	cur = osdp_phy_get_seq_number(pd, ISSET_FLAG(pd, PD_FLAG_PD_MODE));
+	if (cur != comp && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
+		LOG_ERR(TAG "packet seq mismatch %d/%d", cur, comp);
+		pd->reply_id = REPLY_NAK;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
+		return OSDP_ERR_PKT_FMT;
+	}
+
+	return OSDP_ERR_PKT_NONE;
+}
+
+int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
+			   uint8_t **pkt_start)
+{
+	uint8_t *data, *mac;
+	int mac_offset, is_cmd;
+	struct osdp_packet_header *pkt;
+
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+	/* Consume mark byte */
+	buf += 1;
+	len -= 1;
+#endif
+
+	pkt = (struct osdp_packet_header *)buf;
+	len -= pkt->control & PKT_CONTROL_CRC ? 2 : 1;
+	mac_offset = len - 4;
 	data = pkt->data;
+	len -= sizeof(struct osdp_packet_header);
 
 	if (pkt->control & PKT_CONTROL_SCB) {
-		if (pd_mode && !ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
+		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) &&
+		    !ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
 			LOG_ERR(TAG "PD is not SC capable");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
@@ -426,7 +446,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 	}
 
-	memmove(buf_start, data, len);
+	*pkt_start = data;
 	return len;
 }
 

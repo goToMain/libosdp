@@ -616,7 +616,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	if (ret == OSDP_CP_ERR_GENERIC) {
 		LOG_ERR("REPLY %02x for CMD %02x format error!",
-			pd->cmd_id, pd->reply_id);
+			pd->reply_id, pd->cmd_id);
 		return OSDP_CP_ERR_GENERIC;
 	}
 
@@ -670,16 +670,16 @@ static int cp_send_command(struct osdp_pd *pd)
 static int cp_process_reply(struct osdp_pd *pd)
 {
 	uint8_t *buf;
-	int rec_bytes, ret, max_len;
+	int err, len, remaining;
 
 	buf = pd->rx_buf + pd->rx_buf_len;
-	max_len = sizeof(pd->rx_buf) - pd->rx_buf_len;
+	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
 
-	rec_bytes = pd->channel.recv(pd->channel.data, buf, max_len);
-	if (rec_bytes <= 0) {	/* No data received */
+	len = pd->channel.recv(pd->channel.data, buf, remaining);
+	if (len <= 0) {	/* No data received */
 		return OSDP_CP_ERR_NO_DATA;
 	}
-	pd->rx_buf_len += rec_bytes;
+	pd->rx_buf_len += len;
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
@@ -688,21 +688,28 @@ static int cp_process_reply(struct osdp_pd *pd)
 		}
 	}
 
-	/* Valid OSDP packet in buffer */
-	ret = osdp_phy_decode_packet(pd, pd->rx_buf, pd->rx_buf_len);
-	if (ret == OSDP_ERR_PKT_FMT) {
-		return OSDP_CP_ERR_GENERIC;
-	} else if (ret == OSDP_ERR_PKT_WAIT) {
-		/* rx_buf_len != pkt->len; wait for more data */
-		return OSDP_CP_ERR_NO_DATA;
-	} else if (ret == OSDP_ERR_PKT_SKIP) {
-		/* soft fail - discard this message */
-		pd->rx_buf_len = 0;
+	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, &len);
+	if (err == OSDP_ERR_PKT_WAIT) {
+		/* rx_buf_len < pkt->len; wait for more data */
 		return OSDP_CP_ERR_NO_DATA;
 	}
-	pd->rx_buf_len = ret;
+	if (err == OSDP_ERR_PKT_NONE) {
+		/* Valid OSDP packet in buffer */
+		len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);
+		if (len <= 0) {
+			return OSDP_CP_ERR_GENERIC;
+		}
+		err = cp_decode_response(pd, buf, len);
+	}
 
-	return cp_decode_response(pd, pd->rx_buf, pd->rx_buf_len);
+	/* We are done with the packet (error or not). Remove processed bytes */
+	remaining = pd->rx_buf_len - len;
+	if (remaining) {
+		memmove(pd->rx_buf, pd->rx_buf + len, remaining);
+		pd->rx_buf_len = remaining;
+	}
+
+	return err;
 }
 
 static void cp_flush_command_queue(struct osdp_pd *pd)

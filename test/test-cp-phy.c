@@ -76,7 +76,8 @@ int test_cp_build_packet_id(struct osdp *ctx)
 
 int test_phy_decode_packet_ack(struct osdp *ctx)
 {
-	int len;
+	uint8_t *buf;
+	int len, err;
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[] = {
 #ifndef CONFIG_OSDP_SKIP_MARK_BYTE
@@ -87,11 +88,16 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 	uint8_t expected[] = { REPLY_ACK };
 
 	printf("Testing phy_decode_packet(REPLY_ACK) -- ");
-	if ((len = osdp_phy_decode_packet(p, packet, sizeof(packet))) < 0) {
+	err = osdp_phy_check_packet(p, packet, sizeof(packet), &len);
+	if (err) {
 		printf("failed!\n");
 		return -1;
 	}
-	CHECK_ARRAY(packet, len, expected);
+	if ((len = osdp_phy_decode_packet(p, packet, len, &buf)) < 0) {
+		printf("failed!\n");
+		return -1;
+	}
+	CHECK_ARRAY(buf, len, expected);
 	printf("success!\n");
 	return 0;
 }

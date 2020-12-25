@@ -937,6 +937,7 @@ static int state_update(struct osdp_pd *pd)
 			} else {
 				LOG_ERR("CHLNG failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
+				osdp_phy_state_reset(pd);
 				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 			}
 			break;
@@ -949,6 +950,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		if (pd->reply_id != REPLY_RMAC_I) {
 			LOG_ERR("SCRYPT failed. Online without SC");
+			osdp_phy_state_reset(pd);
 			pd->sc_tstamp = osdp_millis_now();
 			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 			break;

@@ -17,7 +17,7 @@
 #include "osdp_common.h"
 
 #define LOG_CTX_GLOBAL -153
-
+#define LOG_TAG "COM: "
 #ifndef PROJECT_VERSION
 #define PROJECT_VERSION "0.0.0"
 #endif

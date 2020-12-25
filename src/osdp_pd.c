@@ -10,6 +10,8 @@
 
 #include "osdp_common.h"
 
+#define LOG_TAG "PD : "
+
 #define CMD_POLL_DATA_LEN              0
 #define CMD_LSTAT_DATA_LEN             0
 #define CMD_ISTAT_DATA_LEN             0

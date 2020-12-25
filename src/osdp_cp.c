@@ -10,6 +10,8 @@
 
 #include "osdp_common.h"
 
+#define LOG_TAG "CP : "
+
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
 #define CMD_ISTAT_LEN                  1

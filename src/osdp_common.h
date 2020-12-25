@@ -149,15 +149,15 @@ union osdp_ephemeral_data {
 #define PD_FLAG_CHN_SHARED      0x00000400 /* PD's channel is shared */
 
 /* logging short hands */
-#define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
-#define LOG_ALERT(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
-#define LOG_CRIT(...)	(osdp_log(LOG_CRIT, __VA_ARGS__))
-#define LOG_ERR(...)	(osdp_log(LOG_ERROR, __VA_ARGS__))
-#define LOG_INF(...)	(osdp_log(LOG_INFO, __VA_ARGS__))
-#define LOG_WRN(...)	(osdp_log(LOG_WARNING, __VA_ARGS__))
-#define LOG_NOT(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
-#define LOG_DBG(...)	(osdp_log(LOG_DEBUG, __VA_ARGS__))
-#define LOG_PRINT(...)	(osdp_log(-1, __VA_ARGS__))
+#define LOG_EM(...)	(osdp_log(LOG_EMERG,  LOG_TAG __VA_ARGS__))
+#define LOG_ALERT(...)	(osdp_log(LOG_ALERT,  LOG_TAG __VA_ARGS__))
+#define LOG_CRIT(...)	(osdp_log(LOG_CRIT,   LOG_TAG __VA_ARGS__))
+#define LOG_ERR(...)	(osdp_log(LOG_ERROR,  LOG_TAG __VA_ARGS__))
+#define LOG_INF(...)	(osdp_log(LOG_INFO,   LOG_TAG __VA_ARGS__))
+#define LOG_WRN(...)	(osdp_log(LOG_WARNING,LOG_TAG __VA_ARGS__))
+#define LOG_NOT(...)	(osdp_log(LOG_NOTICE, LOG_TAG __VA_ARGS__))
+#define LOG_DBG(...)	(osdp_log(LOG_DEBUG,  LOG_TAG __VA_ARGS__))
+#define LOG_PRINT(...)	(osdp_log(-1,         LOG_TAG __VA_ARGS__))
 
 #define osdp_dump(b, l, f, ...) hexdump(b, l, f, __VA_ARGS__)
 

@@ -933,7 +933,6 @@ static int state_update(struct osdp_pd *pd)
 				LOG_ERR("CHLNG failed. Set PD offline due to "
 				        "ENFORCE_SECURE");
 				cp_set_offline(pd);
-				break;
 			} else {
 				LOG_ERR("CHLNG failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
@@ -949,10 +948,16 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_RMAC_I) {
-			LOG_ERR("SCRYPT failed. Online without SC");
-			osdp_phy_state_reset(pd);
-			pd->sc_tstamp = osdp_millis_now();
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+				LOG_ERR("SCRYPT failed. Set PD offline due to "
+				        "ENFORCE_SECURE");
+				cp_set_offline(pd);
+			} else {
+				LOG_ERR("SCRYPT failed. Online without SC");
+				osdp_phy_state_reset(pd);
+				pd->sc_tstamp = osdp_millis_now();
+				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			}
 			break;
 		}
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
@@ -969,8 +974,15 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id == REPLY_NAK) {
-			LOG_WRN("Failed to set SCBK; continue with SCBK-D");
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+				LOG_ERR("Failed to set SCBK; "
+					"Set PD offline due to ENFORCE_SECURE");
+				cp_set_offline(pd);
+			} else {
+				LOG_WRN("Failed to set SCBK; "
+					"Continue with SCBK-D");
+				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			}
 			break;
 		}
 		LOG_INF("SCBK set; restarting SC to verify new SCBK");

@@ -26,6 +26,10 @@ distclean:
 install: default
 	@$(MAKE) -C build install
 
+.PHONY: check
+check: build
+	@$(MAKE) -C build check
+
 build:
 	@mkdir -p build
 	@cd build && cmake ..

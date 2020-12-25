@@ -152,7 +152,7 @@ union osdp_ephemeral_data {
 #define LOG_EM(...)	(osdp_log(LOG_EMERG, __VA_ARGS__))
 #define LOG_ALERT(...)	(osdp_log(LOG_ALERT, __VA_ARGS__))
 #define LOG_CRIT(...)	(osdp_log(LOG_CRIT, __VA_ARGS__))
-#define LOG_ERR(...)	(osdp_log(LOG_ERR, __VA_ARGS__))
+#define LOG_ERR(...)	(osdp_log(LOG_ERROR, __VA_ARGS__))
 #define LOG_INF(...)	(osdp_log(LOG_INFO, __VA_ARGS__))
 #define LOG_WRN(...)	(osdp_log(LOG_WARNING, __VA_ARGS__))
 #define LOG_NOT(...)	(osdp_log(LOG_NOTICE, __VA_ARGS__))
@@ -325,7 +325,7 @@ enum log_levels_e {
 	LOG_EMERG,
 	LOG_ALERT,
 	LOG_CRIT,
-	LOG_ERR,
+	LOG_ERROR,
 	LOG_WARNING,
 	LOG_NOTICE,
 	LOG_INFO,

@@ -114,7 +114,7 @@ int test_cp_phy_setup(struct test *t)
 		return -1;
 	}
 	SET_CURRENT_PD(ctx, 0);
-	osdp_set_log_level(LOG_INFO);
+	osdp_set_log_level(t->loglevel);
 	t->mock_data = (void *)ctx;
 	return 0;
 }

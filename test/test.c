@@ -23,6 +23,7 @@ void test_start(struct test *t)
 	t->tests = 0;
 	t->success = 0;
 	t->failure = 0;
+	t->loglevel = LOG_INFO;
 }
 
 int test_end(struct test *t)

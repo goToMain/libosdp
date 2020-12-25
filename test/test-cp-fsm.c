@@ -92,7 +92,7 @@ int test_cp_fsm_setup(struct test *t)
 		printf("   init failed!\n");
 		return -1;
 	}
-	osdp_set_log_level(LOG_INFO);
+	osdp_set_log_level(t->loglevel);
 	SET_CURRENT_PD(ctx, 0);
 	SET_FLAG(GET_CURRENT_PD(ctx), PD_FLAG_SKIP_SEQ_CHECK);
 	t->mock_data = (void *)ctx;

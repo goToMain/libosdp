@@ -129,7 +129,7 @@ int test_mixed_fsm_setup(struct test *t)
 		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
 		return -1;
 	}
-	osdp_set_log_level(LOG_INFO);
+	osdp_set_log_level(t->loglevel);
 	t->mock_data = (void *)&test_data;
 	return 0;
 }

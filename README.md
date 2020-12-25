@@ -69,13 +69,14 @@ commands and replies and their support status in LibOSDP [here][22].
 
   * cmake3 (host)
   * python3 (host, optional)
-  * OpenSSL (host and target, optional)
+  * python3-pip (host, optional)
+  * OpenSSL (host and target, optional - recommended)
   * [goToMain/C-Utils][25] (host, submodule)
 
 ### For ubuntu
 
 ```sh
-sudo apt install cmake python3-dev libssl-dev
+sudo apt install cmake python3 python3-pip python3-dev libssl-dev
 ```
 
 ## Compile LibOSDP

@@ -93,4 +93,3 @@ of the protocol support only the most common among them. You can see a
 
    changelog
    license
-   todo

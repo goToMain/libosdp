@@ -1095,6 +1095,9 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 			SET_FLAG(TO_PD(ctx, owner), PD_FLAG_CHN_SHARED);
 			SET_FLAG(pd, PD_FLAG_CHN_SHARED);
 		}
+		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
+			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
+		}
 	}
 	memset(cp->channel_lock, 0, sizeof(int) * num_pd);
 	SET_CURRENT_PD(ctx, 0);

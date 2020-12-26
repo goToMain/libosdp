@@ -36,13 +36,13 @@ int test_cp_phy_fsm_send(void *data, uint8_t *buf, int len)
 	case 0:
 		if (memcmp(buf, cmd_poll, len) != 0) {
 			printf(SUB_1 "poll buf Mismatch!\n");
-			hexdump(buf, len, "Attempt to send");
+			CHECK_ARRAY(buf, len, cmd_poll);
 		}
 		break;
 	case 1:
 		if (memcmp(buf, cmd_id, len) != 0) {
 			printf(SUB_1 "id buf Mismatch!\n");
-			hexdump(buf, len, "Attempt to send");
+			CHECK_ARRAY(buf, len, cmd_id);
 		}
 		break;
 	}

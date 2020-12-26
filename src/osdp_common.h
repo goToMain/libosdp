@@ -147,6 +147,8 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_SCBKD_DONE   0x00000100 /* SCBKD check is done */
 #define PD_FLAG_PD_MODE         0x00000200 /* device is setup as PD */
 #define PD_FLAG_CHN_SHARED      0x00000400 /* PD's channel is shared */
+#define PD_FLAG_PKT_SKIP_MARK   0x00000800 /* CONFIG_OSDP_SKIP_MARK_BYTE */
+#define PD_FLAG_PKT_HAS_MARK    0x00001000 /* Packet has mark byte */
 
 /* logging short hands */
 #define LOG_EM(...)	(osdp_log(LOG_EMERG,  LOG_TAG __VA_ARGS__))

@@ -1082,12 +1082,13 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 		}
 		LOG_WRN("SCBK not provided. PD is in INSTALL_MODE");
 		SET_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
-	}
-	else {
+	} else {
 		memcpy(pd->sc.scbk, scbk, 16);
 	}
 	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
-
+	if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
+		SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
+	}
 	osdp_pd_set_attributes(pd, info->cap, &info->id);
 	osdp_pd_set_attributes(pd, osdp_pd_cap, NULL);
 

@@ -54,10 +54,10 @@ int osdp_phy_packet_get_data_offset(struct osdp_pd *pd, const uint8_t *buf)
 	struct osdp_packet_header *pkt;
 
 	ARG_UNUSED(pd);
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	mark_byte_len = 1;
-	buf += 1;
-#endif
+	if (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK)) {
+		mark_byte_len = 1;
+		buf += 1;
+	}
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->control & PKT_CONTROL_SCB) {
 		sb_len = pkt->data[0];
@@ -70,9 +70,9 @@ uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *pd, const uint8_t *buf)
 	struct osdp_packet_header *pkt;
 
 	ARG_UNUSED(pd);
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	buf += 1;
-#endif
+	if (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK)) {
+		buf += 1;
+	}
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->control & PKT_CONTROL_SCB) {
 		return pkt->data;
@@ -101,11 +101,18 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		return OSDP_ERR_PKT_FMT;
 	}
 
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	buf[0] = OSDP_PKT_MARK;
-	buf++;
-	mark_byte_len = 1;
-#endif
+	/**
+	 * In PD mode just follow what we received from CP. In CP mode, as we
+	 * initiate the transaction, choose based on CONFIG_OSDP_SKIP_MARK_BYTE.
+	 */
+	if ((pd_mode && ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK)) ||
+	    (!pd_mode && !ISSET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK))) {
+		buf[0] = OSDP_PKT_MARK;
+		buf++;
+		mark_byte_len = 1;
+		SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	}
+
 	/* Fill packet header */
 	pkt = (struct osdp_packet_header *)buf;
 	pkt->som = OSDP_PKT_SOM;
@@ -145,24 +152,25 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 
 	/* Do a sanity check only; we expect expect header to be prefilled */
 	if ((unsigned long)len <= sizeof(struct osdp_packet_header)) {
-		LOG_ERR("packet_finalize: Invalid header");
+		LOG_ERR("PKT_F: Invalid header");
 		return OSDP_ERR_PKT_FMT;
 	}
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	if (buf[0] != OSDP_PKT_MARK) {
-		LOG_ERR("packet_finalize: header MARK validation failed! "
-			"ID: 0x%02x", is_cmd ? pd->cmd_id : pd->reply_id);
-		return OSDP_ERR_PKT_FMT;
+
+	if (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK)) {
+		if (buf[0] != OSDP_PKT_MARK) {
+			LOG_ERR("PKT_F: MARK validation failed! ID: 0x%02x",
+				is_cmd ? pd->cmd_id : pd->reply_id);
+			return OSDP_ERR_PKT_FMT;
+		}
+		/* temporarily get rid of mark byte */
+		buf += 1;
+		len -= 1;
+		max_len -= 1;
 	}
-	/* temporarily get rid of mark byte */
-	buf += 1;
-	len -= 1;
-	max_len -= 1;
-#endif
 	pkt = (struct osdp_packet_header *)buf;
 	if (pkt->som != OSDP_PKT_SOM) {
-		LOG_ERR("packet_finalize: header SOM validation failed! "
-			"ID: 0x%02x", is_cmd ? pd->cmd_id : pd->reply_id);
+		LOG_ERR("PKT_F: header SOM validation failed! ID: 0x%02x",
+			is_cmd ? pd->cmd_id : pd->reply_id);
 		return OSDP_ERR_PKT_FMT;
 	}
 
@@ -224,9 +232,10 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	buf[len + 1] = BYTE_1(crc16);
 	len += 2;
 
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	len += 1; /* put back mark byte */
-#endif
+	if (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK)) {
+		len += 1; /* put back mark byte */
+	}
+
 	return len;
 
 out_of_space_error:
@@ -239,7 +248,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			  int *one_pkt_len)
 {
 	uint16_t comp, cur;
-	int pd_addr, pkt_len, mark_byte_len = 0;
+	int pd_addr, pkt_len;
 	struct osdp_packet_header *pkt;
 
 	/* wait till we have the header */
@@ -248,15 +257,12 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	if (buf[0] != OSDP_PKT_MARK) {
-		LOG_ERR("Invalid MARK 0x%02x", buf[0]);
-		return OSDP_ERR_PKT_FMT;
+	CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	if (buf[0] == OSDP_PKT_MARK) {
+		buf += 1;
+		len -= 1;
+		SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 	}
-	buf += 1;
-	len -= 1;
-	mark_byte_len = 1;
-#endif
 
 	pkt = (struct osdp_packet_header *)buf;
 
@@ -277,7 +283,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-	*one_pkt_len = pkt_len + mark_byte_len;
+	*one_pkt_len = pkt_len + (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK) ? 1 : 0);
 
 	/* validate CRC/checksum */
 	if (pkt->control & PKT_CONTROL_CRC) {
@@ -355,11 +361,11 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	int mac_offset, is_cmd;
 	struct osdp_packet_header *pkt;
 
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
-	/* Consume mark byte */
-	buf += 1;
-	len -= 1;
-#endif
+	if (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK)) {
+		/* Consume mark byte */
+		buf += 1;
+		len -= 1;
+	}
 
 	pkt = (struct osdp_packet_header *)buf;
 	len -= pkt->control & PKT_CONTROL_CRC ? 2 : 1;

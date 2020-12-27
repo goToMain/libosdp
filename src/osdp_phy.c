@@ -97,7 +97,7 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	pd_mode = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
 	if (max_len < exp_len) {
-		LOG_INF("packet_init: out of space! CMD: %02x", pd->cmd_id);
+		LOG_ERR("packet_init: out of space! CMD: %02x", pd->cmd_id);
 		return OSDP_ERR_PKT_FMT;
 	}
 

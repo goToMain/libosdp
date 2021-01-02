@@ -789,7 +789,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	if (ret != 0) {
 		/* catch all errors and report it as a RECORD error to CP */
-		LOG_ERR("Failed to build REPLY(%02x); Sending NAK instead!");
+		LOG_ERR("Failed to build REPLY(%02x); Sending NAK instead!",
+			pd->reply_id);
 		ASSERT_BUF_LEN(REPLY_NAK_LEN);
 		buf[0] = REPLY_NAK;
 		buf[1] = OSDP_PD_NAK_RECORD;

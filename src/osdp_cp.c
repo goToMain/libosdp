@@ -427,10 +427,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		/* post-capabilities hooks */
 		t2 = OSDP_PD_CAP_COMMUNICATION_SECURITY;
-		if (pd->cap[t2].compliance_level & 0x01)
+		if (pd->cap[t2].compliance_level & 0x01) {
 			SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
-		else
+		} else {
 			CLEAR_FLAG(pd, PD_FLAG_SC_CAPABLE);
+		}
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_LSTATR:
@@ -691,9 +692,9 @@ static void cp_flush_command_queue(struct osdp_pd *pd)
 
 static inline void cp_set_offline(struct osdp_pd *pd)
 {
+	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 	pd->state = OSDP_CP_STATE_OFFLINE;
 	pd->tstamp = osdp_millis_now();
-	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 }
 
 static inline void cp_set_state(struct osdp_pd *pd, enum osdp_state_e state)
@@ -840,24 +841,26 @@ static int state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_STATE_INIT:
 		cp_set_state(pd, OSDP_CP_STATE_IDREQ);
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_CP_STATE_IDREQ:
 		if (cp_cmd_dispatcher(pd, CMD_ID) != 0) {
 			break;
 		}
 		if (pd->reply_id != REPLY_PDID) {
-			LOG_ERR("Unexpected reply for cmd " STR(CMD_ID));
+			LOG_ERR("Unexpected REPLY(%02x) for cmd "
+				STR(CMD_CAP), pd->reply_id);
 			cp_set_offline(pd);
 			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_CAPDET);
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_CP_STATE_CAPDET:
 		if (cp_cmd_dispatcher(pd, CMD_CAP) != 0) {
 			break;
 		}
 		if (pd->reply_id != REPLY_PDCAP) {
-			LOG_ERR("Unexpected reply for cmd " STR(CMD_CAP));
+			LOG_ERR("Unexpected REPLY(%02x) for cmd "
+				STR(CMD_CAP), pd->reply_id);
 			cp_set_offline(pd);
 			break;
 		}
@@ -878,7 +881,7 @@ static int state_update(struct osdp_pd *pd)
 	case OSDP_CP_STATE_SC_INIT:
 		osdp_sc_init(pd);
 		cp_set_state(pd, OSDP_CP_STATE_SC_CHLNG);
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_CP_STATE_SC_CHLNG:
 		if (cp_cmd_dispatcher(pd, CMD_CHLNG) != 0) {
 			break;
@@ -917,7 +920,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_SC_SCRYPT);
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_CP_STATE_SC_SCRYPT:
 		if (cp_cmd_dispatcher(pd, CMD_SCRYPT) != 0) {
 			break;

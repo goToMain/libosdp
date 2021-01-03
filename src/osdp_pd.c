@@ -44,10 +44,10 @@
 #define REPLY_CCRYPT_LEN               33
 #define REPLY_RMAC_I_LEN               17
 
-#define OSDP_PD_ERR_NONE      0
-#define OSDP_PD_ERR_NO_DATA   1
-#define OSDP_PD_ERR_GENERIC  -1
-#define OSDP_PD_ERR_REPLY    -2
+#define OSDP_PD_ERR_NONE               0
+#define OSDP_PD_ERR_NO_DATA            1
+#define OSDP_PD_ERR_GENERIC           -1
+#define OSDP_PD_ERR_REPLY             -2
 
 /* Implicit cababilities */
 static struct osdp_pd_cap osdp_pd_cap[] = {
@@ -928,7 +928,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		pd->rx_buf_len = ret;
 		pd->tstamp = osdp_millis_now();
 		pd->state = OSDP_PD_STATE_PROCESS_CMD;
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_PD_STATE_PROCESS_CMD:
 		ret = pd_receve_packet(pd);
 		if (ret == OSDP_PD_ERR_NO_DATA &&
@@ -945,7 +945,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			pd->sc_tstamp = osdp_millis_now();
 		}
 		pd->state = OSDP_PD_STATE_SEND_REPLY;
-		/* FALLTHRU */
+		__fallthrough;
 	case OSDP_PD_STATE_SEND_REPLY:
 		if (pd_send_reply(pd) == -1) {
 			pd->state = OSDP_PD_STATE_ERR;

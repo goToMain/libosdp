@@ -806,6 +806,7 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 static int state_update(struct osdp_pd *pd)
 {
 	int phy_state, soft_fail;
+	struct osdp *ctx = TO_CTX(pd);
 
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == OSDP_CP_ERR_INPROG ||
@@ -829,6 +830,7 @@ static int state_update(struct osdp_pd *pd)
 	case OSDP_CP_STATE_ONLINE:
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)  == false &&
 		    ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) == true  &&
+		    ISSET_FLAG(ctx, FLAG_SC_DISABLED)  == false &&
 		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS) {
 			LOG_INF("Retry SC after retry timeout");
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
@@ -872,14 +874,15 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_offline(pd);
 			break;
 		}
-		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE)) {
+		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) &&
+		    !ISSET_FLAG(ctx, FLAG_SC_DISABLED)) {
 			CLEAR_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
 		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
-			LOG_INF("PD is not SC capable. Set PD offline due "
+			LOG_INF("SC disabled or not capable. Set PD offline due "
 				    "to ENFORCE_SECURE");
 			cp_set_offline(pd);
 		} else {
@@ -1029,10 +1032,13 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		return NULL;
 	}
 	ctx->magic = 0xDEADBEAF;
-	ctx->flags |= FLAG_CP_MODE;
+	SET_FLAG(ctx, FLAG_CP_MODE);
 
 	if (master_key != NULL) {
 		memcpy(ctx->sc_master_key, master_key, 16);
+	} else {
+		LOG_WRN("Master key not available! SC Disabled.");
+		SET_FLAG(ctx, FLAG_SC_DISABLED);
 	}
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));

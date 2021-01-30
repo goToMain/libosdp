@@ -133,6 +133,7 @@ union osdp_ephemeral_data {
 
 /* Global flags */
 #define FLAG_CP_MODE            0x00000001 /* Set when initialized as CP */
+#define FLAG_SC_DISABLED        0x00000002 /* cp_setup with master_key=NULL */
 
 /* PD State Flags */
 #define PD_FLAG_MASK            0x0000FFFF /* only 16 bits are for flags */

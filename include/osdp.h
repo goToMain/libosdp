@@ -398,6 +398,7 @@ struct osdp_cmd_comset {
  * @brief This command transfers an encryption key from the CP to a PD.
  *
  * @param type Type of keys:
+ *   - 0x00 - Master Key (This is not part of OSDP Spec, see gh-issue:#42)
  *   - 0x01 – Secure Channel Base Key
  * @param length Number of bytes of key data - (Key Length in bits + 7) / 8
  * @param data Key data

@@ -351,7 +351,7 @@ int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 
 /* from osdp_sc.c */
-void osdp_compute_scbk(struct osdp_pd *p, uint8_t *scbk);
+void osdp_compute_scbk(struct osdp_pd *p, uint8_t *master_key, uint8_t *scbk);
 void osdp_compute_session_keys(struct osdp *ctx);
 void osdp_compute_cp_cryptogram(struct osdp_pd *p);
 int osdp_verify_cp_cryptogram(struct osdp_pd *p);

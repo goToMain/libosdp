@@ -16,16 +16,15 @@ static const uint8_t osdp_scbk_default[16] = {
 	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
 };
 
-void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *scbk)
+void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk)
 {
 	int i;
-	struct osdp *ctx = TO_CTX(pd);
 
 	memcpy(scbk, pd->sc.pd_client_uid, 8);
 	for (i = 8; i < 16; i++) {
 		scbk[i] = ~scbk[i - 8];
 	}
-	osdp_encrypt(ctx->sc_master_key, NULL, scbk, 16);
+	osdp_encrypt(master_key, NULL, scbk, 16);
 }
 
 void osdp_compute_session_keys(struct osdp *ctx)
@@ -41,7 +40,7 @@ void osdp_compute_session_keys(struct osdp *ctx)
 		 * the SCBK (sent from application layer).
 		 */
 		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0) {
-			osdp_compute_scbk(pd, pd->sc.scbk);
+			osdp_compute_scbk(pd, ctx->sc_master_key, pd->sc.scbk);
 		}
 	}
 

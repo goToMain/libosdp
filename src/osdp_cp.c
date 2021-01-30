@@ -304,11 +304,12 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			LOG_ERR("Can not perform a KEYSET without SC!");
 			return -1;
 		}
+		cmd = (struct osdp_cmd *)pd->ephemeral_data;
 		ASSERT_BUF_LEN(CMD_KEYSET_LEN);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 1;  /* key type (1: SCBK) */
 		buf[len++] = 16; /* key length in bytes */
-		osdp_compute_scbk(pd, buf + len);
+		osdp_compute_scbk(pd, cmd->keyset.data, buf + len);
 		len += 16;
 		ret = 0;
 		break;
@@ -777,6 +778,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 
 static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 {
+	struct osdp *ctx = TO_CTX(pd);
 	struct osdp_cmd *c;
 
 	if (ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
@@ -790,6 +792,12 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 	}
 
 	c->id = cmd;
+	switch (cmd) {
+	case CMD_KEYSET:
+		c->keyset.length = 16;
+		memcpy(c->keyset.data, ctx->sc_master_key, 16);
+		break;
+	}
 	cp_cmd_enqueue(pd, c);
 	SET_FLAG(pd, PD_FLAG_AWAIT_RESP);
 	return OSDP_CP_ERR_INPROG;
@@ -1169,6 +1177,8 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_KEYSET:
+		LOG_INF("Master KEYSET is a global command; "
+			"all connected PDs will be affected.");
 		return osdp_cp_send_command_keyset(ctx, &p->keyset);
 	default:
 		LOG_ERR("Invalid CMD_ID:%d", p->id);

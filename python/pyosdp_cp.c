@@ -186,24 +186,26 @@ static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int i, ret=-1, tmp;
-	uint8_t master_key[16];
+	uint8_t *master_key;
+	Py_ssize_t master_key_len = 0;
 	enum channel_type channel_type;
 	PyObject *py_info_list, *py_info;
 	static char *kwlist[] = { "", "master_key", NULL };
-	char *device = NULL, *channel_type_str = NULL, *master_key_str = NULL;
+	char *device = NULL, *channel_type_str = NULL;
 	osdp_t *ctx;
 	osdp_pd_info_t *info, *info_list = NULL;
 
 	srand(time(NULL));
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$s:cp_init", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:cp_init", kwlist,
 					 &PyList_Type, &py_info_list,
-					 &master_key_str))
+					 &master_key, &master_key_len))
 		goto error;
 
-	if (master_key_str && (strlen(master_key_str) != 32 ||
-	    hstrtoa(master_key, master_key_str) == -1)) {
-		PyErr_SetString(PyExc_TypeError, "master_key parse error");
+	if (master_key_len == 0)
+		master_key = NULL;
+	if (master_key && master_key_len != 16) {
+		PyErr_SetString(PyExc_TypeError, "master_key must be exactly 16 bytes");
 		goto error;
 	}
 
@@ -271,8 +273,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			    &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info_list,
-			    master_key_str ? master_key : NULL);
+	ctx = osdp_cp_setup(self->num_pd, info_list, master_key);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
 		goto error;

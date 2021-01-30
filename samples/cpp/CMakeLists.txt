@@ -5,7 +5,7 @@
 #
 
 cmake_minimum_required(VERSION 3.0)
-project(osdp_c_sample)
+project(osdp_cpp_sample)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 	# This sample is built individually so try to locate an installed
@@ -22,13 +22,14 @@ else()
 	link_directories(${LIBOSDP_LIBRARY_DIR})
 endif()
 
-set(CP_SAMPLE c_cp_sample)
-set(PD_SAMPLE c_pd_sample)
+set(CMAKE_CXX_STANDARD 11)
+set(CP_SAMPLE cpp_cp_sample)
+set(PD_SAMPLE cpp_pd_sample)
 
 include_directories(${LIBOSDP_INCLUDE_DIR} ${CMAKE_SOURCE_DIRECTORY}/include)
 
-add_executable(${CP_SAMPLE} cp_app.c)
-add_executable(${PD_SAMPLE} pd_app.c)
+add_executable(${CP_SAMPLE} cp_app.cpp)
+add_executable(${PD_SAMPLE} pd_app.cpp)
 
 target_link_libraries(${CP_SAMPLE} ${LIBOSDP_LIBRARY})
 target_link_libraries(${PD_SAMPLE} ${LIBOSDP_LIBRARY})

@@ -40,6 +40,7 @@ add_subdirectory(src)
 add_subdirectory(osdpctl)
 add_subdirectory(test)
 add_subdirectory(samples/c)
+add_subdirectory(samples/cpp)
 add_subdirectory(doc)
 add_subdirectory(python)
 

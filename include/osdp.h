@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
-#define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
+#define OSDP_CMD_KEYSET_KEY_MAX_LEN    16
 #define OSDP_CMD_MFG_MAX_DATALEN       64
 #define OSDP_EVENT_MAX_DATALEN         64
 
@@ -183,48 +183,60 @@ struct osdp_pd_id {
 	uint32_t firmware_version;
 };
 
+/**
+ * @brief pointer to function that copies received bytes into buffer. This
+ * function should be non-blocking.
+ *
+ * @param data for use by underlying layers. osdp_channel::data is passed
+ * @param buf byte array copy incoming data
+ * @param len sizeof `buf`. Can copy utmost `len` bytes into `buf`
+ *
+ * @retval +ve: number of bytes copied on to `buf`. Must be <= `len`
+ * @retval -ve on errors
+ */
+typedef int (*osdp_read_fn_t)(void *data, uint8_t *buf, int maxlen);
+
+/**
+ * @brief pointer to function that sends byte array into some channel. This
+ * function should be non-blocking.
+ *
+ * @param data for use by underlying layers. osdp_channel::data is passed
+ * @param buf byte array to be sent
+ * @param len number of bytes in `buf`
+ *
+ * @retval +ve: number of bytes sent. must be <= `len`
+ * @retval -ve on errors
+ */
+typedef int (*osdp_write_fn_t)(void *data, uint8_t *buf, int len);
+
+/**
+ * @brief pointer to function that drops all bytes in TX/RX fifo. This
+ * function should be non-blocking.
+ *
+ * @param data for use by underlying layers. osdp_channel::data is passed
+ */
+typedef void (*osdp_flush_fn_t)(void *data);
+
+/**
+ * @brief User defined communication channel abstaction for OSDP devices.
+ * The methods for read/write/flush are expected to be non-blocking.
+ *
+ * @param data pointer to a block of memory that will be passed to the
+ *             send/receive/flush method. This is optional (can be set to NULL)
+ * @param id on multi-drop networks, more than one PD can share the same
+ *           channel (read/write/flush pointers). On such networks, the
+ *           channel_id is used to lock a PD to a channel. On multi-drop
+ *           networks, this `id` must non-zero and be unique for each bus.
+ * @param recv Pointer to function used to receive osdp packet data
+ * @param send Pointer to function used to send osdp packet data
+ * @param flush Pointer to function used to fush the channel (optional)
+ */
 struct osdp_channel {
-	/**
-	 * @brief pointer to a block of memory that will be passed to the
-	 * send/receive method. This is optional and can be left empty.
-	 */
 	void *data;
-
-	/**
-	 * @brief on multi-drop networks, more than one PD can share the same
-	 * channel (read/write/flush pointers). On such networks, the channel_id
-	 * is used to lock a PD to a channel. On multi-drop networks, this `id`
-	 * must non-zero and be unique for each bus.
-	 */
 	int id;
-
-	/**
-	 * @brief pointer to function that copies received bytes into buffer
-	 * @param data for use by underlying layers. channel_s::data is passed
-	 * @param buf byte array copy incoming data
-	 * @param len sizeof `buf`. Can copy utmost `len` bytes into `buf`
-	 *
-	 * @retval +ve: number of bytes copied on to `bug`. Must be <= `len`
-	 * @retval -ve on errors
-	 */
-	int (*recv)(void *data, uint8_t *buf, int maxlen);
-
-	/**
-	 * @brief pointer to function that sends byte array into some channel
-	 * @param data for use by underlying layers. channel_s::data is passed
-	 * @param buf byte array to be sent
-	 * @param len number of bytes in `buf`
-	 *
-	 * @retval +ve: number of bytes sent. must be <= `len`
-	 * @retval -ve on errors
-	 */
-	int (*send)(void *data, uint8_t *buf, int len);
-
-	/**
-	 * @brief pointer to function that drops all bytes in TX/RX fifo
-	 * @param data for use by underlying layers. channel_s::data is passed
-	 */
-	void (*flush)(void *data);
+	osdp_read_fn_t recv;
+	osdp_write_fn_t send;
+	osdp_flush_fn_t flush;
 };
 
 /**
@@ -253,7 +265,7 @@ typedef struct {
 } osdp_pd_info_t;
 
 /**
- * The keep the OSDP internal data strucutres from polluting the exposed
+ * @brief To keep the OSDP internal data strucutres from polluting the exposed
  * headers, they are typedefed to void before sending them to the upper layers.
  * This level of abstaction looked reasonable as _technically_ no one should
  * attempt to modify it outside fo the LibOSDP and their definition may change
@@ -569,9 +581,9 @@ struct osdp_event {
 * `osdp_pd_set_command_callback`.
 * @param cmd pointer to the received command.
 *
-* @return 0 if LibOSDP must send a `osdp_ACK` response
-* @return -ve if LibOSDP must send a `osdp_NAK` response
-* @return +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send
+* @retval 0 if LibOSDP must send a `osdp_ACK` response
+* @retval -ve if LibOSDP must send a `osdp_NAK` response
+* @retval +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send
 * a specific response. This is useful for sending manufacturer specific
 * reply ``osdp_MFGREP``.
 */
@@ -587,8 +599,8 @@ typedef int (*pd_commnand_callback_t)(void *arg, struct osdp_cmd *cmd);
 * @param pd PD offset number as in `pd_info_t *`.
 * @param ev pointer to osdp_event struct (filled by libosdp).
 *
-* @return 0 on handling the event successfully.
-* @return -ve on errors.
+* @retval 0 on handling the event successfully.
+* @retval -ve on errors.
 */
 typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
 
@@ -607,8 +619,8 @@ typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
  * @param scbk 16 byte Secure Channel Base Key. If this field is NULL PD is set
  *             to "Install Mode".
  *
- * @return OSDP Context on success
- * @return NULL on errors
+ * @retval OSDP Context on success
+ * @retval NULL on errors
  */
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 
@@ -666,8 +678,8 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  * @param scbk 16 byte Secure Channel Base Key. If this field is NULL PD is set
  *             to "Install Mode".
  *
- * @return OSDP Context on success
- * @return NULL on errors
+ * @retval OSDP Context on success
+ * @retval NULL on errors
  */
 osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
 
@@ -748,7 +760,7 @@ void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...));
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.
  *
- * @return version string
+ * @retval version string
  */
 const char *osdp_get_version();
 
@@ -757,14 +769,14 @@ const char *osdp_get_version();
  * info about the source tree from which this version of LibOSDP was built. Used
  * in diagnostics.
  *
- * @return source identifier string
+ * @retval source identifier string
  */
 const char *osdp_get_source_info();
 
 /**
  * @brief Get a bit mask of number of PD that are online currently.
  *
- * @return Bit-Mask (max 32 PDs)
+ * @retval Bit-Mask (max 32 PDs)
  */
 uint32_t osdp_get_status_mask(osdp_t *ctx);
 
@@ -772,7 +784,7 @@ uint32_t osdp_get_status_mask(osdp_t *ctx);
  * @brief Get a bit mask of number of PD that are online and have an active
  * secure channel currently.
  *
- * @return Bit-Mask (max 32 PDs)
+ * @retval Bit-Mask (max 32 PDs)
  */
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
 

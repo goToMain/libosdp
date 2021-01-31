@@ -10,6 +10,8 @@ pointer all API calls.
 Device lifecycle management
 ---------------------------
 
+.. doxygentypedef:: osdp_t
+
 .. doxygenstruct:: osdp_pd_info_t
    :members:
 

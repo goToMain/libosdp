@@ -6,6 +6,8 @@ The following functions are used when OSDP is to be used in CP mode.
 Device lifecycle management
 ---------------------------
 
+.. doxygentypedef:: osdp_t
+
 .. doxygenstruct:: osdp_pd_info_t
    :members:
 

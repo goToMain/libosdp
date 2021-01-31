@@ -7,16 +7,6 @@ wrapper for all the commands for convenience.
 
 .. code:: c
 
-    enum osdp_cmd_e {
-        OSDP_CMD_OUTPUT = 1,
-        OSDP_CMD_LED,
-        OSDP_CMD_BUZZER,
-        OSDP_CMD_TEXT,
-        OSDP_CMD_KEYSET,
-        OSDP_CMD_COMSET,
-        OSDP_CMD_SENTINEL
-    };
-
     struct osdp_cmd {
         enum osdp_cmd_e id;
         union {
@@ -26,8 +16,11 @@ wrapper for all the commands for convenience.
             struct osdp_cmd_output output;
             struct osdp_cmd_comset comset;
             struct osdp_cmd_keyset keyset;
+            struct osdp_cmd_mfg    mfg;
         };
     };
+
+.. doxygenenum:: osdp_cmd_e
 
 .. doxygenstruct:: osdp_cmd
    :members:
@@ -43,7 +36,7 @@ Command LED
         uint8_t off_count;
         uint8_t on_color;
         uint8_t off_color;
-        uint16_t timer;
+        uint16_t timer_count;
     };
 
     struct osdp_cmd_led {
@@ -67,7 +60,7 @@ Command Output
     struct osdp_cmd_output {
         uint8_t output_no;
         uint8_t control_code;
-        uint16_t tmr_count;
+        uint16_t timer_count;
     };
 
 .. doxygenstruct:: osdp_cmd_output
@@ -80,7 +73,7 @@ Command Buzzer
 
     struct osdp_cmd_buzzer {
         uint8_t reader;
-        uint8_t tone_code;
+        uint8_t control_code;
         uint8_t on_count;
         uint8_t off_count;
         uint8_t rep_count;
@@ -96,7 +89,7 @@ Command Text
 
     struct osdp_cmd_text {
         uint8_t reader;
-        uint8_t cmd;
+        uint8_t control_code;
         uint8_t temp_time;
         uint8_t offset_row;
         uint8_t offset_col;
@@ -113,8 +106,8 @@ Command Comset
 .. code:: c
 
     struct osdp_cmd_comset {
-        uint8_t addr;
-        uint32_t baud;
+        uint8_t address;
+        uint32_t baud_rate;
     };
 
 .. doxygenstruct:: osdp_cmd_comset

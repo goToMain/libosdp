@@ -14,6 +14,18 @@ these with your application as needed (-losdp or -losdpstatic). Have a look at
     make check
     make DESTDIR=/your/install/path install
 
+Build html docs
+---------------
+
+HTML docs of LibOSDP depends on python3, pip3, doxygen, sphinx, and breathe.
+
+.. code:: sh
+
+    pip3 install -r requirements.txt
+    mkdir build && cd build
+    cmake ..
+    make html_docs
+
 Compile-time configuration options
 ----------------------------------
 
@@ -27,7 +39,7 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 +===============================+===========+===========================================+
 | CONFIG\_OSDP\_PACKET\_TRACE   | OFF       | Enable raw packet trace for diagnostics   |
 +-------------------------------+-----------+-------------------------------------------+
-| CONFIG_OSDP_SC_ENABLE         | ON        | Enable secure channel communication       |
+| CONFIG_OSDP_SKIP_MARK_BYTE    | OFF       | Don't send the leading mark byte (0xFF)   |
 +-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project

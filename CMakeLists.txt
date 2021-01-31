@@ -24,7 +24,6 @@ include(AddCCompilerFlag)
 include(GitInfo)
 include(BuildType)
 include(GNUInstallDirs)
-include(Quirks)
 
 ## Global settings
 add_c_compiler_flag(-Wall)

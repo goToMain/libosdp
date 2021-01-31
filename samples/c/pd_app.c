@@ -43,10 +43,20 @@ int pd_command_handler(void *arg, struct osdp_cmd *cmd)
 	return 0;
 }
 
-int main()
-{
-	struct osdp_t *ctx;
-	struct osdp_pd_cap cap[] = {
+osdp_pd_info_t info_pd = {
+	.address = 101,
+	.baud_rate = 9600,
+	.flags = 0,
+	.channel.send = sample_pd_send_func,
+	.channel.recv = sample_pd_recv_func,
+	.id = {
+		.version = 1,
+		.model = 153,
+		.vendor_code = 31337,
+		.serial_number = 0x01020304,
+		.firmware_version = 0x0A0B0C0D,
+	},
+	.cap = (struct osdp_pd_cap []) {
 		{
 			.function_code = OSDP_PD_CAP_READER_LED_CONTROL,
 			.compliance_level = 1,
@@ -57,23 +67,13 @@ int main()
 			.compliance_level = 1,
 			.num_items = 1
 		},
-		{ -1, 0, 0 }
-	};
-	osdp_pd_info_t info_pd = {
-		.address = 101,
-		.baud_rate = 9600,
-		.flags = 0,
-		.channel.send = sample_pd_send_func,
-		.channel.recv = sample_pd_recv_func,
-		.id = {
-			.version = 1,
-			.model = 153,
-			.vendor_code = 31337,
-			.serial_number = 0x01020304,
-			.firmware_version = 0x0A0B0C0D,
-		},
-		.cap = cap,
-	};
+		{ (uint8_t)-1, 0, 0 } /* Sentinel */
+	}
+};
+
+int main()
+{
+	struct osdp_t *ctx;
 
 	ctx = osdp_pd_setup(&info_pd, NULL);
 	if (ctx == NULL) {

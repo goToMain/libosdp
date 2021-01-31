@@ -29,19 +29,19 @@ int sample_cp_recv_func(void *data, uint8_t *buf, int len)
 	return 0;
 }
 
+osdp_pd_info_t pd_info[] = {
+	{
+		.address = 101,
+		.baud_rate = 115200,
+		.flags = 0,
+		.channel.send = sample_cp_send_func,
+		.channel.recv = sample_cp_recv_func
+	},
+};
+
 int main()
 {
-	osdp_pd_info_t info[] = {
-		{
-			.address = 101,
-			.baud_rate = 115200,
-			.flags = 0,
-			.channel.send = sample_cp_send_func,
-			.channel.recv = sample_cp_recv_func
-		},
-	};
-
-	osdp_t *ctx = osdp_cp_setup(1, info, NULL);
+	osdp_t *ctx = osdp_cp_setup(1, pd_info, NULL);
 	osdp_set_log_level(7);
 
 	if (ctx == NULL)

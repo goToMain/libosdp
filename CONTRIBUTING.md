@@ -11,8 +11,16 @@ transparent as possible, whether it's:
 ## We Develop with Github
 
 We use github to host code, to track issues and feature requests, as well as
-accept pull requests. You can read more about github development work flow
-[here][1].
+accept contributions in the form of pull requests.
+
+You start off by creating a fork of goToMain/libosdp to <your-username>/libosdp
+and then clone from your fork (or add another remote to existing clone). After
+that, you can create a branch from master and make your code changes there and
+push your changed to origin (if you added a remote earlier, then to that
+remote). Now when you visit github page for <your-username>/libosdp, you should
+see an option to raise a pull requst to goToMain/libosdp.
+
+You can read more about github development work flow [here][1] and
 
 ## Any contributions you make will be under the project's license
 

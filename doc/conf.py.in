@@ -6,7 +6,7 @@ author = '@PROJECT_AUTHOR@'
 release = '@PROJECT_VERSION@'
 
 master_doc = 'index'
-extensions = ['sphinx_rtd_theme']
+extensions = ['sphinx_rtd_theme', 'breathe']
 templates_path = ['_templates']
 exclude_patterns = [
 	'_build',
@@ -15,6 +15,7 @@ exclude_patterns = [
 	'conf.py.in',
 	'*.txt'
 ]
+breathe_default_project = 'LibOSDP' # see CMakeLists.txt
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -31,7 +32,6 @@ html_js_files = ['_static/js/script.js']
 html_theme = 'sphinx_rtd_theme'
 html_copy_source = False
 html_theme_options = {
-    'canonical_url': '@PROJECT_HOMEPAGE@',
     'logo_only': False,
     'display_version': True,
     'prev_next_buttons_location': 'bottom',

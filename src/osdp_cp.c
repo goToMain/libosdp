@@ -629,7 +629,7 @@ static int cp_send_command(struct osdp_pd *pd)
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->rx_buf, pd->rx_buf_len,
+			osdp_dump(pd->rx_buf, len,
 				  "OSDP: PD[%d]: Sent", pd->offset);
 		}
 	}

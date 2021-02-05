@@ -53,7 +53,7 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 		ap_opt++;
 	}
 	printf("  -%c, --%-"PAD"s Fork to background\n", 'f', "fork");
-	printf("  -%c, --%-"PAD"s Prevent writing to tty\n", 'q', "quite");
+	printf("  -%c, --%-"PAD"s Prevent writing to tty\n", 'q', "quiet");
 	printf("  -%c, --%-"PAD"s Print this help message\n", 'h', "help");
 
 	count = 0;
@@ -138,7 +138,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	ostr[olen++] = 'h';
 
 	opt = opts + i + 1;
-	opt->name = "quite";
+	opt->name = "quiet";
 	opt->val = 'q';
 	ostr[olen++] = 'q';
 

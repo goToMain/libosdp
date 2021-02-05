@@ -390,7 +390,7 @@ void config_parse(const char *filename, struct config_s *config)
 		exit(-1);
 	}
 	if (ret == -2) {
-		printf("Error: memory alloc failed when paring: %s\n", filename);
+		printf("Error: memory alloc failed when parsing: %s\n", filename);
 		exit(-1);
 	}
 	if (ret < 0) {

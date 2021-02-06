@@ -365,16 +365,16 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data, int len
 void osdp_sc_init(struct osdp_pd *p);
 
 /* from osdp_common.c */
-int64_t osdp_millis_now(void);
+int64_t osdp_millis_now(void) __weak;
 int64_t osdp_millis_since(int64_t last);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
-void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-void osdp_get_rand(uint8_t *buf, int len);
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len) __weak;
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len) __weak;
+void osdp_get_rand(uint8_t *buf, int len) __weak;
 void safe_free(void *p);
 
 #endif	/* _OSDP_COMMON_H_ */

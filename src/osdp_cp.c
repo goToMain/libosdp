@@ -318,7 +318,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (smb == NULL) {
 			break;
 		}
-		osdp_get_rand(pd->sc.cp_random, 8);
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_11;  /* type */
 		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;

@@ -844,7 +844,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		break;
 	case OSDP_CP_STATE_OFFLINE:
-		if (osdp_millis_since(pd->tstamp) > OSDP_CMD_RETRY_WAIT_MS) {
+		if (osdp_millis_since(pd->tstamp) > OSDP_ONLINE_RETRY_WAIT_MS) {
 			cp_set_state(pd, OSDP_CP_STATE_INIT);
 			osdp_phy_state_reset(pd);
 		}

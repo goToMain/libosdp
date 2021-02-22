@@ -354,7 +354,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			 */
 			if ((pkt_len == 6) && (pkt->data[0] == REPLY_BUSY)) {
 				pd->seq_number -= 1;
-				return OSDP_ERR_PKT_NONE;
+				return OSDP_ERR_PKT_BUSY;
 			}
 		}
 	}

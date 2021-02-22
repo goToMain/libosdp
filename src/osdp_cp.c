@@ -318,7 +318,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (smb == NULL) {
 			break;
 		}
-		osdp_get_rand(pd->sc.cp_random, 8);
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_11;  /* type */
 		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
@@ -844,7 +843,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		break;
 	case OSDP_CP_STATE_OFFLINE:
-		if (osdp_millis_since(pd->tstamp) > OSDP_CMD_RETRY_WAIT_MS) {
+		if (osdp_millis_since(pd->tstamp) > OSDP_ONLINE_RETRY_WAIT_MS) {
 			cp_set_state(pd, OSDP_CP_STATE_INIT);
 			osdp_phy_state_reset(pd);
 		}

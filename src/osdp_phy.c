@@ -288,8 +288,9 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 
 	/* validate CRC/checksum */
 	if (pkt->control & PKT_CONTROL_CRC) {
-		cur = (buf[pkt_len - 1] << 8) | buf[pkt_len - 2];
-		comp = osdp_compute_crc16(buf, pkt_len - 2);
+		pkt_len -= 2; /* consume CRC */
+		cur = (buf[pkt_len + 1] << 8) | buf[pkt_len];
+		comp = osdp_compute_crc16(buf, pkt_len);
 		if (comp != cur) {
 			LOG_ERR("Invalid crc 0x%04x/0x%04x", comp, cur);
 			pd->reply_id = REPLY_NAK;
@@ -297,8 +298,9 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			return OSDP_ERR_PKT_CHECK;
 		}
 	} else {
-		cur = buf[pkt_len - 1];
-		comp = osdp_compute_checksum(buf, pkt_len - 1);
+		pkt_len -= 1; /* consume checksum */
+		cur = buf[pkt_len];
+		comp = osdp_compute_checksum(buf, pkt_len);
 		if (comp != cur) {
 			LOG_ERR("Invalid checksum %02x/%02x", comp, cur);
 			pd->reply_id = REPLY_NAK;
@@ -342,6 +344,18 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
 			return OSDP_ERR_PKT_FMT;
+		}
+	} else {
+		if (comp == 0) {
+			/**
+			 * Check for receiving a busy reply from the PD which would
+			 * have a sequence number of 0, come in an unsecured packet
+			 * of minimum length, and have the reply ID REPLY_BUSY.
+			 */
+			if ((pkt_len == 6) && (pkt->data[0] == REPLY_BUSY)) {
+				pd->seq_number -= 1;
+				return OSDP_ERR_PKT_BUSY;
+			}
 		}
 	}
 	cur = osdp_phy_get_seq_number(pd, ISSET_FLAG(pd, PD_FLAG_PD_MODE));

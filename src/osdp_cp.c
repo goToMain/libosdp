@@ -690,17 +690,31 @@ static void cp_flush_command_queue(struct osdp_pd *pd)
 	}
 }
 
+static inline void cp_set_state(struct osdp_pd *pd, enum osdp_state_e state)
+{
+	pd->state = state;
+	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
+}
+
+static inline void cp_set_online(struct osdp_pd *pd)
+{
+	cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+	pd->wait_ms = 0;
+}
+
 static inline void cp_set_offline(struct osdp_pd *pd)
 {
 	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 	pd->state = OSDP_CP_STATE_OFFLINE;
 	pd->tstamp = osdp_millis_now();
-}
-
-static inline void cp_set_state(struct osdp_pd *pd, enum osdp_state_e state)
-{
-	pd->state = state;
-	CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
+	if (pd->wait_ms == 0) {
+		pd->wait_ms = 1000; /* retry after 1 second initially */
+	} else {
+		pd->wait_ms <<= 1;
+		if (pd->wait_ms > OSDP_ONLINE_RETRY_WAIT_MAX_MS) {
+			pd->wait_ms = OSDP_ONLINE_RETRY_WAIT_MAX_MS;
+		}
+	}
 }
 
 static int cp_phy_state_update(struct osdp_pd *pd)
@@ -843,7 +857,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		break;
 	case OSDP_CP_STATE_OFFLINE:
-		if (osdp_millis_since(pd->tstamp) > OSDP_ONLINE_RETRY_WAIT_MS) {
+		if (osdp_millis_since(pd->tstamp) > pd->wait_ms) {
 			cp_set_state(pd, OSDP_CP_STATE_INIT);
 			osdp_phy_state_reset(pd);
 		}
@@ -885,7 +899,7 @@ static int state_update(struct osdp_pd *pd)
 				    "to ENFORCE_SECURE");
 			cp_set_offline(pd);
 		} else {
-			cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+			cp_set_online(pd);
 		}
 		break;
 	case OSDP_CP_STATE_SC_INIT:
@@ -906,7 +920,7 @@ static int state_update(struct osdp_pd *pd)
 			if (ISSET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE)) {
 				LOG_INF("SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
-				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+				cp_set_online(pd);
 				break;
 			}
 			SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
@@ -925,7 +939,7 @@ static int state_update(struct osdp_pd *pd)
 				LOG_ERR("CHLNG failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
 				osdp_phy_state_reset(pd);
-				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+				cp_set_online(pd);
 			}
 			break;
 		}
@@ -944,7 +958,7 @@ static int state_update(struct osdp_pd *pd)
 				LOG_ERR("SCRYPT failed. Online without SC");
 				osdp_phy_state_reset(pd);
 				pd->sc_tstamp = osdp_millis_now();
-				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+				cp_set_online(pd);
 			}
 			break;
 		}
@@ -955,7 +969,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		LOG_INF("SC Active");
 		pd->sc_tstamp = osdp_millis_now();
-		cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+		cp_set_online(pd);
 		break;
 	case OSDP_CP_STATE_SET_SCBK:
 		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0) {
@@ -969,7 +983,7 @@ static int state_update(struct osdp_pd *pd)
 			} else {
 				LOG_WRN("Failed to set SCBK; "
 					"Continue with SCBK-D");
-				cp_set_state(pd, OSDP_CP_STATE_ONLINE);
+				cp_set_online(pd);
 			}
 			break;
 		}

@@ -294,6 +294,7 @@ struct osdp_pd {
 	/* PD state management */
 	int state;
 	int phy_state;
+	uint32_t wait_ms;
 
 	int64_t tstamp;
 	int64_t sc_tstamp;

@@ -448,19 +448,28 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			 * Only the data portion of message (after id byte)
 			 * is encrypted. While (en/de)crypting, we must skip
 			 * header (6), security block (2) and cmd/reply id (1)
-			 * bytes if cmd/reply has no data, use SCS_15/SCS_16.
+			 * bytes.
 			 *
 			 * At this point, the header and security block is
 			 * already consumed. So we can just skip the cmd/reply
 			 * ID (data[0])  when calling osdp_decrypt_data().
 			 */
 			len = osdp_decrypt_data(pd, is_cmd, data + 1, len - 1);
-			if (len <= 0) {
+			if (len < 0) {
 				LOG_ERR("Failed at decrypt; discarding SC");
 				CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 				pd->reply_id = REPLY_NAK;
 				pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 				return OSDP_ERR_PKT_FMT;
+			}
+			if (len == 0) {
+				/**
+				 * If cmd/reply has no data, PD "should" have
+				 * used SCS_15/SCS_16 but we will be tolerant
+				 * towards those faulty implementations.
+				 */
+				LOG_INF("Received encrypted data block with 0 "
+					"length; tolerating non-conformance!");
 			}
 			len += 1; /* put back cmd/reply ID */
 		}

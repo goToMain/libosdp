@@ -152,15 +152,16 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 
 	osdp_decrypt(pd->sc.s_enc, iv, data, length);
 
-	while (data[length - 1] == 0x00) {
+	length--;
+	while (length && data[length] == 0x00) {
 		length--;
 	}
-	if (data[length - 1] != OSDP_SC_EOM_MARKER) {
+	if (data[length] != OSDP_SC_EOM_MARKER) {
 		return -1;
 	}
-	data[length - 1] = 0;
+	data[length] = 0;
 
-	return length - 1;
+	return length;
 }
 
 int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)

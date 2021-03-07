@@ -175,27 +175,10 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
-		ASSERT_BUF_LEN(CMD_POLL_LEN);
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
 	case CMD_LSTAT:
-		ASSERT_BUF_LEN(CMD_LSTAT_LEN);
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
 	case CMD_ISTAT:
-		ASSERT_BUF_LEN(CMD_ISTAT_LEN);
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
 	case CMD_OSTAT:
-		ASSERT_BUF_LEN(CMD_OSTAT_LEN);
-		buf[len++] = pd->cmd_id;
-		ret = 0;
-		break;
 	case CMD_RSTAT:
-		ASSERT_BUF_LEN(CMD_RSTAT_LEN);
 		buf[len++] = pd->cmd_id;
 		ret = 0;
 		break;

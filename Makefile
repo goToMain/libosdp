@@ -30,7 +30,10 @@ install: default
 check: build
 	@$(MAKE) -C build check
 
-build:
+utils/README.md:
+	git submodule update --init --recursive
+
+build: utils/README.md
 	@mkdir -p build
 	@cd build && cmake ..
 

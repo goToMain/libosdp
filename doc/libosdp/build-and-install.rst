@@ -37,9 +37,11 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 +-------------------------------+-----------+-------------------------------------------+
 | OPTION                        | Default   | Description                               |
 +===============================+===========+===========================================+
-| CONFIG\_OSDP\_PACKET\_TRACE   | OFF       | Enable raw packet trace for diagnostics   |
+| CONFIG_OSDP_PACKET_TRACE      | OFF       | Enable raw packet trace for diagnostics   |
 +-------------------------------+-----------+-------------------------------------------+
 | CONFIG_OSDP_SKIP_MARK_BYTE    | OFF       | Don't send the leading mark byte (0xFF)   |
++-------------------------------+-----------+-------------------------------------------+
+| CONFIG_DISABLE_PRETTY_LOGGING | OFF       | Don't colourize log outputs               |
 +-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project

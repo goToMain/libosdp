@@ -7,6 +7,7 @@
 ## Options
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
+option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
 
 if (CONFIG_OSDP_PACKET_TRACE)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_PACKET_TRACE")
@@ -14,6 +15,10 @@ endif()
 
 if (CONFIG_OSDP_SKIP_MARK_BYTE)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_SKIP_MARK_BYTE")
+endif()
+
+if (CONFIG_DISABLE_PRETTY_LOGGING)
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_DISABLE_PRETTY_LOGGING")
 endif()
 
 # static and shared library names

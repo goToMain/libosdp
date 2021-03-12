@@ -31,11 +31,6 @@
 #define WHT   "\x1B[37m"
 #define RESET "\x1B[0m"
 
-const char *log_level_colors[LOG_MAX_LEVEL] = {
-	RED,   RED,   RED,   RED,
-	YEL,   MAG,   GRN,   RESET
-};
-
 const char *log_level_names[LOG_MAX_LEVEL] = {
 	"EMERG", "ALERT", "CRIT ", "ERROR",
 	"WARN ", "NOTIC", "INFO ", "DEBUG"
@@ -46,16 +41,26 @@ int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
 int (*log_printf)(const char *fmt, ...) = printf;
 
-void osdp_log_set_color(const char *color)
+void osdp_log_set_colour(int log_level)
 {
+#ifndef CONFIG_DISABLE_PRETTY_LOGGING
 	int ret, len;
+	const char *colour;
+	static const char *colours[LOG_MAX_LEVEL] = {
+		RED,   RED,   RED,   RED,
+		YEL,   MAG,   GRN,   RESET
+	};
 
-	len = strnlen(color, 8);
+	colour = (log_level < 0) ? RESET : colours[log_level];
+	len = strnlen(colour, 8);
 	if (isatty(fileno(stdout))) {
-		ret = write(fileno(stdout), color, len);
+		ret = write(fileno(stdout), colour, len);
 		assert(ret == len);
 		ARG_UNUSED(ret); /* squash warning in Release builds */
 	}
+#else
+	ARG_UNUSED(log_level);
+#endif
 }
 
 OSDP_EXPORT
@@ -103,14 +108,14 @@ void osdp_log(int log_level, const char *fmt, ...)
 		free(buf);
 		return;
 	}
-	osdp_log_set_color(log_level_colors[log_level]);
+	osdp_log_set_colour(log_level);
 	if (g_log_ctx == LOG_CTX_GLOBAL) {
 		log_printf("OSDP: %s: %s\n", log_level_names[log_level], buf);
 	} else {
 		log_printf("OSDP: %s: PD[%d]: %s\n", log_level_names[log_level],
 			   g_log_ctx, buf);
 	}
-	osdp_log_set_color(RESET);
+	osdp_log_set_colour(-1); /* Reset colour */
 	free(buf);
 }
 

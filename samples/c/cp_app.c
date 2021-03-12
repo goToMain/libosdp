@@ -5,8 +5,17 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <osdp.h>
+#include <stdint.h>
+
+/**
+ * This method overrides the one provided by libosdp. It should return
+ * a millisecond reference point from some tick source.
+ */
+int64_t osdp_millis_now()
+{
+	return 0;
+}
 
 int sample_cp_send_func(void *data, uint8_t *buf, int len)
 {
@@ -55,7 +64,7 @@ int main()
 		// your application code.
 
 		osdp_cp_refresh(ctx);
-		usleep(1000);
+		// delay();
 	}
 	return 0;
 }

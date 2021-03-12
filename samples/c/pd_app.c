@@ -5,8 +5,17 @@
  */
 
 #include <stdio.h>
-#include <unistd.h>
 #include <osdp.h>
+#include <stdint.h>
+
+/**
+ * This method overrides the one provided by libosdp. It should return
+ * a millisecond reference point from some tick source.
+ */
+int64_t osdp_millis_now()
+{
+	return 0;
+}
 
 enum osdp_pd_e {
 	OSDP_PD_1,
@@ -87,7 +96,7 @@ int main()
 		osdp_pd_refresh(ctx);
 
 		// your application code.
-		usleep(1000);
+		// delay();
 	}
 
 	return 0;

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include <utils/memory.h>
 #include <utils/strutils.h>
 
 #include "ini_parser.h"

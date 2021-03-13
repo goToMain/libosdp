@@ -90,21 +90,19 @@ void osdp_log_ctx_restore()
 
 void osdp_log(int log_level, const char *fmt, ...)
 {
+	size_t len;
 	va_list args;
-	char *buf;
+	static char buf[128];
 
 	if (log_level >= LOG_MAX_LEVEL || log_level > g_log_level) {
 		return;
 	}
 	va_start(args, fmt);
-	if (vasprintf(&buf, fmt, args) == -1) {
-		log_printf("vasprintf error\n");
-		return;
-	}
+	len = vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
+	assert(len <= sizeof(buf));
 	if (log_level < 0) {
 		log_printf("OSDP: %s\n", buf);
-		free(buf);
 		return;
 	}
 	osdp_log_set_colour(log_level);
@@ -115,7 +113,6 @@ void osdp_log(int log_level, const char *fmt, ...)
 			   g_log_ctx, buf);
 	}
 	osdp_log_set_colour(-1); /* Reset colour */
-	free(buf);
 }
 
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)

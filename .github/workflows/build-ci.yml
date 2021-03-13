@@ -15,7 +15,6 @@ on:
 jobs:
   Build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
       with:
@@ -36,9 +35,20 @@ jobs:
         name: libosdp-ci-binaries.zip
         path: ./packages/
 
+  BuildLean:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: configure
+      run: |
+        ./configure
+    - name: make
+      run: make
+
   Test:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
       with:

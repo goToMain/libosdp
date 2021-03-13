@@ -10,9 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <sys/time.h>
-#include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "osdp_common.h"
 

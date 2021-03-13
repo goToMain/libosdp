@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <utils/utils.h>
 #include <utils/queue.h>

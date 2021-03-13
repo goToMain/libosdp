@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
 #include "osdp_common.h"
 
 #define OSDP_SC_EOM_MARKER             0x80  /* End of Message Marker */

@@ -5,8 +5,6 @@
  */
 
 #include <stdlib.h>
-#include <string.h>
-#include <utils/utils.h>
 
 #include "osdp_common.h"
 

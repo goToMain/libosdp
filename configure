@@ -96,8 +96,6 @@ if [[ ! -z "${USE_OPENSSL}" ]]; then
 	fi
 fi
 
-CCFLAGS+=" -static"
-
 ## Declare sources
 if [[ -z "${USE_OPENSSL}" ]]; then
 	echo "Using in-tree AES methods. Consider using openssl (--use-openssl)"
@@ -108,17 +106,17 @@ LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src
 
 ## Generate osdp_config.h
 echo "Generating osdp_config.h"
-cp src/osdp_config.h.in src/osdp_config.h
-sed -i "" -e "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" src/osdp_config.h
-sed -i "" -e "s/@PROJECT_NAME@/${PROJECT_NAME}/" src/osdp_config.h
-sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" src/osdp_config.h
-sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" src/osdp_config.h
-sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" src/osdp_config.h
-sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" src/osdp_config.h
+cp src/osdp_config.h.in osdp_config.h
+sed -i "" -e "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" osdp_config.h
+sed -i "" -e "s/@PROJECT_NAME@/${PROJECT_NAME}/" osdp_config.h
+sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" osdp_config.h
+sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" osdp_config.h
+sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" osdp_config.h
+sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" osdp_config.h
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"
-cat > src/osdp_export.h <<----
+cat > osdp_export.h <<----
 #ifndef OSDP_EXPORT_H
 #define OSDP_EXPORT_H
 
@@ -139,7 +137,7 @@ CC       := ${CC}
 CXX      := ${CXX}
 AR       := ${AR}
 SYSROOT  := ${SYSROOT}
-CCFLAGS  := ${CCFLAGS} -Wall -Wextra -O3 -Iinclude -Isrc -Iutils/include
+CCFLAGS  := ${CCFLAGS} -Wall -Wextra -O3 -Iinclude -Isrc -I. -Iutils/include
 CXXFLAGS := ${CXXFLAGS}
 LDFLAGS  := ${LDFLAGS}
 SRC      := ${LIBOSDP_SOURCES}

@@ -135,10 +135,7 @@ uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len)
 
 int64_t osdp_millis_now()
 {
-	struct timeval tv;
-
-	gettimeofday(&tv, NULL);
-	return (int64_t) ((tv.tv_sec) * 1000L + (tv.tv_usec) / 1000L);
+	return millis_now();
 }
 
 int64_t osdp_millis_since(int64_t last)

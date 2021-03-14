@@ -174,7 +174,7 @@ clean:
 
 .PHONY: distclean
 distclean: clean
-	\$(Q)rm -f Makefile src/osdp_config.h src/osdp_export.h
+	\$(Q)rm -f Makefile osdp_config.h osdp_export.h
 ---
 echo
 echo "LibOSDP lean build system configured!"

@@ -9,8 +9,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
+#ifndef CONFIG_DISABLE_PRETTY_LOGGING
 #include <unistd.h>
+#endif
 #include <sys/time.h>
 
 #include "osdp_common.h"

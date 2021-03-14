@@ -101,7 +101,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_start(args, fmt);
 	len = vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
-	assert(len <= sizeof(buf));
+	assert(len < sizeof(buf));
 	if (log_level < 0) {
 		log_printf("OSDP: %s\n", buf);
 		return;

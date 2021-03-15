@@ -283,7 +283,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		info->cap = pd->cap;
 	}
 
-	osdp_set_log_level(c->log_level);
+	osdp_logger_init(c->log_level, printf);
 
 	if (c->mode == CONFIG_MODE_CP) {
 		c->cp_ctx = osdp_cp_setup(c->num_pd, info_arr, c->cp.master_key);

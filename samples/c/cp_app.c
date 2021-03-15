@@ -51,7 +51,7 @@ osdp_pd_info_t pd_info[] = {
 int main()
 {
 	osdp_t *ctx = osdp_cp_setup(1, pd_info, NULL);
-	osdp_set_log_level(7);
+	osdp_logger_init(7, printf);
 
 	if (ctx == NULL)
 	{

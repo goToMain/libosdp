@@ -752,12 +752,6 @@ int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
 void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...));
 
 /**
- * @brief A convenience macro for setting just the log level.
- * see osdp_logger_init()
- */
-#define osdp_set_log_level(l) osdp_logger_init(l, NULL)
-
-/**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.
  *
  * @retval version string

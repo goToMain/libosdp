@@ -39,7 +39,7 @@ const char *log_level_names[LOG_MAX_LEVEL] = {
 int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
 int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
-int (*log_printf)(const char *fmt, ...) = printf;
+int (*log_printf)(const char *fmt, ...);
 
 void osdp_log_set_colour(int log_level)
 {
@@ -95,9 +95,12 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_list args;
 	static char buf[128];
 
-	if (log_level >= LOG_MAX_LEVEL || log_level > g_log_level) {
+	if (log_printf == NULL ||
+	    log_level >= LOG_MAX_LEVEL ||
+	    log_level > g_log_level) {
 		return;
 	}
+
 	va_start(args, fmt);
 	len = vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);

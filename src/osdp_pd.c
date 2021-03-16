@@ -949,6 +949,9 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			pd->state = OSDP_PD_STATE_ERR;
 			break;
 		}
+		if (TO_CTX(pd)->command_complete_callback) {
+			TO_CTX(pd)->command_complete_callback(pd->cmd_id);
+		}
 		pd->rx_buf_len = 0;
 		pd->state = OSDP_PD_STATE_IDLE;
 		break;

@@ -355,3 +355,11 @@ uint32_t osdp_get_status_mask(osdp_t *ctx)
 
 	return mask;
 }
+
+OSDP_EXPORT
+void osdp_set_command_complete_callback(osdp_t *ctx, osdp_command_complete_callback_t cb)
+{
+	assert(ctx);
+
+	TO_OSDP(ctx)->command_complete_callback = cb;
+}

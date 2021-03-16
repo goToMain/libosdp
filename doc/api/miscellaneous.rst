@@ -17,3 +17,4 @@ Status
 
 .. doxygenfunction:: osdp_get_sc_status_mask
 
+.. doxygenfunction:: osdp_set_command_complete_callback

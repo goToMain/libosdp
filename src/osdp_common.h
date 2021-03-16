@@ -334,6 +334,7 @@ struct osdp {
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;
 	uint8_t sc_master_key[16];
+	osdp_command_complete_callback_t command_complete_callback;
 };
 
 enum log_levels_e {

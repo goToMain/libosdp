@@ -604,6 +604,15 @@ typedef int (*pd_commnand_callback_t)(void *arg, struct osdp_cmd *cmd);
 */
 typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
 
+/**
+ * @brief Callback for for command completion event callbacks. After is has
+ * been registered with `osdp_set_command_complete_callback()` this method is
+ * invoked after a command has been processed successfully in CP and PD sides.
+ *
+ * @param id OSDP command ID (Note: this is not `enum osdp_cmd_e`)
+ */
+typedef void (*osdp_command_complete_callback_t)(int id);
+
 /* ------------------------------- */
 /*            CP Methods           */
 /* ------------------------------- */
@@ -781,6 +790,16 @@ uint32_t osdp_get_status_mask(osdp_t *ctx);
  * @retval Bit-Mask (max 32 PDs)
  */
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
+
+/**
+ * @breif Set osdp_command_complete_callback_t to susbscibe to osdp command or
+ * event completion events. This can be used to perform post command actions
+ * such as changing the baud rate of the underlying channel after a COMSET
+ * command was acknowledged/issued by a peer.
+ *
+ */
+void osdp_set_command_complete_callback(osdp_t *ctx,
+					osdp_command_complete_callback_t cb);
 
 #ifdef __cplusplus
 }

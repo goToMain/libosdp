@@ -613,6 +613,15 @@ typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
  */
 typedef void (*osdp_command_complete_callback_t)(int id);
 
+/**
+ * @brief A printf() like method that will be used to wirte out log lines.
+ *
+ * @param fmt C printf() style format string. See man 3 printf
+ *
+ * @retval number of characters written to the log stream
+ */
+typedef int (*osdp_log_fn_t)(const char *fmt, ...);
+
 /* ------------------------------- */
 /*            CP Methods           */
 /* ------------------------------- */
@@ -758,7 +767,7 @@ int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
  *               buffer. Can be handy if you want to log to file on a UART
  *               device without putchar redirection.
  */
-void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...));
+void osdp_logger_init(int log_level, osdp_log_fn_t log_fn);
 
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.

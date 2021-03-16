@@ -72,7 +72,11 @@ osdp_pd_info_t info_pd = {
 
 int main()
 {
-	OSDP::PeripheralDevice pd(&info_pd, nullptr);
+	OSDP::PeripheralDevice pd;
+
+	pd.logger_init(0, printf);
+
+	pd.setup(&info_pd, nullptr);
 
 	pd.set_command_callback(pd_command_handler);
 

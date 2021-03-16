@@ -123,13 +123,13 @@ int test_mixed_fsm_setup(struct test *t)
 		.channel.send = test_mixed_pd_fsm_send,
 		.channel.recv = test_mixed_pd_fsm_receive,
 	};
+	osdp_logger_init(t->loglevel, printf);
 	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
 	if (test_data.pd_ctx == NULL) {
 		printf(SUB_1 "pd init failed!\n");
 		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
 		return -1;
 	}
-	osdp_set_log_level(t->loglevel);
 	t->mock_data = (void *)&test_data;
 	return 0;
 }

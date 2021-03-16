@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <iostream>
 #include <unistd.h>
 #include <osdp.hpp>
 
@@ -47,9 +48,11 @@ osdp_pd_info_t pd_info[] = {
 
 int main()
 {
-	OSDP::ControlPanel cp(1, pd_info, nullptr);
+	OSDP::ControlPanel cp;
 
-	cp.set_log_level(7);
+	cp.logger_init(7, printf);
+
+	cp.setup(1, pd_info, nullptr);
 
 	while (1) {
 		// your application code.

@@ -82,7 +82,9 @@ osdp_pd_info_t info_pd = {
 
 int main()
 {
-	struct osdp_t *ctx;
+	osdp_t *ctx;
+
+	osdp_logger_init(7, printf);
 
 	ctx = osdp_pd_setup(&info_pd, NULL);
 	if (ctx == NULL) {

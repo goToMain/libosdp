@@ -21,11 +21,6 @@ public:
 		osdp_logger_init(log_level, log_fn);
 	}
 
-	void set_log_level(int log_level)
-	{
-		osdp_logger_init(log_level, nullptr);
-	}
-
 	const char *get_version()
 	{
 		return osdp_get_version();
@@ -52,14 +47,19 @@ protected:
 
 class ControlPanel : public Common {
 public:
-	ControlPanel(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
+	ControlPanel()
 	{
-		_ctx = osdp_cp_setup(num_pd, info, master_key);
 	}
 
 	~ControlPanel()
 	{
 		osdp_cp_teardown(_ctx);
+	}
+
+	bool setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
+	{
+		_ctx = osdp_cp_setup(num_pd, info, master_key);
+		return _ctx != nullptr;
 	}
 
 	void refresh()
@@ -75,14 +75,19 @@ public:
 
 class PeripheralDevice : public Common {
 public:
-	PeripheralDevice(osdp_pd_info_t *info, uint8_t *scbk)
+	PeripheralDevice()
 	{
-		_ctx = osdp_pd_setup(info, scbk);
 	}
 
 	~PeripheralDevice()
 	{
 		osdp_pd_teardown(_ctx);
+	}
+
+	bool setup(osdp_pd_info_t *info, uint8_t *scbk)
+	{
+		_ctx = osdp_pd_setup(info, scbk);
+		return _ctx != nullptr;
 	}
 
 	void refresh()

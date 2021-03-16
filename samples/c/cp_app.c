@@ -50,17 +50,17 @@ osdp_pd_info_t pd_info[] = {
 
 int main()
 {
-	osdp_t *ctx = osdp_cp_setup(1, pd_info, NULL);
+	osdp_t *ctx;
+
 	osdp_logger_init(7, printf);
 
-	if (ctx == NULL)
-	{
+	ctx = osdp_cp_setup(1, pd_info, NULL);
+	if (ctx == NULL) {
 		printf("cp init failed!\n");
 		return -1;
 	}
 
-	while (1)
-	{
+	while (1) {
 		// your application code.
 
 		osdp_cp_refresh(ctx);

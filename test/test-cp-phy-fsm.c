@@ -95,12 +95,12 @@ int test_cp_phy_fsm_setup(struct test *t)
 		.channel.recv = test_cp_phy_fsm_receive,
 		.channel.flush = NULL
 	};
+	osdp_logger_init(t->loglevel, printf);
 	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;
 	}
-	osdp_set_log_level(t->loglevel);
 	SET_CURRENT_PD(ctx, 0);
 	t->mock_data = (void *)ctx;
 	return 0;

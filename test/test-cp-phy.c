@@ -114,13 +114,13 @@ int test_cp_phy_setup(struct test *t)
 		.channel.recv = NULL,
 		.channel.flush = NULL
 	};
+	osdp_logger_init(t->loglevel, printf);
 	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;
 	}
 	SET_CURRENT_PD(ctx, 0);
-	osdp_set_log_level(t->loglevel);
 	t->mock_data = (void *)ctx;
 	return 0;
 }

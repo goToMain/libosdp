@@ -848,9 +848,37 @@ static int pd_send_reply(struct osdp_pd *pd)
 	return OSDP_PD_ERR_NONE;
 }
 
+static int pd_decode_packet(struct osdp_pd *pd, int *len)
+{
+	int err;
+	uint8_t *buf;
+
+	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, len);
+	if (err == OSDP_ERR_PKT_WAIT) {
+		/* rx_buf_len < pkt->len; wait for more data */
+		return OSDP_PD_ERR_NO_DATA;
+	}
+	if (err == OSDP_ERR_PKT_FMT || err == OSDP_ERR_PKT_SKIP) {
+		return OSDP_PD_ERR_GENERIC;
+	}
+	if (err) { /* propagate other errors as-is */
+		return err;
+	}
+
+	pd->reply_id = 0; /* reset past reply ID so phy can send NAK */
+	pd->ephemeral_data[0] = 0; /* reset past NAK reason */
+	*len = osdp_phy_decode_packet(pd, pd->rx_buf, *len, &buf);
+	if (*len <= 0) {
+		if (pd->reply_id != 0) {
+			return OSDP_PD_ERR_REPLY; /* Send a NAK */
+		}
+		return OSDP_PD_ERR_GENERIC; /* fatal errors */
+	}
+	return pd_decode_command(pd, buf, *len);
+}
+
 static int pd_receve_packet(struct osdp_pd *pd)
 {
-	uint8_t *buf;
 	int len, err, remaining;
 
 	len = pd->channel.recv(pd->channel.data, pd->rx_buf + pd->rx_buf_len,
@@ -876,26 +904,7 @@ static int pd_receve_packet(struct osdp_pd *pd)
 		}
 	}
 
-	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, &len);
-	if (err == OSDP_ERR_PKT_WAIT) {
-		/* rx_buf_len < pkt->len; wait for more data */
-		return OSDP_PD_ERR_NO_DATA;
-	}
-	if (err == OSDP_ERR_PKT_FMT) {
-		return OSDP_PD_ERR_GENERIC;
-	}
-	if (err == OSDP_ERR_PKT_NONE) {
-		pd->reply_id = 0; /* reset past reply ID so phy can send NAK */
-		pd->ephemeral_data[0] = 0; /* reset past NAK reason */
-		len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);
-		if (len <= 0) {
-			if (pd->reply_id != 0) {
-				return OSDP_PD_ERR_REPLY; /* Send a NAK */
-			}
-			return OSDP_PD_ERR_GENERIC; /* fatal errors */
-		}
-		err = pd_decode_command(pd, buf, len);
-	}
+	err = pd_decode_packet(pd, &len);
 
 	/* We are done with the packet (error or not). Remove processed bytes */
 	remaining = pd->rx_buf_len - len;

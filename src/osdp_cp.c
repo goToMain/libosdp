@@ -573,7 +573,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	return ret;
 }
 
-static int cp_send_command(struct osdp_pd *pd)
+static int cp_build_packet(struct osdp_pd *pd)
 {
 	int ret, len;
 
@@ -596,20 +596,30 @@ static int cp_send_command(struct osdp_pd *pd)
 		return OSDP_CP_ERR_GENERIC;
 	}
 
+	pd->rx_buf_len = len;
+
+	return OSDP_CP_ERR_NONE;
+}
+
+static int cp_send_command(struct osdp_pd *pd)
+{
+	int ret;
+
 	/* flush rx to remove any invalid data. */
 	if (pd->channel.flush) {
 		pd->channel.flush(pd->channel.data);
 	}
 
-	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
-	if (ret != len) {
-		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
+	ret = pd->channel.send(pd->channel.data, pd->rx_buf, pd->rx_buf_len);
+	if (ret != pd->rx_buf_len) {
+		LOG_ERR("Channel send for %d bytes failed! ret: %d",
+			pd->rx_buf_len, ret);
 		return OSDP_CP_ERR_GENERIC;
 	}
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->rx_buf, len,
+			osdp_dump(pd->rx_buf, pd->rx_buf_len,
 				  "OSDP: PD[%d]: Sent", pd->offset);
 		}
 	}
@@ -725,7 +735,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		cp_cmd_free(pd, cmd);
 		/* fall-thru */
 	case OSDP_CP_PHY_STATE_SEND_CMD:
-		if ((cp_send_command(pd)) < 0) {
+		if (cp_build_packet(pd)) {
+			LOG_ERR("Failed to build packet for CMD(%d)", pd->cmd_id);
+			ret = OSDP_CP_ERR_GENERIC;
+			break;
+		}
+		if (cp_send_command(pd)) {
 			LOG_ERR("Failed to send CMD(%d)", pd->cmd_id);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
 			ret = OSDP_CP_ERR_GENERIC;

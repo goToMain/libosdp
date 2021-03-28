@@ -1138,5 +1138,6 @@ int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event)
  * Force export some private methods for testing.
  */
 void (*test_osdp_pd_update)(struct osdp_pd *pd) = osdp_pd_update;
+int (*test_pd_decode_packet)(struct osdp_pd *pd, int *len) = pd_decode_packet;
 
 #endif /* UNIT_TESTING */

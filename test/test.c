@@ -59,5 +59,7 @@ int main(int argc, char *argv[])
 
 	run_mixed_fsm_tests(&t);
 
+	run_osdp_commands_tests(&t);
+
 	return test_end(&t);
 }

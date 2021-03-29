@@ -183,7 +183,7 @@ enum osdp_pd_nak_code_e {
 	 */
 	OSDP_PD_NAK_CMD_UNKNOWN,
 	/**
-	 * @brief This PD does not support the security block that was received
+	 * @brief Sequence number error
 	 */
 	OSDP_PD_NAK_SEQ_NUM,
 	/**

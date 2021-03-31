@@ -58,17 +58,12 @@ struct cp_cmd_node {
 static int cp_cmd_queue_init(struct osdp_pd *pd)
 {
 	if (slab_init(&pd->cmd.slab, sizeof(struct cp_cmd_node),
-		      OSDP_CP_CMD_POOL_SIZE)) {
+		      pd->cmd.slab_blob, sizeof(pd->cmd.slab_blob)) < 0) {
 		LOG_ERR("Failed to initialize command slab");
 		return -1;
 	}
 	queue_init(&pd->cmd.queue);
 	return 0;
-}
-
-static void cp_cmd_queue_del(struct osdp_pd *pd)
-{
-	slab_del(&pd->cmd.slab);
 }
 
 static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
@@ -84,10 +79,11 @@ static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
 
 static void cp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
+	ARG_UNUSED(pd);
 	struct cp_cmd_node *n;
 
 	n = CONTAINER_OF(cmd, struct cp_cmd_node, object);
-	slab_free(&pd->cmd.slab, n);
+	assert(slab_free(n) == 0);
 }
 
 static void cp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
@@ -1107,15 +1103,10 @@ error:
 OSDP_EXPORT
 void osdp_cp_teardown(osdp_t *ctx)
 {
-	int i;
-
 	if (ctx == NULL || TO_CP(ctx) == NULL) {
 		return;
 	}
 
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		cp_cmd_queue_del(TO_PD(ctx, i));
-	}
 	safe_free(TO_PD(ctx, 0));
 	safe_free(TO_CP(ctx)->channel_lock);
 	safe_free(TO_CP(ctx));

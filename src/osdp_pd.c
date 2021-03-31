@@ -71,17 +71,12 @@ struct pd_event_node {
 static int pd_event_queue_init(struct osdp_pd *pd)
 {
 	if (slab_init(&pd->event.slab, sizeof(struct pd_event_node),
-		      OSDP_CP_CMD_POOL_SIZE)) {
+		      pd->event.slab_blob, sizeof(pd->event.slab_blob)) < 0) {
 		LOG_ERR("Failed to initialize command slab");
 		return -1;
 	}
 	queue_init(&pd->event.queue);
 	return 0;
-}
-
-static void pd_event_queue_del(struct osdp_pd *pd)
-{
-	slab_del(&pd->event.slab);
 }
 
 static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
@@ -97,10 +92,11 @@ static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 
 static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
 {
+	ARG_UNUSED(pd);
 	struct pd_event_node *n;
 
 	n = CONTAINER_OF(event, struct pd_event_node, object);
-	slab_free(&pd->event.slab, n);
+	assert(slab_free(n) == 0);
 }
 
 static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
@@ -1079,7 +1075,6 @@ void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
 
-	pd_event_queue_del(TO_PD(ctx, 0));
 	safe_free(TO_PD(ctx, 0));
 	safe_free(TO_CP(ctx));
 	safe_free(ctx);

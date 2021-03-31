@@ -101,8 +101,6 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 #
 list(APPEND LIB_OSDP_UTILS_SRC
 	${CMAKE_SOURCE_DIR}/utils/src/utils.c
-	${CMAKE_SOURCE_DIR}/utils/src/memory.c
-	${CMAKE_SOURCE_DIR}/utils/src/strutils.c
 	${CMAKE_SOURCE_DIR}/utils/src/list.c
 	${CMAKE_SOURCE_DIR}/utils/src/queue.c
 	${CMAKE_SOURCE_DIR}/utils/src/slab.c

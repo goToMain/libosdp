@@ -21,6 +21,10 @@ if (CONFIG_DISABLE_PRETTY_LOGGING)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_DISABLE_PRETTY_LOGGING")
 endif()
 
+if (CONFIG_OSDP_STATIC_PD)
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_STATIC_PD")
+endif()
+
 # static and shared library names
 set(LIB_OSDP_SHARED osdp)
 set(LIB_OSDP_STATIC osdpstatic)
@@ -34,10 +38,15 @@ configure_file(osdp_config.h.in osdp_config.h @ONLY)
 list(APPEND LIB_OSDP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_common.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_phy.c
-	${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_pd.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_sc.c
 )
+
+if (NOT CONFIG_OSDP_STATIC_PD)
+	list(APPEND LIB_OSDP_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
+	)
+endif()
 
 list(APPEND LIB_OSDP_INCLUDE_DIRS
 	${CMAKE_SOURCE_DIR}/utils/include
@@ -101,8 +110,6 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 #
 list(APPEND LIB_OSDP_UTILS_SRC
 	${CMAKE_SOURCE_DIR}/utils/src/utils.c
-	${CMAKE_SOURCE_DIR}/utils/src/memory.c
-	${CMAKE_SOURCE_DIR}/utils/src/strutils.c
 	${CMAKE_SOURCE_DIR}/utils/src/list.c
 	${CMAKE_SOURCE_DIR}/utils/src/queue.c
 	${CMAKE_SOURCE_DIR}/utils/src/slab.c

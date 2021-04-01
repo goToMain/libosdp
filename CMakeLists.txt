@@ -33,15 +33,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+option(CONFIG_OSDP_STATIC_PD "Setup PD single statically" OFF)
+
 # Each subdirecttory has it's own CMakeLists.txt
 add_subdirectory(utils)
 add_subdirectory(src)
-add_subdirectory(osdpctl)
-add_subdirectory(test)
-add_subdirectory(samples/c)
-add_subdirectory(samples/cpp)
-add_subdirectory(doc)
-add_subdirectory(python)
+if (NOT CONFIG_OSDP_STATIC_PD)
+	add_subdirectory(osdpctl)
+	add_subdirectory(test)
+	add_subdirectory(samples/c)
+	add_subdirectory(samples/cpp)
+	add_subdirectory(doc)
+	add_subdirectory(python)
+endif()
 
 ## uninstall target
 add_custom_target(uninstall

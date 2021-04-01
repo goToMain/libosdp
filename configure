@@ -19,6 +19,7 @@ usage() {
 	  --use-openssl                Use methods from openssl instead of in-tree ones
 	  --openssl-include-dir DIR    Include directory for openssl if not in system path
 	  --no-colours                 Don't colourize log ouputs
+	  --static-pd                  Setup PD single statically
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
 	---
@@ -32,6 +33,7 @@ while [ $# -gt 0 ]; do
 	--use-openssl)         USE_OPENSSL=1;;
 	--openssl-include-dir) OPENSSL_INCLUDE_DIR=$2; shift;;
 	--no-colours)          NO_COLOURS=1;;
+	--static-pd)           STATIC_PD=1;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
 	*) echo -e "Unknown option $1\n"; usage; exit 1;;
@@ -72,6 +74,10 @@ if [[ ! -z "${SKIP_MARK_BYTE}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_SKIP_MARK_BYTE"
 fi
 
+if [[ ! -z "${STATIC_PD}" ]]; then
+	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
+fi
+
 ## Repo meta data
 echo "Extracting source code meta information"
 PROJECT_VERSION=$(perl -ne 'print if s/^project\(libosdp VERSION ([0-9.]+)\)$/\1/' CMakeLists.txt)
@@ -101,8 +107,15 @@ if [[ -z "${USE_OPENSSL}" ]]; then
 	echo "Using in-tree AES methods. Consider using openssl (--use-openssl)"
 	LIBOSDP_SOURCES+=" src/osdp_aes.c"
 fi
-LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_cp.c src/osdp_pd.c"
-LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c utils/src/memory.c"
+LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c"
+LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
+
+if [[ -z "${STATIC_PD}" ]]; then
+	LIBOSDP_SOURCES+=" src/osdp_cp.c"
+	OSDP_SAMPLES="cp_app.out pd_app.out"
+else
+	OSDP_SAMPLES="pd_app.out"
+fi
 
 ## Generate osdp_config.h
 echo "Generating osdp_config.h"
@@ -163,9 +176,14 @@ all: \$(O)/libosdp.a samples
 	\$(Q)\$(CC) -c $< \$(CCFLAGS) -o \$@
 
 .PHONY: samples
-samples:
+samples: ${OSDP_SAMPLES}
+
+cp_app.out:
 	@echo "LINK \$@"
 	\$(Q)\$(CC) \$(CCFLAGS) samples/c/cp_app.c -o cp_app.out -Iinclude -L. -losdp
+
+pd_app.out:
+	@echo "LINK \$@"
 	\$(Q)\$(CC) \$(CCFLAGS) samples/c/pd_app.c -o pd_app.out -Iinclude -L. -losdp
 
 .PHONY: clean

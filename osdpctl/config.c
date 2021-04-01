@@ -416,7 +416,8 @@ void config_parse(const char *filename, struct config_s *config)
 
 	if (config->pd->channel_type == CHANNEL_TYPE_MSGQ) {
 		if (config->mode == CONFIG_MODE_PD) {
-			safe_free(config->pd->channel_device);
+			if (config->pd->channel_device)
+				free(config->pd->channel_device);
 			config->pd->channel_device = safe_strdup(config->config_file);
 		}
 	}

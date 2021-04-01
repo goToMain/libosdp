@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef CONFIG_OSDP_STATIC_PD
 #include <stdlib.h>
+#endif
 
 #include "osdp_common.h"
 
@@ -71,17 +73,12 @@ struct pd_event_node {
 static int pd_event_queue_init(struct osdp_pd *pd)
 {
 	if (slab_init(&pd->event.slab, sizeof(struct pd_event_node),
-		      OSDP_CP_CMD_POOL_SIZE)) {
+		      pd->event.slab_blob, sizeof(pd->event.slab_blob)) < 0) {
 		LOG_ERR("Failed to initialize command slab");
 		return -1;
 	}
 	queue_init(&pd->event.queue);
 	return 0;
-}
-
-static void pd_event_queue_del(struct osdp_pd *pd)
-{
-	slab_del(&pd->event.slab);
 }
 
 static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
@@ -97,10 +94,11 @@ static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 
 static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
 {
+	ARG_UNUSED(pd);
 	struct pd_event_node *n;
 
 	n = CONTAINER_OF(event, struct pd_event_node, object);
-	slab_free(&pd->event.slab, n);
+	assert(slab_free(n) == 0);
 }
 
 static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
@@ -1011,27 +1009,39 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 
 	osdp_log_ctx_set(info->address);
 
+#ifndef CONFIG_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
 		LOG_ERR("Failed to allocate osdp context");
 		return NULL;
 	}
-	ctx->magic = 0xDEADBEAF;
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
 		LOG_ERR("Failed to allocate osdp_cp context");
 		goto error;
 	}
-	cp = TO_CP(ctx);
-	cp->__parent = ctx;
-	cp->num_pd = 1;
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd));
 	if (ctx->pd == NULL) {
 		LOG_ERR("Failed to allocate osdp_pd context");
 		goto error;
 	}
+#else
+	static struct osdp g_osdp_ctx;
+	static struct osdp_cp g_osdp_cp_ctx;
+	static struct osdp_pd g_osdp_pd_ctx;
+
+	ctx = &g_osdp_ctx;
+	ctx->cp = &g_osdp_cp_ctx;
+	ctx->pd = &g_osdp_pd_ctx;
+#endif
+
+	ctx->magic = 0xDEADBEAF;
+	cp = TO_CP(ctx);
+	cp->__parent = ctx;
+	cp->num_pd = 1;
+
 	SET_CURRENT_PD(ctx, 0);
 	pd = TO_PD(ctx, 0);
 
@@ -1079,10 +1089,11 @@ void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
 
-	pd_event_queue_del(TO_PD(ctx, 0));
+#ifndef CONFIG_OSDP_STATIC_PD
 	safe_free(TO_PD(ctx, 0));
 	safe_free(TO_CP(ctx));
 	safe_free(ctx);
+#endif
 }
 
 OSDP_EXPORT

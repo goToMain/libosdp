@@ -52,6 +52,12 @@
 #define AES_PAD_LEN(x)                 ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)                    (TO_CP(ctx)->num_pd)
 
+#define OSDP_QUEUE_SLAB_SIZE (OSDP_CP_CMD_POOL_SIZE * \
+			      (sizeof(struct osdp_cmd) + \
+			       sizeof(queue_node_t)))
+
+#define safe_free(p)			if (p) free(p)
+
 /* Unused type only to estmate ephemeral_data size */
 union osdp_ephemeral_data {
 	struct osdp_cmd cmd;
@@ -278,6 +284,7 @@ struct osdp_secure_channel {
 struct osdp_queue {
 	queue_t queue;
 	slab_t slab;
+	uint8_t slab_blob[OSDP_QUEUE_SLAB_SIZE];
 };
 
 struct osdp_pd {
@@ -385,6 +392,5 @@ void osdp_log_ctx_restore();
 __weak void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 __weak void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 __weak void osdp_get_rand(uint8_t *buf, int len);
-void safe_free(void *p);
 
 #endif	/* _OSDP_COMMON_H_ */

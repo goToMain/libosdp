@@ -43,6 +43,8 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 +-------------------------------+-----------+-------------------------------------------+
 | CONFIG_DISABLE_PRETTY_LOGGING | OFF       | Don't colourize log outputs               |
 +-------------------------------+-----------+-------------------------------------------+
+| CONFIG_OSDP_STATIC_PD         | OFF       | Setup PD single statically                |
++-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project
 ---------------------------------

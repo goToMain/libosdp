@@ -21,6 +21,10 @@ if (CONFIG_DISABLE_PRETTY_LOGGING)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_DISABLE_PRETTY_LOGGING")
 endif()
 
+if (CONFIG_OSDP_STATIC_PD)
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_STATIC_PD")
+endif()
+
 # static and shared library names
 set(LIB_OSDP_SHARED osdp)
 set(LIB_OSDP_STATIC osdpstatic)
@@ -34,10 +38,15 @@ configure_file(osdp_config.h.in osdp_config.h @ONLY)
 list(APPEND LIB_OSDP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_common.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_phy.c
-	${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_pd.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_sc.c
 )
+
+if (NOT CONFIG_OSDP_STATIC_PD)
+	list(APPEND LIB_OSDP_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
+	)
+endif()
 
 list(APPEND LIB_OSDP_INCLUDE_DIRS
 	${CMAKE_SOURCE_DIR}/utils/include

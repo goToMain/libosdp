@@ -244,7 +244,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR("CMD(%02x) not allowed due to ENFORCE_SECURE",
 				pd->cmd_id);
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_PD_ERR_REPLY;
 		}
 	}

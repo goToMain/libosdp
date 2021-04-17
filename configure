@@ -188,7 +188,7 @@ pd_app.out:
 
 .PHONY: clean
 clean:
-	\$(Q)rm -f \$(OBJ) \$(O)/libosdp.a cp_app.out pd_app.out
+	\$(Q)rm -f \$(OBJ) \$(O)/src/*.o \$(O)/libosdp.a cp_app.out pd_app.out
 
 .PHONY: distclean
 distclean: clean

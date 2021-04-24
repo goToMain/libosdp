@@ -332,6 +332,8 @@ struct osdp_pd {
 
 	int64_t tstamp;
 	int64_t sc_tstamp;
+
+	uint16_t peer_rx_size;
 	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
 	int rx_buf_len;
 	int64_t phy_tstamp;

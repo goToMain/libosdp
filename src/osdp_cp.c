@@ -418,6 +418,14 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			pd->cap[t1].compliance_level = buf[pos++];
 			pd->cap[t1].num_items        = buf[pos++];
 		}
+
+		/* Get peer RX buffer size */
+		t1 = OSDP_PD_CAP_RECEIVE_BUFFERSIZE;
+		if (pd->cap[t1].function_code == t1) {
+			pd->peer_rx_size = pd->cap[t1].compliance_level;
+			pd->peer_rx_size |= pd->cap[t1].num_items << 8;
+		}
+
 		/* post-capabilities hooks */
 		t2 = OSDP_PD_CAP_COMMUNICATION_SECURITY;
 		if (pd->cap[t2].compliance_level & 0x01) {

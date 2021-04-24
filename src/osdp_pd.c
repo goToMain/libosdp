@@ -65,6 +65,11 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 		1, /* (Bit-0) AES128 support */
 		0, /* N/A */
 	},
+	{
+		OSDP_PD_CAP_RECEIVE_BUFFERSIZE,
+		BYTE_0(OSDP_PACKET_BUF_SIZE),
+		BYTE_1(OSDP_PACKET_BUF_SIZE),
+	},
 	{ -1, 0, 0 } /* Sentinel */
 };
 

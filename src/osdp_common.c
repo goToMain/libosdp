@@ -308,11 +308,10 @@ const char *osdp_get_source_info()
 OSDP_EXPORT
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 {
+	input_check(ctx);
 	int i;
 	uint32_t mask = 0;
 	struct osdp_pd *pd;
-
-	assert(ctx);
 
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
 		for (i = 0; i < NUM_PD(ctx); i++) {
@@ -335,11 +334,10 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 OSDP_EXPORT
 uint32_t osdp_get_status_mask(osdp_t *ctx)
 {
+	input_check(ctx);
 	int i;
 	uint32_t mask = 0;
 	struct osdp_pd *pd;
-
-	assert(ctx);
 
 	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
 		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
@@ -359,7 +357,7 @@ uint32_t osdp_get_status_mask(osdp_t *ctx)
 OSDP_EXPORT
 void osdp_set_command_complete_callback(osdp_t *ctx, osdp_command_complete_callback_t cb)
 {
-	assert(ctx);
+	input_check(ctx);
 
 	TO_OSDP(ctx)->command_complete_callback = cb;
 }

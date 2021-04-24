@@ -1101,7 +1101,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 OSDP_EXPORT
 void osdp_pd_refresh(osdp_t *ctx)
 {
-	assert(ctx);
+	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	osdp_log_ctx_set(pd->address);
@@ -1111,7 +1111,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 OSDP_EXPORT
 void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap)
 {
-	assert(ctx);
+	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	osdp_pd_set_attributes(pd, cap, NULL);
@@ -1121,7 +1121,7 @@ OSDP_EXPORT
 void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb,
 				  void *arg)
 {
-	assert(ctx);
+	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	pd->command_callback_arg = arg;
@@ -1131,7 +1131,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb,
 OSDP_EXPORT
 int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event)
 {
-	assert(ctx);
+	input_check(ctx);
 	struct osdp_event *ev;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 

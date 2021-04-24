@@ -1103,9 +1103,7 @@ error:
 OSDP_EXPORT
 void osdp_cp_teardown(osdp_t *ctx)
 {
-	if (ctx == NULL || TO_CP(ctx) == NULL) {
-		return;
-	}
+	input_check(ctx);
 
 	safe_free(TO_PD(ctx, 0));
 	safe_free(TO_CP(ctx)->channel_lock);
@@ -1116,10 +1114,9 @@ void osdp_cp_teardown(osdp_t *ctx)
 OSDP_EXPORT
 void osdp_cp_refresh(osdp_t *ctx)
 {
+	input_check(ctx);
 	int i, rc;
 	struct osdp_pd *pd;
-
-	assert(ctx);
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		SET_CURRENT_PD(ctx, i);
@@ -1144,7 +1141,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 OSDP_EXPORT void
 osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 {
-	assert(ctx);
+	input_check(ctx);
 
 	TO_CP(ctx)->event_callback = cb;
 	TO_CP(ctx)->event_callback_arg = arg;
@@ -1153,15 +1150,12 @@ osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 OSDP_EXPORT
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 {
-	assert(ctx);
+	input_check(ctx, pd);
+	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
 	struct osdp_cmd *cmd;
 	int cmd_id;
 
-	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_ERR("Invalid PD number");
-		return -1;
-	}
-	if (TO_PD(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
+	if (pd_ctx->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN("PD not online");
 		return -1;
 	}
@@ -1194,14 +1188,14 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		return -1;
 	}
 
-	cmd = cp_cmd_alloc(TO_PD(ctx, pd));
+	cmd = cp_cmd_alloc(pd_ctx);
 	if (cmd == NULL) {
 		return -1;
 	}
 
 	memcpy(cmd, p, sizeof(struct osdp_cmd));
 	cmd->id = cmd_id; /* translate to internal */
-	cp_cmd_enqueue(TO_PD(ctx, pd), cmd);
+	cp_cmd_enqueue(pd_ctx, cmd);
 	return 0;
 }
 

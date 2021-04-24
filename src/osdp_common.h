@@ -66,6 +66,29 @@ union osdp_ephemeral_data {
 #define OSDP_EPHEMERAL_DATA_MAX_LEN      sizeof(union osdp_ephemeral_data)
 
 /**
+ * OSDP application exposed methor arg checker.
+ *
+ * Usage:
+ *    input_check(ctx);
+ *    input_check(ctx, pd);
+ */
+#define input_check_osdp_ctx(ctx) \
+		assert(ctx)
+#define input_check_pd_offset(pd)	\
+		if (pd < 0 || pd >= NUM_PD(ctx)) { \
+			LOG_ERR("Invalid PD number"); \
+			return -1; \
+		}
+#define input_check2(_1, _2) \
+		input_check_osdp_ctx(_1); \
+		input_check_pd_offset(_2);
+#define input_check1(_1) \
+		input_check_osdp_ctx(_1);
+#define get_macro(_1,_2,macro,...) macro
+#define input_check(...) get_macro(__VA_ARGS__, \
+		input_check2, input_check1)(__VA_ARGS__)
+
+/**
  * @brief OSDP reserved commands
  */
 #define CMD_POLL                0x60

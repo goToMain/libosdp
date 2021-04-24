@@ -117,10 +117,12 @@ union osdp_ephemeral_data {
 #define CMD_SCRYPT              0x77
 #define CMD_CONT                0x79
 #define CMD_ABORT               0x7A
-#define CMD_MAXREPLY            0x7B
+#define CMD_FILETRANSFER        0x7C
+#define CMD_ACURXSIZE           0x7B
 #define CMD_MFG                 0x80
 #define CMD_SCDONE              0xA0
 #define CMD_XWR                 0xA1
+#define CMD_KEEPACTIVE          0xA7
 
 /**
  * @brief OSDP reserved responses
@@ -144,6 +146,7 @@ union osdp_ephemeral_data {
 #define REPLY_BIOMATCHR         0x58
 #define REPLY_CCRYPT            0x76
 #define REPLY_RMAC_I            0x78
+#define REPLY_FTSTAT            0x7A
 #define REPLY_MFGREP            0x90
 #define REPLY_BUSY              0x79
 #define REPLY_XRD               0xB1

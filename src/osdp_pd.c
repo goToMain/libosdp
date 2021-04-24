@@ -28,6 +28,9 @@
 #define CMD_KEYSET_DATA_LEN            18
 #define CMD_CHLNG_DATA_LEN             8
 #define CMD_SCRYPT_DATA_LEN            16
+#define CMD_ABORT_DATA_LEN             0
+#define CMD_ACURXSIZE_DATA_LEN         2
+#define CMD_KEEPACTIVE_DATA_LEN        2
 
 #define REPLY_ACK_LEN                  1
 #define REPLY_PDID_LEN                 13
@@ -480,6 +483,23 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		} else {
 			pd->reply_id = REPLY_ACK;
 		}
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	case CMD_ACURXSIZE:
+		ASSERT_LENGTH(len, CMD_ACURXSIZE_DATA_LEN);
+		pd->peer_rx_size = buf[pos] | (buf[pos + 1] << 8);
+		pd->reply_id = REPLY_ACK;
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	case CMD_KEEPACTIVE:
+		ASSERT_LENGTH(len, CMD_KEEPACTIVE_DATA_LEN);
+		pd->sc_tstamp += buf[pos] | (buf[pos + 1] << 8);
+		pd->reply_id = REPLY_ACK;
+		ret = OSDP_PD_ERR_NONE;
+		break;
+	case CMD_ABORT:
+		ASSERT_LENGTH(len, CMD_ABORT_DATA_LEN);
+		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_KEYSET:

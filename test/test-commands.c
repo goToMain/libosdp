@@ -120,6 +120,9 @@ struct test_osdp_commands {
 	{ CMD_SCRYPT,	REPLY_RMAC_I },
 	{ CMD_MFG,	REPLY_ACK },
 	{ CMD_COMSET,	REPLY_COM },
+	{ CMD_ACURXSIZE, REPLY_ACK },
+	{ CMD_KEEPACTIVE, REPLY_ACK },
+	{ CMD_ABORT,	REPLY_ACK },
 };
 
 #define STRINGIFY(x) #x

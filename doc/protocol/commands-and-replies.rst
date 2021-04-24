@@ -51,11 +51,13 @@ Commands
 +-----------------+---------+-------------------------------------------------------+-----------+
 | CMD_SCRYPT      | 0x77    | Server's Random Number and Server Cryptogram          | NO        |
 +-----------------+---------+-------------------------------------------------------+-----------+
-| CMD_ABORT       | 0x7A    | Stop Multi Part Message                               | No        |
+| CMD_ABORT       | 0x7A    | Stop Multi Part Message                               | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
-| CMD_MAXREPLY    | 0x7B    | Maximum Acceptable Reply Size                         | No        |
+| CMD_ACURXSIZE   | 0x7B    | Maximum Acceptable Reply Size                         | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
 | CMD_MFG         | 0x80    | Manufacturer Specific Command                         | Yes       |
++-----------------+---------+-------------------------------------------------------+-----------+
+| CMD_KEEPACTIVE  | 0xA7    | Keep secure channel active                            | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
 
 Responses

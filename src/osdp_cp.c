@@ -276,6 +276,22 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = 0;
 		break;
+	case CMD_ACURXSIZE:
+		buf[len++] = pd->cmd_id;
+		buf[len++] = BYTE_0(OSDP_PACKET_BUF_SIZE);
+		buf[len++] = BYTE_1(OSDP_PACKET_BUF_SIZE);
+		ret = 0;
+		break;
+	case CMD_KEEPACTIVE:
+		buf[len++] = pd->cmd_id;
+		buf[len++] = BYTE_0(0); // keepalive in ms time LSB
+		buf[len++] = BYTE_1(0); // keepalive in ms time MSB
+		ret = 0;
+		break;
+	case CMD_ABORT:
+		buf[len++] = pd->cmd_id;
+		ret = 0;
+		break;
 	case CMD_KEYSET:
 		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 			LOG_ERR("Can not perform a KEYSET without SC!");

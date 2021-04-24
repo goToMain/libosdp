@@ -242,7 +242,7 @@ struct osdp_channel {
 /**
  * @brief OSDP PD Information. This struct is used to describe a PD to LibOSDP.
  *
- * @param baud_rate Can be one of 9600/38400/115200
+ * @param baud_rate Can be one of 9600/19200/38400/115200/230400
  * @param address 7 bit PD address. the rest of the bits are ignored. The
  *        special address 0x7F is used for broadcast. So there can be 2^7-1
  *        devices on a multi-drop channel
@@ -399,7 +399,7 @@ struct osdp_cmd_text {
  *
  * @param address Unit ID to which this PD will respond after the change takes
  *        effect.
- * @param baud_rate baud rate value 9600/38400/115200
+ * @param baud_rate baud rate value 9600/19200/38400/115200/230400
  */
 struct osdp_cmd_comset {
 	uint8_t address;

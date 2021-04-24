@@ -19,8 +19,8 @@ Half-duplex RS-485 - one twisted pair, shield/signal ground
 Signaling
 ---------
 
-Half duplex asynchronous serial 8 data bits, 1 stop bit, no parity bits, 9600,
-19200 or 38400 Baud suggested
+Half duplex asynchronous serial 8 data bits, 1 stop bit, no parity bits, with
+either one of 9600, 19200, 38400, 115200 or 320400 baud rates.
 
 Character Encoding
 ------------------

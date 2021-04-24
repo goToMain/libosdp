@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "osdp_common.h"
+#include "osdp_file.h"
 
 #define LOG_TAG "CP : "
 
@@ -292,6 +293,14 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		ret = 0;
 		break;
+	case CMD_FILETRANSFER:
+		buf[len++] = pd->cmd_id;
+		ret = osdp_file_cmd_tx_build(pd, buf + len, max_len);
+		if (ret <= 0) {
+			break;
+		}
+		len = ret;
+		break;
 	case CMD_KEYSET:
 		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
 			LOG_ERR("Can not perform a KEYSET without SC!");
@@ -548,6 +557,9 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
 		ret = OSDP_CP_ERR_NONE;
+		break;
+	case REPLY_FTSTAT:
+		ret = osdp_file_cmd_stat_decode(pd, buf, len);
 		break;
 	case REPLY_CCRYPT:
 		ASSERT_LENGTH(len, REPLY_CCRYPT_DATA_LEN);
@@ -867,6 +879,11 @@ static int state_update(struct osdp_pd *pd)
 			LOG_INF("Retry SC after retry timeout");
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
+		}
+		if (osdp_file_tx_pending(pd)) {
+			/* Don't care if dispatch failed; osdp_file.c should
+			 * handle failures */
+			cp_cmd_dispatcher(pd, CMD_FILETRANSFER);
 		}
 		if (osdp_millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS) {
 			break;
@@ -1203,6 +1220,9 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 	case OSDP_CMD_MFG:
 		cmd_id = CMD_MFG;
 		break;
+	case OSDP_CMD_FILE_TX:
+		return osdp_file_tx_initiate(pd_ctx, p->file_tx.fd,
+					     p->file_tx.flags);
 	case OSDP_CMD_KEYSET:
 		LOG_INF("Master KEYSET is a global command; "
 			"all connected PDs will be affected.");

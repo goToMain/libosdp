@@ -237,7 +237,7 @@ void osdp_get_rand(uint8_t *buf, int len)
 	}
 }
 
-#else /* CONFIG_OSDP_USE_OPENSSL */
+#else /* CONFIG_ENABLED(USE_OPENSSL) */
 
 #include "osdp_aes.h"
 
@@ -283,7 +283,7 @@ void osdp_get_rand(uint8_t *buf, int len)
 	}
 }
 
-#endif /* CONFIG_OSDP_USE_OPENSSL */
+#endif /* CONFIG_ENABLED(USE_OPENSSL) */
 
 /* --- Exported Methods --- */
 

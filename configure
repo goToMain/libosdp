@@ -20,6 +20,7 @@ usage() {
 	  --openssl-include-dir DIR    Include directory for openssl if not in system path
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
+	  --file                       Compile support for file tx command
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
 	---
@@ -34,6 +35,7 @@ while [ $# -gt 0 ]; do
 	--openssl-include-dir) OPENSSL_INCLUDE_DIR=$2; shift;;
 	--no-colours)          NO_COLOURS=1;;
 	--static-pd)           STATIC_PD=1;;
+	--file)                FILE=1;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
 	*) echo -e "Unknown option $1\n"; usage; exit 1;;
@@ -78,6 +80,10 @@ if [[ ! -z "${STATIC_PD}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
 fi
 
+if [[ ! -z "${FILE}" ]]; then
+	CCFLAGS+=" -DCONFIG_OSDP_FILE"
+fi
+
 ## Repo meta data
 echo "Extracting source code meta information"
 PROJECT_VERSION=$(perl -ne 'print if s/^project\(libosdp VERSION ([0-9.]+)\)$/\1/' CMakeLists.txt)
@@ -115,6 +121,10 @@ if [[ -z "${STATIC_PD}" ]]; then
 	OSDP_SAMPLES="cp_app.out pd_app.out"
 else
 	OSDP_SAMPLES="pd_app.out"
+fi
+
+if [[ ! -z "${FILE}" ]]; then
+	LIBOSDP_SOURCES+=" src/osdp_file.c"
 fi
 
 ## Generate osdp_config.h

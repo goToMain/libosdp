@@ -25,6 +25,10 @@ if (CONFIG_OSDP_STATIC_PD)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_STATIC_PD")
 endif()
 
+if (CONFIG_OSDP_FILE)
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_FILE")
+endif()
+
 # static and shared library names
 set(LIB_OSDP_SHARED osdp)
 set(LIB_OSDP_STATIC osdpstatic)
@@ -45,6 +49,12 @@ list(APPEND LIB_OSDP_SOURCES
 if (NOT CONFIG_OSDP_STATIC_PD)
 	list(APPEND LIB_OSDP_SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
+	)
+endif()
+
+if (CONFIG_OSDP_FILE)
+	list(APPEND LIB_OSDP_SOURCES
+		${CMAKE_CURRENT_SOURCE_DIR}/osdp_file.c
 	)
 endif()
 

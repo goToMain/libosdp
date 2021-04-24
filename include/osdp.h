@@ -438,6 +438,17 @@ struct osdp_cmd_mfg {
 };
 
 /**
+ * @brief File transfer start command
+ *
+ * @param fd Pre-agreed file ID between CP and PD.
+ * @param flags Reserved; set to 0
+ */
+struct osdp_cmd_file_tx {
+	int fd;
+	uint32_t flags;
+};
+
+/**
  * @brief OSDP application exposed commands
  */
 enum osdp_cmd_e {
@@ -448,6 +459,7 @@ enum osdp_cmd_e {
 	OSDP_CMD_KEYSET,
 	OSDP_CMD_COMSET,
 	OSDP_CMD_MFG,
+	OSDP_CMD_FILE_TX,
 	OSDP_CMD_SENTINEL
 };
 
@@ -466,13 +478,14 @@ enum osdp_cmd_e {
 struct osdp_cmd {
 	enum osdp_cmd_e id;
 	union {
-		struct osdp_cmd_led    led;
+		struct osdp_cmd_led led;
 		struct osdp_cmd_buzzer buzzer;
-		struct osdp_cmd_text   text;
+		struct osdp_cmd_text text;
 		struct osdp_cmd_output output;
 		struct osdp_cmd_comset comset;
 		struct osdp_cmd_keyset keyset;
-		struct osdp_cmd_mfg    mfg;
+		struct osdp_cmd_mfg mfg;
+		struct osdp_cmd_file_tx file_tx;
 	};
 };
 
@@ -546,12 +559,24 @@ struct osdp_event_mfgrep {
 };
 
 /**
+ * @brief OSDP File transfer status event
+ *
+ * @param fd File ID for which this event is generatated
+ * @param status 0: success; -ve on errors.
+ */
+struct osdp_event_file_tx {
+	int fd;
+	int status;
+};
+
+/**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
 	OSDP_EVENT_CARDREAD,
 	OSDP_EVENT_KEYPRESS,
 	OSDP_EVENT_MFGREP,
+	OSDP_EVENT_FILE_TX,
 	OSDP_EVENT_SENTINEL
 };
 
@@ -569,6 +594,7 @@ struct osdp_event {
 		struct osdp_event_keypress keypress;
 		struct osdp_event_cardread cardread;
 		struct osdp_event_mfgrep mfgrep;
+		struct osdp_event_file_tx file_tx;
 	};
 };
 
@@ -809,6 +835,21 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
  */
 void osdp_set_command_complete_callback(osdp_t *ctx,
 					osdp_command_complete_callback_t cb);
+
+#ifdef CONFIG_OSDP_FILE
+
+struct osdp_file_ops {
+	int (*open)(int fd, size_t *size);
+	ssize_t (*read)(int fd, void *buf, size_t count, size_t offset);
+	ssize_t (*write)(int fd, const void *buf, size_t count, size_t offset);
+	void (*close)(int fd);
+};
+
+int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops);
+
+int osdp_file_tx_status(osdp_t *ctx, int pd, size_t *size, size_t *offset);
+
+#endif /* CONFIG_OSDP_FILE */
 
 #ifdef __cplusplus
 }

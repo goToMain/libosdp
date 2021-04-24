@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "osdp_common.h"
+#include "osdp_file.h"
+
 #ifndef CONFIG_OSDP_STATIC_PD
 #include <stdlib.h>
 #endif
-
-#include "osdp_common.h"
 
 #define LOG_TAG "PD : "
 
@@ -507,6 +508,14 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
+	case CMD_FILETRANSFER:
+		ret = osdp_file_cmd_tx_decode(pd, buf, len);
+		if (ret == 0) {
+			ret = OSDP_PD_ERR_NONE;
+			pd->reply_id = REPLY_FTSTAT;
+			break;
+		}
+		break;
 	case CMD_KEYSET:
 		PD_CMD_CAP_CHECK(pd, &cmd);
 		ASSERT_LENGTH(len, CMD_KEYSET_DATA_LEN);
@@ -752,6 +761,14 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			buf[len++] = cmd->mfg.data[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
+		break;
+	case REPLY_FTSTAT:
+		buf[len++] = pd->reply_id;
+		ret = osdp_file_cmd_stat_build(pd, buf + len, max_len);
+		if (ret <= 0) {
+			break;
+		}
+		len = ret;
 		break;
 	case REPLY_CCRYPT:
 		if (smb == NULL) {

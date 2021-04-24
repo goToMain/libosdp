@@ -351,6 +351,7 @@ struct osdp_pd {
 	struct osdp_secure_channel sc;
 	void *command_callback_arg;
 	pd_commnand_callback_t command_callback;
+	struct osdp_file *file;
 };
 
 struct osdp_cp {

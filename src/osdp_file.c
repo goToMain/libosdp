@@ -12,7 +12,8 @@
 #define CONFIG_OSDP_FILE
 #endif
 
-#include "osdp_common.h"
+#include <stdlib.h>
+
 #include "osdp_file.h"
 
 #define LOG_TAG "FOP: "
@@ -107,7 +108,7 @@ bool osdp_file_tx_pending(struct osdp_pd *pd)
 {
 	struct osdp_file *f = TO_FILE(pd);
 
-	if (f->state == OSDP_FILE_IDLE) {
+	if (!f || f->state == OSDP_FILE_IDLE) {
 		return false;
 	}
 
@@ -120,7 +121,7 @@ int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
 	struct osdp_file *f = TO_FILE(pd);
 	ARG_UNUSED(flags);
 
-	if (!f->ops) {
+	if (!f || !f->ops) {
 		LOG_WRN("File ops not registered!");
 		return -1;
 	}
@@ -135,8 +136,17 @@ OSDP_EXPORT
 int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops)
 {
 	input_check(ctx, pd);
+	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
 
-	TO_PD(ctx, pd)->file->ops = ops;
+	if (!pd_ctx->file) {
+		pd_ctx->file = calloc(1, sizeof(struct osdp_file));
+		if (pd_ctx->file == NULL) {
+			LOG_ERR("Failed to alloc struct osdp_file");
+			return -1;
+		}
+	}
+
+	pd_ctx->file->ops = ops;
 	return 0;
 }
 

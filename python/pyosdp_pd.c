@@ -199,24 +199,22 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 	"@return None"
 static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
-	int ret;
+	int ret, scbk_length;
 	osdp_t *ctx;
 	osdp_pd_info_t info;
 	enum channel_type channel_type;
 	char *device = NULL, *channel_type_str = NULL;
 	static char *kwlist[] = { "", "capabilities", "scbk", NULL };
 	PyObject *py_info, *py_pd_cap_list;
-	Py_buffer scbk_buffer;
 	uint8_t *scbk = NULL;
 
 	srand(time(NULL));
 
 	info.cap = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!y*", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!", kwlist,
 					 &PyDict_Type, &py_info,
-					 &PyList_Type, &py_pd_cap_list,
-					 &scbk_buffer))
+					 &PyList_Type, &py_pd_cap_list))
 		goto error;
 
 	if (scbk_buffer.buf != NULL && scbk_buffer.len == 16)
@@ -257,6 +255,13 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	if (pyosdp_dict_get_int(py_info, "serial_number", (int *)&info.id.serial_number))
 		goto error;
 
+	if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &scbk_length))
+		goto error;
+
+	info.scbk = NULL;
+	if (scbk && scbk_length == 16)
+		info.scbk = scbk;
+
 	channel_type = channel_guess_type(channel_type_str);
 	if (channel_type == CHANNEL_TYPE_ERR) {
 		PyErr_SetString(PyExc_ValueError, "unable to guess channel type");
@@ -273,7 +278,7 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	channel_get(&self->chn_mgr, device, &info.channel.id, &info.channel.data,
 		    &info.channel.send, &info.channel.recv, &info.channel.flush);
 
-	ctx = osdp_pd_setup(&info, scbk);
+	ctx = osdp_pd_setup(&info);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup pd");
 		goto error;

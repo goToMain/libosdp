@@ -281,6 +281,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		memcpy(&info->id, &pd->id, sizeof(struct osdp_pd_id));
 		pack_pd_capabilities(pd->cap);
 		info->cap = pd->cap;
+		info->scbk = NULL;
 	}
 
 	osdp_logger_init(c->log_level, printf);
@@ -296,7 +297,8 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		scbk = NULL;
 		if (load_scbk(c->pd, scbk_buf) == 0)
 			scbk = scbk_buf;
-		c->pd_ctx = osdp_pd_setup(info_arr, scbk);
+		info_arr->scbk = scbk;
+		c->pd_ctx = osdp_pd_setup(info_arr);
 		if (c->pd_ctx == NULL) {
 			printf("Failed to setup PD context\n");
 			return -1;

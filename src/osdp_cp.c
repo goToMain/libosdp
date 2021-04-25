@@ -1067,7 +1067,7 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 OSDP_EXPORT
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
-	int i, owner;
+	int i, owner, scbk_count = 0;
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
 	struct osdp *ctx;
@@ -1082,13 +1082,6 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	}
 	ctx->magic = 0xDEADBEAF;
 	SET_FLAG(ctx, FLAG_CP_MODE);
-
-	if (master_key != NULL) {
-		memcpy(ctx->sc_master_key, master_key, 16);
-	} else {
-		LOG_WRN("Master key not available! SC Disabled.");
-		SET_FLAG(ctx, FLAG_SC_DISABLED);
-	}
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));
 	if (ctx->cp == NULL) {
@@ -1119,6 +1112,11 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		pd->address = p->address;
 		pd->flags = p->flags;
 		pd->seq_number = -1;
+		if (p->scbk != NULL) {
+			scbk_count += 1;
+			memcpy(pd->sc.scbk, p->scbk, 16);
+			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
+		}
 		if (cp_cmd_queue_init(pd)) {
 			goto error;
 		}
@@ -1131,6 +1129,16 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
 	}
+
+	if (master_key == NULL && scbk_count != num_pd) {
+		LOG_WRN("Master key / SCBK not passed; SC Disabled.");
+		SET_FLAG(ctx, FLAG_SC_DISABLED);
+	} else {
+		LOG_WRN("Master Key based key derivation is discouraged! "
+		        "Consider passing individual SCBKs");
+		memcpy(ctx->sc_master_key, master_key, 16);
+	}
+
 	memset(cp->channel_lock, 0, sizeof(int) * num_pd);
 	SET_CURRENT_PD(ctx, 0);
 	LOG_INF("CP setup complete");

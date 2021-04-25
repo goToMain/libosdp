@@ -25,7 +25,8 @@ int test_osdp_commands_setup(struct test *t)
 		.channel.data = NULL,
 		.channel.send = NULL,
 		.channel.recv = NULL,
-		.channel.flush = NULL
+		.channel.flush = NULL,
+		.scbk = NULL,
 	};
 	osdp_logger_init(t->loglevel, printf);
 	priv.cp_ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
@@ -75,9 +76,10 @@ int test_osdp_commands_setup(struct test *t)
 		.channel.data = NULL,
 		.channel.send = NULL,
 		.channel.recv = NULL,
+		.scbk = NULL,
 	};
 
-	priv.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
+	priv.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd);
 	if (priv.pd_ctx == NULL) {
 		printf(SUB_1 "pd init failed!\n");
 		osdp_cp_teardown((osdp_t *) priv.cp_ctx);

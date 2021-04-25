@@ -254,6 +254,9 @@ struct osdp_channel {
  *        only PD mode of operation
  * @param channel Communication channel ops structure, containing send/recv
  *        function pointers.
+ * @param scbk Pointer to 16 bytes of Secure Channel Base Key for the PD. If
+ *        non-null, this is used to set-up the secure channel instead of using
+ *        the Master Key (in case of CP).
  */
 typedef struct {
 	int baud_rate;
@@ -262,6 +265,7 @@ typedef struct {
 	struct osdp_pd_id id;
 	struct osdp_pd_cap *cap;
 	struct osdp_channel channel;
+	uint8_t *scbk;
 } osdp_pd_info_t;
 
 /**
@@ -658,10 +662,14 @@ typedef int (*osdp_log_fn_t)(const char *fmt, ...);
  * intact.
  *
  * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
- *               treated as an array of length num_pd.
+ *        treated as an array of length num_pd.
  * @param info Pointer to info struct populated by application.
- * @param scbk 16 byte Secure Channel Base Key. If this field is NULL PD is set
- *             to "Install Mode".
+ * @param master_key 16 byte Master Key from which the SCBK (Secure Channel Base
+ *        KEY) is generated. If this field is NULL, then secure channel is
+ *        disbaled.
+ *
+ *        Note: Master key based SCBK derivation is discouraged. Pass SCBK for
+ *        each connected PD in osdp_pd_info_t::scbk.
  *
  * @retval OSDP Context on success
  * @retval NULL on errors
@@ -719,13 +727,11 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  * intact.
  *
  * @param info Pointer to iinfo struct populated by application.
- * @param scbk 16 byte Secure Channel Base Key. If this field is NULL PD is set
- *             to "Install Mode".
  *
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_pd_setup(osdp_pd_info_t * info, uint8_t *scbk);
+osdp_t *osdp_pd_setup(osdp_pd_info_t * info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -837,6 +843,9 @@ void osdp_set_command_complete_callback(osdp_t *ctx,
 					osdp_command_complete_callback_t cb);
 
 #ifdef CONFIG_OSDP_FILE
+
+#include <stddef.h>
+#include <sys/types.h>
 
 struct osdp_file_ops {
 	int (*open)(int fd, size_t *size);

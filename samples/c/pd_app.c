@@ -77,7 +77,8 @@ osdp_pd_info_t info_pd = {
 			.num_items = 1
 		},
 		{ (uint8_t)-1, 0, 0 } /* Sentinel */
-	}
+	},
+	.scbk = NULL,
 };
 
 int main()
@@ -86,7 +87,7 @@ int main()
 
 	osdp_logger_init(7, printf);
 
-	ctx = osdp_pd_setup(&info_pd, NULL);
+	ctx = osdp_pd_setup(&info_pd);
 	if (ctx == NULL) {
 		printf("pd init failed!\n");
 		return -1;

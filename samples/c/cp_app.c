@@ -44,7 +44,8 @@ osdp_pd_info_t pd_info[] = {
 		.baud_rate = 115200,
 		.flags = 0,
 		.channel.send = sample_cp_send_func,
-		.channel.recv = sample_cp_recv_func
+		.channel.recv = sample_cp_recv_func,
+		.scbk = NULL,
 	},
 };
 

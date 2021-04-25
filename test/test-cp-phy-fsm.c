@@ -93,7 +93,8 @@ int test_cp_phy_fsm_setup(struct test *t)
 		.channel.data = NULL,
 		.channel.send = test_cp_phy_fsm_send,
 		.channel.recv = test_cp_phy_fsm_receive,
-		.channel.flush = NULL
+		.channel.flush = NULL,
+		.scbk = NULL,
 	};
 	osdp_logger_init(t->loglevel, printf);
 	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);

@@ -84,9 +84,9 @@ public:
 		osdp_pd_teardown(_ctx);
 	}
 
-	bool setup(osdp_pd_info_t *info, uint8_t *scbk)
+	bool setup(osdp_pd_info_t *info)
 	{
-		_ctx = osdp_pd_setup(info, scbk);
+		_ctx = osdp_pd_setup(info);
 		return _ctx != nullptr;
 	}
 

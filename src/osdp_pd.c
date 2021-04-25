@@ -1043,7 +1043,7 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
+osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 {
 	struct osdp_pd *pd;
 	struct osdp_cp *cp;
@@ -1101,7 +1101,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 		goto error;
 	}
 
-	if (scbk == NULL) {
+	if (info->scbk == NULL) {
 		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
 			LOG_ERR("SCBK must be provided in ENFORCE_SECURE");
 			goto error;
@@ -1109,7 +1109,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info, uint8_t *scbk)
 		LOG_WRN("SCBK not provided. PD is in INSTALL_MODE");
 		SET_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 	} else {
-		memcpy(pd->sc.scbk, scbk, 16);
+		memcpy(pd->sc.scbk, info->scbk, 16);
 	}
 	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 	if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {

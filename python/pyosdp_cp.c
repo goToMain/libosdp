@@ -248,6 +248,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			goto error;
 
 		info->cap = NULL;
+		info->scbk = NULL;
 
 		channel_type = channel_guess_type(channel_type_str);
 		if (channel_type == CHANNEL_TYPE_ERR) {

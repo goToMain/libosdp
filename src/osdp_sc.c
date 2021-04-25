@@ -35,10 +35,11 @@ void osdp_compute_session_keys(struct osdp *ctx)
 		memcpy(pd->sc.scbk, osdp_scbk_default, 16);
 	} else {
 		/**
-		 * Compute SCBK only in CP mode. PD mode, expect to already have
-		 * the SCBK (sent from application layer).
+		 * Compute SCBK only in CP mode when SCBK was not provided for
+		 * each connected PD.
 		 */
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == 0) {
+		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)  == false &&
+		    ISSET_FLAG(pd, PD_FLAG_HAS_SCBK) == false) {
 			osdp_compute_scbk(pd, ctx->sc_master_key, pd->sc.scbk);
 		}
 	}
@@ -220,12 +221,14 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 void osdp_sc_init(struct osdp_pd *pd)
 {
 	uint8_t key[16];
+	bool preserve_scbk = ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
+			     ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
 
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+	if (preserve_scbk) {
 		memcpy(key, pd->sc.scbk, 16);
 	}
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+	if (preserve_scbk) {
 		memcpy(pd->sc.scbk, key, 16);
 	}
 	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {

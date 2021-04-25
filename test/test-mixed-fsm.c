@@ -87,7 +87,8 @@ int test_mixed_fsm_setup(struct test *t)
 		.channel.data = NULL,
 		.channel.send = test_mixed_cp_fsm_send,
 		.channel.recv = test_mixed_cp_fsm_receive,
-		.channel.flush = NULL
+		.channel.flush = NULL,
+		.scbk = NULL,
 	};
 	test_data.cp_ctx = (struct osdp *) osdp_cp_setup(1, &info_cp, master_key);
 	if (test_data.cp_ctx == NULL) {
@@ -122,9 +123,10 @@ int test_mixed_fsm_setup(struct test *t)
 		.channel.data = NULL,
 		.channel.send = test_mixed_pd_fsm_send,
 		.channel.recv = test_mixed_pd_fsm_receive,
+		.scbk = NULL,
 	};
 	osdp_logger_init(t->loglevel, printf);
-	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd, NULL);
+	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd);
 	if (test_data.pd_ctx == NULL) {
 		printf(SUB_1 "pd init failed!\n");
 		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);

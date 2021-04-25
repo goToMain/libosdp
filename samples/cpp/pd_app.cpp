@@ -67,7 +67,8 @@ osdp_pd_info_t info_pd = {
 		.recv = sample_pd_recv_func,
 		.send = sample_pd_send_func,
 		.flush = nullptr
-	}
+	},
+	.scbk = nullptr,
 };
 
 int main()
@@ -76,7 +77,7 @@ int main()
 
 	pd.logger_init(0, printf);
 
-	pd.setup(&info_pd, nullptr);
+	pd.setup(&info_pd);
 
 	pd.set_command_callback(pd_command_handler);
 

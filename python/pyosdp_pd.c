@@ -217,9 +217,6 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 					 &PyList_Type, &py_pd_cap_list))
 		goto error;
 
-	if (scbk_buffer.buf != NULL && scbk_buffer.len == 16)
-		scbk = scbk_buffer.buf;
-
 	if (py_pd_cap_list && pyosdp_add_pd_cap(py_pd_cap_list, &info))
 		goto error;
 

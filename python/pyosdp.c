@@ -24,7 +24,7 @@ static PyObject *pyosdp_set_loglevel(pyosdp_t *self, PyObject *args)
 		return NULL;
 	}
 
-	osdp_set_log_level(log_level);
+	osdp_logger_init(log_level, printf);
 
 	Py_RETURN_NONE;
 }

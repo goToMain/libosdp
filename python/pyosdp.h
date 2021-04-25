@@ -17,6 +17,7 @@
 #include <utils/strutils.h>
 #include <utils/hashmap.h>
 #include <utils/channel.h>
+#include <utils/memory.h>
 #include <osdp.h>
 
 typedef struct {

@@ -63,15 +63,6 @@ void osdp_log_set_colour(int log_level)
 #endif
 }
 
-OSDP_EXPORT
-void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
-{
-	g_log_level = log_level;
-	if (log_fn != NULL) {
-		log_printf = log_fn;
-	}
-}
-
 void osdp_log_ctx_set(int log_ctx)
 {
 	g_old_log_ctx = g_log_ctx;
@@ -286,6 +277,15 @@ void osdp_get_rand(uint8_t *buf, int len)
 #endif /* CONFIG_ENABLED(USE_OPENSSL) */
 
 /* --- Exported Methods --- */
+
+OSDP_EXPORT
+void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
+{
+	g_log_level = log_level;
+	if (log_fn != NULL) {
+		log_printf = log_fn;
+	}
+}
 
 OSDP_EXPORT
 const char *osdp_get_version()

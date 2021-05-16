@@ -81,7 +81,6 @@ void osdp_log_ctx_restore()
 
 void osdp_log(int log_level, const char *fmt, ...)
 {
-	size_t len;
 	va_list args;
 	static char buf[128];
 
@@ -91,20 +90,23 @@ void osdp_log(int log_level, const char *fmt, ...)
 	}
 
 	va_start(args, fmt);
-	len = vsnprintf(buf, sizeof(buf), fmt, args);
+	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
-	assert(len < sizeof(buf));
+
 	if (log_level < 0) {
 		log_printf("OSDP: %s\n", buf);
 		return;
 	}
+
 	osdp_log_set_colour(log_level);
+
 	if (g_log_ctx == LOG_CTX_GLOBAL) {
 		log_printf("OSDP: %s: %s\n", log_level_names[log_level], buf);
 	} else {
 		log_printf("OSDP: %s: PD[%d]: %s\n", log_level_names[log_level],
 			   g_log_ctx, buf);
 	}
+
 	osdp_log_set_colour(-1); /* Reset colour */
 }
 

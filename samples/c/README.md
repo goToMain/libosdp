@@ -9,6 +9,6 @@ to compile `cp_sample` and `pd_sample`. If you want look at a real world,
 implementation have a look at [osdpctl](/osdpctl)
 
 ```sh
-gcc cp_app.c -o cp_sample -l osdp -I ../include/ -L ../build/
-gcc pd_app.c -o pd_sample -l osdp -I ../include/ -L ../build/
+gcc cp_app.c -o cp_sample -l osdp -I ../../include/ -L ../../build/lib
+gcc pd_app.c -o pd_sample -l osdp -I ../../include/ -L ../../build/lib
 ```

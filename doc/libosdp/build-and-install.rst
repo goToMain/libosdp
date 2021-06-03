@@ -64,8 +64,8 @@ super simple. First off, add the following to your CMakeLists.txt
         BUILD_COMMAND     make
         INSTALL_COMMAND   make install DESTDIR=${CMAKE_BINARY_DIR}/libosdp/install
     )
-    include_directories("${CMAKE_BINARY_DIR}/libosdp/install/include")
-    link_directories("${CMAKE_BINARY_DIR}/libosdp/install/lib")
+    include_directories("${CMAKE_BINARY_DIR}/libosdp/install/usr/local/include")
+    link_directories("${CMAKE_BINARY_DIR}/libosdp/install/usr/local/lib")
 
 Next you must add ``ext_libosdp`` as a dependency to your target. That
 it! now you can link your application to osdp library. Following example shows

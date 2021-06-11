@@ -43,7 +43,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-if [ -f Makefile ] && [ -z "$FORCE" ]; then
+if [ -f config.mak ] && [ -z "$FORCE" ]; then
 	echo "LibOSDP already configured! Use --force to re-configure"
 	exit 1
 fi
@@ -150,59 +150,16 @@ cat > osdp_export.h <<----
 ---
 
 ## Generate Makefile
-echo "Generating Makefile"
-cat > Makefile << ---
-# configure: This is a generated Makefile!
-# configure: I'll overwrite this file when re-configured.
-
-O        ?= .
-CC       := ${CC}
-CXX      := ${CXX}
-AR       := ${AR}
-SYSROOT  := ${SYSROOT}
-CCFLAGS  := ${CCFLAGS} -Wall -Wextra -O3 -Iinclude -Isrc -I. -Iutils/include
-CXXFLAGS := ${CXXFLAGS}
-LDFLAGS  := ${LDFLAGS}
-SRC      := ${LIBOSDP_SOURCES}
-OBJ      := \$(SRC:%.c=\$(O)/%.o)
-
-ifeq (\$(VERBOSE),)
-Q    := @
-MAKE := make -s
-else
-Q    :=
-MAKE := make
-endif
-
-all: \$(O)/libosdp.a samples
-
-\$(O)/libosdp.a: \$(OBJ)
-	@echo "  AR \$@"
-	\$(Q)\$(AR) qc \$@ $^
-
-\$(O)/%.o: %.c
-	@echo "  CC \$<"
-	@mkdir -p \$(@D)
-	\$(Q)\$(CC) -c $< \$(CCFLAGS) -o \$@
-
-.PHONY: samples
-samples: ${OSDP_SAMPLES}
-
-cp_app.out:
-	@echo "LINK \$@"
-	\$(Q)\$(CC) \$(CCFLAGS) samples/c/cp_app.c -o cp_app.out -Iinclude -L. -losdp
-
-pd_app.out:
-	@echo "LINK \$@"
-	\$(Q)\$(CC) \$(CCFLAGS) samples/c/pd_app.c -o pd_app.out -Iinclude -L. -losdp
-
-.PHONY: clean
-clean:
-	\$(Q)rm -f \$(OBJ) \$(O)/src/*.o \$(O)/libosdp.a cp_app.out pd_app.out
-
-.PHONY: distclean
-distclean: clean
-	\$(Q)rm -f Makefile osdp_config.h osdp_export.h
+echo "Generating config.mak"
+cat > config.mak << ---
+CC=${CC}
+CXX=${CXX}
+AR=${AR}
+SYSROOT=${SYSROOT}
+CCFLAGS=${CCFLAGS}
+CXXFLAGS=${CXXFLAGS}
+LDFLAGS=${LDFLAGS}
+SRC=${LIBOSDP_SOURCES}
 ---
 echo
 echo "LibOSDP lean build system configured!"

@@ -63,4 +63,4 @@ tags
 osdp_config.h
 osdp_export.h
 osdpctl/osdpctl
-Makefile
+config.mak

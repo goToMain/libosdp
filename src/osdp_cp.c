@@ -1130,9 +1130,11 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		}
 	}
 
-	if (master_key == NULL && scbk_count != num_pd) {
-		LOG_WRN("Master key / SCBK not passed; SC Disabled.");
-		SET_FLAG(ctx, FLAG_SC_DISABLED);
+	if (master_key == NULL) {
+		if (scbk_count != num_pd) {
+			LOG_WRN("Master key / SCBK not passed; SC Disabled.");
+			SET_FLAG(ctx, FLAG_SC_DISABLED);
+		}
 	} else {
 		LOG_WRN("Master Key based key derivation is discouraged! "
 		        "Consider passing individual SCBKs");

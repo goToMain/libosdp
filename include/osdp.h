@@ -666,7 +666,7 @@ typedef int (*osdp_log_fn_t)(const char *fmt, ...);
  * @param info Pointer to info struct populated by application.
  * @param master_key 16 byte Master Key from which the SCBK (Secure Channel Base
  *        KEY) is generated. If this field is NULL, then secure channel is
- *        disbaled.
+ *        disabled.
  *
  *        Note: Master key based SCBK derivation is discouraged. Pass SCBK for
  *        each connected PD in osdp_pd_info_t::scbk.

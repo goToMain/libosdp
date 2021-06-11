@@ -1116,6 +1116,10 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 			scbk_count += 1;
 			memcpy(pd->sc.scbk, p->scbk, 16);
 			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
+		} else if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			LOG_ERR("SCBK must be passed for each PD when"
+				" ENFORCE_SECURE is requested.");
+			goto error;
 		}
 		if (cp_cmd_queue_init(pd)) {
 			goto error;
@@ -1130,15 +1134,22 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		}
 	}
 
-	if (master_key == NULL) {
-		if (scbk_count != num_pd) {
+	if (scbk_count != num_pd) {
+		if (master_key != NULL) {
+			LOG_WRN("Masterkey based key derivation is discouraged!"
+				" Consider passing individual SCBKs");
+			memcpy(ctx->sc_master_key, master_key, 16);
+		} else {
 			LOG_WRN("Master key / SCBK not passed; SC Disabled.");
 			SET_FLAG(ctx, FLAG_SC_DISABLED);
 		}
-	} else {
-		LOG_WRN("Master Key based key derivation is discouraged! "
-		        "Consider passing individual SCBKs");
-		memcpy(ctx->sc_master_key, master_key, 16);
+		/**
+		 * In the off chance that some of the info structs had SCBK
+		 * while others didn't.
+		 */
+		for (i = 0; i < num_pd; i++) {
+			CLEAR_FLAG(pd, PD_FLAG_HAS_SCBK);
+		}
 	}
 
 	memset(cp->channel_lock, 0, sizeof(int) * num_pd);

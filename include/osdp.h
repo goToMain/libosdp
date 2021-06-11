@@ -27,6 +27,7 @@ extern "C" {
  * possible. Fail where these assumptions don't hold.
  *   - Don't allow use of SCBK-D.
  *   - Assume that a KEYSET was successful at an earlier time.
+ *   - Disallow master key based SCBK derivation.
  *
  * @note This flag is recommended in production use.
  */

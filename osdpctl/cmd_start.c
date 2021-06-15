@@ -88,13 +88,15 @@ int pd_cmd_led_handler(struct osdp_cmd_led *p)
 
 int pd_cmd_buzzer_handler(struct osdp_cmd_buzzer *p)
 {
-	hexdump((uint8_t *)p, sizeof(struct osdp_cmd_buzzer), "PD-CMD: Buzzer\n");
+	hexdump((uint8_t *)p, sizeof(struct osdp_cmd_buzzer),
+		"PD-CMD: Buzzer\n");
 	return 0;
 }
 
 int pd_cmd_output_handler(struct osdp_cmd_output *p)
 {
-	hexdump((uint8_t *)p, sizeof(struct osdp_cmd_output), "PD-CMD: Output\n");
+	hexdump((uint8_t *)p, sizeof(struct osdp_cmd_output),
+		"PD-CMD: Output\n");
 	return 0;
 }
 
@@ -106,7 +108,8 @@ int pd_cmd_text_handler(struct osdp_cmd_text *p)
 
 int pd_cmd_comset_handler(struct osdp_cmd_comset *p)
 {
-	hexdump((uint8_t *)p, sizeof(struct osdp_cmd_comset), "PD-CMD: ComSet\n");
+	hexdump((uint8_t *)p, sizeof(struct osdp_cmd_comset),
+		"PD-CMD: ComSet\n");
 	return 0;
 }
 
@@ -124,7 +127,7 @@ int pd_command_handler(void *data, struct osdp_cmd *cmd)
 
 	printf("CP: CMD_ID: %d ", cmd->id);
 
-	switch(cmd->id) {
+	switch (cmd->id) {
 	case OSDP_CMD_OUTPUT:
 		return pd_cmd_output_handler(&cmd->output);
 	case OSDP_CMD_LED:
@@ -175,7 +178,7 @@ void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 		return;
 	}
 
-	switch(p->id) {
+	switch (p->id) {
 	case OSDPCTL_CP_CMD_LED:
 		p->cmd.id = OSDP_CMD_LED;
 		break;
@@ -195,7 +198,8 @@ void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 		p->cmd.id = OSDP_CMD_COMSET;
 		break;
 	case OSDPCTL_CMD_STATUS:
-		printf("SC Status: 0x%08x\n", osdp_get_sc_status_mask(c->cp_ctx));
+		printf("SC Status: 0x%08x\n",
+		       osdp_get_sc_status_mask(c->cp_ctx));
 		printf("   Status: 0x%08x\n", osdp_get_status_mask(c->cp_ctx));
 		return;
 	}
@@ -214,7 +218,9 @@ int process_commands(struct config_s *c)
 		printf("Error: msgq was removed externally. Exiting..\n");
 		exit(-1);
 	}
-	if (ret <= 0) return -1;;
+	if (ret <= 0)
+		return -1;
+	;
 
 	if (c->mode == CONFIG_MODE_CP)
 		handle_cp_command(c, (struct osdpctl_cmd *)msgq_cmd.mtext);
@@ -234,7 +240,8 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	ARG_UNUSED(argc);
 
 	if (c->log_file) {
-		printf("Redirecting stdout and strerr to log_file %s\n", c->log_file);
+		printf("Redirecting stdout and strerr to log_file %s\n",
+		       c->log_file);
 		o_redirect(3, c->log_file);
 	}
 
@@ -261,19 +268,18 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
 
-		ret = channel_open(&c->chn_mgr, pd->channel_type, pd->channel_device,
-				   pd->channel_speed, pd->is_pd_mode);
-		if (ret != CHANNEL_ERR_NONE && ret != CHANNEL_ERR_ALREADY_OPEN) {
+		ret = channel_open(&c->chn_mgr, pd->channel_type,
+				   pd->channel_device, pd->channel_speed,
+				   pd->is_pd_mode);
+		if (ret != CHANNEL_ERR_NONE &&
+		    ret != CHANNEL_ERR_ALREADY_OPEN) {
 			printf("Failed to setup channel\n");
-			exit (-1);
+			exit(-1);
 		}
 
-		channel_get(&c->chn_mgr, pd->channel_device,
-			    &info->channel.id,
-			    &info->channel.data,
-			    &info->channel.send,
-			    &info->channel.recv,
-			    &info->channel.flush);
+		channel_get(&c->chn_mgr, pd->channel_device, &info->channel.id,
+			    &info->channel.data, &info->channel.send,
+			    &info->channel.recv, &info->channel.flush);
 
 		if (c->mode == CONFIG_MODE_CP)
 			continue;
@@ -287,7 +293,8 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	osdp_logger_init(c->log_level, printf);
 
 	if (c->mode == CONFIG_MODE_CP) {
-		c->cp_ctx = osdp_cp_setup(c->num_pd, info_arr, c->cp.master_key);
+		c->cp_ctx =
+			osdp_cp_setup(c->num_pd, info_arr, c->cp.master_key);
 		if (c->cp_ctx == NULL) {
 			printf("Failed to setup CP context\n");
 			return -1;
@@ -303,7 +310,8 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			printf("Failed to setup PD context\n");
 			return -1;
 		}
-		osdp_pd_set_command_callback(c->pd_ctx, pd_command_handler, NULL);
+		osdp_pd_set_command_callback(c->pd_ctx, pd_command_handler,
+					     NULL);
 	}
 
 	free(info_arr);

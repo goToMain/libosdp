@@ -6,7 +6,8 @@
 
 #include "test.h"
 
-static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len, int maxlen)
+static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len,
+				int maxlen)
 {
 	int cmd_len;
 	uint8_t cmd_buf[128];
@@ -116,7 +117,7 @@ int test_cp_phy_setup(struct test *t)
 		.scbk = NULL,
 	};
 	osdp_logger_init(t->loglevel, printf);
-	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
+	struct osdp *ctx = (struct osdp *)osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;

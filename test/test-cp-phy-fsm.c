@@ -11,7 +11,7 @@
 extern int (*test_state_update)(struct osdp_pd *);
 extern int (*test_cp_phy_state_update)(struct osdp_pd *);
 extern void (*test_cp_cmd_enqueue)(struct osdp_pd *, struct osdp_cmd *);
-extern struct osdp_cmd * (*test_cp_cmd_alloc)(struct osdp_pd *);
+extern struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *);
 
 int phy_fsm_resp_offset = 0;
 
@@ -63,9 +63,8 @@ int test_cp_phy_fsm_receive(void *data, uint8_t *buf, int len)
 #ifndef CONFIG_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
-		0x53, 0xe5, 0x14, 0x00, 0x05, 0x45, 0xa1, 0xa2, 0xa3,
-		0xb1, 0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2, 0xe3,
-		0x99, 0xa2
+		0x53, 0xe5, 0x14, 0x00, 0x05, 0x45, 0xa1, 0xa2, 0xa3, 0xb1,
+		0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2, 0xe3, 0x99, 0xa2
 	};
 
 	ARG_UNUSED(len);
@@ -97,7 +96,7 @@ int test_cp_phy_fsm_setup(struct test *t)
 		.scbk = NULL,
 	};
 	osdp_logger_init(t->loglevel, printf);
-	struct osdp *ctx = (struct osdp *) osdp_cp_setup(1, &info, NULL);
+	struct osdp *ctx = (struct osdp *)osdp_cp_setup(1, &info, NULL);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;
@@ -114,7 +113,7 @@ void test_cp_phy_fsm_teardown(struct test *t)
 
 void run_cp_phy_fsm_tests(struct test *t)
 {
-	int ret=-128, result = true;
+	int ret = -128, result = true;
 	struct osdp_cmd *cmd_poll;
 	struct osdp_cmd *cmd_id;
 	struct osdp *ctx;
@@ -152,16 +151,13 @@ void run_cp_phy_fsm_tests(struct test *t)
 		/* continue when in command and between commands continue */
 	}
 	printf(SUB_1 "of text loop\n");
-	if (p->id.vendor_code != 0x00a3a2a1 ||
-	    p->id.model != 0xb1 ||
-	    p->id.version != 0xc1 ||
-	    p->id.serial_number != 0xd4d3d2d1 ||
+	if (p->id.vendor_code != 0x00a3a2a1 || p->id.model != 0xb1 ||
+	    p->id.version != 0xc1 || p->id.serial_number != 0xd4d3d2d1 ||
 	    p->id.firmware_version != 0x00e1e2e3) {
 		printf(SUB_1 "ID mismatch! VC:0x%04x MODEL:0x%02x "
-		       "VER:0x%02x SERIAL:0x%04x FW_VER:0x%04x\n",
-		       p->id.vendor_code, p->id.model,
-		       p->id.version, p->id.serial_number,
-		       p->id.firmware_version);
+			     "VER:0x%02x SERIAL:0x%04x FW_VER:0x%04x\n",
+		       p->id.vendor_code, p->id.model, p->id.version,
+		       p->id.serial_number, p->id.firmware_version);
 		result = false;
 	}
 

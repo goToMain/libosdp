@@ -14,33 +14,36 @@
 #define SUB_1 "    -- "
 #define SUB_2 "        -- "
 
-#define DO_TEST(t, m) do {          \
-	t->tests++;                 \
-	if (m(t->mock_data)) {      \
-		t->failure++;       \
-	} else {                    \
-		t->success++;       \
-	}                           \
-} while(0)
+#define DO_TEST(t, m)                                                          \
+	do {                                                                   \
+		t->tests++;                                                    \
+		if (m(t->mock_data)) {                                         \
+			t->failure++;                                          \
+		} else {                                                       \
+			t->success++;                                          \
+		}                                                              \
+	} while (0)
 
-#define TEST_REPORT(t, s) do {      \
-	t->tests++;                 \
-	if (s == true)              \
-		t->success++;       \
-	else                        \
-		t->failure++;       \
-} while (0)
+#define TEST_REPORT(t, s)                                                      \
+	do {                                                                   \
+		t->tests++;                                                    \
+		if (s == true)                                                 \
+			t->success++;                                          \
+		else                                                           \
+			t->failure++;                                          \
+	} while (0)
 
-#define CHECK_ARRAY(a, l, e) do {                               \
-	if (l < 0)                                              \
-		printf ("error! invalid length %d\n", len);     \
-	else if (l != sizeof(e) || memcmp(a, e, sizeof(e))) {   \
-		printf("error! comparison failed!\n");          \
-		hexdump(e, sizeof(e), SUB_1 "Expected");        \
-		hexdump(a, l, SUB_1 "Found");                   \
-		return -1;                                      \
-	}                                                       \
-} while(0)
+#define CHECK_ARRAY(a, l, e)                                                   \
+	do {                                                                   \
+		if (l < 0)                                                     \
+			printf("error! invalid length %d\n", len);             \
+		else if (l != sizeof(e) || memcmp(a, e, sizeof(e))) {          \
+			printf("error! comparison failed!\n");                 \
+			hexdump(e, sizeof(e), SUB_1 "Expected");               \
+			hexdump(a, l, SUB_1 "Found");                          \
+			return -1;                                             \
+		}                                                              \
+	} while (0)
 
 struct test {
 	int loglevel;

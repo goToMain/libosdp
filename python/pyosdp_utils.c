@@ -32,7 +32,8 @@ int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val)
 	return ret;
 }
 
-int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data, int len)
+int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data,
+			  int len)
 {
 	int ret;
 	PyObject *obj;
@@ -108,7 +109,8 @@ int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str)
 
 	tmp = PyDict_GetItemString(dict, key);
 	if (tmp == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: string expected", key);
+		PyErr_Format(PyExc_KeyError,
+			     "Key: '%s' of type: string expected", key);
 		return -1;
 	}
 
@@ -126,14 +128,16 @@ int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res)
 
 	tmp = PyDict_GetItemString(dict, key);
 	if (tmp == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: int expected", key);
+		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: int expected",
+			     key);
 		return -1;
 	}
 
 	return pyosdp_parse_int(tmp, res);
 }
 
-int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data, int *length)
+int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data,
+			  int *length)
 {
 	PyObject *obj;
 	uint8_t *buf;
@@ -141,7 +145,8 @@ int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data, int *
 
 	obj = PyDict_GetItemString(dict, key);
 	if (obj == NULL) {
-		PyErr_Format(PyExc_KeyError, "Key: '%s' of type: bytes expected", key);
+		PyErr_Format(PyExc_KeyError,
+			     "Key: '%s' of type: bytes expected", key);
 		return -1;
 	}
 

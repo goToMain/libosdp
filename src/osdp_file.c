@@ -76,7 +76,7 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		return -1;
 	}
 
-	p->status = (f->last_send > 0) ? 0: -1;
+	p->status = (f->last_send > 0) ? 0 : -1;
 	p->rx_size = 0;
 	p->control = 0;
 	p->delay = 0;

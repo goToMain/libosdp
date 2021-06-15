@@ -16,8 +16,8 @@
 #define is_lower_alpha(x) (x >= 97 && x <= 122)
 
 #define xstr(s) #s
-#define str(s) xstr(s)
-#define PAD str(AP_HELP_SPACING)
+#define str(s)	xstr(s)
+#define PAD	str(AP_HELP_SPACING)
 
 const char *ap_app_name;
 const char *ap_app_desc;
@@ -32,7 +32,8 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 		printf("%s - %s\n", ap_app_name, ap_app_desc);
 
 	printf("\nUsage: %s [OPTIONS...] <CONFIG> <COMMAND> [CMD_ARGS[0] ...]\n"
-	       "\nOPTIONS:\n", ap_app_name);
+	       "\nOPTIONS:\n",
+	       ap_app_name);
 
 	ap_opt = ap_opts;
 	while (ap_opt->short_name != '\0') {
@@ -45,16 +46,16 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 		    ap_opt->type == AP_TYPE_BOOL_HANDLER) {
 			snprintf(opt_str, 64, "%s", ap_opt->long_name);
 		} else {
-			snprintf(opt_str, 64, "%s <%s>",
-				 ap_opt->long_name, ap_opt->opt_name);
+			snprintf(opt_str, 64, "%s <%s>", ap_opt->long_name,
+				 ap_opt->opt_name);
 		}
-		printf("  -%c, --%-"PAD"s %s\n", ap_opt->short_name, opt_str,
-			       ap_opt->help);
+		printf("  -%c, --%-" PAD "s %s\n", ap_opt->short_name, opt_str,
+		       ap_opt->help);
 		ap_opt++;
 	}
-	printf("  -%c, --%-"PAD"s Fork to background\n", 'f', "fork");
-	printf("  -%c, --%-"PAD"s Prevent writing to tty\n", 'q', "quiet");
-	printf("  -%c, --%-"PAD"s Print this help message\n", 'h', "help");
+	printf("  -%c, --%-" PAD "s Fork to background\n", 'f', "fork");
+	printf("  -%c, --%-" PAD "s Prevent writing to tty\n", 'q', "quiet");
+	printf("  -%c, --%-" PAD "s Print this help message\n", 'h', "help");
 
 	count = 0;
 	ap_opt = ap_opts;
@@ -65,8 +66,10 @@ void ap_print_help(struct ap_option *ap_opts, int exit_code)
 		}
 		if (count == 0)
 			printf("\nCOMMANDS:\n");
-		printf("  %-"PAD"s       %s\n", ap_opt->long_name, ap_opt->help);
-		ap_opt++; count++;
+		printf("  %-" PAD "s       %s\n", ap_opt->long_name,
+		       ap_opt->help);
+		ap_opt++;
+		count++;
 	}
 
 	exit(exit_code);
@@ -98,7 +101,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 		ap_opt++;
 	}
 
-	opts = malloc(sizeof (struct option) * (opts_len + 3));
+	opts = malloc(sizeof(struct option) * (opts_len + 3));
 	if (opts == NULL) {
 		printf("Error: alloc error\n");
 		exit(-1);
@@ -149,9 +152,9 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	ostr[olen] = '\0';
 
 	while ((c = getopt_long(argc, argv, ostr, opts, &opt_idx)) >= 0) {
-
 		/* find c in ap_opt->short_name */
-		for (i = 0; i < ap_opts_len && c != ap_opts[i].short_name; i++);
+		for (i = 0; i < ap_opts_len && c != ap_opts[i].short_name; i++)
+			;
 
 		if (c == 'h')
 			ap_print_help(ap_opts, 0);
@@ -200,9 +203,9 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 	while (ap_opt->short_name != '\0') {
 		if (ap_opt->short_name != -1) {
 			if (ap_opt->flags & AP_OPT_REQUIRED &&
-			   (ap_opt->flags & AP_OPT_SEEN) == 0U) {
+			    (ap_opt->flags & AP_OPT_SEEN) == 0U) {
 				printf("Error: arg '%c' is mandatory\n\n",
-					ap_opt->short_name);
+				       ap_opt->short_name);
 				ap_print_help(ap_opts, -1);
 			}
 		} else if (argv[optind]) {
@@ -211,7 +214,7 @@ int ap_parse(int argc, char *argv[], struct ap_option *ap_opts, void *data)
 					if ((pid = fork()) < 0)
 						return -1;
 					if (pid != 0)
-						exit (0);
+						exit(0);
 				}
 				return ap_opt->handler(argc - optind - 1,
 						       argv + optind + 1, data);

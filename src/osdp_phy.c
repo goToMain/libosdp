@@ -6,12 +6,12 @@
 
 #include "osdp_common.h"
 
-#define LOG_TAG "PHY: "
-#define OSDP_PKT_MARK                  0xFF
-#define OSDP_PKT_SOM                   0x53
-#define PKT_CONTROL_SQN                0x03
-#define PKT_CONTROL_CRC                0x04
-#define PKT_CONTROL_SCB                0x08
+#define LOG_TAG		"PHY: "
+#define OSDP_PKT_MARK	0xFF
+#define OSDP_PKT_SOM	0x53
+#define PKT_CONTROL_SQN 0x03
+#define PKT_CONTROL_CRC 0x04
+#define PKT_CONTROL_SCB 0x08
 
 struct osdp_packet_header {
 	uint8_t som;
@@ -115,7 +115,7 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	/* Fill packet header */
 	pkt = (struct osdp_packet_header *)buf;
 	pkt->som = OSDP_PKT_SOM;
-	pkt->pd_address = pd->address & 0x7F;	/* Use only the lower 7 bits */
+	pkt->pd_address = pd->address & 0x7F; /* Use only the lower 7 bits */
 	if (pd_mode) {
 		/* PD must reply with MSB of it's address set */
 		pkt->pd_address |= 0x80;
@@ -139,8 +139,8 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	return mark_byte_len + sizeof(struct osdp_packet_header) + scb_len;
 }
 
-int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
-			     int len, int max_len)
+int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf, int len,
+			     int max_len)
 {
 	uint8_t *data;
 	uint16_t crc16;
@@ -178,8 +178,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	pkt->len_msb = BYTE_1(len + 2);
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-	    pkt->control & PKT_CONTROL_SCB &&
-	    pkt->data[1] >= SCS_15) {
+	    pkt->control & PKT_CONTROL_SCB && pkt->data[1] >= SCS_15) {
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
 			 * Only the data portion of message (after id byte)
@@ -190,8 +189,8 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			 * SCS_15/SCS_16 and send them.
 			 */
 			data = pkt->data + pkt->data[0] + 1;
-			data_len = len - (sizeof(struct osdp_packet_header)
-					  + pkt->data[0] + 1);
+			data_len = len - (sizeof(struct osdp_packet_header) +
+					  pkt->data[0] + 1);
 			len -= data_len;
 			/**
 			 * check if the passed buffer can hold the encrypted
@@ -270,8 +269,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		return OSDP_ERR_PKT_FMT;
 	}
 
-	if (!ISSET_FLAG(pd, PD_FLAG_PD_MODE) &&
-	    !(pkt->pd_address & 0x80)) {
+	if (!ISSET_FLAG(pd, PD_FLAG_PD_MODE) && !(pkt->pd_address & 0x80)) {
 		LOG_ERR("Reply without address MSB set!", pkt->pd_address);
 		return OSDP_ERR_PKT_FMT;
 	}
@@ -426,8 +424,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	}
 
 	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-	    pkt->control & PKT_CONTROL_SCB &&
-	    pkt->data[1] >= SCS_15) {
+	    pkt->control & PKT_CONTROL_SCB && pkt->data[1] >= SCS_15) {
 		/* validate MAC */
 		is_cmd = ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 		osdp_compute_mac(pd, is_cmd, buf, mac_offset);

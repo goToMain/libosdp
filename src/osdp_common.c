@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define _GNU_SOURCE		/* See feature_test_macros(7) */
+#define _GNU_SOURCE /* See feature_test_macros(7) */
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -17,7 +17,7 @@
 #include "osdp_common.h"
 
 #define LOG_CTX_GLOBAL -153
-#define LOG_TAG "COM: "
+#define LOG_TAG	       "COM: "
 #ifndef PROJECT_VERSION
 #define PROJECT_VERSION "0.0.0"
 #endif
@@ -31,12 +31,11 @@
 #define WHT   "\x1B[37m"
 #define RESET "\x1B[0m"
 
-const char *log_level_names[LOG_MAX_LEVEL] = {
-	"EMERG", "ALERT", "CRIT ", "ERROR",
-	"WARN ", "NOTIC", "INFO ", "DEBUG"
-};
+const char *log_level_names[LOG_MAX_LEVEL] = { "EMERG", "ALERT", "CRIT ",
+					       "ERROR", "WARN ", "NOTIC",
+					       "INFO ", "DEBUG" };
 
-int g_log_level = LOG_WARNING;	/* Note: log level is not contextual */
+int g_log_level = LOG_WARNING; /* Note: log level is not contextual */
 int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
 osdp_log_fn_t log_printf;
@@ -46,10 +45,8 @@ void osdp_log_set_colour(int log_level)
 #ifndef CONFIG_DISABLE_PRETTY_LOGGING
 	int ret, len;
 	const char *colour;
-	static const char *colours[LOG_MAX_LEVEL] = {
-		RED,   RED,   RED,   RED,
-		YEL,   MAG,   GRN,   RESET
-	};
+	static const char *colours[LOG_MAX_LEVEL] = { RED, RED, RED, RED,
+						      YEL, MAG, GRN, RESET };
 
 	colour = (log_level < 0) ? RESET : colours[log_level];
 	len = strnlen(colour, 8);
@@ -86,8 +83,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_list args;
 	static char buf[128];
 
-	if (log_printf == NULL ||
-	    log_level >= LOG_MAX_LEVEL ||
+	if (log_printf == NULL || log_level >= LOG_MAX_LEVEL ||
 	    log_level > g_log_level) {
 		return;
 	}
@@ -110,7 +106,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 	osdp_log_set_colour(-1); /* Reset colour */
 }
 
-uint16_t crc16_itu_t(uint16_t seed, const uint8_t * src, size_t len)
+uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 {
 	for (; len > 0; len--) {
 		seed = (seed >> 8U) | (seed << 8U);
@@ -355,7 +351,8 @@ uint32_t osdp_get_status_mask(osdp_t *ctx)
 }
 
 OSDP_EXPORT
-void osdp_set_command_complete_callback(osdp_t *ctx, osdp_command_complete_callback_t cb)
+void osdp_set_command_complete_callback(osdp_t *ctx,
+					osdp_command_complete_callback_t cb)
 {
 	input_check(ctx);
 

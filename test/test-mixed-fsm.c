@@ -72,10 +72,8 @@ int test_mixed_pd_fsm_receive(void *data, uint8_t *buf, int len)
 	return ret;
 }
 
-uint8_t master_key[16] = {
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-};
+uint8_t master_key[16] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+			   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
 
 int test_mixed_fsm_setup(struct test *t)
 {
@@ -90,22 +88,20 @@ int test_mixed_fsm_setup(struct test *t)
 		.channel.flush = NULL,
 		.scbk = NULL,
 	};
-	test_data.cp_ctx = (struct osdp *) osdp_cp_setup(1, &info_cp, master_key);
+	test_data.cp_ctx =
+		(struct osdp *)osdp_cp_setup(1, &info_cp, master_key);
 	if (test_data.cp_ctx == NULL) {
 		printf("   cp init failed!\n");
 		return -1;
 	}
 
 	struct osdp_pd_cap cap[] = {
-		{
-			.function_code = OSDP_PD_CAP_READER_LED_CONTROL,
-			.compliance_level = 1,
-			.num_items = 1
-		}, {
-			.function_code = OSDP_PD_CAP_COMMUNICATION_SECURITY,
-			.compliance_level = 1,
-			.num_items = 1
-		},
+		{ .function_code = OSDP_PD_CAP_READER_LED_CONTROL,
+		  .compliance_level = 1,
+		  .num_items = 1 },
+		{ .function_code = OSDP_PD_CAP_COMMUNICATION_SECURITY,
+		  .compliance_level = 1,
+		  .num_items = 1 },
 		{ -1, 0, 0 }
 	};
 	osdp_pd_info_t info_pd = {
@@ -126,10 +122,10 @@ int test_mixed_fsm_setup(struct test *t)
 		.scbk = NULL,
 	};
 	osdp_logger_init(t->loglevel, printf);
-	test_data.pd_ctx = (struct osdp *) osdp_pd_setup(&info_pd);
+	test_data.pd_ctx = (struct osdp *)osdp_pd_setup(&info_pd);
 	if (test_data.pd_ctx == NULL) {
 		printf(SUB_1 "pd init failed!\n");
-		osdp_cp_teardown((osdp_t *) test_data.cp_ctx);
+		osdp_cp_teardown((osdp_t *)test_data.cp_ctx);
 		return -1;
 	}
 	t->mock_data = (void *)&test_data;
@@ -140,8 +136,8 @@ void test_mixed_fsm_teardown(struct test *t)
 {
 	struct test_mixed *p = t->mock_data;
 
-	osdp_cp_teardown((osdp_t *) p->cp_ctx);
-	osdp_pd_teardown((osdp_t *) p->pd_ctx);
+	osdp_cp_teardown((osdp_t *)p->cp_ctx);
+	osdp_pd_teardown((osdp_t *)p->pd_ctx);
 }
 
 void run_mixed_fsm_tests(struct test *t)

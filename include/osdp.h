@@ -13,10 +13,10 @@
 extern "C" {
 #endif
 
-#define OSDP_CMD_TEXT_MAX_LEN          32
-#define OSDP_CMD_KEYSET_KEY_MAX_LEN    16
-#define OSDP_CMD_MFG_MAX_DATALEN       64
-#define OSDP_EVENT_MAX_DATALEN         64
+#define OSDP_CMD_TEXT_MAX_LEN	    32
+#define OSDP_CMD_KEYSET_KEY_MAX_LEN 16
+#define OSDP_CMD_MFG_MAX_DATALEN    64
+#define OSDP_EVENT_MAX_DATALEN	    64
 
 /**
  * @brief OSDP setup flags. See osdp_pd_info_t::flags
@@ -31,7 +31,7 @@ extern "C" {
  *
  * @note This flag is recommended in production use.
  */
-#define OSDP_FLAG_ENFORCE_SECURE       0x00010000
+#define OSDP_FLAG_ENFORCE_SECURE 0x00010000
 
 /**
  * @brief When set, the PD would allow one session of secure channel to be
@@ -41,7 +41,7 @@ extern "C" {
  * responsible for making sure that the device enters this mode only during
  * controlled/provisioning-time environments.
  */
-#define OSDP_FLAG_INSTALL_MODE         0x00020000
+#define OSDP_FLAG_INSTALL_MODE 0x00020000
 
 /**
  * @brief Various PD capability function codes.
@@ -732,7 +732,7 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_pd_setup(osdp_pd_info_t * info);
+osdp_t *osdp_pd_setup(osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -865,4 +865,4 @@ int osdp_file_tx_status(osdp_t *ctx, int pd, size_t *size, size_t *offset);
 }
 #endif
 
-#endif	/* _OSDP_H_ */
+#endif /* _OSDP_H_ */

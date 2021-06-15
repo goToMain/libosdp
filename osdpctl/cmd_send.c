@@ -196,8 +196,8 @@ int handle_cmd_comset(int argc, char *argv[], struct osdp_cmd_comset *c)
 	if (address <= 0 || address >= 126)
 		return -1;
 
-	if (baud != 9600 && baud != 19200 && baud != 38400 &&
-	    baud != 115200 && baud != 230400)
+	if (baud != 9600 && baud != 19200 && baud != 38400 && baud != 115200 &&
+	    baud != 230400)
 		return -1;
 
 	c->address = (uint8_t)address;
@@ -232,29 +232,23 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 
 	if (strcmp("led", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_LED;
-		ret = handle_cmd_led(argc-2, argv+2, &mq_cmd.cmd.led);
-	}
-	else if (strcmp("buzzer", argv[1]) == 0) {
+		ret = handle_cmd_led(argc - 2, argv + 2, &mq_cmd.cmd.led);
+	} else if (strcmp("buzzer", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_BUZZER;
-		ret = handle_cmd_buzzer(argc-2, argv+2, &mq_cmd.cmd.buzzer);
-	}
-	else if (strcmp("output", argv[1]) == 0) {
+		ret = handle_cmd_buzzer(argc - 2, argv + 2, &mq_cmd.cmd.buzzer);
+	} else if (strcmp("output", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_OUTPUT;
-		ret = handle_cmd_output(argc-2, argv+2, &mq_cmd.cmd.output);
-	}
-	else if (strcmp("text", argv[1]) == 0) {
+		ret = handle_cmd_output(argc - 2, argv + 2, &mq_cmd.cmd.output);
+	} else if (strcmp("text", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_TEXT;
-		ret = handle_cmd_text(argc-2, argv+2, &mq_cmd.cmd.text);
-	}
-	else if (strcmp("comset", argv[1]) == 0) {
+		ret = handle_cmd_text(argc - 2, argv + 2, &mq_cmd.cmd.text);
+	} else if (strcmp("comset", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CP_CMD_COMSET;
-		ret = handle_cmd_comset(argc-2, argv+2, &mq_cmd.cmd.comset);
-	}
-	else if (strcmp("status", argv[1]) == 0) {
+		ret = handle_cmd_comset(argc - 2, argv + 2, &mq_cmd.cmd.comset);
+	} else if (strcmp("status", argv[1]) == 0) {
 		mq_cmd.id = OSDPCTL_CMD_STATUS;
 		ret = 0;
-	}
-	else {
+	} else {
 		printf("Error: unkown command %s\n", argv[1]);
 		goto print_usage;
 	}
@@ -275,6 +269,6 @@ int cmd_handler_send(int argc, char *argv[], void *data)
 print_usage:
 	printf("\nUsage: <PD> <COMMAND> [ARGS..]\n\n");
 	printf("COMMANDS:\n\t"
-		"led\n\tbuzzer\n\toutput\n\ttext\n\tcomset\n\tstatus\n\n");
+	       "led\n\tbuzzer\n\toutput\n\ttext\n\tcomset\n\tstatus\n\n");
 	return -1;
 }

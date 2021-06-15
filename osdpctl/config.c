@@ -100,7 +100,8 @@ int config_parse_key_capabilites(const char *val, void *data)
 	remove_all(str, ' ');
 	tok1 = strtok_r(str, "[)]", &rest1);
 	while (tok1 != NULL) {
-		i = 0; ival[0] = 0;
+		i = 0;
+		ival[0] = 0;
 		tok2 = strtok_r(tok1, "(,", &rest2);
 		while (tok2 != NULL) {
 			if (i > 2 || safe_atoi(tok2, &ival[i++]))
@@ -138,8 +139,8 @@ int config_parse_key_channel_speed(const char *val, void *data)
 	if (safe_atoi(val, &baud))
 		return INI_FAILURE;
 
-	if (baud != 9600 && baud != 19200 && baud != 38400 &&
-	    baud != 115200 && baud != 230400) {
+	if (baud != 9600 && baud != 19200 && baud != 38400 && baud != 115200 &&
+	    baud != 230400) {
 		printf("Error: invalid baudrate %d\n", baud);
 		return INI_FAILURE;
 	}
@@ -194,7 +195,7 @@ int config_parse_key_num_pd(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
-int config_parse_key_master_key(const char* val, void *data)
+int config_parse_key_master_key(const char *val, void *data)
 {
 	uint8_t tmp[128];
 	struct config_s *p = data;
@@ -300,53 +301,54 @@ struct config_key_s {
 };
 
 const struct config_key_s g_config_key_global[] = {
-	{ "mode",		config_parse_key_mode },
-	{ "num_pd",		config_parse_key_num_pd },
-	{ "log_level",		config_parse_key_log_level },
-	{ "conn_topology",	config_parse_key_channel_topology },
-	{ "pid_file",		config_parse_key_pid_file },
-	{ "log_file",		config_parse_key_log_file },
-	{ "master_key",		config_parse_key_master_key },
+	{ "mode", config_parse_key_mode },
+	{ "num_pd", config_parse_key_num_pd },
+	{ "log_level", config_parse_key_log_level },
+	{ "conn_topology", config_parse_key_channel_topology },
+	{ "pid_file", config_parse_key_pid_file },
+	{ "log_file", config_parse_key_log_file },
+	{ "master_key", config_parse_key_master_key },
 	{ NULL, NULL }
 };
 
 const struct config_key_s g_config_key_pd[] = {
-	{ "capabilities",	config_parse_key_capabilites },
-	{ "channel_type",	config_parse_key_channel_type },
-	{ "channel_speed",	config_parse_key_channel_speed },
-	{ "channel_device",	config_parse_key_channel_device },
-	{ "address", 		config_parse_key_address },
-	{ "key_store",		config_parse_key_key_store },
-	{ "vendor_code",	config_parse_key_vendor_code },
-	{ "model",		config_parse_key_model },
-	{ "version",		config_parse_key_version },
-	{ "serial_number",	config_parse_serial_number },
-	{ "firmware_version",	confif_parse_firmware_version },
+	{ "capabilities", config_parse_key_capabilites },
+	{ "channel_type", config_parse_key_channel_type },
+	{ "channel_speed", config_parse_key_channel_speed },
+	{ "channel_device", config_parse_key_channel_device },
+	{ "address", config_parse_key_address },
+	{ "key_store", config_parse_key_key_store },
+	{ "vendor_code", config_parse_key_vendor_code },
+	{ "model", config_parse_key_model },
+	{ "version", config_parse_key_version },
+	{ "serial_number", config_parse_serial_number },
+	{ "firmware_version", confif_parse_firmware_version },
 	{ NULL, NULL }
 };
 
 const char *cap_names[OSDP_PD_CAP_SENTINEL] = {
-	[OSDP_PD_CAP_UNUSED]                        = "NULL",
-	[OSDP_PD_CAP_CONTACT_STATUS_MONITORING]     = "contact_status_monitoring",
-	[OSDP_PD_CAP_OUTPUT_CONTROL]                = "output_control",
-	[OSDP_PD_CAP_CARD_DATA_FORMAT]              = "card_data_format",
-	[OSDP_PD_CAP_READER_LED_CONTROL]            = "reader_led_control",
-	[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT]         = "reader_audible_control",
-	[OSDP_PD_CAP_READER_TEXT_OUTPUT]            = "reader_text_output",
-	[OSDP_PD_CAP_TIME_KEEPING]                  = "time_keeping",
-	[OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT]       = "check_character_support",
-	[OSDP_PD_CAP_COMMUNICATION_SECURITY]        = "communication_security",
-	[OSDP_PD_CAP_RECEIVE_BUFFERSIZE]            = "receive_buffersize",
-	[OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE] = "largest_combined_message_size",
-	[OSDP_PD_CAP_SMART_CARD_SUPPORT]            = "smart_card_support",
-	[OSDP_PD_CAP_READERS]                       = "readers",
-	[OSDP_PD_CAP_BIOMETRICS]                    = "biometrics"
+	[OSDP_PD_CAP_UNUSED] = "NULL",
+	[OSDP_PD_CAP_CONTACT_STATUS_MONITORING] = "contact_status_monitoring",
+	[OSDP_PD_CAP_OUTPUT_CONTROL] = "output_control",
+	[OSDP_PD_CAP_CARD_DATA_FORMAT] = "card_data_format",
+	[OSDP_PD_CAP_READER_LED_CONTROL] = "reader_led_control",
+	[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT] = "reader_audible_control",
+	[OSDP_PD_CAP_READER_TEXT_OUTPUT] = "reader_text_output",
+	[OSDP_PD_CAP_TIME_KEEPING] = "time_keeping",
+	[OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT] = "check_character_support",
+	[OSDP_PD_CAP_COMMUNICATION_SECURITY] = "communication_security",
+	[OSDP_PD_CAP_RECEIVE_BUFFERSIZE] = "receive_buffersize",
+	[OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE] =
+		"largest_combined_message_size",
+	[OSDP_PD_CAP_SMART_CARD_SUPPORT] = "smart_card_support",
+	[OSDP_PD_CAP_READERS] = "readers",
+	[OSDP_PD_CAP_BIOMETRICS] = "biometrics"
 };
 
 int config_key_parse(const char *key, const char *val,
 		     const struct config_key_s *p, void *data)
 {
-	while(p && p->key) {
+	while (p && p->key) {
 		if (strcmp(p->key, key) == 0 && p->handler) {
 			return p->handler(val, data);
 		}
@@ -356,7 +358,7 @@ int config_key_parse(const char *key, const char *val,
 	return INI_FAILURE;
 }
 
-int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
+int config_ini_cb(void *data, const char *sec, const char *key, const char *val)
 {
 	int id;
 	struct config_s *p = data;
@@ -367,7 +369,8 @@ int config_ini_cb(void* data, const char *sec, const char *key, const char *val)
 	if (strncmp("PD", sec, 3) == 0) {
 		if (p->pd == NULL)
 			return INI_FAILURE;
-		return config_key_parse(key, val, g_config_key_pd, (void *)p->pd);
+		return config_key_parse(key, val, g_config_key_pd,
+					(void *)p->pd);
 	}
 	if (strncmp("PD-", sec, 3) == 0) {
 		if (p->pd == NULL)
@@ -392,7 +395,8 @@ void config_parse(const char *filename, struct config_s *config)
 		exit(-1);
 	}
 	if (ret == -2) {
-		printf("Error: memory alloc failed when parsing: %s\n", filename);
+		printf("Error: memory alloc failed when parsing: %s\n",
+		       filename);
 		exit(-1);
 	}
 	if (ret < 0) {
@@ -408,7 +412,7 @@ void config_parse(const char *filename, struct config_s *config)
 		rp = realpath(filename, NULL);
 		if (rp == NULL) {
 			printf("Error: no absolute path for %s", filename);
-			exit (-1);
+			exit(-1);
 		}
 		config->config_file = rp;
 	} else {
@@ -419,7 +423,8 @@ void config_parse(const char *filename, struct config_s *config)
 		if (config->mode == CONFIG_MODE_PD) {
 			if (config->pd->channel_device)
 				free(config->pd->channel_device);
-			config->pd->channel_device = safe_strdup(config->config_file);
+			config->pd->channel_device =
+				safe_strdup(config->config_file);
 		}
 	}
 }
@@ -454,9 +459,8 @@ void config_print(struct config_s *config)
 		for (j = 0; j < OSDP_PD_CAP_SENTINEL; j++) {
 			if (pd->cap[j].function_code == 0)
 				continue;
-			printf("\tFC-%02d %s -- [ %d, %d, %d ]\n",
-			       j, cap_names[j],
-			       pd->cap[j].function_code,
+			printf("\tFC-%02d %s -- [ %d, %d, %d ]\n", j,
+			       cap_names[j], pd->cap[j].function_code,
 			       pd->cap[j].compliance_level,
 			       pd->cap[j].num_items);
 		}
@@ -465,6 +469,5 @@ void config_print(struct config_s *config)
 		printf("vendor_code: %d\n", pd->id.vendor_code);
 		printf("serial_number: 0x%08x\n", pd->id.serial_number);
 		printf("firmware_version: %d\n", pd->id.firmware_version);
-
 	}
 }

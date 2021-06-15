@@ -21,29 +21,16 @@ static void print_version()
 }
 
 struct ap_option ap_opts[] = {
-	{
-		AP_ARG('l', "log-file", "file"),
-		AP_STORE_STR(struct config_s, log_file),
-		AP_FLAGS(AP_OPT_NOFLAG),
-		AP_VALIDATOR(NULL),
-		AP_HELP("Log to file instead of tty")
-	},
-	{
-		AP_CMD("start", cmd_handler_start),
-		AP_HELP("Start a osdp service")
-	},
-	{
-		AP_CMD("send", cmd_handler_send),
-		AP_HELP("Send a command to a osdp device")
-	},
-	{
-		AP_CMD("stop", cmd_handler_stop),
-		AP_HELP("Stop a service started earlier")
-	},
-	{
-		AP_CMD("check", cmd_handler_check),
-		AP_HELP("Check and print parsed config")
-	},
+	{ AP_ARG('l', "log-file", "file"),
+	  AP_STORE_STR(struct config_s, log_file), AP_FLAGS(AP_OPT_NOFLAG),
+	  AP_VALIDATOR(NULL), AP_HELP("Log to file instead of tty") },
+	{ AP_CMD("start", cmd_handler_start), AP_HELP("Start a osdp service") },
+	{ AP_CMD("send", cmd_handler_send),
+	  AP_HELP("Send a command to a osdp device") },
+	{ AP_CMD("stop", cmd_handler_stop),
+	  AP_HELP("Stop a service started earlier") },
+	{ AP_CMD("check", cmd_handler_check),
+	  AP_HELP("Check and print parsed config") },
 	{
 		AP_ARG_BOOL('v', "version", print_version, "Print Version"),
 	},
@@ -92,7 +79,7 @@ int main(int argc, char *argv[])
 	srand(time(NULL));
 	osdpctl_process_init();
 
-        ap_init("osdpctl", "Setup/Manage OSDP devices");
+	ap_init("osdpctl", "Setup/Manage OSDP devices");
 
 	if (argc < 2) {
 		printf("Error: must provide a config file!\n");

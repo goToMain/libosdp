@@ -12,16 +12,13 @@
 #include <utils/utils.h>
 #include <utils/channel.h>
 
-#define CONFIG_FILE_PATH_LENGTH		128
-#define ARG_UNUSED(x)			(void)(x)
+#define CONFIG_FILE_PATH_LENGTH 128
+#define ARG_UNUSED(x)		(void)(x)
 
-enum config_osdp_mode_e {
-	CONFIG_MODE_CP=1,
-	CONFIG_MODE_PD
-};
+enum config_osdp_mode_e { CONFIG_MODE_CP = 1, CONFIG_MODE_PD };
 
 enum config_channel_topology_e {
-	CONFIG_CHANNEL_TOPOLOGY_CHAIN=1,
+	CONFIG_CHANNEL_TOPOLOGY_CHAIN = 1,
 	CONFIG_CHANNEL_TOPOLOGY_STAR
 };
 
@@ -104,8 +101,8 @@ struct osdpctl_cmd {
 };
 
 struct osdpctl_msgbuf {
-	long mtype;		/* message type, must be > 0 */
-	uint8_t mtext[1024];	/* message data */
+	long mtype; /* message type, must be > 0 */
+	uint8_t mtext[1024]; /* message data */
 };
 
 extern struct osdpctl_msgbuf msgq_cmd;

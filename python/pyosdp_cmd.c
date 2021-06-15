@@ -22,11 +22,14 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 
 	switch (cmd->id) {
 	case OSDP_CMD_OUTPUT:
-		if (pyosdp_dict_add_int(obj, "control_code", cmd->output.control_code))
+		if (pyosdp_dict_add_int(obj, "control_code",
+					cmd->output.control_code))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "output_no", cmd->output.output_no))
+		if (pyosdp_dict_add_int(obj, "output_no",
+					cmd->output.output_no))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "timer_count", cmd->output.timer_count))
+		if (pyosdp_dict_add_int(obj, "timer_count",
+					cmd->output.timer_count))
 			return -1;
 		break;
 	case OSDP_CMD_LED:
@@ -56,29 +59,35 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 			return -1;
 		break;
 	case OSDP_CMD_BUZZER:
-		if (pyosdp_dict_add_int(obj, "control_code", cmd->buzzer.control_code))
+		if (pyosdp_dict_add_int(obj, "control_code",
+					cmd->buzzer.control_code))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "on_count", cmd->buzzer.on_count))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "off_count", cmd->buzzer.off_count))
+		if (pyosdp_dict_add_int(obj, "off_count",
+					cmd->buzzer.off_count))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "reader", cmd->buzzer.reader))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "rep_count", cmd->buzzer.rep_count))
+		if (pyosdp_dict_add_int(obj, "rep_count",
+					cmd->buzzer.rep_count))
 			return -1;
 		break;
 	case OSDP_CMD_TEXT:
-		if (pyosdp_dict_add_int(obj, "control_code", cmd->text.control_code))
+		if (pyosdp_dict_add_int(obj, "control_code",
+					cmd->text.control_code))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "offset_col", cmd->text.offset_col))
+		if (pyosdp_dict_add_int(obj, "offset_col",
+					cmd->text.offset_col))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "offset_row", cmd->text.offset_row))
+		if (pyosdp_dict_add_int(obj, "offset_row",
+					cmd->text.offset_row))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
 			return -1;
-		if (cmd->text.length > (sizeof(buf)-1))
+		if (cmd->text.length > (sizeof(buf) - 1))
 			return -1;
 		memcpy(buf, cmd->text.data, cmd->text.length);
 		buf[cmd->text.length] = '\0';
@@ -90,21 +99,25 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 			return -1;
 		if (cmd->keyset.length > 16)
 			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", cmd->keyset.data, cmd->keyset.length))
+		if (pyosdp_dict_add_bytes(obj, "data", cmd->keyset.data,
+					  cmd->keyset.length))
 			return -1;
 		break;
 	case OSDP_CMD_COMSET:
 		if (pyosdp_dict_add_int(obj, "address", cmd->comset.address))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "baud_rate", cmd->comset.baud_rate))
+		if (pyosdp_dict_add_int(obj, "baud_rate",
+					cmd->comset.baud_rate))
 			return -1;
 		break;
 	case OSDP_CMD_MFG:
-		if (pyosdp_dict_add_int(obj, "vendor_code", cmd->mfg.vendor_code))
+		if (pyosdp_dict_add_int(obj, "vendor_code",
+					cmd->mfg.vendor_code))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "mfg_command", cmd->mfg.command))
 			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", cmd->mfg.data, cmd->mfg.length))
+		if (pyosdp_dict_add_bytes(obj, "data", cmd->mfg.data,
+					  cmd->mfg.length))
 			return -1;
 		break;
 	default:
@@ -116,7 +129,6 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 	*dict = obj;
 	return 0;
 }
-
 
 static int pyosdp_handle_cmd_output(struct osdp_cmd *p, PyObject *dict)
 {
@@ -142,8 +154,8 @@ static int pyosdp_handle_cmd_output(struct osdp_cmd *p, PyObject *dict)
 
 static int pyosdp_handle_cmd_led(struct osdp_cmd *p, PyObject *dict)
 {
-	int led_number, reader, off_color, on_color,
-	    off_count, on_count, timer_count, control_code;
+	int led_number, reader, off_color, on_color, off_count, on_count,
+		timer_count, control_code;
 	struct osdp_cmd_led *cmd = &p->led;
 	struct osdp_cmd_led_params *tmp = &cmd->permanent;
 
@@ -334,7 +346,7 @@ int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
 	if (pyosdp_dict_get_int(dict, "command", &cmd_id))
 		return -1;
 
-	switch(cmd_id) {
+	switch (cmd_id) {
 	case OSDP_CMD_OUTPUT:
 		return pyosdp_handle_cmd_output(cmd, dict);
 	case OSDP_CMD_LED:
@@ -371,11 +383,13 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 
 	switch (event->type) {
 	case OSDP_EVENT_CARDREAD:
-		if (pyosdp_dict_add_int(obj, "reader_no", event->cardread.reader_no))
+		if (pyosdp_dict_add_int(obj, "reader_no",
+					event->cardread.reader_no))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "format", event->cardread.format))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "direction", event->cardread.direction))
+		if (pyosdp_dict_add_int(obj, "direction",
+					event->cardread.direction))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "length", event->cardread.length))
 			return -1;
@@ -384,23 +398,29 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 			tmp = (event->cardread.length + 7) / 8; // bits to bytes
 		else
 			tmp = event->cardread.length;
-		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, tmp))
+		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data,
+					  tmp))
 			return -1;
 		break;
 	case OSDP_EVENT_KEYPRESS:
-		if (pyosdp_dict_add_int(obj, "reader_no", event->keypress.reader_no))
+		if (pyosdp_dict_add_int(obj, "reader_no",
+					event->keypress.reader_no))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "length", event->keypress.length))
 			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", event->keypress.data, event->keypress.length))
+		if (pyosdp_dict_add_bytes(obj, "data", event->keypress.data,
+					  event->keypress.length))
 			return -1;
 		break;
 	case OSDP_EVENT_MFGREP:
-		if (pyosdp_dict_add_int(obj, "vendor_code", event->mfgrep.vendor_code))
+		if (pyosdp_dict_add_int(obj, "vendor_code",
+					event->mfgrep.vendor_code))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "mfg_command", event->mfgrep.command))
+		if (pyosdp_dict_add_int(obj, "mfg_command",
+					event->mfgrep.command))
 			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", event->mfgrep.data, event->mfgrep.length))
+		if (pyosdp_dict_add_bytes(obj, "data", event->mfgrep.data,
+					  event->mfgrep.length))
 			return -1;
 		break;
 	default:
@@ -412,7 +432,8 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 	return 0;
 }
 
-static int pyosdp_make_cardread_event_struct(struct osdp_event *p, PyObject *dict)
+static int pyosdp_make_cardread_event_struct(struct osdp_event *p,
+					     PyObject *dict)
 {
 	int i, data_length, reader_no, format, direction, len_bytes;
 	struct osdp_event_cardread *ev = &p->cardread;
@@ -455,7 +476,8 @@ static int pyosdp_make_cardread_event_struct(struct osdp_event *p, PyObject *dic
 	return 0;
 }
 
-static int pyosdp_make_keypress_event_struct(struct osdp_event *p, PyObject *dict)
+static int pyosdp_make_keypress_event_struct(struct osdp_event *p,
+					     PyObject *dict)
 {
 	int i, data_length, reader_no;
 	struct osdp_event_keypress *ev = &p->keypress;

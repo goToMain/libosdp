@@ -87,36 +87,47 @@ bool osdp_file_tx_pending(struct osdp_pd *pd);
 
 #else /* CONFIG_OSDP_FILE */
 
-struct osdp_file {};
+struct osdp_file {
+};
 
-static inline
-int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
+static inline int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf,
+					 int max_len)
 {
-	ARG_UNUSED(pd); ARG_UNUSED(buf); ARG_UNUSED(max_len);
+	ARG_UNUSED(pd);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(max_len);
 	return -1;
 }
-static inline
-int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
+static inline int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf,
+					  int len)
 {
-	ARG_UNUSED(pd); ARG_UNUSED(buf); ARG_UNUSED(len);
+	ARG_UNUSED(pd);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
 	return -1;
 }
-static inline
-int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
+static inline int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf,
+					    int len)
 {
-	ARG_UNUSED(pd); ARG_UNUSED(buf); ARG_UNUSED(len);
+	ARG_UNUSED(pd);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
 	return -1;
 }
-static inline
-int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
+static inline int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf,
+					   int max_len)
 {
-	ARG_UNUSED(pd); ARG_UNUSED(buf); ARG_UNUSED(max_len);
+	ARG_UNUSED(pd);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(max_len);
 	return 0;
 }
-static inline
-int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
+static inline int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id,
+					uint32_t flags)
 {
-	ARG_UNUSED(pd); ARG_UNUSED(file_id); ARG_UNUSED(flags);
+	ARG_UNUSED(pd);
+	ARG_UNUSED(file_id);
+	ARG_UNUSED(flags);
 	return -1;
 }
 static inline bool osdp_file_tx_pending(struct osdp_pd *pd)
@@ -127,4 +138,4 @@ static inline bool osdp_file_tx_pending(struct osdp_pd *pd)
 
 #endif /* CONFIG_OSDP_FILE */
 
-#endif	/* _OSDP_FILE_H_ */
+#endif /* _OSDP_FILE_H_ */

@@ -1202,8 +1202,8 @@ void osdp_cp_refresh(osdp_t *ctx)
 	}
 }
 
-OSDP_EXPORT void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb,
-					    void *arg)
+OSDP_EXPORT
+void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 {
 	input_check(ctx);
 

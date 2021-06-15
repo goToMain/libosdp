@@ -272,11 +272,13 @@ enum osdp_state_e {
 };
 
 enum osdp_pkt_errors_e {
-	/* Define the busy error to a +ve value to indicate no error.  Also set it
-	 * to 2 which is the value of OSDP_CP_ERR_RETRY_CMD which is the error
-	 * code returned by cp_decode_response() after decoding the busy reply
-	 * packet.  This thus allows a busy reply packet to be detected and
-	 * handled without needing the usual additional decoding step. */
+	/**
+	 * Define the busy error to a +ve value to indicate no error.  Also set
+	 * it to 2 which is the value of OSDP_CP_ERR_RETRY_CMD which is the
+	 * error code returned by cp_decode_response() after decoding the busy
+	 * reply packet. This thus allows a busy reply packet to be detected and
+	 * handled without needing the usual additional decoding step.
+	 */
 	OSDP_ERR_PKT_BUSY = 2,
 
 	OSDP_ERR_PKT_NONE = 0,

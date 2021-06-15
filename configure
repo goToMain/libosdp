@@ -21,6 +21,7 @@ usage() {
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
 	  --file                       Compile support for file tx command
+	  --osdpctl                    Build osdpctl tool
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
 	---
@@ -36,6 +37,7 @@ while [ $# -gt 0 ]; do
 	--no-colours)          NO_COLOURS=1;;
 	--static-pd)           STATIC_PD=1;;
 	--file)                FILE=1;;
+	--osdpctl)             OSDPCTL=1;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
 	*) echo -e "Unknown option $1\n"; usage; exit 1;;
@@ -118,13 +120,17 @@ LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src
 
 if [[ -z "${STATIC_PD}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_cp.c"
-	OSDP_SAMPLES="cp_app.out pd_app.out"
+	TARGETS="cp_app.elf pd_app.elf"
 else
-	OSDP_SAMPLES="pd_app.out"
+	TARGETS="pd_app.elf"
 fi
 
 if [[ ! -z "${FILE}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_file.c"
+fi
+
+if [[ ! -z "${OSDPCTL}" ]]; then
+	TARGETS+=" osdpctl.elf"
 fi
 
 ## Generate osdp_config.h
@@ -159,7 +165,8 @@ SYSROOT=${SYSROOT}
 CCFLAGS=${CCFLAGS}
 CXXFLAGS=${CXXFLAGS}
 LDFLAGS=${LDFLAGS}
-SRC=${LIBOSDP_SOURCES}
+SRC_LIBOSDP=${LIBOSDP_SOURCES}
+TARGETS=${TARGETS}
 ---
 echo
 echo "LibOSDP lean build system configured!"

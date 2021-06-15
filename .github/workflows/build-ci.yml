@@ -57,3 +57,13 @@ jobs:
       run: cmake .
     - name: make check
       run: make check
+
+  CheckPatch:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: ClangFormatCheck
+      run: |
+        ./scripts/clang-format-check.sh

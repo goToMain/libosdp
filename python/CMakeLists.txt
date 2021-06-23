@@ -4,8 +4,10 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-find_package(PythonInterp 3 REQUIRED)
-find_package(PythonLibs   3 REQUIRED)
+find_package(PythonInterp 3)
+if(PYTHONINTERP_FOUND)
+find_package(PythonLibs   3)
+if(PYTHONLIBS_FOUND)
 
 set(OSDP_PYTHON_PACKAGE_NAME osdp)
 set(OSDP_PYTHON_PACKAGE_VERSION ${PROJECT_VERSION})
@@ -28,3 +30,6 @@ add_custom_target(python_clean
 add_custom_target(python_uninstall
 	COMMAND xargs rm < ${CMAKE_BINARY_DIR}/python_install_manifest.txt
 )
+
+endif() # PYTHONLIBS_FOUND
+endif() # PYTHONINTERP_FOUND

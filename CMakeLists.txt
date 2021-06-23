@@ -52,5 +52,5 @@ add_custom_target(uninstall
 	COMMAND xargs rm < ${CMAKE_BINARY_DIR}/install_manifest.txt
 )
 
-## include pacakge rules at last
+## include package rules at last
 include(CreatePackages)

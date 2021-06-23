@@ -20,6 +20,7 @@ usage() {
 	  --openssl-include-dir DIR    Include directory for openssl if not in system path
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
+	  --static-cp                  Setup CP statically
 	  --file                       Compile support for file tx command
 	  --osdpctl                    Build osdpctl tool
 	  -f, --force                  Use this flags to override some checks
@@ -36,6 +37,7 @@ while [ $# -gt 0 ]; do
 	--openssl-include-dir) OPENSSL_INCLUDE_DIR=$2; shift;;
 	--no-colours)          NO_COLOURS=1;;
 	--static-pd)           STATIC_PD=1;;
+	--static-cp)           STATIC_CP=1;;
 	--file)                FILE=1;;
 	--osdpctl)             OSDPCTL=1;;
 	-f|--force)            FORCE=1;;
@@ -80,6 +82,10 @@ fi
 
 if [[ ! -z "${STATIC_PD}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
+fi
+
+if [[ ! -z "${STATIC_CP}" ]]; then
+	CCFLAGS+=" -DCONFIG_OSDP_STATIC_CP"
 fi
 
 if [[ ! -z "${FILE}" ]]; then

@@ -34,11 +34,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(CONFIG_OSDP_STATIC_PD "Setup PD single statically" OFF)
+option(CONFIG_OSDP_STATIC_CP "Setup CP statically" OFF)
 
 # Each subdirecttory has it's own CMakeLists.txt
 add_subdirectory(utils)
 add_subdirectory(src)
-if (NOT CONFIG_OSDP_STATIC_PD)
+if (NOT CONFIG_OSDP_STATIC_PD AND NOT CONFIG_OSDP_STATIC_CP)
 	add_subdirectory(osdpctl)
 	add_subdirectory(test)
 	add_subdirectory(samples/c)

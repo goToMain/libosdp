@@ -52,6 +52,7 @@
 #define OSDP_PD_ERR_NO_DATA 1
 #define OSDP_PD_ERR_GENERIC -1
 #define OSDP_PD_ERR_REPLY   -2
+#define OSDP_PD_ERR_IGNORE  -3
 
 /* Implicit cababilities */
 static struct osdp_pd_cap osdp_pd_cap[] = {
@@ -902,7 +903,10 @@ static int pd_decode_packet(struct osdp_pd *pd, int *len)
 		/* rx_buf_len < pkt->len; wait for more data */
 		return OSDP_PD_ERR_NO_DATA;
 	}
-	if (err == OSDP_ERR_PKT_FMT || err == OSDP_ERR_PKT_SKIP) {
+	if (err == OSDP_ERR_PKT_SKIP) {
+		err = OSDP_PD_ERR_IGNORE;
+	}
+	if (err == OSDP_ERR_PKT_FMT) {
 		return OSDP_PD_ERR_GENERIC;
 	}
 	if (err) { /* propagate other errors as-is */
@@ -954,8 +958,12 @@ static int pd_receve_packet(struct osdp_pd *pd)
 	remaining = pd->rx_buf_len - len;
 	if (remaining) {
 		memmove(pd->rx_buf, pd->rx_buf + len, remaining);
-		pd->rx_buf_len = remaining;
 	}
+	/**
+	 * Store remaining length that needs to be processed.
+	 * State machine will be updated accordingly.
+	 */
+	pd->rx_buf_len = remaining;
 
 	return err;
 }
@@ -984,6 +992,15 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		ret = pd_receve_packet(pd);
 		if (ret == OSDP_PD_ERR_NO_DATA &&
 		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
+			break;
+		}
+		if (ret == OSDP_PD_ERR_IGNORE) {
+			/* Process command if non-empty */
+			if (pd->rx_buf_len > 0) {
+				pd->state = OSDP_PD_STATE_PROCESS_CMD;
+			} else {
+				pd->state = OSDP_PD_STATE_IDLE;
+			}
 			break;
 		}
 		if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {

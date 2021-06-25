@@ -45,7 +45,7 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 +-------------------------------+-----------+-------------------------------------------+
 | CONFIG_OSDP_STATIC_PD         | OFF       | Setup PD single statically                |
 +-------------------------------+-----------+-------------------------------------------+
-| CONFIG_OSDP_STATIC_CP         | OFF       | Setup CP statically                       |
+| CONFIG_OSDP_LIB_ONLY          | OFF       | Only build the library                       |
 +-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project

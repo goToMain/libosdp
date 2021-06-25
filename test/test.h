@@ -53,6 +53,9 @@ struct test {
 	void *mock_data;
 };
 
+/* Helpers */
+int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd);
+
 void run_cp_phy_tests(struct test *t);
 void run_cp_phy_fsm_tests(struct test *t);
 void run_cp_fsm_tests(struct test *t);

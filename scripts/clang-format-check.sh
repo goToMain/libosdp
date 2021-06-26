@@ -28,5 +28,6 @@ echo -e "\nFound formatting errors!\n\n"
 
 echo "${diff}"
 
-echo "\n\nRun 'clang-format --style=file -i FILE_YOU_MODIFED' fix these issues!"
-exit 1
+echo "\n\nWarning: found some clang format issues!
+echo "You can run 'clang-format --style=file -i FILE_YOU_MODIFED' fix these issues!"
+exit 0

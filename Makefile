@@ -83,8 +83,8 @@ check: clean $(O)/libtestosdp.a $(O)/test.elf
 .PHONY: clean
 clean:
 	$(Q)rm -f $(OBJ_LIBOSDP) $(OBJ_OSDPCTL) $(OBJ_TEST)
-	$(Q)rm -f $(O)/*.a $(O)/*.elf $(O)/osdp_*.h
+	$(Q)rm -f $(O)/*.a $(O)/*.elf
 
 .PHONY: distclean
 distclean: clean
-	$(Q)rm -f config.mak osdp_config.h osdp_export.h
+	$(Q)rm -f config.mak $(O)/osdp_*.h

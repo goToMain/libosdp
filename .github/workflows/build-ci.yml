@@ -23,7 +23,7 @@ jobs:
       run: |
         cmake -DCMAKE_BUILD_TYPE=Debug .
     - name: make
-      run: make
+      run: VERBOSE=1 make
     - name: pacakge
       run: |
         make package
@@ -56,7 +56,7 @@ jobs:
     - name: configure
       run: cmake .
     - name: make check
-      run: make check
+      run: VERBOSE=1 make check
 
   CheckPatch:
     runs-on: ubuntu-latest

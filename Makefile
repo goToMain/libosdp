@@ -72,7 +72,7 @@ $(O)/test.elf: $(OBJ_TEST)
 
 $(O)/libtestosdp.a: CCFLAGS_EXTRA=-DUNIT_TESTING -DCONFIG_OSDP_FILE
 $(O)/libtestosdp.a: CCFLAGS_EXTRA+=-Iutils/include -Iinclude -Isrc -I.
-$(O)/libtestosdp.a: $(OBJ_LIBOSDP) $(O)/src/osdp_file.o
+$(O)/libtestosdp.a: $(OBJ_LIBOSDP)
 	@echo "  AR $@"
 	$(Q)$(AR) qc $@ $^
 

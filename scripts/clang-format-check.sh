@@ -19,7 +19,7 @@ fi
 
 diff=$(git diff -U0 ${base_head} -- ${files} | ./scripts/clang-format-diff.py -p1)
 
-if [ -z "${diff}" ]; then
+if [[ -z "${diff}" ]]; then
        echo "All source code in PR properly formatted."
        exit 0
 fi
@@ -28,6 +28,6 @@ echo -e "\nFound formatting errors!\n\n"
 
 echo "${diff}"
 
-echo "\n\nWarning: found some clang format issues!
+echo "\n\nWarning: found some clang format issues!"
 echo "You can run 'clang-format --style=file -i FILE_YOU_MODIFED' fix these issues!"
 exit 0

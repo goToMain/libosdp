@@ -1068,12 +1068,12 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 
 	if (osdp_get_sc_status_mask(ctx) != PD_MASK(ctx)) {
 		LOG_WRN("master_key based key set can be performed only when "
-		        "all PDs are ONLINE, SC_ACTIVE");
+			"all PDs are ONLINE, SC_ACTIVE");
 		return -1;
 	}
 
 	LOG_INF("master_key based key set is a global command; "
-	        "all connected PDs will be affected.");
+		"all connected PDs will be affected.");
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = TO_PD(ctx, i);

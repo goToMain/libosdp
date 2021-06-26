@@ -843,23 +843,87 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
 void osdp_set_command_complete_callback(osdp_t *ctx,
 					osdp_command_complete_callback_t cb);
 
-#ifdef CONFIG_OSDP_FILE
-
-#include <stddef.h>
-#include <sys/types.h>
-
+/**
+ * @brief OSDP File operations struct that needs to be filled by the CP/PD
+ * application and registered with LibOSDP using osdp_file_register_ops()
+ * before a file transfer command can be initiated.
+ */
 struct osdp_file_ops {
-	int (*open)(int fd, size_t *size);
-	ssize_t (*read)(int fd, void *buf, size_t count, size_t offset);
-	ssize_t (*write)(int fd, const void *buf, size_t count, size_t offset);
+	/**
+	 * @brief Open a pre-agreed file
+	 *
+	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 * @param size
+	 *
+	 * @retval 0 on success. -1 on errors.
+	 */
+	int (*open)(int fd, int *size);
+
+	/**
+	 * @brief Read a chunk of file data into buffer
+	 *
+	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 * @param buf Buffer to store file data read
+	 * @param size Number of bytes to read from file into buffer
+	 * @param offset Number of bytes from the beginning of the file to
+	 *               start reading from.
+	 *
+	 * @retval Number of bytes read, 0 on EOF, -ve on errors.
+	 *
+	 * @note LibOSDP will guarantee that size and offset params are always
+	 * positive and size is always greater than or equal to offset.
+	 */
+	int (*read)(int fd, void *buf, int size, int offset);
+
+	/**
+	 * @brief Write a chunk of file data from buffer to disk.
+	 *
+	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 * @param buf Buffer with file data to be stored to disk
+	 * @param size Number of bytes to write to disk
+	 * @param offset Number of bytes from the beginning of the file to
+	 *               start writing too.
+	 *
+	 * @retval Number of bytes read, 0 on EOF, -ve on errors.
+	 *
+	 * @note LibOSDP will guarantee that size and offset params are always
+	 * positive and size is always greater than or equal to offset.
+	 */
+	int (*write)(int fd, const void *buf, int size, int offset);
+
+	/**
+	 * @brief Close file that corresponds to a given file discriptor
+	 *
+	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 *
+	 * @retval 0 on success. -1 on errors.
+	 */
 	void (*close)(int fd);
 };
 
+/**
+ * @brief Register a global file operations struct with OSDP. Both CP and PD
+ * modes should have done so already before CP can sending a OSDP_CMD_FILE_TX.
+ *
+ * @param ctx OSDP context
+ * @param pd PD number in case of CP. This param is ignored in PD mode
+ * @param ops Populated file operations struct
+ *
+ * @retval 0 on success. -1 on errors.
+ */
 int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops);
 
-int osdp_file_tx_status(osdp_t *ctx, int pd, size_t *size, size_t *offset);
-
-#endif /* CONFIG_OSDP_FILE */
+/**
+ * @brief Query file transfer status if one is in progress. Calling this method
+ * when there is no file transfer progressing will return error.
+ *
+ * @param ctx OSDP context
+ * @param pd PD number in case of CP. This param is ignored in PD mode
+ * @param size Total size of the file (as obtained from file_ops->open())
+ * @param offset Offset into the file that has been sent/received (CP/PD)
+ * @retval 0 on success. -1 on errors.
+ */
+int osdp_file_tx_status(osdp_t *ctx, int pd, int *size, int *offset);
 
 #ifdef __cplusplus
 }

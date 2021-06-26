@@ -72,9 +72,9 @@ enum file_tx_state_e {
 struct osdp_file {
 	int file_id;
 	enum file_tx_state_e state;
-	size_t last_send;
-	size_t size;
-	size_t offset;
+	int last_send;
+	int size;
+	int offset;
 	struct osdp_file_ops *ops;
 };
 

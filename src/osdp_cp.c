@@ -308,10 +308,21 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
 		ASSERT_BUF_LEN(CMD_KEYSET_LEN);
+		if (cmd->keyset.length != 16) {
+			LOG_ERR("Invalid key length");
+			return -1;
+		}
 		buf[len++] = pd->cmd_id;
-		buf[len++] = 1; /* key type (1: SCBK) */
+		buf[len++] = 1; /* key type is always SCBK here */
 		buf[len++] = 16; /* key length in bytes */
-		osdp_compute_scbk(pd, cmd->keyset.data, buf + len);
+		if (cmd->keyset.type == 1) { /* SCBK */
+			memcpy(buf + len, cmd->keyset.data, 16);
+		} else if (cmd->keyset.type == 0) {  /* master_key */
+			osdp_compute_scbk(pd, cmd->keyset.data, buf + len);
+		} else {
+			LOG_ERR("Unknown key type (%d)", cmd->keyset.type);
+			return -1;
+		}
 		len += 16;
 		ret = 0;
 		break;
@@ -824,7 +835,6 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 
 static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 {
-	struct osdp *ctx = TO_CTX(pd);
 	struct osdp_cmd *c;
 
 	if (ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
@@ -838,12 +848,11 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 	}
 
 	c->id = cmd;
-	switch (cmd) {
-	case CMD_KEYSET:
-		c->keyset.length = 16;
-		memcpy(c->keyset.data, ctx->sc_master_key, 16);
-		break;
+
+	if (c->id == CMD_KEYSET) {
+		memcpy(&c->keyset, pd->ephemeral_data, sizeof(c->keyset));
 	}
+
 	cp_cmd_enqueue(pd, c);
 	SET_FLAG(pd, PD_FLAG_AWAIT_RESP);
 	return OSDP_CP_ERR_INPROG;
@@ -853,6 +862,7 @@ static int state_update(struct osdp_pd *pd)
 {
 	int phy_state, soft_fail;
 	struct osdp *ctx = TO_CTX(pd);
+	struct osdp_cmd_keyset *keyset;
 
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == OSDP_CP_ERR_INPROG ||
@@ -1010,6 +1020,17 @@ static int state_update(struct osdp_pd *pd)
 		cp_set_online(pd);
 		break;
 	case OSDP_CP_STATE_SET_SCBK:
+		if (!ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
+			keyset = (struct osdp_cmd_keyset *)pd->ephemeral_data;
+			if (ISSET_FLAG(pd, PD_FLAG_HAS_SCBK)) {
+				memcpy(keyset->data, pd->sc.scbk, 16);
+				keyset->type = 1;
+			} else {
+				keyset->type = 0;
+				memcpy(keyset->data, ctx->sc_master_key, 16);
+			}
+			keyset->length = 16;
+		}
 		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0) {
 			break;
 		}

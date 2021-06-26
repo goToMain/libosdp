@@ -70,8 +70,9 @@ $(O)/test.elf: $(OBJ_TEST)
 	@echo "LINK $@"
 	$(Q)$(CC) $(CCFLAGS) -o $@ $^ -L. -ltestosdp -pthread
 
-$(O)/libtestosdp.a: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I.
-$(O)/libtestosdp.a: $(OBJ_LIBOSDP)
+$(O)/libtestosdp.a: CCFLAGS_EXTRA=-DUNIT_TESTING -DCONFIG_OSDP_FILE
+$(O)/libtestosdp.a: CCFLAGS_EXTRA+=-Iutils/include -Iinclude -Isrc -I.
+$(O)/libtestosdp.a: $(OBJ_LIBOSDP) $(O)/src/osdp_file.o
 	@echo "  AR $@"
 	$(Q)$(AR) qc $@ $^
 

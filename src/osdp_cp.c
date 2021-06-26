@@ -1067,10 +1067,13 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	struct osdp_pd *pd;
 
 	if (osdp_get_sc_status_mask(ctx) != PD_MASK(ctx)) {
-		LOG_WRN("CMD_KEYSET can be sent only when all PDs are "
-			"ONLINE and SC_ACTIVE.");
-		return 1;
+		LOG_WRN("master_key based key set can be performed only when "
+		        "all PDs are ONLINE, SC_ACTIVE");
+		return -1;
 	}
+
+	LOG_INF("master_key based key set is a global command; "
+	        "all connected PDs will be affected.");
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = TO_PD(ctx, i);
@@ -1269,8 +1272,15 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		return osdp_file_tx_initiate(pd_ctx, p->file_tx.fd,
 					     p->file_tx.flags);
 	case OSDP_CMD_KEYSET:
-		LOG_INF("Master KEYSET is a global command; "
-			"all connected PDs will be affected.");
+		if (p->keyset.type == 1) {
+			cmd_id = CMD_KEYSET;
+			break;
+		}
+		if (ISSET_FLAG(pd_ctx, OSDP_FLAG_ENFORCE_SECURE)) {
+			LOG_ERR("master_key based key set blocked "
+				"due to ENFORCE_SECURE;");
+			return -1;
+		}
 		return osdp_cp_send_command_keyset(ctx, &p->keyset);
 	default:
 		LOG_ERR("Invalid CMD_ID:%d", p->id);

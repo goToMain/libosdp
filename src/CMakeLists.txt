@@ -59,8 +59,8 @@ if (CONFIG_OSDP_FILE)
 endif()
 
 list(APPEND LIB_OSDP_INCLUDE_DIRS
-	${CMAKE_SOURCE_DIR}/utils/include
-	${CMAKE_SOURCE_DIR}/include
+	${PROJECT_SOURCE_DIR}/utils/include
+	${PROJECT_SOURCE_DIR}/include
 )
 
 list(APPEND LIB_OSDP_PRIVATE_INCLUDE_DIRS
@@ -119,10 +119,10 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 # objects relocatable by default (?).
 #
 list(APPEND LIB_OSDP_UTILS_SRC
-	${CMAKE_SOURCE_DIR}/utils/src/utils.c
-	${CMAKE_SOURCE_DIR}/utils/src/list.c
-	${CMAKE_SOURCE_DIR}/utils/src/queue.c
-	${CMAKE_SOURCE_DIR}/utils/src/slab.c
+	${PROJECT_SOURCE_DIR}/utils/src/utils.c
+	${PROJECT_SOURCE_DIR}/utils/src/list.c
+	${PROJECT_SOURCE_DIR}/utils/src/queue.c
+	${PROJECT_SOURCE_DIR}/utils/src/slab.c
 )
 set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 
@@ -135,7 +135,7 @@ endif()
 set_target_properties(${LIB_OSDP_SHARED} PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
-	PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/osdp.h
+	PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/osdp.h
 )
 
 target_include_directories(${LIB_OSDP_SHARED}
@@ -172,7 +172,7 @@ set(LIBOSDP_VERSION_MINOR    ${PROJECT_VERSION_MINOR})
 set(LIBOSDP_VERSION_PATCH    ${PROJECT_VERSION_PATCH})
 
 configure_package_config_file(
-	${CMAKE_SOURCE_DIR}/cmake/LibOSDPConfig.cmake.in
+	${PROJECT_SOURCE_DIR}/cmake/LibOSDPConfig.cmake.in
 	${CMAKE_BINARY_DIR}/LibOSDPConfig.cmake
 	INSTALL_DESTINATION ${LIBOSDP_CMAKE_CONFIG_DIR}
 	PATH_VARS
@@ -191,7 +191,7 @@ write_basic_package_version_file (
 
 # pkg-config file
 configure_file(
-	${CMAKE_SOURCE_DIR}/misc/libosdp.pc.in
+	${PROJECT_SOURCE_DIR}/misc/libosdp.pc.in
 	${CMAKE_BINARY_DIR}/libosdp.pc @ONLY
 )
 
@@ -208,7 +208,7 @@ install(
 	FILES
 		${CMAKE_BINARY_DIR}/LibOSDPConfig.cmake
 		${CMAKE_BINARY_DIR}/LibOSDPConfigVersion.cmake
-		${CMAKE_SOURCE_DIR}/cmake/UseLibOSDP.cmake
+		${PROJECT_SOURCE_DIR}/cmake/UseLibOSDP.cmake
 	DESTINATION ${LIBOSDP_CMAKE_CONFIG_DIR}
 	COMPONENT config_files
 )

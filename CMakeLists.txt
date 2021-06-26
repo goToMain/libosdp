@@ -34,11 +34,12 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 option(CONFIG_OSDP_STATIC_PD "Setup PD single statically" OFF)
+option(CONFIG_OSDP_LIB_ONLY "Only build the library" OFF)
 
 # Each subdirecttory has it's own CMakeLists.txt
 add_subdirectory(utils)
 add_subdirectory(src)
-if (NOT CONFIG_OSDP_STATIC_PD)
+if (NOT CONFIG_OSDP_STATIC_PD AND NOT CONFIG_OSDP_LIB_ONLY)
 	add_subdirectory(osdpctl)
 	add_subdirectory(test)
 	add_subdirectory(samples/c)
@@ -52,5 +53,5 @@ add_custom_target(uninstall
 	COMMAND xargs rm < ${CMAKE_BINARY_DIR}/install_manifest.txt
 )
 
-## include pacakge rules at last
+## include package rules at last
 include(CreatePackages)

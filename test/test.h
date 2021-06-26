@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "osdp_common.h"
 
 #define SUB_1 "    -- "
@@ -55,6 +57,8 @@ struct test {
 
 /* Helpers */
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd);
+int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *));
+int async_runner_stop(int runner);
 
 void run_cp_phy_tests(struct test *t);
 void run_cp_phy_fsm_tests(struct test *t);

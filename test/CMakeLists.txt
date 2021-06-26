@@ -26,7 +26,10 @@ list(APPEND OSDP_UNIT_TEST_SRC
 
 add_executable(${OSDP_UNIT_TEST} EXCLUDE_FROM_ALL ${OSDP_UNIT_TEST_SRC})
 
-target_link_libraries(${OSDP_UNIT_TEST} ${LIB_OSDP_TEST} ${LIB_OSDP_LIBRARIES})
+target_link_libraries(${OSDP_UNIT_TEST}
+		      ${LIB_OSDP_TEST}
+		      ${LIB_OSDP_LIBRARIES}
+		      pthread)
 
 include_directories(
 	${PROJECT_SOURCE_DIR}/include

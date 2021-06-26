@@ -7,16 +7,87 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <pthread.h>
+
 #include <osdp.h>
 
 #include "osdp_common.h"
 #include "test.h"
+
+#define MAX_RUNNERS 4
 
 uint8_t test_cp_to_pd_buf[128];
 int test_cp_to_pd_buf_length;
 
 uint8_t test_pd_to_cp_buf[128];
 int test_pd_to_cp_buf_length;
+
+struct test_async_data {
+	int id;
+	osdp_t *ctx;
+	void (*refresh)(osdp_t *ctx);
+};
+
+volatile int g_async_runner_status[MAX_RUNNERS];
+pthread_t g_async_runner_ctx[MAX_RUNNERS];
+
+void *async_runner(void *data)
+{
+	struct test_async_data *d = data;
+
+	while (g_async_runner_status[d->id]) {
+		d->refresh(d->ctx);
+		usleep(10 * 1000);
+	}
+
+	free(data);
+	return NULL;
+}
+
+int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
+{
+	int i;
+	pthread_t *th;
+
+	for (i = 0; i < MAX_RUNNERS; i++)
+		if (g_async_runner_status[i] == 0)
+			break;
+
+	if (i == MAX_RUNNERS) {
+		printf("Runner limit exhausted");
+		return -1;
+	}
+
+	g_async_runner_status[i] = 1;
+	th = &g_async_runner_ctx[i];
+
+	struct test_async_data *data = malloc(sizeof(struct test_async_data));
+
+	data->id = i;
+	data->ctx = ctx;
+	data->refresh = fn;
+
+	if (pthread_create(th, NULL, async_runner, data)) {
+		printf("pthread_create failed!");
+		return -1;
+	}
+
+	return i;
+}
+
+int async_runner_stop(int runner)
+{
+	if (runner < 0 || runner >= MAX_RUNNERS)
+		return -1;
+
+	if (g_async_runner_status[runner] != 1)
+		return 0;
+
+	g_async_runner_status[runner] = 0;
+	pthread_join(g_async_runner_ctx[runner], NULL);
+
+	return 0;
+}
 
 int test_mock_cp_send(void *data, uint8_t *buf, int len)
 {

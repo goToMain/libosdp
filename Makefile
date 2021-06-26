@@ -67,7 +67,7 @@ OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
 $(O)/test.elf: CCFLAGS_EXTRA=-Isrc -I. -Iutils/include -Iinclude -DUNIT_TESTING
 $(O)/test.elf: $(OBJ_TEST)
 	@echo "LINK $@"
-	$(Q)$(CC) $(CCFLAGS) -o $@ $^ -L. -ltestosdp
+	$(Q)$(CC) $(CCFLAGS) -o $@ $^ -L. -ltestosdp -pthread
 
 $(O)/libtestosdp.a: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I.
 $(O)/libtestosdp.a: $(OBJ_LIBOSDP)

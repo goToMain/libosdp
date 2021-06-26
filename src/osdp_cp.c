@@ -75,6 +75,7 @@ static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
 		LOG_ERR("Command slab allocation failed");
 		return NULL;
 	}
+	memset(&cmd->object, 0, sizeof(cmd->object));
 	return &cmd->object;
 }
 

@@ -84,10 +84,6 @@ if [[ ! -z "${STATIC_PD}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
 fi
 
-if [[ ! -z "${LIB_ONLY}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_LIB_ONLY"
-fi
-
 if [[ ! -z "${FILE}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_FILE"
 fi

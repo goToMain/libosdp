@@ -43,9 +43,9 @@ jobs:
         submodules: recursive
     - name: configure
       run: |
-        ./configure
+        ./configure.sh
     - name: make
-      run: make
+      run: make V=1
 
   Test:
     runs-on: ubuntu-latest

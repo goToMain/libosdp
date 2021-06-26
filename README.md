@@ -90,7 +90,7 @@ LibOSDP to `arm-none-eabi-gcc`.
 ```
 export CROS_COMPILE=arm-none-eabi-
 export CCFLAGS=--specs=nosys.specs
-./configure
+./configure.sh
 make
 ```
 

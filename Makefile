@@ -5,7 +5,7 @@
 #
 
 ifeq ($(wildcard config.mak),)
-$(error run ./configure first. See ./configure -h)
+$(error run ./configure.sh first. See ./configure.sh -h)
 endif
 
 include config.mak

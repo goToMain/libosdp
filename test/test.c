@@ -250,5 +250,7 @@ int main(int argc, char *argv[])
 
 	run_osdp_commands_tests(&t);
 
+	run_file_tx_tests(&t);
+
 	return test_end(&t);
 }

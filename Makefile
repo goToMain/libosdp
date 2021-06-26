@@ -62,6 +62,7 @@ $(O)/pd_app.elf: $(O)/libosdp.a
 
 SRC_TEST := test/test-commands.c test/test-cp-fsm.c test/test-cp-phy-fsm.c
 SRC_TEST += test/test-cp-phy.c test/test-mixed-fsm.c test/test.c
+SRC_TEST += test/test-file.c
 OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
 
 $(O)/test.elf: CCFLAGS_EXTRA=-Isrc -I. -Iutils/include -Iinclude -DUNIT_TESTING

@@ -22,6 +22,7 @@ list(APPEND OSDP_UNIT_TEST_SRC
 	test-cp-fsm.c
 	test-mixed-fsm.c
 	test-commands.c
+	test-file.c
 )
 
 add_executable(${OSDP_UNIT_TEST} EXCLUDE_FROM_ALL ${OSDP_UNIT_TEST_SRC})

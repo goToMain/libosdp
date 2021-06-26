@@ -20,5 +20,11 @@ echo "\${changes}" | while read status file; do
 		fi
 	fi
 done
+
+files=\$(git diff  --cached --name-only | grep -E ".*\.(cpp|cc|c\+\+|cxx|c|h|hpp)$")
+if [[ ! -z "\${files}" ]]; then
+	git diff -U0 --cached -- \${files} | ./scripts/clang-format-diff.py -p1
+fi
+
 ---
 chmod a+x .git/hooks/pre-commit && echo "Installed hook: .git/hooks/pre-commit"

@@ -211,7 +211,7 @@ void test_fill_comand(int cmd, void *data)
 		c.text.offset_row = 1;
 		c.text.offset_col = 1;
 		c.text.length = 7;
-		strncpy((char *)c.text.data, "LibOSDP", 7);
+		memcpy((char *)c.text.data, "LibOSDP", 7);
 		break;
 	case CMD_COMSET:
 		c.comset.address = 73;
@@ -221,7 +221,7 @@ void test_fill_comand(int cmd, void *data)
 		c.mfg.vendor_code = 13;
 		c.mfg.command = 153;
 		c.mfg.length = 7;
-		strncpy((char *)c.mfg.data, "LibOSDP", 7);
+		memcpy((char *)c.mfg.data, "LibOSDP", 7);
 		break;
 	default:
 		break;

@@ -13,7 +13,7 @@ on:
     branches: [ master ]
 
 jobs:
-  Build:
+  CmakeBuild:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -35,7 +35,7 @@ jobs:
         name: libosdp-ci-binaries.zip
         path: ./packages/
 
-  BuildLean:
+  MakeBuild:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -54,7 +54,7 @@ jobs:
       with:
         submodules: recursive
     - name: configure
-      run: cmake .
+      run: ./configure.sh
     - name: make check
       run: VERBOSE=1 make check
 

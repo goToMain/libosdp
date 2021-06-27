@@ -62,21 +62,21 @@ struct osdp_cmd_file_stat {
 
 enum file_tx_state_e {
 	OSDP_FILE_IDLE,
-	OSDP_FILE_START,
 	OSDP_FILE_INPROG,
 	OSDP_FILE_DONE,
 };
 
-#ifdef CONFIG_OSDP_FILE
-
 struct osdp_file {
 	int file_id;
 	enum file_tx_state_e state;
-	int last_send;
+	int length;
 	int size;
 	int offset;
+	int errors;
 	struct osdp_file_ops *ops;
 };
+
+#ifdef CONFIG_OSDP_FILE
 
 int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len);
 int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len);
@@ -84,11 +84,9 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len);
 int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len);
 int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags);
 bool osdp_file_tx_pending(struct osdp_pd *pd);
+void osdp_file_tx_abort(struct osdp_pd *pd);
 
 #else /* CONFIG_OSDP_FILE */
-
-struct osdp_file {
-};
 
 static inline int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf,
 					 int max_len)
@@ -134,6 +132,11 @@ static inline bool osdp_file_tx_pending(struct osdp_pd *pd)
 {
 	ARG_UNUSED(pd);
 	return false;
+}
+
+static inline void osdp_file_tx_abort(struct osdp_pd *pd)
+{
+	ARG_UNUSED(pd);
 }
 
 #endif /* CONFIG_OSDP_FILE */

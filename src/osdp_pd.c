@@ -508,11 +508,12 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case CMD_ABORT:
 		ASSERT_LENGTH(len, CMD_ABORT_DATA_LEN);
+		osdp_file_tx_abort(pd);
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_FILETRANSFER:
-		ret = osdp_file_cmd_tx_decode(pd, buf, len);
+		ret = osdp_file_cmd_tx_decode(pd, buf + pos, len);
 		if (ret == 0) {
 			ret = OSDP_PD_ERR_NONE;
 			pd->reply_id = REPLY_FTSTAT;
@@ -771,7 +772,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (ret <= 0) {
 			break;
 		}
-		len = ret;
+		len += ret;
+		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_CCRYPT:
 		if (smb == NULL) {
@@ -927,7 +929,7 @@ static int pd_decode_packet(struct osdp_pd *pd, int *len)
 
 static int pd_receve_packet(struct osdp_pd *pd)
 {
-	int len, err, remaining;
+	int len, err, remaining, pos;
 
 	len = pd->channel.recv(pd->channel.data, pd->rx_buf + pd->rx_buf_len,
 			       sizeof(pd->rx_buf) - pd->rx_buf_len);
@@ -944,9 +946,11 @@ static int pd_receve_packet(struct osdp_pd *pd)
 		 * pushed back by 2 bytes if secure channel block is present in
 		 * header.
 		 */
-		if (pd->rx_buf_len > OSDP_CMD_ID_OFFSET + 2 &&
-		    pd->rx_buf[OSDP_CMD_ID_OFFSET] != CMD_POLL &&
-		    pd->rx_buf[OSDP_CMD_ID_OFFSET + 2] != CMD_POLL) {
+		pos = OSDP_CMD_ID_OFFSET;
+		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+			pos += 2;
+		}
+		if (pd->rx_buf_len > pos && pd->rx_buf[pos] != CMD_POLL) {
 			osdp_dump(pd->rx_buf, pd->rx_buf_len,
 				  "OSDP: PD[%d]: Received", pd->address);
 		}

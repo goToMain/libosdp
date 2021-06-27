@@ -300,7 +300,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (ret <= 0) {
 			break;
 		}
-		len = ret;
+		len += ret;
 		break;
 	case CMD_KEYSET:
 		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
@@ -571,7 +571,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:
-		ret = osdp_file_cmd_stat_decode(pd, buf, len);
+		ret = osdp_file_cmd_stat_decode(pd, buf + pos, len);
 		break;
 	case REPLY_CCRYPT:
 		ASSERT_LENGTH(len, REPLY_CCRYPT_DATA_LEN);
@@ -664,7 +664,7 @@ static int cp_send_command(struct osdp_pd *pd)
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
 			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: PD[%d]: Sent", pd->offset);
+				  "OSDP: CP->PD[%d]: Sent", pd->offset);
 		}
 	}
 
@@ -688,7 +688,7 @@ static int cp_process_reply(struct osdp_pd *pd)
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
 			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: PD[%d]: Received", pd->offset);
+				  "OSDP: CP->PD[%d]: Received", pd->offset);
 		}
 	}
 
@@ -897,6 +897,7 @@ static int state_update(struct osdp_pd *pd)
 			/* Don't care if dispatch failed; osdp_file.c should
 			 * handle failures */
 			cp_cmd_dispatcher(pd, CMD_FILETRANSFER);
+			break;
 		}
 		if (osdp_millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS) {
 			break;

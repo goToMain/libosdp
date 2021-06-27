@@ -117,7 +117,7 @@ if [[ -z "${USE_OPENSSL}" ]]; then
 	echo "Using in-tree AES methods. Consider using openssl (--use-openssl)"
 	LIBOSDP_SOURCES+=" src/osdp_aes.c"
 fi
-LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c src/osdp_file.c"
+LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
 
 if [[ -z "${STATIC_PD}" ]]; then

@@ -15,11 +15,12 @@
 #include "test.h"
 
 #define MAX_RUNNERS 4
+#define MOCK_BUF_LEN 1024
 
-uint8_t test_cp_to_pd_buf[128];
+uint8_t test_cp_to_pd_buf[MOCK_BUF_LEN];
 int test_cp_to_pd_buf_length;
 
-uint8_t test_pd_to_cp_buf[128];
+uint8_t test_pd_to_cp_buf[MOCK_BUF_LEN];
 int test_pd_to_cp_buf_length;
 
 struct test_async_data {
@@ -92,7 +93,7 @@ int async_runner_stop(int runner)
 int test_mock_cp_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
-
+	assert(len < MOCK_BUF_LEN);
 	memcpy(test_cp_to_pd_buf, buf, len);
 	test_cp_to_pd_buf_length = len;
 	return len;
@@ -107,6 +108,7 @@ int test_mock_cp_receive(void *data, uint8_t *buf, int len)
 	ARG_UNUSED(len);
 
 	if (ret) {
+		assert(ret < MOCK_BUF_LEN);
 		memcpy(buf, test_pd_to_cp_buf, ret);
 		test_pd_to_cp_buf_length = 0;
 	}
@@ -212,7 +214,7 @@ void test_start(struct test *t)
 	t->tests = 0;
 	t->success = 0;
 	t->failure = 0;
-	t->loglevel = LOG_INFO;
+	t->loglevel = LOG_DEBUG;
 }
 
 int test_end(struct test *t)

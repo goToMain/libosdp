@@ -10,7 +10,7 @@ cmake_policy(SET CMP0063 NEW)
 project(libosdp VERSION 1.5.0)
 
 set(PROJECT_AUTHOR       "Siddharth Chandrasekaran")
-set(PROJECT_AUTHOR_EMAIL "siddharth@embedjournal.com")
+set(PROJECT_AUTHOR_EMAIL "sidcha.dev@gmail.com")
 set(PROJECT_YEAR         "2019")
 set(PROJECT_ORG          "goToMain")
 set(PROJECT_URL          "https://github.com/goToMain/libosdp/")

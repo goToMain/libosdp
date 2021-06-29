@@ -44,5 +44,10 @@ encumbrance.
 I'm contributing to libosdp project should I buy the specification?
 -------------------------------------------------------------------
 
-Please send an email to siddharth [at] embedjournal [dot] com. Contributors of
-this project do not need to purchase the specification.
+Please send an email to sidcha.dev@gmail.com. Contributors of this project do
+not need to purchase the specification.
+
+Update (29.06.2021):
+
+This needs to be confirmed with SIA due to the new terms under which the
+specification is shared to me.

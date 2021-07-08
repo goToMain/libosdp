@@ -19,7 +19,7 @@ add_custom_target(python
 )
 
 add_custom_target(python_install
-	COMMAND ${PYTHON_EXECUTABLE} setup.py install --user
+	COMMAND ${PYTHON_EXECUTABLE} setup.py install --user --prefix=
 		--record ${CMAKE_BINARY_DIR}/python_install_manifest.txt
 )
 

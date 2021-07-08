@@ -11,6 +11,8 @@ utils_sources = '@LIB_OSDP_UTILS_SRC@'.split(';') + [
     '@CMAKE_SOURCE_DIR@/utils/src/serial.c',
     '@CMAKE_SOURCE_DIR@/utils/src/channel.c',
     '@CMAKE_SOURCE_DIR@/utils/src/hashmap.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/strutils.c',
+    '@CMAKE_SOURCE_DIR@/utils/src/memory.c',
 ]
 
 pyosdp_sources = '@LIB_OSDP_SOURCES@'.split(';') + [

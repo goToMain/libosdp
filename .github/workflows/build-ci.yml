@@ -68,7 +68,7 @@ jobs:
       with:
         submodules: recursive
     - name: configure
-      run: ./configure.sh
+      run: cmake .
     - name: make check
       run: VERBOSE=1 make check
 

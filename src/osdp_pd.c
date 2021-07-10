@@ -895,47 +895,64 @@ static int pd_send_reply(struct osdp_pd *pd)
 	return OSDP_PD_ERR_NONE;
 }
 
-static int pd_decode_packet(struct osdp_pd *pd, int *len)
+static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 {
-	int err;
+	int err, len;
 	uint8_t *buf;
 
-	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, len);
-	if (err == OSDP_ERR_PKT_WAIT) {
-		/* rx_buf_len < pkt->len; wait for more data */
-		return OSDP_PD_ERR_NO_DATA;
-	}
-	if (err == OSDP_ERR_PKT_SKIP) {
-		err = OSDP_PD_ERR_IGNORE;
-	}
-	if (err == OSDP_ERR_PKT_FMT) {
-		return OSDP_PD_ERR_GENERIC;
-	}
-	if (err) { /* propagate other errors as-is */
-		return err;
+	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, &len);
+
+	/* Translate phy error codes to PD errors */
+	switch(err) {
+	case OSDP_ERR_PKT_NONE: break;
+	case OSDP_ERR_PKT_WAIT: return OSDP_PD_ERR_NO_DATA;
+	case OSDP_ERR_PKT_SKIP: return OSDP_PD_ERR_IGNORE;
+	case OSDP_ERR_PKT_FMT: return OSDP_PD_ERR_GENERIC;
+	default: return err; /* propagate other errors as-is */
 	}
 
-	pd->reply_id = 0; /* reset past reply ID so phy can send NAK */
-	pd->ephemeral_data[0] = 0; /* reset past NAK reason */
-	*len = osdp_phy_decode_packet(pd, pd->rx_buf, *len, &buf);
-	if (*len <= 0) {
+	*one_pkt_len = len;
+
+	/**
+	 * Reset past reply ID and reply data so osdp_phy_decode_packet() can
+	 * populate a NACK that the caller can directly send without calling
+	 * pd_decode_command()
+	 */
+	pd->reply_id = 0;
+	pd->ephemeral_data[0] = 0;
+
+	len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);
+	if (len <= 0) {
 		if (pd->reply_id != 0) {
 			return OSDP_PD_ERR_REPLY; /* Send a NAK */
 		}
 		return OSDP_PD_ERR_GENERIC; /* fatal errors */
 	}
-	return pd_decode_command(pd, buf, *len);
+
+	return pd_decode_command(pd, buf, len);
 }
 
-static int pd_receve_packet(struct osdp_pd *pd)
+static int pd_receive_and_process_command(struct osdp_pd *pd)
 {
+	uint8_t *buf;
 	int len, err, remaining, pos;
 
-	len = pd->channel.recv(pd->channel.data, pd->rx_buf + pd->rx_buf_len,
-			       sizeof(pd->rx_buf) - pd->rx_buf_len);
-	if (len > 0) {
-		pd->rx_buf_len += len;
+	buf = pd->rx_buf + pd->rx_buf_len;
+	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
+
+	len = pd->channel.recv(pd->channel.data, buf, remaining);
+	if (len <= 0) { /* No data received */
+		return OSDP_PD_ERR_NO_DATA;
 	}
+
+	/**
+	 * We received some data on the bus; update pd->tstamp. A rouge CP can
+	 * send one byte at a time to extend this command's window but that
+	 * shouldn't cause any issues related to secure channel as it has it's
+	 * own timestamp.
+	 */
+	pd->tstamp = osdp_millis_now();
+	pd->rx_buf_len += len;
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		/**
@@ -963,6 +980,7 @@ static int pd_receve_packet(struct osdp_pd *pd)
 	if (remaining) {
 		memmove(pd->rx_buf, pd->rx_buf + len, remaining);
 	}
+
 	/**
 	 * Store remaining length that needs to be processed.
 	 * State machine will be updated accordingly.
@@ -972,75 +990,68 @@ static int pd_receve_packet(struct osdp_pd *pd)
 	return err;
 }
 
+static inline void pd_error_reset(struct osdp_pd *pd)
+{
+	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
+	pd->rx_buf_len = 0;
+}
+
 static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
 
-	switch (pd->state) {
-	case OSDP_PD_STATE_IDLE:
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_TIMEOUT_MS) {
-			LOG_INF("PD SC session timeout!");
-			CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		}
-		ret = pd->channel.recv(pd->channel.data, pd->rx_buf,
-				       sizeof(pd->rx_buf));
-		if (ret <= 0) {
-			break;
-		}
-		pd->rx_buf_len = ret;
-		pd->tstamp = osdp_millis_now();
-		pd->state = OSDP_PD_STATE_PROCESS_CMD;
-		__fallthrough;
-	case OSDP_PD_STATE_PROCESS_CMD:
-		ret = pd_receve_packet(pd);
-		if (ret == OSDP_PD_ERR_NO_DATA &&
-		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
-			break;
-		}
-		if (ret == OSDP_PD_ERR_IGNORE) {
-			/* Process command if non-empty */
-			if (pd->rx_buf_len > 0) {
-				pd->state = OSDP_PD_STATE_PROCESS_CMD;
-			} else {
-				pd->state = OSDP_PD_STATE_IDLE;
-			}
-			break;
-		}
-		if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {
-			LOG_ERR("CMD receive error/timeout - err:%d", ret);
-			pd->state = OSDP_PD_STATE_ERR;
-			break;
-		}
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
-		    ret == OSDP_PD_ERR_NONE) {
-			pd->sc_tstamp = osdp_millis_now();
-		}
-		pd->state = OSDP_PD_STATE_SEND_REPLY;
-		__fallthrough;
-	case OSDP_PD_STATE_SEND_REPLY:
-		if (pd_send_reply(pd) == -1) {
-			pd->state = OSDP_PD_STATE_ERR;
-			break;
-		}
-		if (TO_CTX(pd)->command_complete_callback) {
-			TO_CTX(pd)->command_complete_callback(pd->cmd_id);
-		}
-		pd->rx_buf_len = 0;
-		pd->state = OSDP_PD_STATE_IDLE;
-		break;
-	case OSDP_PD_STATE_ERR:
-		/**
-		 * PD error state is momentary as it doesn't maintain any state
-		 * between commands. We just clean up secure channel status and
-		 * go back to idle state.
-		 */
+	/**
+	 * If secure channel is established, we need to make sure that
+	 * the session is valid before accepting a command.
+	 */
+	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
+	    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_TIMEOUT_MS) {
+		LOG_INF("PD SC session timeout!");
 		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
-		if (pd->channel.flush) {
-			pd->channel.flush(pd->channel.data);
+	}
+
+	ret = pd_receive_and_process_command(pd);
+
+	if (ret == OSDP_PD_ERR_IGNORE) {
+		return;
+	}
+
+	if (ret == OSDP_PD_ERR_NO_DATA) {
+		if (pd->rx_buf_len == 0 ||
+		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
+			return;
 		}
-		pd->state = OSDP_PD_STATE_IDLE;
-		break;
+		LOG_DBG("rx_buf: %d", pd->rx_buf_len);
+		hexdump(pd->rx_buf, pd->rx_buf_len, "Buf");
+	}
+
+	if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {
+		LOG_ERR("CMD receive error/timeout - err:%d", ret);
+		pd_error_reset(pd);
+		return;
+	}
+
+	if (ret == OSDP_PD_ERR_NONE && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		pd->sc_tstamp = osdp_millis_now();
+	}
+
+	ret = pd_send_reply(pd);
+	if (ret != OSDP_PD_ERR_NONE) {
+		/**
+		 * PD received and decoded a valid command from CP but failed to
+		 * send the intended respone?? This should not happen but if it
+		 * did, we cannot do anything about it, just complain about it
+		 * and limp back home.
+		 */
+		LOG_ERR("REPLY send failed! CP may be waiting..");
+		return;
+	}
+
+	if (TO_CTX(pd)->command_complete_callback) {
+		TO_CTX(pd)->command_complete_callback(pd->cmd_id);
 	}
 }
 

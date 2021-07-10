@@ -62,11 +62,6 @@ void run_mixed_fsm_tests(struct test *t)
 			result = false;
 			break;
 		}
-		if (pd_pd->state == OSDP_PD_STATE_ERR) {
-			printf(SUB_1 "PD state error!\n");
-			result = false;
-			break;
-		}
 		if (osdp_millis_since(start) > 2 * 1000) {
 			printf(SUB_1 "test timout!\n");
 			result = false;

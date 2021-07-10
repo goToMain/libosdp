@@ -244,13 +244,6 @@ enum osdp_pd_nak_code_e {
 	OSDP_PD_NAK_SENTINEL
 };
 
-enum osdp_pd_state_e {
-	OSDP_PD_STATE_IDLE,
-	OSDP_PD_STATE_PROCESS_CMD,
-	OSDP_PD_STATE_SEND_REPLY,
-	OSDP_PD_STATE_ERR,
-};
-
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,
 	OSDP_CP_PHY_STATE_SEND_CMD,

@@ -905,6 +905,7 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 	/* Translate phy error codes to PD errors */
 	switch(err) {
 	case OSDP_ERR_PKT_NONE: break;
+	case OSDP_ERR_PKT_NACK: return OSDP_PD_ERR_REPLY;
 	case OSDP_ERR_PKT_WAIT: return OSDP_PD_ERR_NO_DATA;
 	case OSDP_ERR_PKT_SKIP: return OSDP_PD_ERR_IGNORE;
 	case OSDP_ERR_PKT_FMT: return OSDP_PD_ERR_GENERIC;
@@ -913,17 +914,9 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 
 	*one_pkt_len = len;
 
-	/**
-	 * Reset past reply ID and reply data so osdp_phy_decode_packet() can
-	 * populate a NACK that the caller can directly send without calling
-	 * pd_decode_command()
-	 */
-	pd->reply_id = 0;
-	pd->ephemeral_data[0] = 0;
-
 	len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);
 	if (len <= 0) {
-		if (pd->reply_id != 0) {
+		if (len == OSDP_ERR_PKT_NACK) {
 			return OSDP_PD_ERR_REPLY; /* Send a NAK */
 		}
 		return OSDP_PD_ERR_GENERIC; /* fatal errors */

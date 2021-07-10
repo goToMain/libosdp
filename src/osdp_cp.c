@@ -697,6 +697,14 @@ static int cp_process_reply(struct osdp_pd *pd)
 		/* rx_buf_len < pkt->len; wait for more data */
 		return OSDP_CP_ERR_NO_DATA;
 	}
+
+	/* Translate phy error codes to CP errors */
+	switch (err) {
+	case OSDP_ERR_PKT_NONE: err = OSDP_CP_ERR_NONE;
+	case OSDP_ERR_PKT_BUSY: err = OSDP_CP_ERR_RETRY_CMD;
+	default: err = OSDP_CP_ERR_GENERIC;
+	}
+
 	if (err == OSDP_ERR_PKT_NONE) {
 		/* Valid OSDP packet in buffer */
 		len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);

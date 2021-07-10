@@ -281,6 +281,12 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		return OSDP_ERR_PKT_WAIT;
 	}
 
+	if (pkt_len > OSDP_PACKET_BUF_SIZE) {
+		pd->reply_id = REPLY_NAK;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
+		return OSDP_ERR_PKT_NACK;
+	}
+
 	*one_pkt_len = pkt_len + (ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK) ? 1 : 0);
 
 	/* validate CRC/checksum */
@@ -292,7 +298,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			LOG_ERR("Invalid crc 0x%04x/0x%04x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
-			return OSDP_ERR_PKT_CHECK;
+			return OSDP_ERR_PKT_NACK;
 		}
 	} else {
 		pkt_len -= 1; /* consume checksum */
@@ -302,7 +308,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			LOG_ERR("Invalid checksum %02x/%02x", comp, cur);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
-			return OSDP_ERR_PKT_CHECK;
+			return OSDP_ERR_PKT_NACK;
 		}
 	}
 
@@ -340,7 +346,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			LOG_ERR("seq-repeat/reply-resend not supported!");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
-			return OSDP_ERR_PKT_FMT;
+			return OSDP_ERR_PKT_NACK;
 		}
 	} else {
 		if (comp == 0) {
@@ -360,7 +366,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		LOG_ERR("packet seq mismatch %d/%d", cur, comp);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
-		return OSDP_ERR_PKT_FMT;
+		return OSDP_ERR_PKT_NACK;
 	}
 
 	return OSDP_ERR_PKT_NONE;
@@ -391,13 +397,13 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			LOG_ERR("PD is not SC capable");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
-			return OSDP_ERR_PKT_FMT;
+			return OSDP_ERR_PKT_NACK;
 		}
 		if (pkt->data[1] < SCS_11 || pkt->data[1] > SCS_18) {
 			LOG_ERR("Invalid SB Type");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-			return OSDP_ERR_PKT_FMT;
+			return OSDP_ERR_PKT_NACK;
 		}
 		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
 			/**
@@ -419,7 +425,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-			return OSDP_ERR_PKT_FMT;
+			return OSDP_ERR_PKT_NACK;
 		}
 	}
 
@@ -434,7 +440,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-			return OSDP_ERR_PKT_FMT;
+			return OSDP_ERR_PKT_NACK;
 		}
 		len -= 4; /* consume MAC */
 
@@ -456,7 +462,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 				CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 				pd->reply_id = REPLY_NAK;
 				pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-				return OSDP_ERR_PKT_FMT;
+				return OSDP_ERR_PKT_NACK;
 			}
 			if (len == 0) {
 				/**

@@ -16,8 +16,9 @@ usage() {
 	OPTIONS:
 	  --packet-trace               Enable raw packet trace for diagnostics
 	  --skip-mark                  Don't send the leading mark byte (0xFF)
-	  --use-openssl                Use methods from openssl instead of in-tree ones
-	  --openssl-include-dir DIR    Include directory for openssl if not in system path
+	  --crypto LIB                 Use methods from LIB (openssl/mbedtls/*tinyaes)
+	  --crypto-include-dir DIR     Include directory for crypto LIB if not in system path
+	  --crypto-ld-flags            Args to pass to linker for the crypto LIB
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
 	  --lib-only                   Only build the library
@@ -33,8 +34,9 @@ while [ $# -gt 0 ]; do
 	--packet-trace)        PACKET_TRACE=1;;
 	--skip-mark)           SKIP_MARK_BYTE=1;;
 	--cross-compile)       CROSS_COMPILE=$2; shift;;
-	--use-openssl)         USE_OPENSSL=1;;
-	--openssl-include-dir) OPENSSL_INCLUDE_DIR=$2; shift;;
+	--crypto)              CRYPTO=$2; shift;;
+	--crypto-include-dir)  CRYPTO_INCLUDE_DIR=$2; shift;;
+	--crypto-ld-flags)     CRYPTO_LD_FLAGS=$2; shift;;
 	--no-colours)          NO_COLOURS=1;;
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
@@ -104,19 +106,26 @@ if [[ -d .git ]]; then
 	GIT_DIFF=$(git diff --quiet --exit-code || echo +)
 fi
 
-if [[ ! -z "${USE_OPENSSL}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_USE_OPENSSL"
-	if [[ ! -z "${OPENSSL_INCLUDE_DIR}" ]]; then
-		CCFLAGS+=" -I${OPENSSL_INCLUDE_DIR}"
-		CXXFLAGS+=" -I${OPENSSL_INCLUDE_DIR}"
-	fi
+if [[ "${CRYPTO}" == "openssl" ]]; then
+	LIBOSDP_SOURCES+=" src/crypto/openssl.c"
+elif [[ "${CRYPTO}" == "mbedtls" ]]; then
+	LIBOSDP_SOURCES+=" src/crypto/mbedtls.c"
+	LDFLAGS+=" -lmbedcrypto -lmbedtls"
+else
+	echo "Using in-tree AES methods. Consider using openssl/mbedtls (see --crypto)"
+	LIBOSDP_SOURCES+=" src/crypto/tinyaes_src.c src/crypto/tinyaes.c"
+fi
+
+if [[ ! -z "${CRYPTO_INCLUDE_DIR}" ]]; then
+	CCFLAGS+=" -I${CRYPTO_INCLUDE_DIR}"
+	CXXFLAGS+=" -I${CRYPTO_INCLUDE_DIR}"
+fi
+
+if [[ ! -z "${CRYPTO_LD_FLAGS}" ]]; then
+	LDFLAGS+=" -I${CRYPTO_LD_FLAGS}"
 fi
 
 ## Declare sources
-if [[ -z "${USE_OPENSSL}" ]]; then
-	echo "Using in-tree AES methods. Consider using openssl (--use-openssl)"
-	LIBOSDP_SOURCES+=" src/osdp_aes.c"
-fi
 LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
 

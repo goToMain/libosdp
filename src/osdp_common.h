@@ -461,10 +461,10 @@ void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
-__weak void osdp_crypt_setup();
-__weak void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-__weak void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-__weak void osdp_get_rand(uint8_t *buf, int len);
-__weak void osdp_crypt_teardown();
+void osdp_crypt_setup();
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_get_rand(uint8_t *buf, int len);
+void osdp_crypt_teardown();
 
 #endif /* _OSDP_COMMON_H_ */

@@ -674,7 +674,7 @@ static int cp_send_command(struct osdp_pd *pd)
 static int cp_process_reply(struct osdp_pd *pd)
 {
 	uint8_t *buf;
-	int err, len, remaining;
+	int err, len, one_pkt_len, remaining;
 
 	buf = pd->rx_buf + pd->rx_buf_len;
 	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
@@ -697,12 +697,13 @@ static int cp_process_reply(struct osdp_pd *pd)
 		/* rx_buf_len < pkt->len; wait for more data */
 		return OSDP_CP_ERR_NO_DATA;
 	}
+	one_pkt_len = len;
 
 	/* Translate phy error codes to CP errors */
 	switch (err) {
-	case OSDP_ERR_PKT_NONE: err = OSDP_CP_ERR_NONE;
-	case OSDP_ERR_PKT_BUSY: err = OSDP_CP_ERR_RETRY_CMD;
-	default: err = OSDP_CP_ERR_GENERIC;
+	case OSDP_ERR_PKT_NONE: err = OSDP_CP_ERR_NONE; break;
+	case OSDP_ERR_PKT_BUSY: err = OSDP_CP_ERR_RETRY_CMD; break;
+	default: return OSDP_CP_ERR_GENERIC;
 	}
 
 	if (err == OSDP_ERR_PKT_NONE) {
@@ -715,11 +716,11 @@ static int cp_process_reply(struct osdp_pd *pd)
 	}
 
 	/* We are done with the packet (error or not). Remove processed bytes */
-	remaining = pd->rx_buf_len - len;
+	remaining = pd->rx_buf_len - one_pkt_len;
 	if (remaining) {
-		memmove(pd->rx_buf, pd->rx_buf + len, remaining);
-		pd->rx_buf_len = remaining;
+		memmove(pd->rx_buf, pd->rx_buf + one_pkt_len, remaining);
 	}
+	pd->rx_buf_len = remaining;
 
 	return err;
 }

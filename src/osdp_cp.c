@@ -952,7 +952,6 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (sc_is_capable(pd)) {
-			CLEAR_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
@@ -980,14 +979,13 @@ static int state_update(struct osdp_pd *pd)
 				cp_set_offline(pd);
 				break;
 			}
-			if (ISSET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE)) {
+			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_INF("SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
 				cp_set_online(pd);
 				break;
 			}
 			SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-			SET_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			pd->phy_state = 0; /* soft reset phy state */
 			LOG_WRN("SC Failed. Retry with SCBK-D");

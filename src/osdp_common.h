@@ -177,7 +177,6 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SKIP_SEQ_CHECK 0x00000020 /* disable seq checks (debug) */
 #define PD_FLAG_SC_USE_SCBKD   0x00000040 /* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE      0x00000080 /* secure channel is active */
-#define PD_FLAG_SC_SCBKD_DONE  0x00000100 /* SCBKD check is done */
 #define PD_FLAG_PD_MODE	       0x00000200 /* device is setup as PD */
 #define PD_FLAG_CHN_SHARED     0x00000400 /* PD's channel is shared */
 #define PD_FLAG_PKT_SKIP_MARK  0x00000800 /* CONFIG_OSDP_SKIP_MARK_BYTE */

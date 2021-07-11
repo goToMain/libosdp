@@ -221,11 +221,13 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd, const uint8_t *data,
 	return 0;
 }
 
-void osdp_sc_init(struct osdp_pd *pd)
+void osdp_sc_setup(struct osdp_pd *pd)
 {
 	uint8_t key[16];
 	bool preserve_scbk = ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
 			     ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
+
+	osdp_crypt_setup();
 
 	if (preserve_scbk) {
 		memcpy(key, pd->sc.scbk, 16);
@@ -246,4 +248,10 @@ void osdp_sc_init(struct osdp_pd *pd)
 	} else {
 		osdp_get_rand(pd->sc.cp_random, 8);
 	}
+}
+
+void osdp_sc_teardown(struct osdp_pd *pd)
+{
+	ARG_UNUSED(pd);
+	osdp_crypt_teardown();
 }

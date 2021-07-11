@@ -421,7 +421,37 @@ int osdp_decrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
 int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
 int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data,
 		     int len);
-void osdp_sc_init(struct osdp_pd *p);
+void osdp_sc_setup(struct osdp_pd *p);
+void osdp_sc_teardown(struct osdp_pd *pd);
+
+static inline bool is_enforce_secure(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE);
+}
+
+static inline bool sc_is_capable(struct osdp_pd *pd)
+{
+	return (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) &&
+	        !ISSET_FLAG(TO_CTX(pd), FLAG_SC_DISABLED));
+}
+
+static inline bool sc_is_active(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void sc_activate(struct osdp_pd *pd)
+{
+	SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void sc_deactivate(struct osdp_pd *pd)
+{
+	if (sc_is_active(pd)) {
+		osdp_sc_teardown(pd);
+	}
+	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
 
 /* from osdp_common.c */
 __weak int64_t osdp_millis_now(void);
@@ -431,8 +461,10 @@ void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
+__weak void osdp_crypt_setup();
 __weak void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 __weak void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 __weak void osdp_get_rand(uint8_t *buf, int len);
+__weak void osdp_crypt_teardown();
 
 #endif /* _OSDP_COMMON_H_ */

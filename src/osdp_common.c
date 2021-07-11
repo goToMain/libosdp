@@ -133,10 +133,15 @@ int64_t osdp_millis_since(int64_t last)
 	return osdp_millis_now() - last;
 }
 
-#ifdef CONFIG_OSDP_USE_OPENSSL
+#if defined(CONFIG_OSDP_USE_OPENSSL)
+
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/err.h>
+
+void osdp_crypt_setup()
+{
+}
 
 void osdp_openssl_fatal(void)
 {
@@ -224,9 +229,17 @@ void osdp_get_rand(uint8_t *buf, int len)
 	}
 }
 
+void osdp_crypt_teardown()
+{
+}
+
 #else /* CONFIG_OSDP_USE_OPENSSL */
 
 #include "osdp_aes.h"
+
+void osdp_crypt_setup()
+{
+}
 
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 {
@@ -268,6 +281,10 @@ void osdp_get_rand(uint8_t *buf, int len)
 		rnd = rand();
 		buf[i] = (uint8_t)(((float)rnd) / RAND_MAX * 256);
 	}
+}
+
+void osdp_crypt_teardown()
+{
 }
 
 #endif /* CONFIG_OSDP_USE_OPENSSL */

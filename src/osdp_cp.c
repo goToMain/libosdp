@@ -305,7 +305,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		len += ret;
 		break;
 	case CMD_KEYSET:
-		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		if (!sc_is_active(pd)) {
 			LOG_ERR("Can not perform a KEYSET without SC!");
 			return -1;
 		}
@@ -361,7 +361,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		return OSDP_CP_ERR_GENERIC;
 	}
 
-	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+	if (smb && (smb[1] > SCS_14) && sc_is_active(pd)) {
 		/**
 		 * When SC active and current cmd is not a handshake (<= SCS_14)
 		 * then we must set SCS type to 17 if this message has data
@@ -598,7 +598,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < 16; i++) {
 			pd->sc.r_mac[i] = buf[pos++];
 		}
-		SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		sc_activate(pd);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	default:
@@ -750,7 +750,7 @@ static inline void cp_set_online(struct osdp_pd *pd)
 
 static inline void cp_set_offline(struct osdp_pd *pd)
 {
-	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+	sc_deactivate(pd);
 	pd->state = OSDP_CP_STATE_OFFLINE;
 	pd->tstamp = osdp_millis_now();
 	if (pd->wait_ms == 0) {
@@ -761,6 +761,12 @@ static inline void cp_set_offline(struct osdp_pd *pd)
 			pd->wait_ms = OSDP_ONLINE_RETRY_WAIT_MAX_MS;
 		}
 	}
+}
+
+static inline bool cp_sc_should_retry(struct osdp_pd *pd)
+{
+	return (sc_is_capable(pd) && !sc_is_active(pd) &&
+	        osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
 }
 
 static int cp_phy_state_update(struct osdp_pd *pd)
@@ -896,10 +902,7 @@ static int state_update(struct osdp_pd *pd)
 
 	switch (pd->state) {
 	case OSDP_CP_STATE_ONLINE:
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) == false &&
-		    ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) == true &&
-		    ISSET_FLAG(ctx, FLAG_SC_DISABLED) == false &&
-		    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS) {
+		if (cp_sc_should_retry(pd)) {
 			LOG_INF("Retry SC after retry timeout");
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
@@ -948,14 +951,13 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_offline(pd);
 			break;
 		}
-		if (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) &&
-		    !ISSET_FLAG(ctx, FLAG_SC_DISABLED)) {
+		if (sc_is_capable(pd)) {
 			CLEAR_FLAG(pd, PD_FLAG_SC_SCBKD_DONE);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
-		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+		if (is_enforce_secure(pd)) {
 			LOG_INF("SC disabled or not capable. Set PD offline due "
 				"to ENFORCE_SECURE");
 			cp_set_offline(pd);
@@ -964,7 +966,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		break;
 	case OSDP_CP_STATE_SC_INIT:
-		osdp_sc_init(pd);
+		osdp_sc_setup(pd);
 		cp_set_state(pd, OSDP_CP_STATE_SC_CHLNG);
 		__fallthrough;
 	case OSDP_CP_STATE_SC_CHLNG:
@@ -972,7 +974,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (phy_state < 0) {
-			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			if (is_enforce_secure(pd)) {
 				LOG_INF("SC Failed. Set PD offline due to "
 					"ENFORCE_SECURE");
 				cp_set_offline(pd);
@@ -992,7 +994,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_CCRYPT) {
-			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			if (is_enforce_secure(pd)) {
 				LOG_ERR("CHLNG failed. Set PD offline due to "
 					"ENFORCE_SECURE");
 				cp_set_offline(pd);
@@ -1011,7 +1013,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_RMAC_I) {
-			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			if (is_enforce_secure(pd)) {
 				LOG_ERR("SCRYPT failed. Set PD offline due to "
 					"ENFORCE_SECURE");
 				cp_set_offline(pd);
@@ -1048,7 +1050,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id == REPLY_NAK) {
-			if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+			if (is_enforce_secure(pd)) {
 				LOG_ERR("Failed to set SCBK; "
 					"Set PD offline due to ENFORCE_SECURE");
 				cp_set_offline(pd);
@@ -1061,7 +1063,7 @@ static int state_update(struct osdp_pd *pd)
 		}
 		LOG_INF("SCBK set; restarting SC to verify new SCBK");
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		sc_deactivate(pd);
 		cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 		pd->seq_number = -1;
 		break;
@@ -1155,7 +1157,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 			scbk_count += 1;
 			memcpy(pd->sc.scbk, p->scbk, 16);
 			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
-		} else if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+		} else if (is_enforce_secure(pd)) {
 			LOG_ERR("SCBK must be passed for each PD when"
 				" ENFORCE_SECURE is requested.");
 			goto error;

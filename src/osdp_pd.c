@@ -244,8 +244,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
 
-	if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE) &&
-	    !ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+	if (is_enforce_secure(pd) && !sc_is_active(pd)) {
 		/**
 		 * Only CMD_ID, CMD_CAP and SC handshake commands (CMD_CHLNG
 		 * and CMD_SCRYPT) are allowed when SC is inactive and
@@ -529,7 +528,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		 * For CMD_KEYSET to be accepted, PD must be
 		 * ONLINE and SC_ACTIVE.
 		 */
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) == 0) {
+		if (!sc_is_active(pd)) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			LOG_ERR("Keyset with SC inactive");
@@ -567,8 +566,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	case CMD_CHLNG:
 		PD_CMD_CAP_CHECK(pd, &cmd);
 		ASSERT_LENGTH(len, CMD_CHLNG_DATA_LEN);
-		osdp_sc_init(pd);
-		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		sc_deactivate(pd);
+		osdp_sc_setup(pd);
 		for (i = 0; i < CMD_CHLNG_DATA_LEN; i++) {
 			pd->sc.cp_random[i] = buf[pos++];
 		}
@@ -814,7 +813,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[1] = SCS_14; /* type */
 		if (osdp_verify_cp_cryptogram(pd) == 0) {
 			smb[2] = 1; /* CP auth succeeded */
-			SET_FLAG(pd, PD_FLAG_SC_ACTIVE);
+			sc_activate(pd);
 			pd->sc_tstamp = osdp_millis_now();
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_WRN("SC Active with SCBK-D");
@@ -829,7 +828,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	}
 
-	if (smb && (smb[1] > SCS_14) && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+	if (smb && (smb[1] > SCS_14) && sc_is_active(pd)) {
 		smb[0] = 2; /* length */
 		smb[1] = (len > 1) ? SCS_18 : SCS_16;
 	}
@@ -959,7 +958,7 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 		 * header.
 		 */
 		pos = OSDP_CMD_ID_OFFSET;
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		if (sc_is_active(pd)) {
 			pos += 2;
 		}
 		if (pd->rx_buf_len > pos && pd->rx_buf[pos] != CMD_POLL) {
@@ -987,7 +986,7 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 
 static inline void pd_error_reset(struct osdp_pd *pd)
 {
-	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+	sc_deactivate(pd);
 	if (pd->channel.flush) {
 		pd->channel.flush(pd->channel.data);
 	}
@@ -1002,10 +1001,10 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	 * If secure channel is established, we need to make sure that
 	 * the session is valid before accepting a command.
 	 */
-	if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
+	if (sc_is_active(pd) &&
 	    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_TIMEOUT_MS) {
 		LOG_INF("PD SC session timeout!");
-		CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+		sc_deactivate(pd);
 	}
 
 	ret = pd_receive_and_process_command(pd);
@@ -1029,7 +1028,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		return;
 	}
 
-	if (ret == OSDP_PD_ERR_NONE && ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+	if (ret == OSDP_PD_ERR_NONE && sc_is_active(pd)) {
 		pd->sc_tstamp = osdp_millis_now();
 	}
 
@@ -1131,7 +1130,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	}
 
 	if (info->scbk == NULL) {
-		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
+		if (is_enforce_secure(pd)) {
 			LOG_ERR("SCBK must be provided in ENFORCE_SECURE");
 			goto error;
 		}

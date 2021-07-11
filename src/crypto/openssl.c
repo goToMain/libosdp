@@ -10,7 +10,6 @@ void osdp_crypt_setup()
 
 void osdp_openssl_fatal(void)
 {
-	LOG_ERR("OpenSSL Fatal");
 	ERR_print_errors_fp(stderr);
 	abort();
 }

@@ -33,8 +33,12 @@ endif()
 set(LIB_OSDP_SHARED osdp)
 set(LIB_OSDP_STATIC osdpstatic)
 
-# optionally, find and use OpenSSL
+# optionally, find and use OpenSSL or MbedTLS
 find_package(OpenSSL)
+
+if (NOT OpenSSL_FOUND)
+	find_package(MbedTLS)
+endif()
 
 # Generate osdp_config.h in build dir.
 configure_file(osdp_config.h.in osdp_config.h @ONLY)
@@ -76,6 +80,10 @@ if (OpenSSL_FOUND)
 	list(APPEND LIB_OSDP_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
 	list(APPEND LIB_OSDP_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_USE_OPENSSL")
+elseif (MbedTLS_FOUND)
+	list(APPEND LIB_OSDP_INCLUDE_DIRS ${MBEDTLS_INCLUDE_DIRS})
+	list(APPEND LIB_OSDP_LIBRARIES ${MBEDCRYPTO_LIBRARY})
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_USE_MBEDTLS")
 else()
 	list(APPEND LIB_OSDP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/osdp_aes.c)
 endif()
@@ -130,6 +138,8 @@ set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 add_library(${LIB_OSDP_SHARED} SHARED ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
 if (OpenSSL_FOUND)
 	target_link_libraries(${LIB_OSDP_SHARED} ${OPENSSL_CRYPTO_LIBRARY})
+elseif (MbedTLS_FOUND)
+	target_link_libraries(${LIB_OSDP_SHARED} ${MBEDCRYPTO_LIBRARY})
 endif()
 
 set_target_properties(${LIB_OSDP_SHARED} PROPERTIES

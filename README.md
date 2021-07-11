@@ -72,6 +72,7 @@ commands and replies and their support status in LibOSDP [here][22].
   * python3-pip (host, optional)
   * doxygen (host, optional)
   * OpenSSL (host and target, optional - recommended)
+  * MbedTLS (host and target)
   * [goToMain/C-Utils][25] (host, submodule)
 
 ### For ubuntu

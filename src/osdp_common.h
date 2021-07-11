@@ -266,11 +266,35 @@ enum osdp_state_e {
 
 enum osdp_pkt_errors_e {
 	OSDP_ERR_PKT_NONE = 0,
+	/**
+	 * Fatal packet formatting issues. The phy layer was unable to find a
+	 * valid OSDP packet or the length of the packet was too long/incorrect.
+	 */
 	OSDP_ERR_PKT_FMT = -1,
+	/**
+	 * Not enough data in buffer; wait for more data (or timeout).
+	 */
 	OSDP_ERR_PKT_WAIT = -2,
+	/**
+	 * Messsage to/from an foreign device that can be safely ignored
+	 * without altering the state of this PD.
+	 */
 	OSDP_ERR_PKT_SKIP = -3,
+	/**
+	 * Packet was valid but does not match some conditions. ie., only this
+	 * packet is faulty, rest of the buffer may still be intact.
+	 */
 	OSDP_ERR_PKT_CHECK = -4,
+	/**
+	 * Discovered a busy packet. In CP mode, it should retry this command
+	 * after some time.
+	 */
 	OSDP_ERR_PKT_BUSY = -5,
+	/**
+	 * Phy layer found a reason to send NACK to the CP that produced
+	 * this packet; pd->reply_id is set REPLY_NAK and the reason code is
+	 * also filled.
+	 */
 	OSDP_ERR_PKT_NACK = -6,
 };
 

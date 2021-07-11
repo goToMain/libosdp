@@ -48,11 +48,13 @@
 #define REPLY_CCRYPT_LEN       33
 #define REPLY_RMAC_I_LEN       17
 
-#define OSDP_PD_ERR_NONE    0
-#define OSDP_PD_ERR_NO_DATA 1
-#define OSDP_PD_ERR_GENERIC -1
-#define OSDP_PD_ERR_REPLY   -2
-#define OSDP_PD_ERR_IGNORE  -3
+enum osdp_pd_error_e {
+	OSDP_PD_ERR_NONE = 0,
+	OSDP_PD_ERR_NO_DATA = -1,
+	OSDP_PD_ERR_GENERIC = -2,
+	OSDP_PD_ERR_REPLY = -3,
+	OSDP_PD_ERR_IGNORE = -4,
+};
 
 /* Implicit cababilities */
 static struct osdp_pd_cap osdp_pd_cap[] = {

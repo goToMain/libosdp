@@ -44,12 +44,14 @@
 #define REPLY_FMT_DATA_LEN     3 /* variable length command */
 #define REPLY_BUSY_DATA_LEN    0
 
-#define OSDP_CP_ERR_NONE      0
-#define OSDP_CP_ERR_GENERIC   -1
-#define OSDP_CP_ERR_NO_DATA   1
-#define OSDP_CP_ERR_RETRY_CMD 2
-#define OSDP_CP_ERR_CAN_YIELD 3
-#define OSDP_CP_ERR_INPROG    4
+enum osdp_cp_error_e {
+	OSDP_CP_ERR_NONE = 0,
+	OSDP_CP_ERR_GENERIC = -1,
+	OSDP_CP_ERR_NO_DATA = -2,
+	OSDP_CP_ERR_RETRY_CMD = -3,
+	OSDP_CP_ERR_CAN_YIELD = -4,
+	OSDP_CP_ERR_INPROG = -5,
+};
 
 struct cp_cmd_node {
 	queue_node_t node;
@@ -1319,5 +1321,7 @@ struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
 int (*test_cp_build_packet)(struct osdp_pd *pd) = cp_build_packet;
+const int CP_ERR_CAN_YIELD = OSDP_CP_ERR_CAN_YIELD;
+const int CP_ERR_INPROG = OSDP_CP_ERR_INPROG;
 
 #endif /* UNIT_TESTING */

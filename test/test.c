@@ -203,7 +203,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 	return 0;
 }
 
-void test_start(struct test *t)
+void test_start(struct test *t, int log_level)
 {
 	printf("\n");
 	printf("------------------------------------------\n");
@@ -214,7 +214,7 @@ void test_start(struct test *t)
 	t->tests = 0;
 	t->success = 0;
 	t->failure = 0;
-	t->loglevel = LOG_DEBUG;
+	t->loglevel = log_level;
 }
 
 int test_end(struct test *t)
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 
 	srand(time(NULL));
 
-	test_start(&t);
+	test_start(&t, LOG_INFO);
 
 	run_cp_phy_tests(&t);
 

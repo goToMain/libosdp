@@ -317,8 +317,8 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	if (pd_addr != pd->address && pd_addr != 0x7F) {
 		/* not addressed to us and was not broadcasted */
 		if (!ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
-			LOG_ERR("Invalid pd address %d", pd_addr);
-			return OSDP_ERR_PKT_FMT;
+			LOG_WRN("Invalid pd address %d", pd_addr);
+			return OSDP_ERR_PKT_CHECK;
 		}
 		return OSDP_ERR_PKT_SKIP;
 	}

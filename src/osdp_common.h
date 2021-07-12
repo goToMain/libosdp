@@ -273,6 +273,8 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_DISABLED    BIT(12) /* master_key=NULL && scbk=NULL */
 #define PD_FLAG_PKT_BROADCAST  BIT(13) /* this packet was addressed to 0x7F */
 #define PD_FLAG_CP_USE_CRC     BIT(14) /* CP uses CRC-16 instead of checksum */
+#define PD_FLAG_TRS_CAPABLE    BIT(15) /* TRS - capability */
+#define PD_FLAG_TRS_ACTIVE     BIT(16) /* TRS - status */
 
 /* PD Init flags */
 #define PD_FLAG_ENFORCE_SECURE  BIT(24) /* See: OSDP_FLAG_ENFORCE_SECURE */
@@ -288,6 +290,12 @@ union osdp_ephemeral_data {
 #define CP_REQ_OFFLINE                 0x00000004
 #define CP_REQ_DISABLE                 0x00000008
 #define CP_REQ_ENABLE                  0x00000010
+
+#define TRS_MODE_00 0x00
+#define TRS_MODE_01 0x01
+
+#define TRS_ENABLE_CARD_INFO_REPORT  0x01
+#define TRS_DISABLE_CARD_INFO_REPORT 0x00
 
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,
@@ -308,7 +316,16 @@ enum osdp_cp_state_e {
 	OSDP_CP_STATE_PROBE,
 	OSDP_CP_STATE_OFFLINE,
 	OSDP_CP_STATE_DISABLED,
+	OSDP_CP_STATE_TRS_SETUP,
+	OSDP_CP_STATE_TRS_RUN,
 	OSDP_CP_STATE_SENTINEL
+};
+
+enum trs_state_e {
+	TRS_STATE_SET_MODE,
+	TRS_STATE_XMIT,
+	TRS_STATE_DISCONNECT_CARD,
+	TRS_STATE_TEARDOWN,
 };
 
 enum osdp_pkt_errors_e {
@@ -436,6 +453,7 @@ struct osdp_pd {
 	struct osdp_channel channel;     /* PD's serial channel */
 	struct osdp_secure_channel sc;   /* Secure Channel session context */
 	struct osdp_file *file;          /* File transfer context */
+	struct osdp_trs *trs;            /* TRS mode context */
 
 	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;
@@ -573,6 +591,15 @@ static inline void sc_deactivate(struct osdp_pd *pd)
 
 static inline void make_request(struct osdp_pd *pd, uint32_t req) {
 	pd->request |= req;
+}
+static inline bool trs_capable(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_TRS_CAPABLE);
+}
+
+static inline bool trs_active(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_TRS_ACTIVE);
 }
 
 static inline bool check_request(struct osdp_pd *pd, uint32_t req) {

@@ -11,6 +11,7 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 #include "osdp_diag.h"
+#include "osdp_trs.h"
 
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
@@ -327,6 +328,14 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		len += ret;
 		break;
+	case CMD_XWR:
+		buf[len++] = pd->cmd_id;
+		ret = osdp_trs_cmd_build(pd, buf + len, max_len);
+		if (ret <= 0) {
+			break;
+		}
+		len += ret;
+		break;
 	case CMD_KEYSET:
 		if (!sc_is_active(pd)) {
 			LOG_ERR("Cannot perform KEYSET without SC!");
@@ -492,6 +501,15 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 				CLEAR_FLAG(pd, PD_FLAG_CP_USE_CRC);
 			}
 		}
+
+		/* Check for Transparent Reader Support */
+		t1 = OSDP_PD_CAP_SMART_CARD_SUPPORT;
+		if (pd->cap[t1].compliance_level & 0x01) {
+			SET_FLAG(pd, PD_FLAG_TRS_CAPABLE);
+		} else {
+			CLEAR_FLAG(pd, PD_FLAG_TRS_CAPABLE);
+		}
+
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_OSTATR: {
@@ -642,6 +660,9 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case REPLY_FTSTAT:
 		ret = osdp_file_cmd_stat_decode(pd, buf + pos, len);
+		break;
+	case REPLY_XRD:
+		ret = osdp_trs_reply_decode(pd, buf + pos, len);
 		break;
 	case REPLY_CCRYPT:
 		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {

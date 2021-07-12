@@ -718,7 +718,78 @@ enum osdp_cmd_e {
 	OSDP_CMD_FILE_TX,     /**< File transfer command */
 	OSDP_CMD_STATUS,      /**< Status report command */
 	OSDP_CMD_COMSET_DONE, /**< Comset completed; Alias for OSDP_CMD_COMSET */
+	OSDP_CMD_XWR,         /**< TODO: Doc TRS mode */
 	OSDP_CMD_SENTINEL     /**< Max command value */
+};
+
+struct osdp_trs_cmd {
+	uint16_t mode_code; // current mode + command
+	union {
+		struct cmd_mode_set {
+			uint8_t mode;
+			uint8_t config;
+		} mode_set;
+		struct send_apdu {
+			int apdu_length;
+			uint8_t apdu[64];
+		} send_apdu;
+		struct pin_entry {
+			uint8_t timeout;
+			uint8_t timeout2;
+			uint8_t format_string;
+			uint8_t pin_block_string;
+			uint8_t ping_length_format;
+			uint8_t pin_max_extra_digit_msb;
+			uint8_t pin_max_extra_digit_lsb;
+			uint8_t pin_entry_valid_condition;
+			uint8_t pin_num_messages;
+			uint8_t language_id_msb;
+			uint8_t language_id_lsb;
+			uint8_t msg_index;
+			uint8_t teo_prologue[3];
+			uint8_t apdu_length_msb;
+			uint8_t apdu_length_lsb;
+			uint8_t apdu[64];
+		} pin_entry;
+	};
+};
+
+struct osdp_trs_reply {
+	// uint8_t mode;
+	// uint8_t preply;
+	uint16_t mode_code;
+	uint32_t data_len;
+	union {
+		struct cmd_reply_NAK {
+			uint8_t err_code;
+		} reply_nak;
+		struct mode_setting_report {
+			uint8_t mode;
+			uint8_t mode_config;
+		} mode_report;
+		struct card_info_report {
+			uint8_t reader;
+			uint8_t protocol;
+			uint8_t csn_len;
+			uint8_t protocol_data_len;
+			uint8_t csn[0];
+			uint8_t protocol_data[0];
+		} card_info_report;
+		struct card_present_status {
+			uint8_t reader;
+			uint8_t status;
+		} card_status;
+		struct card_data {
+			uint8_t reader;
+			uint8_t status;
+			uint8_t apdu[64];
+		} card_data;
+		struct pin_entry_complete {
+			uint8_t reader;
+			uint8_t status;
+			uint8_t tries;
+		} pin_entry_complete;
+	};
 };
 
 /**
@@ -749,6 +820,7 @@ struct osdp_cmd {
 		struct osdp_cmd_mfg mfg;          /**< Manufacturer specific command structure */
 		struct osdp_cmd_file_tx file_tx;  /**< File transfer command structure */
 		struct osdp_status_report status; /**< Status report command structure */
+		struct osdp_trs_cmd trs_cmd;      /**< TODO: Doc TRS */
 	};
 };
 

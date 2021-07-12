@@ -23,6 +23,7 @@ usage() {
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
 	  --lib-only                   Only build the library
+	  --enable-trs                 Enable support for Transparant Reader Support
 	  --cross-compile PREFIX       Use to pass a compiler prefix
 	  --prefix PATH                Install path prefix (default: /usr)
 	  --build-dir                  Build output directory (default: ./build)
@@ -48,6 +49,7 @@ while [ $# -gt 0 ]; do
 	--no-colours)          NO_COLOURS=1;;
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
+	--enable-trs)          ENABLE_TRS=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
 	-d|--debug)            DEBUG=1;;
 	-f|--force)            FORCE=1;;
@@ -102,6 +104,10 @@ fi
 
 if [[ ! -z "${DEBUG}" ]]; then
 	CCFLAGS+=" -g"
+fi
+
+if [[ ! -z "${ENABLE_TRS}" ]]; then
+	CCFLAGS+=" -DCONFIG_OSDP_TRS"
 fi
 
 ## Repo meta data
@@ -166,6 +172,10 @@ TEST_SOURCES+=" tests/unit-tests/test-file.c"
 TEST_SOURCES+=" tests/unit-tests/test-async-fuzz.c"
 TEST_SOURCES+=" tests/unit-tests/test-hotplug.c"
 TEST_SOURCES+=" ${LIBOSDP_SOURCES} ${UTILS_SOURCES}"
+
+if [[ ! -z "${ENABLE_TRS}" ]]; then
+	LIBOSDP_SOURCES+=" src/osdp_trs.c"
+fi
 
 if [[ ! -z "${LIB_ONLY}" ]]; then
 	TARGETS=""

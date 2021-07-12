@@ -34,6 +34,7 @@ option(OPT_BUILD_SHARED "Build shared library" ON)
 option(OPT_OSDP_STATIC_PD "Setup PD single statically" OFF)
 option(OPT_OSDP_LIB_ONLY "Only build the library" OFF)
 option(OPT_BUILD_BARE_METAL "Build library for bare metal targets" OFF)
+option(OPT_BUILD_OSDP_TRS "Enabled Transparent Reader Support" OFF)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

@@ -423,6 +423,16 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data,
 void osdp_sc_setup(struct osdp_pd *p);
 void osdp_sc_teardown(struct osdp_pd *pd);
 
+static inline bool is_pd_mode(struct  osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+}
+
+static inline bool is_cp_mode(struct  osdp_pd *pd)
+{
+	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
+}
+
 static inline bool is_enforce_secure(struct osdp_pd *pd)
 {
 	return ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE);

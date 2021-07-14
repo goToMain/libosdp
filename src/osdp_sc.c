@@ -38,7 +38,7 @@ void osdp_compute_session_keys(struct osdp *ctx)
 		 * Compute SCBK only in CP mode when SCBK was not provided for
 		 * each connected PD.
 		 */
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) == false &&
+		if (is_pd_mode(pd) == false &&
 		    ISSET_FLAG(pd, PD_FLAG_HAS_SCBK) == false) {
 			osdp_compute_scbk(pd, ctx->sc_master_key, pd->sc.scbk);
 		}
@@ -224,7 +224,7 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd, const uint8_t *data,
 void osdp_sc_setup(struct osdp_pd *pd)
 {
 	uint8_t key[16];
-	bool preserve_scbk = ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
+	bool preserve_scbk = is_pd_mode(pd) ||
 			     ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
 
 	osdp_crypt_setup();
@@ -236,7 +236,7 @@ void osdp_sc_setup(struct osdp_pd *pd)
 	if (preserve_scbk) {
 		memcpy(pd->sc.scbk, key, 16);
 	}
-	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
 		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);
 		pd->sc.pd_client_uid[2] = BYTE_0(pd->id.model);

@@ -152,7 +152,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 	osdp_pd_info_t info_cp = {
 		.address = 101,
 		.baud_rate = 9600,
-		.flags = 0,
+		.flags = OSDP_FLAG_ENFORCE_SECURE,
 		.channel.data = NULL,
 		.channel.send = test_mock_cp_send,
 		.channel.recv = test_mock_cp_receive,
@@ -166,19 +166,10 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		return -1;
 	}
 
-	struct osdp_pd_cap cap[] = {
-		{ .function_code = OSDP_PD_CAP_READER_LED_CONTROL,
-		  .compliance_level = 1,
-		  .num_items = 1 },
-		{ .function_code = OSDP_PD_CAP_COMMUNICATION_SECURITY,
-		  .compliance_level = 1,
-		  .num_items = 1 },
-		{ -1, 0, 0 }
-	};
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
-		.flags = 0,
+		.flags = OSDP_FLAG_ENFORCE_SECURE,
 		.id = {
 			.version = 1,
 			.model = 153,
@@ -186,7 +177,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 			.serial_number = 0x01020304,
 			.firmware_version = 0x0A0B0C0D,
 		},
-		.cap = cap,
+		.cap = NULL,
 		.channel.data = NULL,
 		.channel.send = test_mock_pd_send,
 		.channel.recv = test_mock_pd_receive,

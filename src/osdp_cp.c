@@ -602,18 +602,13 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	default:
-		LOG_DBG("Unexpected REPLY(%02x)", pd->reply_id);
-		return OSDP_CP_ERR_GENERIC;
-	}
-
-	if (ret == OSDP_CP_ERR_GENERIC) {
-		LOG_ERR("Format error in REPLY(%02x) for CMD(%02x)",
-			pd->reply_id, pd->cmd_id);
-		return OSDP_CP_ERR_GENERIC;
+		LOG_ERR("Unexpected REPLY(%02x)", pd->reply_id);
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
-		LOG_DBG("CMD(%02x) REPLY(%02x)", pd->cmd_id, pd->reply_id);
+		LOG_DBG("CMD: %s(%02x) REPLY: %s(%02x)",
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id,
+			osdp_reply_name(pd->reply_id), pd->reply_id);
 	}
 
 	return ret;

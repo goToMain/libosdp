@@ -252,8 +252,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		 */
 		if (pd->cmd_id != CMD_ID && pd->cmd_id != CMD_CAP &&
 		    pd->cmd_id != CMD_CHLNG && pd->cmd_id != CMD_SCRYPT) {
-			LOG_ERR("CMD(%02x) not allowed due to ENFORCE_SECURE",
-				pd->cmd_id);
+			LOG_ERR("CMD: %s(%02x) not allowed due to ENFORCE_SECURE",
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_PD_ERR_REPLY;
@@ -263,17 +263,17 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 /* helper macro, can be called from switch cases below */
 #define PD_CMD_CAP_CHECK(pd, cmd)                                              \
 	if (!pd_cmd_cap_ok(pd, cmd)) {                                         \
-		LOG_INF("PD is not capable of handling CMD(%02x); "            \
+		LOG_INF("PD is not capable of handling CMD: %s(%02x); "        \
 			"Reply with NAK_CMD_UNKNOWN",                          \
-			pd->cmd_id);                                           \
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id);                \
 		ret = OSDP_PD_ERR_REPLY;                                       \
 		break;                                                         \
 	}
 
 #define ASSERT_LENGTH(got, exp)                                                \
 	if (got != exp) {                                                      \
-		LOG_ERR("CMD(%02x) length error! Got:%d, Exp:%d", pd->cmd_id,  \
-			got, exp);                                             \
+		LOG_ERR("CMD %s(%02x) length error! Got:%d, Exp:%d",           \
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id, got, exp);      \
 		return OSDP_PD_ERR_GENERIC;                                    \
 	}
 
@@ -585,11 +585,17 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	default:
-		LOG_ERR("Unknown command ID %02x", pd->cmd_id);
+		LOG_ERR("Unknown CMD(%02x)", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
 		ret = OSDP_PD_ERR_NONE;
 		break;
+	}
+
+	if (pd->cmd_id != CMD_POLL) {
+		LOG_DBG("CMD: %s(%02x) REPLY: %s(%02x)",
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id,
+			osdp_reply_name(pd->reply_id), pd->reply_id);
 	}
 
 	if (ret != 0 && ret != OSDP_PD_ERR_REPLY) {
@@ -598,10 +604,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
 		return OSDP_PD_ERR_REPLY;
-	}
-
-	if (pd->cmd_id != CMD_POLL) {
-		LOG_DBG("CMD: %02x REPLY: %02x", pd->cmd_id, pd->reply_id);
 	}
 
 	return ret;
@@ -626,8 +628,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 #define ASSERT_BUF_LEN(need)                                                   \
 	if (max_len < need) {                                                  \
-		LOG_ERR("OOM at build REPLY(%02x) - have:%d, need:%d",         \
-			pd->reply_id, max_len, need);                          \
+		LOG_ERR("OOM at build REPLY: %s(%02x) - have:%d, need:%d",     \
+			osdp_reply_name(pd->reply_id), pd->reply_id,           \
+			max_len, need);                                        \
 		return OSDP_PD_ERR_GENERIC;                                    \
 	}
 
@@ -836,8 +839,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	if (ret != 0) {
 		/* catch all errors and report it as a RECORD error to CP */
-		LOG_ERR("Failed to build REPLY(%02x); Sending NAK instead!",
-			pd->reply_id);
+		LOG_ERR("Failed to build REPLY: %s(%02x); Sending NAK instead!",
+			osdp_reply_name(pd->reply_id), pd->reply_id);
 		ASSERT_BUF_LEN(REPLY_NAK_LEN);
 		buf[0] = REPLY_NAK;
 		buf[1] = OSDP_PD_NAK_RECORD;

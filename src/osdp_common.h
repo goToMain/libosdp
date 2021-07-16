@@ -470,6 +470,10 @@ void osdp_log(int log_level, const char *fmt, ...);
 void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
+
+const char *osdp_cmd_name(int cmd_id);
+const char *osdp_reply_name(int reply_id);
+
 void osdp_crypt_setup();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);

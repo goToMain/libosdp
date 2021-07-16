@@ -244,6 +244,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
 
+	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		if (pd->cmd_id != CMD_POLL) {
+			osdp_dump(buf, len, "OSDP: CMD: %s(%02x)",
+				  osdp_cmd_name(pd->cmd_id), pd->cmd_id);
+		}
+	}
+
 	if (is_enforce_secure(pd) && !sc_is_active(pd)) {
 		/**
 		 * Only CMD_ID, CMD_CAP and SC handshake commands (CMD_CHLNG
@@ -845,6 +852,13 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[0] = REPLY_NAK;
 		buf[1] = OSDP_PD_NAK_RECORD;
 		len = 2;
+	}
+
+	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		if (pd->cmd_id != CMD_POLL) {
+			osdp_dump(buf + 1, len - 1, "OSDP: REPLY: %s(%02x)",
+				  osdp_reply_name(buf[0]), buf[0]);
+		}
 	}
 
 	return len;

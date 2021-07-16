@@ -6,12 +6,17 @@
 
 ## Options
 option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
+option(CONFIG_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)
 option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
 option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
 option(CONFIG_OSDP_FILE "Enabled support for OSDP File Transfer" OFF)
 
 if (CONFIG_OSDP_PACKET_TRACE)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_PACKET_TRACE")
+endif()
+
+if (CONFIG_OSDP_DATA_TRACE)
+	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_DATA_TRACE")
 endif()
 
 if (CONFIG_OSDP_SKIP_MARK_BYTE)

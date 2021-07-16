@@ -34,21 +34,23 @@ LibOSDP can can be configured to enable/disable certain featured by passing the
 switches. For instance, if you want to also build static library, you can pass
 the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 
-+-------------------------------+-----------+-------------------------------------------+
-| OPTION                        | Default   | Description                               |
-+===============================+===========+===========================================+
-| CONFIG_OSDP_PACKET_TRACE      | OFF       | Enable raw packet trace for diagnostics   |
-+-------------------------------+-----------+-------------------------------------------+
-| CONFIG_OSDP_SKIP_MARK_BYTE    | OFF       | Don't send the leading mark byte (0xFF)   |
-+-------------------------------+-----------+-------------------------------------------+
-| CONFIG_DISABLE_PRETTY_LOGGING | OFF       | Don't colourize log outputs               |
-+-------------------------------+-----------+-------------------------------------------+
-| CONFIG_OSDP_STATIC_PD         | OFF       | Setup PD single statically                |
-+-------------------------------+-----------+-------------------------------------------+
-| CONFIG_OSDP_LIB_ONLY          | OFF       | Only build the library                    |
-+-------------------------------+-----------+-------------------------------------------+
-| CONFIG_OSDP_FILE              | OFF       | Enable file transfer support              |
-+-------------------------------+-----------+-------------------------------------------+
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| Configure.sh flag   | CMake OPTION                  | Default   | Description                               |
++=====================+===============================+===========+===========================================+
+| --packet-trace      | CONFIG_OSDP_PACKET_TRACE      | OFF       | Enable raw packet trace for diagnostics   |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| --data-trace        | CONFIG_OSDP_DATA_TRACE        | OFF       | Enable command/reply data buffer tracing  |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| --skip-mark         | CONFIG_OSDP_SKIP_MARK_BYTE    | OFF       | Don't send the leading mark byte (0xFF)   |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| --no-colours        | CONFIG_DISABLE_PRETTY_LOGGING | OFF       | Don't colourize log outputs               |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| --static-pd         | CONFIG_OSDP_STATIC_PD         | OFF       | Setup PD single statically                |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| --lib-only          | CONFIG_OSDP_LIB_ONLY          | OFF       | Only build the library                    |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+|  --file             | CONFIG_OSDP_FILE              | OFF       | Enable file transfer support              |
++---------------------+-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project
 ---------------------------------

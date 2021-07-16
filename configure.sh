@@ -15,6 +15,7 @@ usage() {
 
 	OPTIONS:
 	  --packet-trace               Enable raw packet trace for diagnostics
+	  --data-trace                 Enable command/reply data buffer tracing
 	  --skip-mark                  Don't send the leading mark byte (0xFF)
 	  --crypto LIB                 Use methods from LIB (openssl/mbedtls/*tinyaes)
 	  --crypto-include-dir DIR     Include directory for crypto LIB if not in system path
@@ -32,6 +33,7 @@ usage() {
 while [ $# -gt 0 ]; do
 	case $1 in
 	--packet-trace)        PACKET_TRACE=1;;
+	--data-trace)          DATA_TRACE=1;;
 	--skip-mark)           SKIP_MARK_BYTE=1;;
 	--cross-compile)       CROSS_COMPILE=$2; shift;;
 	--crypto)              CRYPTO=$2; shift;;
@@ -76,6 +78,10 @@ fi
 
 if [[ ! -z "${PACKET_TRACE}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_PACKET_TRACE"
+fi
+
+if [[ ! -z "${DATA_TRACE}" ]]; then
+	CCFLAGS+=" -DCONFIG_OSDP_DATA_TRACE"
 fi
 
 if [[ ! -z "${SKIP_MARK_BYTE}" ]]; then

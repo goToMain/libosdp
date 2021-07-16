@@ -376,6 +376,13 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		return OSDP_CP_ERR_GENERIC;
 	}
 
+	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		if (pd->cmd_id != CMD_POLL) {
+			osdp_dump(buf + 1, len - 1, "OSDP: CMD: %s(%02x)",
+				  osdp_cmd_name(pd->cmd_id), pd->cmd_id);
+		}
+	}
+
 	return len;
 }
 
@@ -388,6 +395,13 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	pd->reply_id = buf[pos++];
 	len--; /* consume reply id from the head */
+
+	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		if (pd->cmd_id != CMD_POLL) {
+			osdp_dump(buf, len, "OSDP: REPLY: %s(%02x)",
+				  osdp_reply_name(pd->reply_id), pd->reply_id);
+		}
+	}
 
 #define ASSERT_LENGTH(got, exp)                                                \
 	if (got != exp) {                                                      \

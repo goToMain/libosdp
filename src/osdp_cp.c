@@ -1193,9 +1193,11 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 	memset(cp->channel_lock, 0, sizeof(int) * num_pd);
 	SET_CURRENT_PD(ctx, 0);
-	LOG_INF("CP setup complete");
-	return (osdp_t *)ctx;
 
+	LOG_INF("CP setup complete - %s %s",
+		osdp_get_version(), osdp_get_source_info());
+
+	return (osdp_t *)ctx;
 error:
 	osdp_cp_teardown((osdp_t *)ctx);
 	return NULL;

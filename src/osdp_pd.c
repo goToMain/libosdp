@@ -1149,9 +1149,10 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
-	LOG_INF("PD setup complete");
-	return (osdp_t *)ctx;
+	LOG_INF("PD setup complete - %s %s",
+		osdp_get_version(), osdp_get_source_info());
 
+	return (osdp_t *)ctx;
 error:
 	osdp_pd_teardown((osdp_t *)ctx);
 	return NULL;

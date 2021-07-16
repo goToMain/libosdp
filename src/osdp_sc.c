@@ -10,10 +10,10 @@
 #define LOG_TAG		   "SC: "
 
 /* Default key as specified in OSDP specification */
-static const uint8_t osdp_scbk_default[16] = { 0x30, 0x31, 0x32, 0x33,
-					       0x34, 0x35, 0x36, 0x37,
-					       0x38, 0x39, 0x3A, 0x3B,
-					       0x3C, 0x3D, 0x3E, 0x3F };
+static const uint8_t osdp_scbk_default[16] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
+};
 
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk)
 {
@@ -219,18 +219,17 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd, const uint8_t *data,
 
 void osdp_sc_setup(struct osdp_pd *pd)
 {
-	uint8_t key[16];
-	bool preserve_scbk = is_pd_mode(pd) ||
-			     ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
+	uint8_t scbk[16];
+	bool preserve_scbk = is_pd_mode(pd) || ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
 
 	osdp_crypt_setup();
 
 	if (preserve_scbk) {
-		memcpy(key, pd->sc.scbk, 16);
+		memcpy(scbk, pd->sc.scbk, 16);
 	}
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
 	if (preserve_scbk) {
-		memcpy(pd->sc.scbk, key, 16);
+		memcpy(pd->sc.scbk, scbk, 16);
 	}
 	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);

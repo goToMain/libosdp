@@ -32,5 +32,13 @@ add_custom_target(python_uninstall
 	COMMAND xargs rm < ${CMAKE_BINARY_DIR}/python_install_manifest.txt
 )
 
+add_custom_target(pypi_build
+	COMMAND ${PYTHON_EXECUTABLE} -m build
+)
+
+add_custom_target(pypi_upload
+	COMMAND ${PYTHON_EXECUTABLE} -m twine upload --repository testpypi dist/*
+)
+
 endif() # PYTHONLIBS_FOUND
 endif() # PYTHONINTERP_FOUND

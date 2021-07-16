@@ -13,6 +13,7 @@ set(OSDP_PYTHON_PACKAGE_NAME osdp)
 set(OSDP_PYTHON_PACKAGE_VERSION ${PROJECT_VERSION})
 
 configure_file(setup.py.in setup.py)
+configure_file(pyproject.toml pyproject.toml)
 
 add_custom_target(python
 	COMMAND ${PYTHON_EXECUTABLE} setup.py build

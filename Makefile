@@ -84,7 +84,7 @@ check: clean $(O)/libtestosdp.a $(O)/test.elf
 
 .PHONY: clean
 clean:
-	$(Q)rm -f $(OBJ_LIBOSDP) $(OBJ_OSDPCTL) $(OBJ_TEST)
+	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_OSDPCTL) $(OBJ_TEST)
 	$(Q)rm -f $(O)/*.a $(O)/*.elf
 
 .PHONY: distclean

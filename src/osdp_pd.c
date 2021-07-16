@@ -1127,7 +1127,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	ctx->pd = &g_osdp_pd_ctx;
 #endif
 
-	ctx->magic = 0xDEADBEAF;
+	ctx->magic = OSDP_CTX_MAGIC;
 	cp = TO_CP(ctx);
 	cp->__parent = ctx;
 	cp->num_pd = 1;

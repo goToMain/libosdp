@@ -1128,7 +1128,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		LOG_ERR("Failed to allocate osdp context");
 		return NULL;
 	}
-	ctx->magic = 0xDEADBEAF;
+	ctx->magic = OSDP_CTX_MAGIC;
 	SET_FLAG(ctx, FLAG_CP_MODE);
 
 	ctx->cp = calloc(1, sizeof(struct osdp_cp));

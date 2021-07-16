@@ -24,6 +24,8 @@
 #define NULL ((void *)0)
 #endif
 
+#define OSDP_CTX_MAGIC 0xDEADBEAF
+
 #define ARG_UNUSED(x) (void)(x)
 
 #define ISSET_FLAG(p, f) (((p)->flags & (f)) == (f))
@@ -73,7 +75,9 @@ union osdp_ephemeral_data {
  *    input_check(ctx);
  *    input_check(ctx, pd);
  */
-#define input_check_osdp_ctx(ctx) assert(ctx)
+#define input_check_osdp_ctx(ctx)                                              \
+	assert(ctx);                                                           \
+	assert(TO_OSDP(ctx)->magic == OSDP_CTX_MAGIC);
 #define input_check_pd_offset(pd)                                              \
 	if (pd < 0 || pd >= NUM_PD(ctx)) {                                     \
 		LOG_ERR("Invalid PD number");                                  \
@@ -82,7 +86,8 @@ union osdp_ephemeral_data {
 #define input_check2(_1, _2)                                                   \
 	input_check_osdp_ctx(_1);                                              \
 	input_check_pd_offset(_2);
-#define input_check1(_1)	      input_check_osdp_ctx(_1);
+#define input_check1(_1)                                                       \
+	input_check_osdp_ctx(_1);
 #define get_macro(_1, _2, macro, ...) macro
 #define input_check(...)                                                       \
 	get_macro(__VA_ARGS__, input_check2, input_check1)(__VA_ARGS__)
@@ -376,7 +381,7 @@ struct osdp_cp {
 };
 
 struct osdp {
-	int magic;
+	uint32_t magic;
 	uint32_t flags;
 	struct osdp_cp *cp;
 	struct osdp_pd *pd;

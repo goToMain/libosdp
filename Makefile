@@ -13,6 +13,7 @@ include config.mak
 O ?= .
 OBJ_LIBOSDP := $(SRC_LIBOSDP:%.c=$(O)/%.o)
 CCFLAGS += -Wall -Wextra -O3
+UT_DIR := tests/unit-tests
 
 ifeq ($(VERBOSE),)
 MAKE := make -s
@@ -60,9 +61,9 @@ $(O)/pd_app.elf: $(O)/libosdp.a
 
 ## Check
 
-SRC_TEST := test/test-commands.c test/test-cp-fsm.c test/test-cp-phy-fsm.c
-SRC_TEST += test/test-cp-phy.c test/test-mixed-fsm.c test/test.c
-SRC_TEST += test/test-file.c
+SRC_TEST := $(UT_DIR)/test-commands.c $(UT_DIR)/test-cp-fsm.c $(UT_DIR)/test-cp-phy-fsm.c
+SRC_TEST += $(UT_DIR)/test-cp-phy.c $(UT_DIR)/test-mixed-fsm.c $(UT_DIR)/test.c
+SRC_TEST += $(UT_DIR)/test-file.c
 OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
 
 $(O)/test.elf: CCFLAGS_EXTRA=-Isrc -I. -Iutils/include -Iinclude -DUNIT_TESTING

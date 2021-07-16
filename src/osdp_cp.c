@@ -1321,6 +1321,33 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 	return 0;
 }
 
+OSDP_EXPORT
+int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id)
+{
+	input_check(ctx, pd);
+	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
+
+	memcpy(id, &pd_ctx->id, sizeof(struct osdp_pd_id));
+	return 0;
+}
+
+OSDP_EXPORT
+int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap)
+{
+	input_check(ctx, pd);
+	int fc;
+	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
+
+	fc = cap->function_code;
+	if (fc <= OSDP_PD_CAP_UNUSED || fc >= OSDP_PD_CAP_SENTINEL) {
+		return -1;
+	}
+
+	cap->compliance_level = pd_ctx->cap[fc].compliance_level;
+	cap->num_items = pd_ctx->cap[fc].num_items;
+	return 0;
+}
+
 #ifdef UNIT_TESTING
 
 /**

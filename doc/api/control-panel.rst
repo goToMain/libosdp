@@ -39,3 +39,16 @@ Refer to the `command structure`_ document for more information on how to
 populate the ``cmd`` structure for these function.
 
 .. _command structure: command-structure.html
+
+Get PD capability
+-----------------
+
+.. doxygenstruct:: osdp_pd_cap
+   :members:
+
+.. doxygenfunction:: osdp_cp_get_capability
+
+Others
+------
+
+.. doxygenfunction:: osdp_cp_get_pd_id

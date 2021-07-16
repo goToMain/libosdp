@@ -709,6 +709,36 @@ void osdp_cp_teardown(osdp_t *ctx);
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
 
 /**
+ * @brief Get PD ID information as reported by the PD. Calling this method
+ * before the CP has had a the chance to get this information will return
+ * invalid/stale results.
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset number as in `pd_info_t *`.
+ * @param id A pointer to struct osdp_pd_id that will be filled with the
+ *           PD ID information that the PD last returned.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id);
+
+/**
+ * @brief Get capability associated to a function_code that the PD reports in
+ * response to osdp_CAP(0x62) command. Calling this method before the CP has
+ * had a the chance to get this information will return invalid/stale results.
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset number as in `pd_info_t *`.
+ * @param cap in/out; struct osdp_pd_cap pointer with osdp_pd_cap::function_code
+ *            set to the function code to get data for.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
+
+/**
  * @brief Set callback method for CP event notification. This callback is
  * invoked when the CP receives an event from the PD.
  *

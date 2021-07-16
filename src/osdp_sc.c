@@ -30,18 +30,14 @@ void osdp_compute_session_keys(struct osdp *ctx)
 {
 	int i;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+	uint8_t scbk[16];
 
-	if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-		memcpy(pd->sc.scbk, osdp_scbk_default, 16);
+	if (is_cp_mode(pd) && ISSET_FLAG(pd, PD_FLAG_HAS_SCBK) == false) {
+		osdp_compute_scbk(pd, ctx->sc_master_key, scbk);
+	} else if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+		memcpy(scbk, osdp_scbk_default, 16);
 	} else {
-		/**
-		 * Compute SCBK only in CP mode when SCBK was not provided for
-		 * each connected PD.
-		 */
-		if (is_pd_mode(pd) == false &&
-		    ISSET_FLAG(pd, PD_FLAG_HAS_SCBK) == false) {
-			osdp_compute_scbk(pd, ctx->sc_master_key, pd->sc.scbk);
-		}
+		memcpy(scbk, pd->sc.scbk, 16);
 	}
 
 	memset(pd->sc.s_enc, 0, 16);
@@ -61,9 +57,9 @@ void osdp_compute_session_keys(struct osdp *ctx)
 		pd->sc.s_mac2[i] = pd->sc.cp_random[i - 2];
 	}
 
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_enc, 16);
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_mac1, 16);
-	osdp_encrypt(pd->sc.scbk, NULL, pd->sc.s_mac2, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_enc, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_mac1, 16);
+	osdp_encrypt(scbk, NULL, pd->sc.s_mac2, 16);
 }
 
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd)

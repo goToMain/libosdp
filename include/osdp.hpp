@@ -41,6 +41,21 @@ public:
 		return osdp_get_sc_status_mask(_ctx);
 	}
 
+	void set_command_complete_callback(osdp_command_complete_callback_t cb)
+	{
+		osdp_set_command_complete_callback(_ctx, cb);
+	}
+
+	int file_register_ops(int pd, struct osdp_file_ops *ops)
+	{
+		return osdp_file_register_ops(_ctx, pd, ops);
+	}
+
+	int file_tx_get_status(int pd, int *size, int *offset)
+	{
+		return osdp_file_tx_status(_ctx, pd, size, offset);
+	}
+
 protected:
 	osdp_t *_ctx;
 };
@@ -71,6 +86,22 @@ public:
 	{
 		return osdp_cp_send_command(_ctx, pd, cmd);
 	}
+
+	void set_event_callback(cp_event_callback_t cb, void *arg)
+	{
+		osdp_cp_set_event_callback(_ctx, cb, arg);
+	}
+
+	int get_pd_id(int pd, struct osdp_pd_id *id)
+	{
+		return osdp_cp_get_pd_id(_ctx, pd, id);
+	}
+
+	int get_capability(int pd, struct osdp_pd_cap *cap)
+	{
+		return osdp_cp_get_capability(_ctx, pd, cap);
+	}
+
 };
 
 class PeripheralDevice : public Common {

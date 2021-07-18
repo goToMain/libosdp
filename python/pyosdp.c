@@ -5,6 +5,19 @@
  */
 
 #include "pyosdp.h"
+#include <stdio.h>
+
+int pyosdp_log_fn(const char *fmt, ...)
+{
+	int len;
+	va_list args;
+
+	va_start(args, fmt);
+	len = vfprintf(stderr, fmt, args);
+	va_end(args);
+
+	return len;
+}
 
 #define pyosdp_set_loglevel_doc                                                \
 	"Set OSDP logging level\n"                                             \
@@ -24,7 +37,7 @@ static PyObject *pyosdp_set_loglevel(pyosdp_t *self, PyObject *args)
 		return NULL;
 	}
 
-	osdp_logger_init(log_level, printf);
+	osdp_logger_init(log_level, pyosdp_log_fn);
 
 	Py_RETURN_NONE;
 }

@@ -757,6 +757,7 @@ static inline void cp_set_online(struct osdp_pd *pd)
 {
 	cp_set_state(pd, OSDP_CP_STATE_ONLINE);
 	pd->wait_ms = 0;
+	pd->tstamp = 0;
 }
 
 static inline void cp_set_offline(struct osdp_pd *pd)
@@ -993,6 +994,7 @@ static int state_update(struct osdp_pd *pd)
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_INF("SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
+				osdp_phy_state_reset(pd);
 				cp_set_online(pd);
 				break;
 			}

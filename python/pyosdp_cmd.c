@@ -77,6 +77,9 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 		if (pyosdp_dict_add_int(obj, "control_code",
 					cmd->text.control_code))
 			return -1;
+		if (pyosdp_dict_add_int(obj, "temp_time",
+					cmd->text.temp_time))
+			return -1;
 		if (pyosdp_dict_add_int(obj, "offset_col",
 					cmd->text.offset_col))
 			return -1;

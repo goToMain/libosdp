@@ -56,7 +56,7 @@ static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 		return -1;
 
 	arglist = Py_BuildValue("(O)", dict);
-	result = PyEval_CallObject(self->command_cb, arglist);
+	result = PyObject_CallObject(self->command_cb, arglist);
 
 	if (result && PyDict_Check(result)) {
 		if (pyosdp_dict_get_int(result, "return_code", &ret_val) == 0) {
@@ -203,7 +203,7 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	osdp_pd_info_t info;
 	enum channel_type channel_type;
 	char *device = NULL, *channel_type_str = NULL;
-	static char *kwlist[] = { "", "capabilities", "scbk", NULL };
+	static char *kwlist[] = { "", "capabilities", NULL };
 	PyObject *py_info, *py_pd_cap_list;
 	uint8_t *scbk = NULL;
 
@@ -254,12 +254,12 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 				(int *)&info.id.serial_number))
 		goto error;
 
-	if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &scbk_length))
-		goto error;
-
 	info.scbk = NULL;
-	if (scbk && scbk_length == 16)
-		info.scbk = scbk;
+	if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &scbk_length) == 0) {
+		if (scbk && scbk_length == 16)
+			info.scbk = scbk;
+	}
+	PyErr_Clear();
 
 	channel_type = channel_guess_type(channel_type_str);
 	if (channel_type == CHANNEL_TYPE_ERR) {

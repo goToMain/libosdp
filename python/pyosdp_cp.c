@@ -70,7 +70,7 @@ int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 
 	arglist = Py_BuildValue("(IO)", address, event_dict);
 
-	result = PyEval_CallObject(self->event_cb, arglist);
+	result = PyObject_CallObject(self->event_cb, arglist);
 
 	Py_XDECREF(result);
 	Py_DECREF(arglist);
@@ -186,8 +186,8 @@ static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int i, ret = -1, tmp;
-	uint8_t *master_key;
-	Py_ssize_t master_key_len = 0;
+	uint8_t *sc_key;
+	Py_ssize_t sc_key_len = 0;
 	enum channel_type channel_type;
 	PyObject *py_info_list, *py_info;
 	static char *kwlist[] = { "", "master_key", NULL };
@@ -199,12 +199,12 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:cp_init", kwlist,
 					 &PyList_Type, &py_info_list,
-					 &master_key, &master_key_len))
+					 &sc_key, &sc_key_len))
 		goto error;
 
-	if (master_key_len == 0)
-		master_key = NULL;
-	if (master_key && master_key_len != 16) {
+	if (sc_key_len == 0)
+		sc_key = NULL;
+	if (sc_key && sc_key_len != 16) {
 		PyErr_SetString(PyExc_TypeError,
 				"master_key must be exactly 16 bytes");
 		goto error;
@@ -250,8 +250,17 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
 			goto error;
 
+		if (pyosdp_dict_get_bytes(py_info, "scbk", &sc_key, &tmp))
+			goto error;
+
+		if (sc_key && tmp != 16) {
+			PyErr_SetString(PyExc_TypeError,
+					"master_key must be exactly 16 bytes");
+			goto error;
+		}
+		info->scbk = sc_key;
+
 		info->cap = NULL;
-		info->scbk = NULL;
 
 		channel_type = channel_guess_type(channel_type_str);
 		if (channel_type == CHANNEL_TYPE_ERR) {
@@ -274,7 +283,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			    &info->channel.recv, &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info_list, master_key);
+	ctx = osdp_cp_setup(self->num_pd, info_list, sc_key);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
 		goto error;

@@ -110,7 +110,9 @@ static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
 	struct pd_event_node *n;
 
 	n = CONTAINER_OF(event, struct pd_event_node, object);
-	assert(slab_free(n) == 0);
+	if (slab_free(n)) {
+		LOG_ERR("Event slab free failed");
+	}
 }
 
 static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)

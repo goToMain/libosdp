@@ -87,7 +87,9 @@ static void cp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	struct cp_cmd_node *n;
 
 	n = CONTAINER_OF(cmd, struct cp_cmd_node, object);
-	assert(slab_free(n) == 0);
+	if (slab_free(n)) {
+		LOG_ERR("Command slab free failed");
+	}
 }
 
 static void cp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)

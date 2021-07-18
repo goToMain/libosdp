@@ -9,21 +9,6 @@ import time
 import random
 import osdp
 
-pd_info = {
-    "address": 101,
-    "flags": 0,
-    "channel_type": "message_queue",
-    "channel_speed": 115200,
-    "channel_device": '/tmp/osdp_mq',
-
-    # PD_ID
-    "version": 1,
-    "model": 1,
-    "vendor_code": 0xCAFEBABE,
-    "serial_number": 0xDEADBEAF,
-    "firmware_version": 0x0000F00D
-}
-
 pd_cap = [
     {
         "function_code": osdp.CAP_OUTPUT_CONTROL,
@@ -60,6 +45,22 @@ def load_scbk():
             key = bytes.fromhex(f.read())
     return key
 
+pd_info = {
+    "address": 101,
+    "flags": 0,
+    "scbk": load_scbk(),
+    "channel_type": "message_queue",
+    "channel_speed": 115200,
+    "channel_device": '/tmp/osdp_mq',
+
+    # PD_ID
+    "version": 1,
+    "model": 1,
+    "vendor_code": 0xCAFEBABE,
+    "serial_number": 0xDEADBEAF,
+    "firmware_version": 0x0000F00D
+}
+
 def handle_command(command):
     print("PD received command: ", command)
 
@@ -86,7 +87,7 @@ print("pyosdp", "Version:", osdp.get_version(),
                 "Info:", osdp.get_source_info())
 osdp.set_loglevel(6)
 
-pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap, scbk=load_scbk())
+pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
 pd.set_command_callback(handle_command)
 
 card_read_event = {

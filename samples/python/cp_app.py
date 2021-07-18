@@ -66,18 +66,19 @@ mfg_cmd = {
     "data": bytes([9,1,9,2,6,3,1,7,7,0])
 }
 
+key = bytes([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
+
 pd_info = [
     # PD_0 info
     {
         "address": 101,
         "flags": 0, # osdp.FLAG_ENFORCE_SECURE
+        "scbk": key,
         "channel_type": "message_queue",
         "channel_speed": 115200,
         "channel_device": '/tmp/osdp_mq',
     }
 ]
-
-key = bytes([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
 
 commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd, mfg_cmd, keyset_cmd ]
 
@@ -89,7 +90,7 @@ print("pyosdp", "Version:", osdp.get_version(),
                 "Info:", osdp.get_source_info())
 osdp.set_loglevel(6)
 
-cp = osdp.ControlPanel(pd_info, master_key=key)
+cp = osdp.ControlPanel(pd_info)
 cp.set_event_callback(event_handler)
 
 count = 0  # loop counter

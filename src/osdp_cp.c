@@ -9,7 +9,7 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 
-#define LOG_TAG "CP : "
+#define LOG_TAG " CP: "
 
 #define CMD_POLL_LEN   1
 #define CMD_LSTAT_LEN  1
@@ -893,7 +893,8 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 
 static int state_update(struct osdp_pd *pd)
 {
-	int phy_state, soft_fail;
+	bool soft_fail;
+	int phy_state;
 	struct osdp *ctx = TO_CTX(pd);
 	struct osdp_cmd_keyset *keyset;
 
@@ -908,7 +909,7 @@ static int state_update(struct osdp_pd *pd)
 
 	/* phy state error -- cleanup */
 	if (pd->state != OSDP_CP_STATE_OFFLINE &&
-	    phy_state == OSDP_CP_ERR_GENERIC && soft_fail == 0) {
+	    phy_state == OSDP_CP_ERR_GENERIC && !soft_fail) {
 		cp_set_offline(pd);
 		return OSDP_CP_ERR_CAN_YIELD;
 	}

@@ -832,6 +832,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 				TO_CTX(pd)->command_complete_callback(
 					pd->cmd_id);
 			}
+			if (sc_is_active(pd)) {
+				pd->sc_tstamp = osdp_millis_now();
+			}
 			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 			break;
 		}

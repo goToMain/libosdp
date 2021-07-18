@@ -445,6 +445,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			     * secure session.
 			     */
 			    sc_deactivate(pd);
+			    pd->sc_tstamp = 0; /* force a SC retry */
 		}
 		if (sc_is_active(pd)) {
 			LOG_ERR("Received plain-text message in SC");

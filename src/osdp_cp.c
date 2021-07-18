@@ -1085,8 +1085,8 @@ static int state_update(struct osdp_pd *pd)
 
 static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 {
-	int i;
-	struct osdp_cmd *cmd;
+	int i, res = 0;
+	struct osdp_cmd *cmd[OSDP_PD_MAX] = { 0 };
 	struct osdp_pd *pd;
 
 	if (osdp_get_sc_status_mask(ctx) != PD_MASK(ctx)) {
@@ -1095,21 +1095,34 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 		return -1;
 	}
 
+	if (NUM_PD(ctx) > OSDP_PD_MAX) {
+		return -1;
+	}
+
 	LOG_INF("master_key based key set is a global command; "
 		"all connected PDs will be affected.");
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = TO_PD(ctx, i);
-		cmd = cp_cmd_alloc(pd);
-		if (cmd == NULL) {
-			return -1;
+		cmd[i] = cp_cmd_alloc(pd);
+		if (cmd[i] == NULL) {
+			res = -1;
+			break;
 		}
-		cmd->id = CMD_KEYSET;
-		memcpy(&cmd->keyset, p, sizeof(struct osdp_cmd_keyset));
-		cp_cmd_enqueue(pd, cmd);
+		cmd[i]->id = CMD_KEYSET;
+		memcpy(&cmd[i]->keyset, p, sizeof(struct osdp_cmd_keyset));
 	}
 
-	return 0;
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = TO_PD(ctx, i);
+		if (res < 0 && cmd[i]) {
+			cp_cmd_free(pd, cmd[i]);
+		} else {
+			cp_cmd_enqueue(pd, cmd[i]);
+		}
+	}
+
+	return res;
 }
 
 /* --- Exported Methods --- */

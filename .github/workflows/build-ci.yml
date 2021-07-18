@@ -71,6 +71,11 @@ jobs:
       run: cmake .
     - name: make check
       run: VERBOSE=1 make check
+    - name: pytest
+      run: |
+        make python_install
+        python3 -m pip install -r tests/pytest/requirements.txt
+        make pytest
 
   CheckPatch:
     runs-on: ubuntu-latest

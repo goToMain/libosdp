@@ -1317,6 +1317,8 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 					     p->file_tx.flags);
 	case OSDP_CMD_KEYSET:
 		if (p->keyset.type == 1) {
+			if (!sc_is_active(pd_ctx))
+				return -1;
 			cmd_id = CMD_KEYSET;
 			break;
 		}

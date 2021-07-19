@@ -92,6 +92,7 @@ void pyosdp_add_module_constants(PyObject *module)
 
 	/* setup flags */
 	ADD_CONST("FLAG_ENFORCE_SECURE", OSDP_FLAG_ENFORCE_SECURE);
+	ADD_CONST("FLAG_INSTALL_MODE", OSDP_FLAG_INSTALL_MODE);
 
 	/* enum osdp_cmd_e */
 	ADD_CONST("CMD_OUTPUT", OSDP_CMD_OUTPUT);
@@ -101,6 +102,7 @@ void pyosdp_add_module_constants(PyObject *module)
 	ADD_CONST("CMD_COMSET", OSDP_CMD_COMSET);
 	ADD_CONST("CMD_KEYSET", OSDP_CMD_KEYSET);
 	ADD_CONST("CMD_MFG", OSDP_CMD_MFG);
+	ADD_CONST("CMD_FILE_TX", OSDP_CMD_FILE_TX);
 
 	/* enum osdp_event_type */
 	ADD_CONST("EVENT_CARDREAD", OSDP_EVENT_CARDREAD);

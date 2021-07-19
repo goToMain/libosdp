@@ -118,31 +118,31 @@ static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
 	"@param pd PD offset number\n"                                               \
 	"@param command A dict of command keys and values. See osdp.h for details\n" \
 	"\n"                                                                         \
-	"@return None\n"
+	"@return boolean status of command submission\n"
 static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 {
-	int pd;
+	int pd, ret;
 	PyObject *cmd_dict;
 	struct osdp_cmd cmd;
 
 	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd_dict))
-		return NULL;
+		Py_RETURN_FALSE;
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		return NULL;
+		Py_RETURN_FALSE;
 	}
 
 	memset(&cmd, 0, sizeof(struct osdp_cmd));
 	if (pyosdp_cmd_make_struct(&cmd, cmd_dict))
-		return NULL;
+		Py_RETURN_FALSE;
 
-	if (osdp_cp_send_command(self->ctx, pd, &cmd)) {
-		PyErr_SetString(PyExc_RuntimeError, "send command failed");
-		return NULL;
-	}
+	ret = osdp_cp_send_command(self->ctx, pd, &cmd);
 
-	Py_RETURN_NONE;
+	if (ret == 0)
+		Py_RETURN_TRUE;
+
+	Py_RETURN_FALSE;
 }
 
 static int pyosdp_cp_tp_clear(pyosdp_t *self)

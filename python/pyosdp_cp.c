@@ -250,15 +250,16 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
 			goto error;
 
-		if (pyosdp_dict_get_bytes(py_info, "scbk", &sc_key, &tmp))
-			goto error;
-
-		if (sc_key && tmp != 16) {
-			PyErr_SetString(PyExc_TypeError,
-					"master_key must be exactly 16 bytes");
-			goto error;
+		info->scbk = NULL;
+		if (pyosdp_dict_get_bytes(py_info, "scbk", &sc_key, &tmp) == 0) {
+			if (sc_key && tmp != 16) {
+				PyErr_SetString(PyExc_TypeError,
+						"master_key must be exactly 16 bytes");
+				goto error;
+			}
+			info->scbk = sc_key;
 		}
-		info->scbk = sc_key;
+		PyErr_Clear();
 
 		info->cap = NULL;
 
@@ -283,7 +284,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			    &info->channel.recv, &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info_list, sc_key);
+	ctx = osdp_cp_setup(self->num_pd, info_list, NULL);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
 		goto error;

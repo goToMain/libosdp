@@ -4,4 +4,13 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-__all__ = ["ControlPanel", "PeripheralDevice", "KeyStore"]
+from .control_panel import ControlPanel
+from .peripheral_device import PeripheralDevice
+from .key_store import KeyStore
+from .constants import (
+    Flag, Command, CommandLEDColor, Event, CardFormat, Capability
+)
+
+__author__ = 'Siddharth Chandrasekaran <sidcha.dev@gmail.com>'
+__copyright__ = 'Copyright 2021 Siddharth Chandrasekaran'
+__license__ = 'Apache License, Version 2.0 (Apache-2.0)'

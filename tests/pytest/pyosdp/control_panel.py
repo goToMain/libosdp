@@ -4,32 +4,21 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+import os
+import tempfile
 import osdp
 import time
 import queue
 import threading
 
-from .key_store import KeyStore
 from .helpers import osdp_refresh
 
 class ControlPanel():
-    def __init__(self, pd_addr_list):
+    def __init__(self, pd_info_list):
         osdp.set_loglevel(7)
-        self.keystore = KeyStore('/tmp/')
         self.pd_addr = []
-        pd_info_list = []
-        for addr in pd_addr_list:
-            key = self.keystore.load_key('pd-' + str(addr), create=True)
-            pd_info = {
-                "address": addr,
-                "flags": 0, # osdp.FLAG_ENFORCE_SECURE,
-                "scbk": key,
-                "channel_type": "message_queue",
-                "channel_speed": 115200,
-                "channel_device": '/tmp/pyosdp_mq',
-            }
-            self.pd_addr.append(addr)
-            pd_info_list.append(pd_info)
+        for pd_info in pd_info_list:
+            self.pd_addr.append(pd_info['address'])
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
         self.ctx = osdp.ControlPanel(pd_info_list)
         self.ctx.set_event_callback(self.event_handler)
@@ -61,8 +50,9 @@ class ControlPanel():
     def send_command(self, address, cmd):
         pd = self.pd_addr.index(address)
         self.lock.acquire()
-        self.ctx.send_command(pd, cmd)
+        ret = self.ctx.send_command(pd, cmd)
         self.lock.release()
+        return ret
 
     def start(self):
         if not self.thread:

@@ -10,6 +10,7 @@ import random
 
 class KeyStore():
     def __init__(self, dir=None):
+        self.temp_dir = None
         if not dir:
             self.temp_dir = tempfile.TemporaryDirectory()
             self.key_dir = self.temp_dir.name
@@ -19,7 +20,8 @@ class KeyStore():
     def key_file(self, name):
         return os.path.join(self.key_dir, 'key_' + name + '.bin')
 
-    def gen_key(self, key_len=16):
+    @staticmethod
+    def gen_key(key_len=16):
         key = []
         for i in range(key_len):
             key.append(random.randint(0, 255))

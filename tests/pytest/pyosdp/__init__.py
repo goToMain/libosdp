@@ -8,8 +8,9 @@ from .control_panel import ControlPanel
 from .peripheral_device import PeripheralDevice
 from .key_store import KeyStore
 from .constants import (
-    Flag, Command, CommandLEDColor, Event, CardFormat, Capability
+    LibFlag, Command, CommandLEDColor, Event, CardFormat, Capability
 )
+from .helpers import PDInfo, PDCapabilities
 
 __author__ = 'Siddharth Chandrasekaran <sidcha.dev@gmail.com>'
 __copyright__ = 'Copyright 2021 Siddharth Chandrasekaran'

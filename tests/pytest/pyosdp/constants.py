@@ -6,7 +6,7 @@
 
 import osdp
 
-class Flag:
+class LibFlag:
     EnforceSecure = osdp.FLAG_ENFORCE_SECURE
     InstallMode = osdp.FLAG_INSTALL_MODE
 

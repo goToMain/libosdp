@@ -9,24 +9,32 @@ import time
 import queue
 import threading
 
-from .helpers import osdp_refresh
+from .helpers import PDInfo, PDCapabilities
 
 class PeripheralDevice():
-    def __init__(self, pd_info, pd_cap):
+    def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities):
         osdp.set_loglevel(7)
         self.command_queue = queue.Queue()
-        self.pd_ctx = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
+        self.pd_ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
         self.pd_ctx.set_command_callback(self.command_handler)
         self.event = threading.Event()
         self.lock = threading.Lock()
         args = (self.event, self.lock, self.pd_ctx,)
-        self.thread = threading.Thread(name='pd', target=osdp_refresh, args=args)
+        self.thread = threading.Thread(name='pd', target=self.refresh, args=args)
+
+    @staticmethod
+    def refresh(event, lock, ctx):
+        while not event.is_set():
+            lock.acquire()
+            ctx.refresh()
+            lock.release()
+            time.sleep(0.020) #sleep for 20ms
 
     def command_handler(self, command):
         self.command_queue.put(command)
         return { "return_code": 0 }
 
-    def get_command(self, timeout=0):
+    def get_command(self, timeout: int=5):
         try:
             cmd = self.command_queue.get(timeout=timeout)
         except queue.Empty:

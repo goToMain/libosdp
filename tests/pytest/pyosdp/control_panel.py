@@ -11,21 +11,31 @@ import time
 import queue
 import threading
 
-from .helpers import osdp_refresh
+from .helpers import PDInfo
 
 class ControlPanel():
-    def __init__(self, pd_info_list):
+    def __init__(self, pd_info_list: list[PDInfo]):
         osdp.set_loglevel(7)
         self.pd_addr = []
+        info_list = []
         for pd_info in pd_info_list:
-            self.pd_addr.append(pd_info['address'])
+            self.pd_addr.append(pd_info.address)
+            info_list.append(pd_info.get())
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
-        self.ctx = osdp.ControlPanel(pd_info_list)
+        self.ctx = osdp.ControlPanel(info_list)
         self.ctx.set_event_callback(self.event_handler)
         self.event = threading.Event()
         self.lock = threading.Lock()
         args = (self.event, self.lock, self.ctx,)
-        self.thread = threading.Thread(name='cp', target=osdp_refresh, args=args)
+        self.thread = threading.Thread(name='cp', target=self.refresh, args=args)
+
+    @staticmethod
+    def refresh(event, lock, ctx):
+        while not event.is_set():
+            lock.acquire()
+            ctx.refresh()
+            lock.release()
+            time.sleep(0.020) #sleep for 20ms
 
     def event_handler(self, address, event):
         pd = self.pd_addr.index(address)
@@ -42,10 +52,26 @@ class ControlPanel():
 
     def get_num_sc_active(self):
         sc_active = 0
+        self.lock.acquire()
         for i in range(len(self.pd_addr)):
             if self.ctx.sc_active(i):
                 sc_active += 1
+        self.lock.release()
         return sc_active
+
+    def is_sc_active(self, address):
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.is_sc_active(pd)
+        self.lock.release()
+        return ret
+
+    def is_online(self, address):
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.is_online(pd)
+        self.lock.release()
+        return ret
 
     def send_command(self, address, cmd):
         pd = self.pd_addr.index(address)

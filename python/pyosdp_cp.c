@@ -186,7 +186,7 @@ static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int i, ret = -1, tmp;
-	uint8_t *sc_key;
+	uint8_t *master_key=NULL, *scbk=NULL;
 	Py_ssize_t sc_key_len = 0;
 	enum channel_type channel_type;
 	PyObject *py_info_list, *py_info;
@@ -197,14 +197,16 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 
 	srand(time(NULL));
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:cp_init", kwlist,
+	/* the string after the : is used as the function name in error messages */
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:pyosdp_cp_init", kwlist,
 					 &PyList_Type, &py_info_list,
-					 &sc_key, &sc_key_len))
+					 &master_key, &sc_key_len))
 		goto error;
 
+	/* Master Key */
 	if (sc_key_len == 0)
-		sc_key = NULL;
-	if (sc_key && sc_key_len != 16) {
+		master_key = NULL;
+	if (master_key && sc_key_len != 16) {
 		PyErr_SetString(PyExc_TypeError,
 				"master_key must be exactly 16 bytes");
 		goto error;
@@ -251,13 +253,13 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			goto error;
 
 		info->scbk = NULL;
-		if (pyosdp_dict_get_bytes(py_info, "scbk", &sc_key, &tmp) == 0) {
-			if (sc_key && tmp != 16) {
+		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &tmp) == 0) {
+			if (scbk && tmp != 16) {
 				PyErr_SetString(PyExc_TypeError,
-						"master_key must be exactly 16 bytes");
+						"scbk must be exactly 16 bytes");
 				goto error;
 			}
-			info->scbk = sc_key;
+			info->scbk = scbk;
 		}
 		PyErr_Clear();
 
@@ -284,7 +286,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			    &info->channel.recv, &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info_list, NULL);
+	ctx = osdp_cp_setup(self->num_pd, info_list, master_key);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
 		goto error;
@@ -335,7 +337,7 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  pyosdp_cp_send_command_doc },
 	{ "is_online", (PyCFunction)pyosdp_cp_pd_is_online, METH_VARARGS,
 	  pyosdp_cp_pd_is_online_doc },
-	{ "sc_active", (PyCFunction)pyosdp_cp_pd_is_sc_active, METH_VARARGS,
+	{ "is_sc_active", (PyCFunction)pyosdp_cp_pd_is_sc_active, METH_VARARGS,
 	  pyosdp_cp_pd_is_sc_active_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };

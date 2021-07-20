@@ -211,7 +211,8 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 
 	info.cap = NULL;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!", kwlist,
+	/* the string after the : is used as the function name in error messages */
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!:pyosdp_pd_init", kwlist,
 					 &PyDict_Type, &py_info, &PyList_Type,
 					 &py_pd_cap_list))
 		goto error;

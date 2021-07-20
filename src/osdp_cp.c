@@ -9,7 +9,7 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 
-#define LOG_TAG " CP: "
+#define LOG_TAG "CP: "
 
 #define CMD_POLL_LEN   1
 #define CMD_LSTAT_LEN  1
@@ -147,6 +147,30 @@ static int cp_channel_release(struct osdp_pd *pd)
 	ctx->cp->channel_lock[pd->offset] = 0;
 
 	return 0;
+}
+
+static const char *cp_get_cap_name(int cap)
+{
+	if (cap <= OSDP_PD_CAP_UNUSED || cap >= OSDP_PD_CAP_SENTINEL) {
+		return NULL;
+	}
+	const char *cap_name[] = {
+		[OSDP_PD_CAP_CONTACT_STATUS_MONITORING] = "ContactStatusMonitoring",
+		[OSDP_PD_CAP_OUTPUT_CONTROL] = "OutputControl",
+		[OSDP_PD_CAP_CARD_DATA_FORMAT] = "CardDataFormat",
+		[OSDP_PD_CAP_READER_LED_CONTROL] = "LEDControl",
+		[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT] = "AudiableControl",
+		[OSDP_PD_CAP_READER_TEXT_OUTPUT] = "TextOutput",
+		[OSDP_PD_CAP_TIME_KEEPING] = "TimeKeeping",
+		[OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT] = "CheckCharacter",
+		[OSDP_PD_CAP_COMMUNICATION_SECURITY] = "CommunicationSecurity",
+		[OSDP_PD_CAP_RECEIVE_BUFFERSIZE] = "ReceiveBufferSize",
+		[OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE] = "CombinedMessageSize",
+		[OSDP_PD_CAP_SMART_CARD_SUPPORT] = "SmartCard",
+		[OSDP_PD_CAP_READERS] = "Reader",
+		[OSDP_PD_CAP_BIOMETRICS] = "Biometric",
+	};
+	return cap_name[cap];
 }
 
 /**
@@ -456,6 +480,10 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			pd->cap[t1].function_code = t1;
 			pd->cap[t1].compliance_level = buf[pos++];
 			pd->cap[t1].num_items = buf[pos++];
+			LOG_DBG("Reports capability '%s' (%d/%d)",
+				cp_get_cap_name(pd->cap[t1].function_code),
+				pd->cap[t1].compliance_level,
+				pd->cap[t1].num_items);
 		}
 
 		/* Get peer RX buffer size */
@@ -1181,10 +1209,12 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		pd->address = p->address;
 		pd->flags = p->flags;
 		pd->seq_number = -1;
+		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
 		if (p->scbk != NULL) {
 			scbk_count += 1;
 			memcpy(pd->sc.scbk, p->scbk, 16);
 			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
+			CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
 		} else if (is_enforce_secure(pd)) {
 			LOG_ERR("SCBK must be passed for each PD when"
 				" ENFORCE_SECURE is requested.");
@@ -1208,24 +1238,17 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 			LOG_WRN("Masterkey based key derivation is discouraged!"
 				" Consider passing individual SCBKs");
 			memcpy(ctx->sc_master_key, master_key, 16);
-		} else {
-			LOG_WRN("Master key / SCBK not passed; SC Disabled.");
-			SET_FLAG(ctx, FLAG_SC_DISABLED);
-		}
-		/**
-		 * In the off chance that some of the info structs had SCBK
-		 * while others didn't.
-		 */
-		for (i = 0; i < num_pd; i++) {
-			CLEAR_FLAG(pd, PD_FLAG_HAS_SCBK);
+			for (i = 0; i < num_pd; i++) {
+				CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
+			}
 		}
 	}
 
 	memset(cp->channel_lock, 0, sizeof(int) * num_pd);
 	SET_CURRENT_PD(ctx, 0);
 
-	LOG_INF("CP setup complete - %s %s",
-		osdp_get_version(), osdp_get_source_info());
+	LOG_INF("CP setup (with %d connected PDs) complete - %s %s",
+		num_pd, osdp_get_version(), osdp_get_source_info());
 
 	return (osdp_t *)ctx;
 error:
@@ -1253,8 +1276,8 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		SET_CURRENT_PD(ctx, i);
-		osdp_log_ctx_set(i);
 		pd = TO_PD(ctx, i);
+		osdp_log_ctx_set(pd->address);
 
 		if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
 		    cp_channel_acquire(pd, NULL)) {

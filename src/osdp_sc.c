@@ -7,7 +7,6 @@
 #include "osdp_common.h"
 
 #define OSDP_SC_EOM_MARKER 0x80 /* End of Message Marker */
-#define LOG_TAG		   " SC: "
 
 /* Default key as specified in OSDP specification */
 static const uint8_t osdp_scbk_default[16] = {
@@ -140,7 +139,6 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 	uint8_t iv[16];
 
 	if (length % 16 != 0) {
-		LOG_ERR("SC: decrypt_pkt invalid len:%d", length);
 		return -1;
 	}
 

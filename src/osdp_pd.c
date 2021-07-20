@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #endif
 
-#define LOG_TAG " PD: "
+#define LOG_TAG "PD: "
 
 #define CMD_POLL_DATA_LEN	0
 #define CMD_LSTAT_DATA_LEN	0

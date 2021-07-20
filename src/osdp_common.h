@@ -170,7 +170,6 @@ union osdp_ephemeral_data {
 
 /* Global flags */
 #define FLAG_CP_MODE	 0x00000001 /* Set when initialized as CP */
-#define FLAG_SC_DISABLED 0x00000002 /* cp_setup with master_key=NULL */
 
 /* PD State Flags */
 #define PD_FLAG_MASK	       0x0000FFFF /* only 16 bits are for flags */
@@ -187,6 +186,7 @@ union osdp_ephemeral_data {
 #define PD_FLAG_PKT_SKIP_MARK  0x00000800 /* CONFIG_OSDP_SKIP_MARK_BYTE */
 #define PD_FLAG_PKT_HAS_MARK   0x00001000 /* Packet has mark byte */
 #define PD_FLAG_HAS_SCBK       0x00002000 /* PD has a dedicated SCBK */
+#define PD_FLAG_SC_DISABLED    0x00004000 /* master_key=NULL && scbk=NULL */
 
 /* logging short hands */
 #define LOG_EM(...)    (osdp_log(LOG_EMERG, LOG_TAG __VA_ARGS__))
@@ -446,7 +446,7 @@ static inline bool is_enforce_secure(struct osdp_pd *pd)
 static inline bool sc_is_capable(struct osdp_pd *pd)
 {
 	return (ISSET_FLAG(pd, PD_FLAG_SC_CAPABLE) &&
-	        !ISSET_FLAG(TO_CTX(pd), FLAG_SC_DISABLED));
+	        !ISSET_FLAG(pd, PD_FLAG_SC_DISABLED));
 }
 
 static inline bool sc_is_active(struct osdp_pd *pd)

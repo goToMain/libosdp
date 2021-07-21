@@ -434,19 +434,24 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */
 	} else {
+#ifndef CONFIG_OSDP_STATIC_PD
+		/**
+		 * If the current packet is an ACK for a KEYSET, the PD might
+		 * have discarded the secure channel session keys in favour of
+		 * the new key we sent and hence this packet may reach us in
+		 * plain text. To work with such PDs, we must also discard our
+		 * secure session.
+		 *
+		 * The way we do this is by calling osdp_keyset_complete() which
+		 * is a CP method (layer violation) and hence this section is
+		 * guarded under the not-defined(CONFIG_OSDP_STATIC_PD) macro as
+		 * osdp_cp.c will not be compiled there.
+		 */
 		if (is_cp_mode(pd) && pd->cmd_id == CMD_KEYSET &&
 		    pkt->data[0] == REPLY_ACK) {
-			    /**
-			     * If the current packet is an ACK for a KEYSET,
-			     * the PD might have discarded the secure channel
-			     * session keys in favour of the new key we sent and
-			     * hence this packet may reach us in plain text. To
-			     * work with such PDs, we must also discard our
-			     * secure session.
-			     */
-			    sc_deactivate(pd);
-			    pd->sc_tstamp = 0; /* force a SC retry */
+			    osdp_keyset_complete(pd);
 		}
+#endif
 		if (sc_is_active(pd)) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;

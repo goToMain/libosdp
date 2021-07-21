@@ -1104,10 +1104,7 @@ static int state_update(struct osdp_pd *pd)
 			}
 			break;
 		}
-		LOG_INF("SCBK set; restarting SC to verify new SCBK");
-		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-		sc_deactivate(pd);
-		cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
+		osdp_keyset_complete(pd);
 		pd->seq_number = -1;
 		break;
 	default:
@@ -1157,6 +1154,17 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	}
 
 	return res;
+}
+
+void osdp_keyset_complete(struct osdp_pd *pd)
+{
+	struct osdp_cmd *c = (struct osdp_cmd *)pd->ephemeral_data;
+
+	sc_deactivate(pd);
+	CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+	memcpy(pd->sc.scbk, c->keyset.data, 16);
+	cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
+	LOG_INF("SCBK set; restarting SC to verify new SCBK");
 }
 
 /* --- Exported Methods --- */

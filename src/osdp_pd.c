@@ -553,13 +553,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.keyset.type = buf[pos++];
 		cmd.keyset.length = buf[pos++];
 		memcpy(cmd.keyset.data, buf + pos, 16);
-		memcpy(pd->sc.scbk, buf + pos, 16);
 		ret = OSDP_PD_ERR_NONE;
 		if (pd->command_callback) {
 			ret = pd->command_callback(pd->command_callback_arg,
 						   &cmd);
 		} else {
-			LOG_WRN("Keyset without command callback trigger");
+			LOG_EM("Keyset without a command callback! The SC new"
+			       "SCBK will be lost when the PD reboots.");
 		}
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -567,6 +567,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
+		memcpy(pd->sc.scbk, cmd.keyset.data, 16);
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 		CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 		sc_deactivate(pd);

@@ -19,18 +19,18 @@ pd_cap = PDCapabilities([
 
 pd_info_list = [
     PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
-    PDInfo(102, name='chn-1')
+    # PDInfo(102, name='chn-1')
 ]
 
 secure_pd_addr = pd_info_list[0].address
 secure_pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
 
-insecure_pd_addr = pd_info_list[1].address
-insecure_pd = PeripheralDevice(pd_info_list[1], pd_cap, log_level=LogLevel.Debug)
+# insecure_pd_addr = pd_info_list[1].address
+# insecure_pd = PeripheralDevice(pd_info_list[1], pd_cap, log_level=LogLevel.Debug)
 
 pd_list = [
     secure_pd,
-    insecure_pd,
+    # insecure_pd,
 ]
 
 cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
@@ -140,5 +140,5 @@ def test_command_keyset():
     assert cp.is_sc_active(secure_pd_addr)
 
     # When not in SC, KEYSET command should not be accepted.
-    assert cp.is_sc_active(insecure_pd_addr) == False
-    assert cp.send_command(insecure_pd_addr, test_cmd) == False
+    # assert cp.is_sc_active(insecure_pd_addr) == False
+    # assert cp.send_command(insecure_pd_addr, test_cmd) == False

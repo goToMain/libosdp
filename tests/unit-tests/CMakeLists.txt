@@ -21,8 +21,6 @@ list(APPEND OSDP_UNIT_TEST_SRC
 	test-cp-phy.c
 	test-cp-phy-fsm.c
 	test-cp-fsm.c
-	test-mixed-fsm.c
-	test-commands.c
 	test-file.c
 )
 

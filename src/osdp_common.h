@@ -189,14 +189,14 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_DISABLED    0x00004000 /* master_key=NULL && scbk=NULL */
 
 /* logging short hands */
-#define LOG_EM(...)    (osdp_log(LOG_EMERG, LOG_TAG __VA_ARGS__))
-#define LOG_ALERT(...) (osdp_log(LOG_ALERT, LOG_TAG __VA_ARGS__))
-#define LOG_CRIT(...)  (osdp_log(LOG_CRIT, LOG_TAG __VA_ARGS__))
-#define LOG_ERR(...)   (osdp_log(LOG_ERROR, LOG_TAG __VA_ARGS__))
-#define LOG_INF(...)   (osdp_log(LOG_INFO, LOG_TAG __VA_ARGS__))
-#define LOG_WRN(...)   (osdp_log(LOG_WARNING, LOG_TAG __VA_ARGS__))
-#define LOG_NOT(...)   (osdp_log(LOG_NOTICE, LOG_TAG __VA_ARGS__))
-#define LOG_DBG(...)   (osdp_log(LOG_DEBUG, LOG_TAG __VA_ARGS__))
+#define LOG_EM(...)    (osdp_log(OSDP_LOG_EMERG, LOG_TAG __VA_ARGS__))
+#define LOG_ALERT(...) (osdp_log(OSDP_LOG_ALERT, LOG_TAG __VA_ARGS__))
+#define LOG_CRIT(...)  (osdp_log(OSDP_LOG_CRIT, LOG_TAG __VA_ARGS__))
+#define LOG_ERR(...)   (osdp_log(OSDP_LOG_ERROR, LOG_TAG __VA_ARGS__))
+#define LOG_INF(...)   (osdp_log(OSDP_LOG_INFO, LOG_TAG __VA_ARGS__))
+#define LOG_WRN(...)   (osdp_log(OSDP_LOG_WARNING, LOG_TAG __VA_ARGS__))
+#define LOG_NOT(...)   (osdp_log(OSDP_LOG_NOTICE, LOG_TAG __VA_ARGS__))
+#define LOG_DBG(...)   (osdp_log(OSDP_LOG_DEBUG, LOG_TAG __VA_ARGS__))
 #define LOG_PRINT(...) (osdp_log(-1, LOG_TAG __VA_ARGS__))
 
 #define osdp_dump(b, l, f, ...) hexdump(b, l, f, __VA_ARGS__)
@@ -389,17 +389,7 @@ struct osdp {
 	osdp_command_complete_callback_t command_complete_callback;
 };
 
-enum log_levels_e {
-	LOG_EMERG,
-	LOG_ALERT,
-	LOG_CRIT,
-	LOG_ERROR,
-	LOG_WARNING,
-	LOG_NOTICE,
-	LOG_INFO,
-	LOG_DEBUG,
-	LOG_MAX_LEVEL
-};
+void osdp_keyset_complete(struct osdp_pd *pd);
 
 /* from osdp_phy.c */
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);

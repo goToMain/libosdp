@@ -85,7 +85,7 @@ int main()
 {
 	osdp_t *ctx;
 
-	osdp_logger_init(7, printf);
+	osdp_logger_init(OSDP_LOG_DEBUG, printf);
 
 	ctx = osdp_pd_setup(&info_pd);
 	if (ctx == NULL) {

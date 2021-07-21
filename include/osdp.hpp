@@ -16,7 +16,7 @@ class Common {
 public:
 	Common() {}
 
-	void logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
+	void logger_init(int log_level, osdp_log_fn_t log_fn)
 	{
 		osdp_logger_init(log_level, log_fn);
 	}

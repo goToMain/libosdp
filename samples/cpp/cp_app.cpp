@@ -50,7 +50,7 @@ int main()
 {
 	OSDP::ControlPanel cp;
 
-	cp.logger_init(7, printf);
+	cp.logger_init(OSDP_LOG_DEBUG, printf);
 
 	cp.setup(1, pd_info, nullptr);
 

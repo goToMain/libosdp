@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 
 	srand(time(NULL));
 
-	test_start(&t, LOG_INFO);
+	test_start(&t, OSDP_LOG_INFO);
 
 	run_cp_phy_tests(&t);
 

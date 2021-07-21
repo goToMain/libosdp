@@ -31,11 +31,12 @@
 #define WHT   "\x1B[37m"
 #define RESET "\x1B[0m"
 
-const char *log_level_names[LOG_MAX_LEVEL] = { "EMERG", "ALERT", "CRIT ",
-					       "ERROR", "WARN ", "NOTIC",
-					       "INFO ", "DEBUG" };
+const char *log_level_names[OSDP_LOG_MAX_LEVEL] = {
+	"EMERG", "ALERT", "CRIT ", "ERROR",
+	"WARN ", "NOTIC", "INFO ", "DEBUG"
+};
 
-int g_log_level = LOG_WARNING; /* Note: log level is not contextual */
+int g_log_level = OSDP_LOG_MAX_LEVEL; /* Note: log level is not contextual */
 int g_log_ctx = LOG_CTX_GLOBAL;
 int g_old_log_ctx = LOG_CTX_GLOBAL;
 osdp_log_fn_t log_printf;
@@ -45,8 +46,10 @@ void osdp_log_set_colour(int log_level)
 #ifndef CONFIG_DISABLE_PRETTY_LOGGING
 	int ret, len;
 	const char *colour;
-	static const char *colours[LOG_MAX_LEVEL] = { RED, RED, RED, RED,
-						      YEL, MAG, GRN, RESET };
+	static const char *colours[OSDP_LOG_MAX_LEVEL] = {
+		RED, RED, RED, RED,
+		YEL, MAG, GRN, RESET
+	};
 
 	colour = (log_level < 0) ? RESET : colours[log_level];
 	len = strnlen(colour, 8);
@@ -83,7 +86,7 @@ void osdp_log(int log_level, const char *fmt, ...)
 	va_list args;
 	static char buf[128];
 
-	if (log_printf == NULL || log_level >= LOG_MAX_LEVEL ||
+	if (log_printf == NULL || log_level >= OSDP_LOG_MAX_LEVEL ||
 	    log_level > g_log_level) {
 		return;
 	}
@@ -213,7 +216,7 @@ const char *osdp_reply_name(int reply_id)
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-void osdp_logger_init(int log_level, int (*log_fn)(const char *fmt, ...))
+void osdp_logger_init(int log_level, osdp_log_fn_t log_fn)
 {
 	g_log_level = log_level;
 	if (log_fn != NULL) {

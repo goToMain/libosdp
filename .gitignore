@@ -68,3 +68,5 @@ config.mak
 ## pytests
 .pytest_cache/
 __pycache__/
+.cache/
+*.pyc

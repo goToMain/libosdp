@@ -9,8 +9,7 @@ import time
 from .constants import Capability, LibFlag
 
 class PDInfo:
-    def __init__(self, address: int, scbk: bytes=None,
-                 flags: list[LibFlag]=[], name: str='chn'):
+    def __init__(self, address: int, scbk: bytes=None, flags=[], name: str='chn'):
         self.address = address
         self.flags = flags
         self.scbk = scbk
@@ -61,13 +60,13 @@ class _PDCapEntity:
         }
 
 class PDCapabilities:
-    def __init__(self, cap_list: list[tuple[Capability, int, int]]):
+    def __init__(self, cap_list):
         self.capabilities = {}
         for cap in cap_list:
             (fc, cl, ni) = cap
             self.capabilities[fc] = _PDCapEntity(fc, cl, ni)
 
-    def get(self) -> list[dict]:
+    def get(self):
         ret = []
         for fc in self.capabilities.keys():
             ret.append(self.capabilities[fc].get())

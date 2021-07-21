@@ -22,7 +22,6 @@
 
 typedef struct {
 	PyObject_HEAD
-	enum osdp_log_level_e log_level;
 	struct channel_manager channel_manager;
 } pyosdp_base_t;
 

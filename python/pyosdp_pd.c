@@ -140,7 +140,7 @@ static void pyosdp_pd_tp_dealloc(pyosdp_pd_t *self)
 {
 	if (self->ctx)
 		osdp_pd_teardown(self->ctx);
-	PyObject_GC_UnTrack(self);
+	// PyObject_GC_UnTrack(self);
 	pyosdp_pd_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -326,7 +326,7 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	  METH_VARARGS, pyosdp_pd_set_command_callback_doc },
 	{ "notify_event", (PyCFunction)pyosdp_pd_notify_event,
 	  METH_VARARGS, pyosdp_pd_notify_event_doc },
-	{ "sc_active", (PyCFunction)pyosdp_pd_is_sc_active,
+	{ "is_sc_active", (PyCFunction)pyosdp_pd_is_sc_active,
 	  METH_NOARGS, pyosdp_pd_is_sc_active_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };

@@ -20,16 +20,18 @@ int pyosdp_log_fn(const char *fmt, ...)
 	"@return None"
 static PyObject *pyosdp_set_loglevel(pyosdp_base_t *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "I", &self->log_level))
+	int log_level;
+
+	if (!PyArg_ParseTuple(args, "I", &log_level))
 		return NULL;
 
-	if (self->log_level < OSDP_LOG_EMERG ||
-	    self->log_level > OSDP_LOG_MAX_LEVEL) {
+	if (log_level < OSDP_LOG_EMERG ||
+	    log_level > OSDP_LOG_MAX_LEVEL) {
 		PyErr_SetString(PyExc_KeyError, "invalid log level");
 		return NULL;
 	}
 
-	osdp_logger_init(self->log_level, pyosdp_log_fn);
+	osdp_logger_init(log_level, pyosdp_log_fn);
 
 	Py_RETURN_NONE;
 }
@@ -92,7 +94,7 @@ static PyObject *pyosdp_base_tp_new(PyTypeObject *type, PyObject *args,
 static int pyosdp_base_tp_init(pyosdp_base_t *self, PyObject *args, PyObject *kwds)
 {
 	channel_manager_init(&self->channel_manager);
-	self->log_level = 6;
+	osdp_logger_init(OSDP_LOG_INFO, pyosdp_log_fn);
 	return 0;
 }
 

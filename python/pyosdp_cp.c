@@ -171,7 +171,7 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 	if (self->ctx)
 		osdp_cp_teardown(self->ctx);
 
-	PyObject_GC_UnTrack(self);
+	// PyObject_GC_UnTrack(self);
 	pyosdp_cp_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -185,7 +185,7 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 	"@return None"
 static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs)
 {
-	int i, ret = -1, tmp;
+	int i, ret = -1, len;
 	uint8_t *master_key=NULL, *scbk=NULL;
 	Py_ssize_t sc_key_len = 0;
 	enum channel_type channel_type;
@@ -252,8 +252,8 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
 			goto error;
 
-		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &tmp) == 0) {
-			if (scbk && tmp != 16) {
+		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &len) == 0) {
+			if (scbk && len != 16) {
 				PyErr_SetString(PyExc_TypeError,
 						"scbk must be exactly 16 bytes");
 				goto error;
@@ -269,15 +269,14 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			goto error;
 		}
 
-		tmp = channel_open(&self->base.channel_manager, channel_type,
+		ret = channel_open(&self->base.channel_manager, channel_type,
 				   device, info->baud_rate, 0);
-		if (tmp != CHANNEL_ERR_NONE &&
-		    tmp != CHANNEL_ERR_ALREADY_OPEN) {
+		if (ret != CHANNEL_ERR_NONE &&
+		    ret != CHANNEL_ERR_ALREADY_OPEN) {
 			PyErr_SetString(PyExc_PermissionError,
 					"Unable to open channel");
 			goto error;
 		}
-
 		channel_get(&self->base.channel_manager, device, &info->channel.id,
 			    &info->channel.data, &info->channel.send,
 			    &info->channel.recv, &info->channel.flush);
@@ -291,13 +290,13 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 
 	osdp_cp_set_event_callback(ctx, pyosdp_cp_event_cb, self);
 
-	ret = 0;
 	self->ctx = ctx;
+	return 0;
 error:
 	safe_free(info_list);
 	safe_free(channel_type_str);
 	safe_free(device);
-	return ret;
+	return -1;
 }
 
 PyObject *pyosdp_cp_tp_repr(PyObject *self)

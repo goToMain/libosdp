@@ -4,6 +4,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+import time
 import pytest
 import copy
 
@@ -16,22 +17,36 @@ pd_cap = PDCapabilities([
     (Capability.TextOutput, 1, 1),
 ])
 
-secure_pd_addr = 101
-secure_pd_info = PDInfo(secure_pd_addr, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='mq-0')
-secure_pd = PeripheralDevice(secure_pd_info, pd_cap)
+pd_info_list = [
+    PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
+    PDInfo(102, name='chn-1')
+]
 
-cp = ControlPanel([ secure_pd_info ])
+secure_pd_addr = pd_info_list[0].address
+secure_pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
+
+insecure_pd_addr = pd_info_list[1].address
+insecure_pd = PeripheralDevice(pd_info_list[1], pd_cap, log_level=LogLevel.Debug)
+
+pd_list = [
+    secure_pd,
+    insecure_pd,
+]
+
+cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():
-    secure_pd.start()
+    for pd in pd_list:
+        pd.start()
     cp.start()
     yield
     teardown_test()
 
 def teardown_test():
     cp.stop()
-    secure_pd.stop()
+    for pd in pd_list:
+        pd.stop()
 
 def test_command_output():
     test_cmd = {
@@ -113,8 +128,17 @@ def test_command_keyset():
     test_cmd = {
         'command': Command.Keyset,
         'type': 1,
-        'data': bytes([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16])
+        'data': KeyStore.gen_key()
     }
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
+
+    # PD must be online and SC active after a KEYSET command
+    time.sleep(0.5)
+    assert cp.is_online(secure_pd_addr)
+    assert cp.is_sc_active(secure_pd_addr)
+
+    # When not in SC, KEYSET command should not be accepted.
+    assert cp.is_sc_active(insecure_pd_addr) == False
+    assert cp.send_command(insecure_pd_addr, test_cmd) == False

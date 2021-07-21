@@ -13,14 +13,15 @@ from .helpers import PDInfo, PDCapabilities
 from .constants import LogLevel
 
 class PeripheralDevice():
-    def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities, log_level: LogLevel=LogLevel.Info):
+    def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities,
+                 log_level: LogLevel=LogLevel.Info):
         self.command_queue = queue.Queue()
-        self.pd_ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
-        self.pd_ctx.set_loglevel(log_level)
-        self.pd_ctx.set_command_callback(self.command_handler)
+        self.ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
+        self.ctx.set_loglevel(log_level)
+        self.ctx.set_command_callback(self.command_handler)
         self.event = threading.Event()
         self.lock = threading.Lock()
-        args = (self.event, self.lock, self.pd_ctx,)
+        args = (self.event, self.lock, self.ctx,)
         self.thread = threading.Thread(name='pd', target=self.refresh, args=args)
 
     @staticmethod

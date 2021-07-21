@@ -7,7 +7,6 @@
 #define _GNU_SOURCE /* See feature_test_macros(7) */
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #ifndef CONFIG_DISABLE_PRETTY_LOGGING
 #include <unistd.h>

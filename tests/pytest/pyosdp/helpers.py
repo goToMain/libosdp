@@ -9,7 +9,8 @@ import time
 from .constants import Capability, LibFlag
 
 class PDInfo:
-    def __init__(self, address: int, scbk: bytes=None, flags: list[LibFlag]=[], name: str='mq'):
+    def __init__(self, address: int, scbk: bytes=None,
+                 flags: list[LibFlag]=[], name: str='chn'):
         self.address = address
         self.flags = flags
         self.scbk = scbk
@@ -46,7 +47,8 @@ class PDInfo:
         }
 
 class _PDCapEntity:
-    def __init__(self, function_code: Capability, compliance_level: int=1, num_items: int=1):
+    def __init__(self, function_code: Capability,
+                 compliance_level: int=1, num_items: int=1):
         self.function_code = function_code
         self.compliance_level = compliance_level
         self.num_items = num_items

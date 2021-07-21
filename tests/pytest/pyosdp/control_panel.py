@@ -15,7 +15,8 @@ from .helpers import PDInfo
 from .constants import LogLevel
 
 class ControlPanel():
-    def __init__(self, pd_info_list: list[PDInfo], log_level: LogLevel=LogLevel.Info):
+    def __init__(self, pd_info_list: list[PDInfo],
+                 log_level: LogLevel=LogLevel.Info):
         self.pd_addr = []
         info_list = []
         for pd_info in pd_info_list:

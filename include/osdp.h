@@ -230,7 +230,7 @@ typedef void (*osdp_flush_fn_t)(void *data);
  *           networks, this `id` must non-zero and be unique for each bus.
  * @param recv Pointer to function used to receive osdp packet data
  * @param send Pointer to function used to send osdp packet data
- * @param flush Pointer to function used to fush the channel (optional)
+ * @param flush Pointer to function used to flush the channel (optional)
  */
 struct osdp_channel {
 	void *data;
@@ -830,7 +830,7 @@ enum osdp_log_level_e {
 };
 
 /**
- * @brief A printf() like method that will be used to wirte out log lines.
+ * @brief A printf() like method that will be used to write out log lines.
  *
  * @param fmt C printf() style format string. See man 3 printf
  *
@@ -881,7 +881,7 @@ uint32_t osdp_get_status_mask(osdp_t *ctx);
 uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
 
 /**
- * @breif Set osdp_command_complete_callback_t to susbscibe to osdp command or
+ * @brief Set osdp_command_complete_callback_t to subscribe to osdp command or
  * event completion events. This can be used to perform post command actions
  * such as changing the baud rate of the underlying channel after a COMSET
  * command was acknowledged/issued by a peer.

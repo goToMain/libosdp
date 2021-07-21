@@ -10,12 +10,13 @@ import queue
 import threading
 
 from .helpers import PDInfo, PDCapabilities
+from .constants import LogLevel
 
 class PeripheralDevice():
-    def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities):
-        osdp.set_loglevel(7)
+    def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities, log_level: LogLevel=LogLevel.Info):
         self.command_queue = queue.Queue()
         self.pd_ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
+        self.pd_ctx.set_loglevel(log_level)
         self.pd_ctx.set_command_callback(self.command_handler)
         self.event = threading.Event()
         self.lock = threading.Lock()

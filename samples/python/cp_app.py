@@ -85,12 +85,13 @@ commands = [ output_cmd, buzzer_cmd, text_cmd, led_cmd, comset_cmd, mfg_cmd, key
 def event_handler(address, event):
     print("Address: ", address, " Event: ", event)
 
-# Print LibOSDP version and source info
-print("pyosdp", "Version:", osdp.get_version(),
-                "Info:", osdp.get_source_info())
-osdp.set_loglevel(6)
-
 cp = osdp.ControlPanel(pd_info)
+
+# Print LibOSDP version and source info
+print("pyosdp", "Version:", cp.get_version(),
+                "Info:", cp.get_source_info())
+cp.set_loglevel(osdp.LOG_DEBUG)
+
 cp.set_event_callback(event_handler)
 
 count = 0  # loop counter

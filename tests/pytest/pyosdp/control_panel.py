@@ -12,10 +12,10 @@ import queue
 import threading
 
 from .helpers import PDInfo
+from .constants import LogLevel
 
 class ControlPanel():
-    def __init__(self, pd_info_list: list[PDInfo]):
-        osdp.set_loglevel(7)
+    def __init__(self, pd_info_list: list[PDInfo], log_level: LogLevel=LogLevel.Info):
         self.pd_addr = []
         info_list = []
         for pd_info in pd_info_list:
@@ -24,6 +24,7 @@ class ControlPanel():
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
         self.ctx = osdp.ControlPanel(info_list)
         self.ctx.set_event_callback(self.event_handler)
+        self.ctx.set_loglevel(log_level)
         self.event = threading.Event()
         self.lock = threading.Lock()
         args = (self.event, self.lock, self.ctx,)

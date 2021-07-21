@@ -10,6 +10,16 @@ class LibFlag:
     EnforceSecure = osdp.FLAG_ENFORCE_SECURE
     InstallMode = osdp.FLAG_INSTALL_MODE
 
+class LogLevel:
+    Emergency = osdp.LOG_EMERG
+    Alert = osdp.LOG_ALERT
+    Critical = osdp.LOG_CRIT
+    Error = osdp.LOG_ERROR
+    Warning = osdp.LOG_WARNING
+    Notice = osdp.LOG_NOTICE
+    Info = osdp.LOG_INFO
+    Debug = osdp.LOG_DEBUG
+
 class Command:
     Output = osdp.CMD_OUTPUT
     Buzzer = osdp.CMD_BUZZER

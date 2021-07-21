@@ -12,7 +12,7 @@
 	"@param pd PD offset number\n"                                         \
 	"\n"                                                                   \
 	"@return Secure Channel Status (Bool)"
-static PyObject *pyosdp_cp_pd_is_online(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_cp_pd_is_online(pyosdp_cp_t *self, PyObject *args)
 {
 	int pd;
 	uint32_t mask;
@@ -39,7 +39,7 @@ static PyObject *pyosdp_cp_pd_is_online(pyosdp_t *self, PyObject *args)
 	"@param pd PD offset number\n"                                         \
 	"\n"                                                                   \
 	"@return Secure Channel Status (Bool)"
-static PyObject *pyosdp_cp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_cp_pd_is_sc_active(pyosdp_cp_t *self, PyObject *args)
 {
 	int pd;
 	uint32_t mask;
@@ -62,7 +62,7 @@ static PyObject *pyosdp_cp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
 
 int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 {
-	pyosdp_t *self = data;
+	pyosdp_cp_t *self = data;
 	PyObject *arglist, *result, *event_dict;
 
 	if (pyosdp_make_event_dict(&event_dict, event))
@@ -83,7 +83,7 @@ int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 	"@param callback A function to call when a PD reports an event\n"      \
 	"\n"                                                                   \
 	"@return None"
-static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_cp_set_event_callback(pyosdp_cp_t *self, PyObject *args)
 {
 	PyObject *event_cb = NULL;
 
@@ -105,7 +105,7 @@ static PyObject *pyosdp_cp_set_event_callback(pyosdp_t *self, PyObject *args)
 	"OSDP periodic refresh hook. Must be called at least once every 50ms\n" \
 	"\n"                                                                    \
 	"@return None\n"
-static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
+static PyObject *pyosdp_cp_refresh(pyosdp_cp_t *self, pyosdp_cp_t *args)
 {
 	osdp_cp_refresh(self->ctx);
 
@@ -119,7 +119,7 @@ static PyObject *pyosdp_cp_refresh(pyosdp_t *self, pyosdp_t *args)
 	"@param command A dict of command keys and values. See osdp.h for details\n" \
 	"\n"                                                                         \
 	"@return boolean status of command submission\n"
-static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 {
 	int pd, ret;
 	PyObject *cmd_dict;
@@ -145,7 +145,7 @@ static PyObject *pyosdp_cp_send_command(pyosdp_t *self, PyObject *args)
 	Py_RETURN_FALSE;
 }
 
-static int pyosdp_cp_tp_clear(pyosdp_t *self)
+static int pyosdp_cp_tp_clear(pyosdp_cp_t *self)
 {
 	Py_XDECREF(self->event_cb);
 	return 0;
@@ -154,24 +154,24 @@ static int pyosdp_cp_tp_clear(pyosdp_t *self)
 static PyObject *pyosdp_cp_tp_new(PyTypeObject *type, PyObject *args,
 				  PyObject *kwargs)
 {
-	pyosdp_t *self = NULL;
+	pyosdp_cp_t *self = NULL;
 
-	self = (pyosdp_t *)type->tp_alloc(type, 0);
+	self = (pyosdp_cp_t *)type->tp_alloc(type, 0);
 	if (self == NULL) {
 		return NULL;
 	}
 	self->ctx = NULL;
 	self->event_cb = NULL;
-	self->command_cb = NULL;
 	self->num_pd = 0;
 	return (PyObject *)self;
 }
 
-static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
+static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 {
 	if (self->ctx)
 		osdp_cp_teardown(self->ctx);
-	channel_manager_teardown(&self->chn_mgr);
+
+	PyObject_GC_UnTrack(self);
 	pyosdp_cp_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -183,7 +183,7 @@ static void pyosdp_cp_tp_dealloc(pyosdp_t *self)
 	"@param master_key A hexadecimal string representation of the master key\n"          \
 	"\n"                                                                                 \
 	"@return None"
-static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
+static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int i, ret = -1, tmp;
 	uint8_t *master_key=NULL, *scbk=NULL;
@@ -195,7 +195,9 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 	osdp_t *ctx;
 	osdp_pd_info_t *info, *info_list = NULL;
 
-	srand(time(NULL));
+	/* call base class constructor */
+	if (OSDPBaseType.tp_init((PyObject *)self, args, kwargs) < 0)
+		return -1;
 
 	/* the string after the : is used as the function name in error messages */
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:pyosdp_cp_init", kwlist,
@@ -211,8 +213,6 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 				"master_key must be exactly 16 bytes");
 		goto error;
 	}
-
-	channel_manager_init(&self->chn_mgr);
 
 	self->num_pd = (int)PyList_Size(py_info_list);
 	if (self->num_pd == 0 || self->num_pd > 127) {
@@ -252,7 +252,6 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
 			goto error;
 
-		info->scbk = NULL;
 		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &tmp) == 0) {
 			if (scbk && tmp != 16) {
 				PyErr_SetString(PyExc_TypeError,
@@ -263,8 +262,6 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		}
 		PyErr_Clear();
 
-		info->cap = NULL;
-
 		channel_type = channel_guess_type(channel_type_str);
 		if (channel_type == CHANNEL_TYPE_ERR) {
 			PyErr_SetString(PyExc_ValueError,
@@ -272,8 +269,8 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			goto error;
 		}
 
-		tmp = channel_open(&self->chn_mgr, channel_type, device,
-				   info->baud_rate, 0);
+		tmp = channel_open(&self->base.channel_manager, channel_type,
+				   device, info->baud_rate, 0);
 		if (tmp != CHANNEL_ERR_NONE &&
 		    tmp != CHANNEL_ERR_ALREADY_OPEN) {
 			PyErr_SetString(PyExc_PermissionError,
@@ -281,7 +278,7 @@ static int pyosdp_cp_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 			goto error;
 		}
 
-		channel_get(&self->chn_mgr, device, &info->channel.id,
+		channel_get(&self->base.channel_manager, device, &info->channel.id,
 			    &info->channel.data, &info->channel.send,
 			    &info->channel.recv, &info->channel.flush);
 	}
@@ -313,7 +310,7 @@ PyObject *pyosdp_cp_tp_repr(PyObject *self)
 	return py_string;
 }
 
-static int pyosdp_cp_tp_traverse(pyosdp_t *self, visitproc visit, void *arg)
+static int pyosdp_cp_tp_traverse(pyosdp_cp_t *self, visitproc visit, void *arg)
 {
 	Py_VISIT(self->ctx);
 	return 0;
@@ -329,16 +326,16 @@ static PyGetSetDef pyosdp_cp_tp_getset[] = {
 };
 
 static PyMethodDef pyosdp_cp_tp_methods[] = {
-	{ "refresh", (PyCFunction)pyosdp_cp_refresh, METH_NOARGS,
-	  pyosdp_cp_refresh_doc },
+	{ "refresh", (PyCFunction)pyosdp_cp_refresh,
+	  METH_NOARGS, pyosdp_cp_refresh_doc },
 	{ "set_event_callback", (PyCFunction)pyosdp_cp_set_event_callback,
 	  METH_VARARGS, pyosdp_cp_set_event_callback_doc },
-	{ "send_command", (PyCFunction)pyosdp_cp_send_command, METH_VARARGS,
-	  pyosdp_cp_send_command_doc },
-	{ "is_online", (PyCFunction)pyosdp_cp_pd_is_online, METH_VARARGS,
-	  pyosdp_cp_pd_is_online_doc },
-	{ "is_sc_active", (PyCFunction)pyosdp_cp_pd_is_sc_active, METH_VARARGS,
-	  pyosdp_cp_pd_is_sc_active_doc },
+	{ "send_command", (PyCFunction)pyosdp_cp_send_command,
+	  METH_VARARGS, pyosdp_cp_send_command_doc },
+	{ "is_online", (PyCFunction)pyosdp_cp_pd_is_online,
+	  METH_VARARGS, pyosdp_cp_pd_is_online_doc },
+	{ "is_sc_active", (PyCFunction)pyosdp_cp_pd_is_sc_active,
+	  METH_VARARGS, pyosdp_cp_pd_is_sc_active_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 
@@ -349,7 +346,7 @@ static PyMemberDef pyosdp_cp_tp_members[] = {
 static PyTypeObject ControlPanelTypeObject = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0).tp_name = "ControlPanel",
 	.tp_doc = pyosdp_cp_tp_init_doc,
-	.tp_basicsize = sizeof(pyosdp_t),
+	.tp_basicsize = sizeof(pyosdp_cp_t),
 	.tp_itemsize = 0,
 	.tp_dealloc = (destructor)pyosdp_cp_tp_dealloc,
 	.tp_repr = pyosdp_cp_tp_repr,
@@ -362,6 +359,7 @@ static PyTypeObject ControlPanelTypeObject = {
 	.tp_getset = pyosdp_cp_tp_getset,
 	.tp_init = (initproc)pyosdp_cp_tp_init,
 	.tp_new = pyosdp_cp_tp_new,
+	.tp_base = &OSDPBaseType,
 };
 
 int pyosdp_add_type_cp(PyObject *module)

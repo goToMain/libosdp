@@ -10,7 +10,7 @@
 	"Get Secure Channel status, (active/inactive)\n"                       \
 	"\n"                                                                   \
 	"@return Secure Channel Status (Bool)"
-static PyObject *pyosdp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_pd_is_sc_active(pyosdp_pd_t *self, PyObject *args)
 {
 	uint32_t mask;
 
@@ -28,7 +28,7 @@ static PyObject *pyosdp_pd_is_sc_active(pyosdp_t *self, PyObject *args)
 	"@param event A dict of event keys and values. See osdp.h for details\n" \
 	"\n"                                                                     \
 	"@return None\n"
-static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 {
 	PyObject *event_dict;
 	struct osdp_event event;
@@ -49,7 +49,7 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_t *self, PyObject *args)
 static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 {
 	int ret_val = -1;
-	pyosdp_t *self = arg;
+	pyosdp_pd_t *self = arg;
 	PyObject *dict, *arglist, *result;
 
 	if (pyosdp_cmd_make_dict(&dict, cmd))
@@ -87,7 +87,7 @@ static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 	"@param callback A function to call when a CP sends a command\n"       \
 	"\n"                                                                   \
 	"@return None"
-static PyObject *pyosdp_pd_set_command_callback(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_pd_set_command_callback(pyosdp_pd_t *self, PyObject *args)
 {
 	PyObject *callable = NULL;
 
@@ -109,14 +109,14 @@ static PyObject *pyosdp_pd_set_command_callback(pyosdp_t *self, PyObject *args)
 	"OSDP periodic refresh hook. Must be called at least once every 50ms\n" \
 	"\n"                                                                    \
 	"@return None\n"
-static PyObject *pyosdp_pd_refresh(pyosdp_t *self, PyObject *args)
+static PyObject *pyosdp_pd_refresh(pyosdp_pd_t *self, PyObject *args)
 {
 	osdp_pd_refresh(self->ctx);
 
 	Py_RETURN_NONE;
 }
 
-static int pyosdp_pd_tp_clear(pyosdp_t *self)
+static int pyosdp_pd_tp_clear(pyosdp_pd_t *self)
 {
 	Py_XDECREF(self->command_cb);
 	return 0;
@@ -125,24 +125,22 @@ static int pyosdp_pd_tp_clear(pyosdp_t *self)
 static PyObject *pyosdp_pd_tp_new(PyTypeObject *type, PyObject *args,
 				  PyObject *kwargs)
 {
-	pyosdp_t *self = NULL;
+	pyosdp_pd_t *self = NULL;
 
-	self = (pyosdp_t *)type->tp_alloc(type, 0);
+	self = (pyosdp_pd_t *)type->tp_alloc(type, 0);
 	if (self == NULL) {
 		return NULL;
 	}
 	self->ctx = NULL;
-	self->event_cb = NULL;
 	self->command_cb = NULL;
-	self->num_pd = 0;
 	return (PyObject *)self;
 }
 
-static void pyosdp_pd_tp_dealloc(pyosdp_t *self)
+static void pyosdp_pd_tp_dealloc(pyosdp_pd_t *self)
 {
 	if (self->ctx)
 		osdp_pd_teardown(self->ctx);
-	channel_manager_teardown(&self->chn_mgr);
+	PyObject_GC_UnTrack(self);
 	pyosdp_pd_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -196,20 +194,20 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 	"@param scbk A hexadecimal string representation of the PD secure channel base key\n"         \
 	"\n"                                                                                          \
 	"@return None"
-static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
+static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs)
 {
 	int ret, scbk_length;
 	osdp_t *ctx;
-	osdp_pd_info_t info;
+	osdp_pd_info_t info = { 0 };
 	enum channel_type channel_type;
 	char *device = NULL, *channel_type_str = NULL;
 	static char *kwlist[] = { "", "capabilities", NULL };
 	PyObject *py_info, *py_pd_cap_list;
 	uint8_t *scbk = NULL;
 
-	srand(time(NULL));
-
-	info.cap = NULL;
+	/* call base class constructor */
+	if (OSDPBaseType.tp_init((PyObject *)self, NULL, NULL) < 0)
+		return -1;
 
 	/* the string after the : is used as the function name in error messages */
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|$O!:pyosdp_pd_init", kwlist,
@@ -219,8 +217,6 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 
 	if (py_pd_cap_list && pyosdp_add_pd_cap(py_pd_cap_list, &info))
 		goto error;
-
-	channel_manager_init(&self->chn_mgr);
 
 	if (pyosdp_dict_get_int(py_info, "address", &info.address))
 		goto error;
@@ -255,7 +251,6 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 				(int *)&info.id.serial_number))
 		goto error;
 
-	info.scbk = NULL;
 	if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &scbk_length) == 0) {
 		if (scbk && scbk_length == 16)
 			info.scbk = scbk;
@@ -269,15 +264,15 @@ static int pyosdp_pd_tp_init(pyosdp_t *self, PyObject *args, PyObject *kwargs)
 		goto error;
 	}
 
-	ret = channel_open(&self->chn_mgr, channel_type, device, info.baud_rate,
-			   1);
+	ret = channel_open(&self->base.channel_manager, channel_type, device,
+			   info.baud_rate, 1);
 	if (ret != CHANNEL_ERR_NONE && ret != CHANNEL_ERR_ALREADY_OPEN) {
 		PyErr_SetString(PyExc_PermissionError,
 				"Unable to open channel");
 		goto error;
 	}
 
-	channel_get(&self->chn_mgr, device, &info.channel.id,
+	channel_get(&self->base.channel_manager, device, &info.channel.id,
 		    &info.channel.data, &info.channel.send, &info.channel.recv,
 		    &info.channel.flush);
 
@@ -309,7 +304,7 @@ PyObject *pyosdp_pd_tp_repr(PyObject *self)
 	return py_string;
 }
 
-static int pyosdp_pd_tp_traverse(pyosdp_t *self, visitproc visit, void *arg)
+static int pyosdp_pd_tp_traverse(pyosdp_pd_t *self, visitproc visit, void *arg)
 {
 	Py_VISIT(self->ctx);
 	return 0;
@@ -325,14 +320,14 @@ static PyGetSetDef pyosdp_pd_tp_getset[] = {
 };
 
 static PyMethodDef pyosdp_pd_tp_methods[] = {
-	{ "refresh", (PyCFunction)pyosdp_pd_refresh, METH_NOARGS,
-	  pyosdp_pd_refresh_doc },
+	{ "refresh", (PyCFunction)pyosdp_pd_refresh,
+	  METH_NOARGS, pyosdp_pd_refresh_doc },
 	{ "set_command_callback", (PyCFunction)pyosdp_pd_set_command_callback,
 	  METH_VARARGS, pyosdp_pd_set_command_callback_doc },
-	{ "notify_event", (PyCFunction)pyosdp_pd_notify_event, METH_VARARGS,
-	  pyosdp_pd_notify_event_doc },
-	{ "sc_active", (PyCFunction)pyosdp_pd_is_sc_active, METH_NOARGS,
-	  pyosdp_pd_is_sc_active_doc },
+	{ "notify_event", (PyCFunction)pyosdp_pd_notify_event,
+	  METH_VARARGS, pyosdp_pd_notify_event_doc },
+	{ "sc_active", (PyCFunction)pyosdp_pd_is_sc_active,
+	  METH_NOARGS, pyosdp_pd_is_sc_active_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 
@@ -342,7 +337,7 @@ static PyMemberDef pyosdp_pd_tp_members[] = {
 
 PyTypeObject PeripheralDeviceTypeObject = {
 	PyVarObject_HEAD_INIT(&PyType_Type, 0).tp_name = "PeripheralDevice",
-	.tp_basicsize = sizeof(pyosdp_t),
+	.tp_basicsize = sizeof(pyosdp_pd_t),
 	.tp_itemsize = 0,
 	.tp_dealloc = (destructor)pyosdp_pd_tp_dealloc,
 	.tp_repr = pyosdp_pd_tp_repr,
@@ -356,6 +351,7 @@ PyTypeObject PeripheralDeviceTypeObject = {
 	.tp_getset = pyosdp_pd_tp_getset,
 	.tp_init = (initproc)pyosdp_pd_tp_init,
 	.tp_new = pyosdp_pd_tp_new,
+	.tp_base = &OSDPBaseType,
 };
 
 int pyosdp_add_type_pd(PyObject *module)

@@ -7,83 +7,11 @@
 #include "pyosdp.h"
 #include <stdio.h>
 
-int pyosdp_log_fn(const char *fmt, ...)
-{
-	int len;
-	va_list args;
-
-	va_start(args, fmt);
-	len = vfprintf(stderr, fmt, args);
-	va_end(args);
-
-	return len;
-}
-
-#define pyosdp_set_loglevel_doc                                                \
-	"Set OSDP logging level\n"                                             \
-	"\n"                                                                   \
-	"@param log_level OSDP log level (0 to 7)\n"                           \
-	"\n"                                                                   \
-	"@return None"
-static PyObject *pyosdp_set_loglevel(pyosdp_t *self, PyObject *args)
-{
-	int log_level;
-
-	if (!PyArg_ParseTuple(args, "I", &log_level))
-		return NULL;
-
-	if (log_level <= 0 || log_level > 7) {
-		PyErr_SetString(PyExc_KeyError, "invalid log level");
-		return NULL;
-	}
-
-	osdp_logger_init(log_level, pyosdp_log_fn);
-
-	Py_RETURN_NONE;
-}
-
-PyObject *pyosdp_get_version(pyosdp_t *self, PyObject *args)
-{
-	const char *version;
-	PyObject *obj;
-
-	version = osdp_get_version();
-	obj = Py_BuildValue("s", version);
-	if (obj == NULL)
-		return NULL;
-	Py_INCREF(obj);
-	return obj;
-}
-
-PyObject *pyosdp_get_source_info(pyosdp_t *self, PyObject *args)
-{
-	const char *info;
-	PyObject *obj;
-
-	info = osdp_get_source_info();
-	obj = Py_BuildValue("s", info);
-	if (obj == NULL)
-		return NULL;
-	Py_INCREF(obj);
-	return obj;
-}
-
-static PyMethodDef osdp_funcs[] = {
-	{ "get_version", (PyCFunction)pyosdp_get_version, METH_NOARGS,
-	  "Get OSDP version as string" },
-	{ "get_source_info", (PyCFunction)pyosdp_get_source_info, METH_NOARGS,
-	  "Get LibOSDP source info string" },
-	{ "set_loglevel", (PyCFunction)pyosdp_set_loglevel, METH_VARARGS,
-	  pyosdp_set_loglevel_doc },
-	{ NULL, NULL, 0, NULL } /* sentinel */
-};
-
 static PyModuleDef osdp_module = {
 	PyModuleDef_HEAD_INIT,
 	.m_name = "osdp",
 	.m_doc = "Open Supervised Device Protocol",
 	.m_size = -1,
-	.m_methods = osdp_funcs,
 };
 
 void pyosdp_add_module_constants(PyObject *module)
@@ -161,10 +89,26 @@ PyMODINIT_FUNC PyInit_osdp(void)
 	PyObject *module;
 
 	module = PyModule_Create(&osdp_module);
+	if (module == NULL)
+		return NULL;
 
 	pyosdp_add_module_constants(module);
-	pyosdp_add_type_cp(module);
-	pyosdp_add_type_pd(module);
 
-	return module;
+	do {
+
+		if (pyosdp_add_type_osdp_base(module))
+			break;
+
+		if (pyosdp_add_type_cp(module))
+			break;
+
+		if (pyosdp_add_type_pd(module))
+			break;
+
+		return module;
+
+	} while (0);
+
+	Py_DECREF(module);
+	return NULL;
 }

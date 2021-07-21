@@ -21,12 +21,23 @@
 #include <osdp.h>
 
 typedef struct {
-	PyObject_HEAD PyObject *command_cb;
+	PyObject_HEAD
+	enum osdp_log_level_e log_level;
+	struct channel_manager channel_manager;
+} pyosdp_base_t;
+
+typedef struct {
+	pyosdp_base_t base;
 	PyObject *event_cb;
-	osdp_t *ctx;
-	struct channel_manager chn_mgr;
 	int num_pd;
-} pyosdp_t;
+	osdp_t *ctx;
+} pyosdp_cp_t;
+
+typedef struct {
+	pyosdp_base_t base;
+	PyObject *command_cb;
+	osdp_t *ctx;
+} pyosdp_pd_t;
 
 /* from pyosdp_utils.c */
 
@@ -45,6 +56,11 @@ int pyosdp_dict_add_int(PyObject *dict, const char *key, int val);
 int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val);
 int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data,
 			  int len);
+
+/* from pyosdp_base.c */
+
+extern PyTypeObject OSDPBaseType;
+int pyosdp_add_type_osdp_base(PyObject *module);
 
 /* from pyosdp_cp.c */
 

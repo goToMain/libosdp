@@ -39,20 +39,18 @@
 #define BYTE_3(x) (uint8_t)(((x) >> 24) & 0xFF)
 
 /* casting helpers */
-#define TO_OSDP(p)  ((struct osdp *)p)
-#define TO_CP(p)    (((struct osdp *)(p))->cp)
-#define TO_PD(p, i) (((struct osdp *)(p))->pd + i)
-#define TO_CTX(p)   ((struct osdp *)p->__parent)
+#define TO_OSDP(ctx)  ((struct osdp *)ctx)
+#define TO_PD(ctx, i) ((TO_OSDP(ctx))->pd + i)
+#define TO_CTX(pd)   ((pd)->_parent)
 
-#define GET_CURRENT_PD(p) (TO_CP(p)->current_pd)
-#define SET_CURRENT_PD(p, i)                                                   \
+#define GET_CURRENT_PD(ctx) (TO_OSDP(ctx)->_current_pd)
+#define SET_CURRENT_PD(ctx, i)                                                 \
 	do {                                                                   \
-		TO_CP(p)->current_pd = TO_PD(p, i);                            \
-		TO_CP(p)->pd_offset = i;                                       \
+		TO_OSDP(ctx)->_current_pd = TO_PD(ctx, i);                     \
 	} while (0)
-#define PD_MASK(ctx)   (uint32_t)((1 << (TO_CP(ctx)->num_pd)) - 1)
 #define AES_PAD_LEN(x) ((x + 16 - 1) & (~(16 - 1)))
-#define NUM_PD(ctx)    (TO_CP(ctx)->num_pd)
+#define NUM_PD(ctx)    (TO_OSDP(ctx)->_num_pd)
+#define PD_MASK(ctx)   (uint32_t)(BIT(NUM_PD(ctx)) - 1)
 
 #define OSDP_QUEUE_SLAB_SIZE                                                   \
 	(OSDP_CP_CMD_POOL_SIZE *                                               \
@@ -76,17 +74,20 @@ union osdp_ephemeral_data {
  *    input_check(ctx);
  *    input_check(ctx, pd);
  */
+#define input_check_init(ctx)                                                  \
+	assert(ctx);                                                           \
+	TO_OSDP(ctx)->_magic = OSDP_CTX_MAGIC;
 #define input_check_osdp_ctx(ctx)                                              \
 	assert(ctx);                                                           \
-	assert(TO_OSDP(ctx)->magic == OSDP_CTX_MAGIC);
-#define input_check_pd_offset(pd)                                              \
+	assert(TO_OSDP(ctx)->_magic == OSDP_CTX_MAGIC);
+#define input_check_pd_offset(ctx, pd)                                         \
 	if (pd < 0 || pd >= NUM_PD(ctx)) {                                     \
-		LOG_ERR("Invalid PD number");                                  \
+		LOG_ERR("Invalid PD number %d", pd);                           \
 		return -1;                                                     \
 	}
 #define input_check2(_1, _2)                                                   \
 	input_check_osdp_ctx(_1);                                              \
-	input_check_pd_offset(_2);
+	input_check_pd_offset(_1, _2);
 #define input_check1(_1)                                                       \
 	input_check_osdp_ctx(_1);
 #define get_macro(_1, _2, macro, ...) macro
@@ -169,36 +170,32 @@ union osdp_ephemeral_data {
 #define SCS_17 0x17 /* CP -> PD -- packets w MAC w ENC*/
 #define SCS_18 0x18 /* PD -> CP -- packets w MAC w ENC*/
 
-/* Global flags */
-#define FLAG_CP_MODE	 0x00000001 /* Set when initialized as CP */
-
 /* PD State Flags */
-#define PD_FLAG_MASK	       0x0000FFFF /* only 16 bits are for flags */
-#define PD_FLAG_SC_CAPABLE     0x00000001 /* PD secure channel capable */
-#define PD_FLAG_TAMPER	       0x00000002 /* local tamper status */
-#define PD_FLAG_POWER	       0x00000004 /* local power status */
-#define PD_FLAG_R_TAMPER       0x00000008 /* remote tamper status */
-#define PD_FLAG_AWAIT_RESP     0x00000010 /* set after command is sent */
-#define PD_FLAG_SKIP_SEQ_CHECK 0x00000020 /* disable seq checks (debug) */
-#define PD_FLAG_SC_USE_SCBKD   0x00000040 /* in this SC attempt, use SCBKD */
-#define PD_FLAG_SC_ACTIVE      0x00000080 /* secure channel is active */
-#define PD_FLAG_PD_MODE	       0x00000200 /* device is setup as PD */
-#define PD_FLAG_CHN_SHARED     0x00000400 /* PD's channel is shared */
-#define PD_FLAG_PKT_SKIP_MARK  0x00000800 /* CONFIG_OSDP_SKIP_MARK_BYTE */
-#define PD_FLAG_PKT_HAS_MARK   0x00001000 /* Packet has mark byte */
-#define PD_FLAG_HAS_SCBK       0x00002000 /* PD has a dedicated SCBK */
-#define PD_FLAG_SC_DISABLED    0x00004000 /* master_key=NULL && scbk=NULL */
+#define PD_FLAG_SC_CAPABLE     BIT(0)  /* PD secure channel capable */
+#define PD_FLAG_TAMPER         BIT(1)  /* local tamper status */
+#define PD_FLAG_POWER          BIT(2)  /* local power status */
+#define PD_FLAG_R_TAMPER       BIT(3)  /* remote tamper status */
+#define PD_FLAG_AWAIT_RESP     BIT(4)  /* set after command is sent */
+#define PD_FLAG_SKIP_SEQ_CHECK BIT(5)  /* disable seq checks (debug) */
+#define PD_FLAG_SC_USE_SCBKD   BIT(6)  /* in this SC attempt, use SCBKD */
+#define PD_FLAG_SC_ACTIVE      BIT(7)  /* secure channel is active */
+#define PD_FLAG_PD_MODE        BIT(8)  /* device is setup as PD */
+#define PD_FLAG_CHN_SHARED     BIT(9)  /* PD's channel is shared */
+#define PD_FLAG_PKT_SKIP_MARK  BIT(10) /* CONFIG_OSDP_SKIP_MARK_BYTE */
+#define PD_FLAG_PKT_HAS_MARK   BIT(11) /* Packet has mark byte */
+#define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
+#define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
 
 /* logging short hands */
-#define LOG_EM(...)    (osdp_log(OSDP_LOG_EMERG, LOG_TAG __VA_ARGS__))
-#define LOG_ALERT(...) (osdp_log(OSDP_LOG_ALERT, LOG_TAG __VA_ARGS__))
-#define LOG_CRIT(...)  (osdp_log(OSDP_LOG_CRIT, LOG_TAG __VA_ARGS__))
-#define LOG_ERR(...)   (osdp_log(OSDP_LOG_ERROR, LOG_TAG __VA_ARGS__))
-#define LOG_INF(...)   (osdp_log(OSDP_LOG_INFO, LOG_TAG __VA_ARGS__))
-#define LOG_WRN(...)   (osdp_log(OSDP_LOG_WARNING, LOG_TAG __VA_ARGS__))
-#define LOG_NOT(...)   (osdp_log(OSDP_LOG_NOTICE, LOG_TAG __VA_ARGS__))
-#define LOG_DBG(...)   (osdp_log(OSDP_LOG_DEBUG, LOG_TAG __VA_ARGS__))
-#define LOG_PRINT(...) (osdp_log(-1, LOG_TAG __VA_ARGS__))
+#define LOG_EM(...)    osdp_log(OSDP_LOG_EMERG, LOG_TAG __VA_ARGS__)
+#define LOG_ALERT(...) osdp_log(OSDP_LOG_ALERT, LOG_TAG __VA_ARGS__)
+#define LOG_CRIT(...)  osdp_log(OSDP_LOG_CRIT, LOG_TAG __VA_ARGS__)
+#define LOG_ERR(...)   osdp_log(OSDP_LOG_ERROR, LOG_TAG __VA_ARGS__)
+#define LOG_INF(...)   osdp_log(OSDP_LOG_INFO, LOG_TAG __VA_ARGS__)
+#define LOG_WRN(...)   osdp_log(OSDP_LOG_WARNING, LOG_TAG __VA_ARGS__)
+#define LOG_NOT(...)   osdp_log(OSDP_LOG_NOTICE, LOG_TAG __VA_ARGS__)
+#define LOG_DBG(...)   osdp_log(OSDP_LOG_DEBUG, LOG_TAG __VA_ARGS__)
+#define LOG_PRINT(...) osdp_log(-1, LOG_TAG __VA_ARGS__))
 
 #define osdp_dump(b, l, f, ...) hexdump(b, l, f, __VA_ARGS__)
 
@@ -284,7 +281,7 @@ struct osdp_queue {
 };
 
 struct osdp_pd {
-	void *__parent;
+	struct osdp *_parent;
 	int offset;
 	uint32_t flags;
 
@@ -324,21 +321,14 @@ struct osdp_pd {
 	struct osdp_file *file;
 };
 
-struct osdp_cp {
-	void *__parent;
-	int num_pd;
-	struct osdp_pd *current_pd; /* current operational pd's pointer */
-	int pd_offset; /* current pd's offset into ctx->pd */
+struct osdp {
+	uint32_t _magic;
+	int _num_pd;
+	struct osdp_pd *_current_pd; /* current operational pd's pointer */
+	struct osdp_pd *pd;
 	int *channel_lock;
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
-};
-
-struct osdp {
-	uint32_t magic;
-	uint32_t flags;
-	struct osdp_cp *cp;
-	struct osdp_pd *pd;
 	uint8_t sc_master_key[16];
 	osdp_command_complete_callback_t command_complete_callback;
 };

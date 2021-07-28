@@ -249,18 +249,10 @@ uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
 	uint32_t mask = 0;
 	struct osdp_pd *pd;
 
-	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
-		for (i = 0; i < NUM_PD(ctx); i++) {
-			pd = TO_PD(ctx, i);
-			if (pd->state == OSDP_CP_STATE_ONLINE &&
-			    ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-				mask |= 1 << i;
-			}
-		}
-	} else {
-		pd = TO_PD(ctx, 0);
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = TO_PD(ctx, i);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-			mask = 1;
+			mask |= 1 << i;
 		}
 	}
 
@@ -275,16 +267,12 @@ uint32_t osdp_get_status_mask(osdp_t *ctx)
 	uint32_t mask = 0;
 	struct osdp_pd *pd;
 
-	if (ISSET_FLAG(TO_OSDP(ctx), FLAG_CP_MODE)) {
-		for (i = 0; i < TO_OSDP(ctx)->cp->num_pd; i++) {
-			pd = TO_PD(ctx, i);
-			if (pd->state == OSDP_CP_STATE_ONLINE) {
-				mask |= 1 << i;
-			}
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = TO_PD(ctx, i);
+		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
+		    pd->state == OSDP_CP_STATE_ONLINE) {
+			mask |= 1 << i;
 		}
-	} else {
-		/* PD is stateless */
-		mask = 1;
 	}
 
 	return mask;

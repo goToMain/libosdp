@@ -118,12 +118,12 @@ static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
 	int i;
 	struct osdp *ctx = TO_CTX(pd);
 
-	if (ctx->cp->channel_lock[pd->offset] == pd->channel.id) {
+	if (ctx->channel_lock[pd->offset] == pd->channel.id) {
 		return 0; /* already acquired! by current PD */
 	}
-	assert(ctx->cp->channel_lock[pd->offset] == 0);
+	assert(ctx->channel_lock[pd->offset] == 0);
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		if (ctx->cp->channel_lock[i] == pd->channel.id) {
+		if (ctx->channel_lock[i] == pd->channel.id) {
 			/* some other PD has locked this channel */
 			if (owner != NULL) {
 				*owner = i;
@@ -131,7 +131,7 @@ static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
 			return -1;
 		}
 	}
-	ctx->cp->channel_lock[pd->offset] = pd->channel.id;
+	ctx->channel_lock[pd->offset] = pd->channel.id;
 
 	return 0;
 }
@@ -140,11 +140,11 @@ static int cp_channel_release(struct osdp_pd *pd)
 {
 	struct osdp *ctx = TO_CTX(pd);
 
-	if (ctx->cp->channel_lock[pd->offset] != pd->channel.id) {
+	if (ctx->channel_lock[pd->offset] != pd->channel.id) {
 		LOG_ERR("Attempt to release another PD's channel lock");
 		return -1;
 	}
-	ctx->cp->channel_lock[pd->offset] = 0;
+	ctx->channel_lock[pd->offset] = 0;
 
 	return 0;
 }
@@ -415,7 +415,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	uint32_t temp32;
-	struct osdp_cp *cp = TO_CTX(pd)->cp;
+	struct osdp *ctx = TO_CTX(pd);
 	int i, ret = OSDP_CP_ERR_GENERIC, pos = 0, t1, t2;
 	struct osdp_event event;
 
@@ -538,7 +538,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_KEYPPAD:
-		if (len < REPLY_KEYPPAD_DATA_LEN || !cp->event_callback) {
+		if (len < REPLY_KEYPPAD_DATA_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_KEYPRESS;
@@ -550,11 +550,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.keypress.length; i++) {
 			event.keypress.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
+		ctx->event_callback(ctx->event_callback_arg, pd->offset, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RAW:
-		if (len < REPLY_RAW_DATA_LEN || !cp->event_callback) {
+		if (len < REPLY_RAW_DATA_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_CARDREAD;
@@ -570,11 +570,12 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < t1; i++) {
 			event.cardread.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
+		ctx->event_callback(ctx->event_callback_arg,
+				    pd->offset, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FMT:
-		if (len < REPLY_FMT_DATA_LEN || !cp->event_callback) {
+		if (len < REPLY_FMT_DATA_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_CARDREAD;
@@ -589,7 +590,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.cardread.length; i++) {
 			event.cardread.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
+		ctx->event_callback(ctx->event_callback_arg,
+				    pd->offset, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_BUSY:
@@ -598,7 +600,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_RETRY_CMD;
 		break;
 	case REPLY_MFGREP:
-		if (len < REPLY_MFGREP_LEN || !cp->event_callback) {
+		if (len < REPLY_MFGREP_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_MFGREP;
@@ -613,7 +615,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.mfgrep.length; i++) {
 			event.mfgrep.data[i] = buf[pos + i];
 		}
-		cp->event_callback(cp->event_callback_arg, pd->offset, &event);
+		ctx->event_callback(ctx->event_callback_arg,
+				    pd->offset, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:
@@ -1174,7 +1177,6 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 {
 	int i, owner, scbk_count = 0;
 	struct osdp_pd *pd;
-	struct osdp_cp *cp;
 	struct osdp *ctx;
 
 	assert(info);
@@ -1185,18 +1187,11 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		LOG_ERR("Failed to allocate osdp context");
 		return NULL;
 	}
-	ctx->magic = OSDP_CTX_MAGIC;
-	SET_FLAG(ctx, FLAG_CP_MODE);
 
-	ctx->cp = calloc(1, sizeof(struct osdp_cp));
-	if (ctx->cp == NULL) {
-		LOG_ERR("Failed to allocate osdp_cp context");
-		goto error;
-	}
-	cp = TO_CP(ctx);
-	cp->__parent = ctx;
-	cp->channel_lock = calloc(1, sizeof(int) * num_pd);
-	if (cp->channel_lock == NULL) {
+	input_check_init(ctx);
+
+	ctx->channel_lock = calloc(1, sizeof(int) * num_pd);
+	if (ctx->channel_lock == NULL) {
 		LOG_ERR("Failed to allocate osdp channel locks");
 		goto error;
 	}
@@ -1206,13 +1201,13 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		LOG_ERR("Failed to allocate osdp_pd[] context");
 		goto error;
 	}
-	cp->num_pd = num_pd;
+	ctx->_num_pd = num_pd;
 
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
 		pd = TO_PD(ctx, i);
 		pd->offset = i;
-		pd->__parent = ctx;
+		pd->_parent = ctx;
 		pd->baud_rate = p->baud_rate;
 		pd->address = p->address;
 		pd->flags = p->flags;
@@ -1252,7 +1247,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		}
 	}
 
-	memset(cp->channel_lock, 0, sizeof(int) * num_pd);
+	memset(ctx->channel_lock, 0, sizeof(int) * num_pd);
 	SET_CURRENT_PD(ctx, 0);
 
 	LOG_INF("CP setup (with %d connected PDs) complete - %s %s",
@@ -1270,8 +1265,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 	input_check(ctx);
 
 	safe_free(TO_PD(ctx, 0));
-	safe_free(TO_CP(ctx)->channel_lock);
-	safe_free(TO_CP(ctx));
+	safe_free(TO_OSDP(ctx)->channel_lock);
 	safe_free(ctx);
 }
 
@@ -1307,8 +1301,8 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 {
 	input_check(ctx);
 
-	TO_CP(ctx)->event_callback = cb;
-	TO_CP(ctx)->event_callback_arg = arg;
+	TO_OSDP(ctx)->event_callback = cb;
+	TO_OSDP(ctx)->event_callback_arg = arg;
 }
 
 OSDP_EXPORT

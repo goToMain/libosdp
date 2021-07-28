@@ -152,6 +152,53 @@ enum osdp_pd_cap_function_code_e {
 	OSDP_PD_CAP_SENTINEL
 };
 
+enum osdp_pd_nak_code_e {
+	/**
+	 * @brief Dummy
+	 */
+	OSDP_PD_NAK_NONE,
+	/**
+	 * @brief Message check character(s) error (bad cksum/crc)
+	 */
+	OSDP_PD_NAK_MSG_CHK,
+	/**
+	 * @brief Command length error
+	 */
+	OSDP_PD_NAK_CMD_LEN,
+	/**
+	 * @brief Unknown Command Code – Command not implemented by PD
+	 */
+	OSDP_PD_NAK_CMD_UNKNOWN,
+	/**
+	 * @brief Sequence number error
+	 */
+	OSDP_PD_NAK_SEQ_NUM,
+	/**
+	 * @brief Secure Channel is not supported by PD
+	 */
+	OSDP_PD_NAK_SC_UNSUP,
+	/**
+	 * @brief unsupported security block or security conditions not met
+	 */
+	OSDP_PD_NAK_SC_COND,
+	/**
+	 * @brief BIO_TYPE not supported
+	 */
+	OSDP_PD_NAK_BIO_TYPE,
+	/**
+	 * @brief BIO_FORMAT not supported
+	 */
+	OSDP_PD_NAK_BIO_FMT,
+	/**
+	 * @brief Unable to process command record
+	 */
+	OSDP_PD_NAK_RECORD,
+	/**
+	 * @brief Dummy
+	 */
+	OSDP_PD_NAK_SENTINEL
+};
+
 /**
  * @brief PD capability structure. Each PD capability has a 3 byte
  * representation.

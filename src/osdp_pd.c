@@ -1128,8 +1128,8 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	SET_CURRENT_PD(ctx, 0);
 	pd = osdp_to_pd(ctx, 0);
 
-	pd->_parent = ctx;
-	pd->offset = 0;
+	pd->osdp_ctx = ctx;
+	pd->idx = 0;
 	pd->baud_rate = info->baud_rate;
 	pd->address = info->address;
 	pd->flags = info->flags;

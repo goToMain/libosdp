@@ -279,56 +279,66 @@ struct osdp_queue {
 };
 
 struct osdp_pd {
-	struct osdp *_parent;
-	int offset;
-	uint32_t flags;
+	struct osdp *osdp_ctx; /* Ref to osdp * to access shared resources */
+	int idx;               /* Offset into osdp->pd[] for this PD */
+	uint32_t flags;        /* Used with: ISSET_FLAG, SET_FLAG, CLEAR_FLAG */
 
-	/* OSDP specified data */
-	int baud_rate;
-	int address;
-	int seq_number;
+	int baud_rate;         /* Serial baud/bit rate */
+	int address;           /* PD address */
+	int seq_number;        /* Current packet sequence number */
+	struct osdp_pd_id id;  /* PD ID information (as received from app) */
+
+	/* PD Capability; Those received from app + implicit capabilities */
 	struct osdp_pd_cap cap[OSDP_PD_CAP_SENTINEL];
-	struct osdp_pd_id id;
 
-	/* PD state management */
-	int state;
-	int phy_state;
-	uint32_t wait_ms;
+	int state;             /* FSM state (CP mode only) */
+	int phy_state;         /* phy layer FSM state (CP mode only) */
+	uint32_t wait_ms;      /* wait time in MS to retry communication */
+	int64_t tstamp;        /* Last POLL command issued time in ticks */
+	int64_t sc_tstamp;     /* Last received secure reply time in ticks */
+	int64_t phy_tstamp;    /* Time in ticks since command was sent */
 
-	int64_t tstamp;
-	int64_t sc_tstamp;
+	uint16_t peer_rx_size; /* Receieve buffer size of the peer PD/CP */
 
-	uint16_t peer_rx_size;
+	/* Raw bytes received from the serial line for this PD */
 	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
-	int rx_buf_len;
-	int64_t phy_tstamp;
 
-	int cmd_id;
-	int reply_id;
+	int rx_buf_len;        /* Number of bytes in pd->rx_buf */
+
+	int cmd_id;            /* Currently processing command ID */
+	int reply_id;          /* Currently processing reply ID */
+
+	/* Data bytes of the current command/reply ID */
 	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];
 
 	union {
-		struct osdp_queue cmd;
-		struct osdp_queue event;
+		struct osdp_queue cmd;   /* Command queue (CP Mode only) */
+		struct osdp_queue event; /* Command queue (PD Mode only) */
 	};
 
-	struct osdp_channel channel;
-	struct osdp_secure_channel sc;
+	struct osdp_channel channel;     /* PD's serial channel */
+	struct osdp_secure_channel sc;   /* Secure Channel session context */
+	struct osdp_file *file;          /* File transfer context */
+
+	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;
 	pd_commnand_callback_t command_callback;
-	struct osdp_file *file;
 };
 
 struct osdp {
-	uint32_t _magic;
-	int _num_pd;
+	uint32_t _magic;       /* Canary to be used in input_check() */
+	int _num_pd;           /* Number of PDs attached to this context */
 	struct osdp_pd *_current_pd; /* current operational pd's pointer */
-	struct osdp_pd *pd;
-	int *channel_lock;
+	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
+	int *channel_lock;     /* array of length NUM_PD() to lock a channel */
+	uint8_t sc_master_key[16]; /* Secure Channel master key (deprecated) */
+
+	/* OSDP defined command complete callback subscription */
+	osdp_command_complete_callback_t command_complete_callback;
+
+	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
-	uint8_t sc_master_key[16];
-	osdp_command_complete_callback_t command_complete_callback;
 };
 
 void osdp_keyset_complete(struct osdp_pd *pd);
@@ -362,7 +372,7 @@ void osdp_sc_teardown(struct osdp_pd *pd);
 
 static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
 {
-	return pd->_parent;
+	return pd->osdp_ctx;
 }
 
 static inline struct osdp_pd *osdp_to_pd(struct osdp *ctx, int pd_idx)

@@ -284,10 +284,10 @@ int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops)
 }
 
 OSDP_EXPORT
-int osdp_file_tx_status(osdp_t *ctx, int pd, int *size, int *offset)
+int osdp_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset)
 {
-	input_check(ctx, pd);
-	struct osdp_file *f = TO_FILE(osdp_to_pd(ctx, pd));
+	input_check(ctx, pd_idx);
+	struct osdp_file *f = TO_FILE(osdp_to_pd(ctx, pd_idx));
 
 	if (f->state != OSDP_FILE_INPROG && f->state != OSDP_FILE_DONE) {
 		LOG_ERR("File TX not in progress");

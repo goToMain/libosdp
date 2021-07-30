@@ -118,10 +118,10 @@ static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
 	int i;
 	struct osdp *ctx = pd_to_osdp(pd);
 
-	if (ctx->channel_lock[pd->offset] == pd->channel.id) {
+	if (ctx->channel_lock[pd->idx] == pd->channel.id) {
 		return 0; /* already acquired! by current PD */
 	}
-	assert(ctx->channel_lock[pd->offset] == 0);
+	assert(ctx->channel_lock[pd->idx] == 0);
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		if (ctx->channel_lock[i] == pd->channel.id) {
 			/* some other PD has locked this channel */
@@ -131,7 +131,7 @@ static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
 			return -1;
 		}
 	}
-	ctx->channel_lock[pd->offset] = pd->channel.id;
+	ctx->channel_lock[pd->idx] = pd->channel.id;
 
 	return 0;
 }
@@ -140,11 +140,11 @@ static int cp_channel_release(struct osdp_pd *pd)
 {
 	struct osdp *ctx = pd_to_osdp(pd);
 
-	if (ctx->channel_lock[pd->offset] != pd->channel.id) {
+	if (ctx->channel_lock[pd->idx] != pd->channel.id) {
 		LOG_ERR("Attempt to release another PD's channel lock");
 		return -1;
 	}
-	ctx->channel_lock[pd->offset] = 0;
+	ctx->channel_lock[pd->idx] = 0;
 
 	return 0;
 }
@@ -550,7 +550,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.keypress.length; i++) {
 			event.keypress.data[i] = buf[pos + i];
 		}
-		ctx->event_callback(ctx->event_callback_arg, pd->offset, &event);
+		ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RAW:
@@ -571,7 +571,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.cardread.data[i] = buf[pos + i];
 		}
 		ctx->event_callback(ctx->event_callback_arg,
-				    pd->offset, &event);
+				    pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FMT:
@@ -591,7 +591,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.cardread.data[i] = buf[pos + i];
 		}
 		ctx->event_callback(ctx->event_callback_arg,
-				    pd->offset, &event);
+				    pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_BUSY:
@@ -616,7 +616,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			event.mfgrep.data[i] = buf[pos + i];
 		}
 		ctx->event_callback(ctx->event_callback_arg,
-				    pd->offset, &event);
+				    pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:
@@ -708,7 +708,7 @@ static int cp_send_command(struct osdp_pd *pd)
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
 			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: CP->PD[%d]: Sent", pd->offset);
+				  "OSDP: CP->PD[%d]: Sent", pd->idx);
 		}
 	}
 
@@ -732,7 +732,7 @@ static int cp_process_reply(struct osdp_pd *pd)
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
 			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: CP->PD[%d]: Received", pd->offset);
+				  "OSDP: CP->PD[%d]: Received", pd->idx);
 		}
 	}
 
@@ -1206,8 +1206,8 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
 		pd = osdp_to_pd(ctx, i);
-		pd->offset = i;
-		pd->_parent = ctx;
+		pd->idx = i;
+		pd->osdp_ctx = ctx;
 		pd->baud_rate = p->baud_rate;
 		pd->address = p->address;
 		pd->flags = p->flags;
@@ -1306,14 +1306,14 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 }
 
 OSDP_EXPORT
-int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
+int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 {
-	input_check(ctx, pd);
-	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 	struct osdp_cmd *cmd;
 	int cmd_id;
 
-	if (pd_ctx->state != OSDP_CP_STATE_ONLINE) {
+	if (pd->state != OSDP_CP_STATE_ONLINE) {
 		LOG_WRN("PD not online");
 		return -1;
 	}
@@ -1338,16 +1338,16 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_FILE_TX:
-		return osdp_file_tx_initiate(pd_ctx, p->file_tx.fd,
+		return osdp_file_tx_initiate(pd, p->file_tx.fd,
 					     p->file_tx.flags);
 	case OSDP_CMD_KEYSET:
 		if (p->keyset.type == 1) {
-			if (!sc_is_active(pd_ctx))
+			if (!sc_is_active(pd))
 				return -1;
 			cmd_id = CMD_KEYSET;
 			break;
 		}
-		if (ISSET_FLAG(pd_ctx, OSDP_FLAG_ENFORCE_SECURE)) {
+		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
 			LOG_ERR("master_key based key set blocked "
 				"due to ENFORCE_SECURE;");
 			return -1;
@@ -1358,41 +1358,41 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 		return -1;
 	}
 
-	cmd = cp_cmd_alloc(pd_ctx);
+	cmd = cp_cmd_alloc(pd);
 	if (cmd == NULL) {
 		return -1;
 	}
 
 	memcpy(cmd, p, sizeof(struct osdp_cmd));
 	cmd->id = cmd_id; /* translate to internal */
-	cp_cmd_enqueue(pd_ctx, cmd);
+	cp_cmd_enqueue(pd, cmd);
 	return 0;
 }
 
 OSDP_EXPORT
-int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id)
+int osdp_cp_get_pd_id(osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
 {
-	input_check(ctx, pd);
-	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 
-	memcpy(id, &pd_ctx->id, sizeof(struct osdp_pd_id));
+	memcpy(id, &pd->id, sizeof(struct osdp_pd_id));
 	return 0;
 }
 
 OSDP_EXPORT
-int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap)
+int osdp_cp_get_capability(osdp_t *ctx, int pd_idx, struct osdp_pd_cap *cap)
 {
-	input_check(ctx, pd);
+	input_check(ctx, pd_idx);
 	int fc;
-	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 
 	fc = cap->function_code;
 	if (fc <= OSDP_PD_CAP_UNUSED || fc >= OSDP_PD_CAP_SENTINEL) {
 		return -1;
 	}
 
-	cap->compliance_level = pd_ctx->cap[fc].compliance_level;
-	cap->num_items = pd_ctx->cap[fc].num_items;
+	cap->compliance_level = pd->cap[fc].compliance_level;
+	cap->num_items = pd->cap[fc].num_items;
 	return 0;
 }
 

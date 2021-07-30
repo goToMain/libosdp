@@ -15,7 +15,7 @@ class PDInfo:
         self.scbk = scbk
         self.channel_device = '/tmp/pyosdp-' + name
         self.channel_speed = 115200
-        self.channel_type = 'message_queue'
+        self.channel_type = 'fifo'
         self.version= 1
         self.model= 1
         self.vendor_code= 0xCAFEBABE

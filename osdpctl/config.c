@@ -153,11 +153,6 @@ int config_parse_key_channel_device(const char *val, void *data)
 {
 	struct config_pd_s *p = data;
 
-	if (access(val, F_OK) == -1) {
-		printf("Error: device %s does not exist\n", val);
-		return INI_FAILURE;
-	}
-
 	if (val[0] == '/')
 		p->channel_device = safe_strdup(val);
 	else

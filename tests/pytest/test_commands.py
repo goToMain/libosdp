@@ -19,18 +19,18 @@ pd_cap = PDCapabilities([
 
 pd_info_list = [
     PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
-    # PDInfo(102, name='chn-1')
+    PDInfo(102, name='chn-1')
 ]
 
 secure_pd_addr = pd_info_list[0].address
 secure_pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
 
-# insecure_pd_addr = pd_info_list[1].address
-# insecure_pd = PeripheralDevice(pd_info_list[1], pd_cap, log_level=LogLevel.Debug)
+insecure_pd_addr = pd_info_list[1].address
+insecure_pd = PeripheralDevice(pd_info_list[1], pd_cap, log_level=LogLevel.Debug)
 
 pd_list = [
     secure_pd,
-    # insecure_pd,
+    insecure_pd,
 ]
 
 cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
@@ -55,6 +55,7 @@ def test_command_output():
         'control_code': 1,
         'timer_count': 10
     }
+    assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
@@ -68,6 +69,7 @@ def test_command_buzzer():
         'off_count': 10,
         'rep_count': 10
     }
+    assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
@@ -82,6 +84,7 @@ def test_command_text():
         'offset_col': 1,
         'data': 'PYOSDP'
     }
+    assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
@@ -109,6 +112,7 @@ def test_command_comset():
         'address': secure_pd_addr,
         'baud_rate': 9600
     }
+    assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
@@ -120,6 +124,7 @@ def test_command_mfg():
         'mfg_command': 13,
         'data': bytes([9,1,9,2,6,3,1,7,7,0])
     }
+    assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
@@ -130,6 +135,7 @@ def test_command_keyset():
         'type': 1,
         'data': KeyStore.gen_key()
     }
+    assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     cmd = secure_pd.get_command()
     assert cmd == test_cmd
@@ -140,5 +146,5 @@ def test_command_keyset():
     assert cp.is_sc_active(secure_pd_addr)
 
     # When not in SC, KEYSET command should not be accepted.
-    # assert cp.is_sc_active(insecure_pd_addr) == False
-    # assert cp.send_command(insecure_pd_addr, test_cmd) == False
+    assert cp.is_sc_active(insecure_pd_addr) == False
+    assert cp.send_command(insecure_pd_addr, test_cmd) == False

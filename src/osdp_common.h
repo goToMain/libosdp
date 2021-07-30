@@ -40,13 +40,11 @@
 
 /* casting helpers */
 #define TO_OSDP(ctx)  ((struct osdp *)ctx)
-#define TO_PD(ctx, i) ((TO_OSDP(ctx))->pd + i)
-#define TO_CTX(pd)   ((pd)->_parent)
 
 #define GET_CURRENT_PD(ctx) (TO_OSDP(ctx)->_current_pd)
 #define SET_CURRENT_PD(ctx, i)                                                 \
 	do {                                                                   \
-		TO_OSDP(ctx)->_current_pd = TO_PD(ctx, i);                     \
+		TO_OSDP(ctx)->_current_pd = osdp_to_pd(ctx, i);                \
 	} while (0)
 #define AES_PAD_LEN(x) ((x + 16 - 1) & (~(16 - 1)))
 #define NUM_PD(ctx)    (TO_OSDP(ctx)->_num_pd)
@@ -361,6 +359,16 @@ int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data,
 		     int len);
 void osdp_sc_setup(struct osdp_pd *p);
 void osdp_sc_teardown(struct osdp_pd *pd);
+
+static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
+{
+	return pd->_parent;
+}
+
+static inline struct osdp_pd *osdp_to_pd(struct osdp *ctx, int pd_idx)
+{
+	return ctx->pd + pd_idx;
+}
 
 static inline bool is_pd_mode(struct  osdp_pd *pd)
 {

@@ -796,7 +796,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ASSERT_BUF_LEN(REPLY_CCRYPT_LEN);
 		osdp_get_rand(pd->sc.pd_random, 8);
-		osdp_compute_session_keys(TO_CTX(pd));
+		osdp_compute_session_keys(pd_to_osdp(pd));
 		osdp_compute_pd_cryptogram(pd);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < 8; i++) {
@@ -1017,6 +1017,7 @@ static inline void pd_error_reset(struct osdp_pd *pd)
 static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
+	struct osdp *ctx = pd_to_osdp(pd);
 
 	/**
 	 * If secure channel is established, we need to make sure that
@@ -1065,8 +1066,8 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		return;
 	}
 
-	if (TO_CTX(pd)->command_complete_callback) {
-		TO_CTX(pd)->command_complete_callback(pd->cmd_id);
+	if (ctx->command_complete_callback) {
+		ctx->command_complete_callback(pd->cmd_id);
 	}
 }
 
@@ -1125,7 +1126,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	ctx->_num_pd = 1;
 
 	SET_CURRENT_PD(ctx, 0);
-	pd = TO_PD(ctx, 0);
+	pd = osdp_to_pd(ctx, 0);
 
 	pd->_parent = ctx;
 	pd->offset = 0;
@@ -1173,7 +1174,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 	assert(ctx);
 
 #ifndef CONFIG_OSDP_STATIC_PD
-	safe_free(TO_PD(ctx, 0));
+	safe_free(osdp_to_pd(ctx, 0));
 	safe_free(ctx);
 #endif
 }

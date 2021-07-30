@@ -116,7 +116,7 @@ static int cp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
 static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
 {
 	int i;
-	struct osdp *ctx = TO_CTX(pd);
+	struct osdp *ctx = pd_to_osdp(pd);
 
 	if (ctx->channel_lock[pd->offset] == pd->channel.id) {
 		return 0; /* already acquired! by current PD */
@@ -138,7 +138,7 @@ static int cp_channel_acquire(struct osdp_pd *pd, int *owner)
 
 static int cp_channel_release(struct osdp_pd *pd)
 {
-	struct osdp *ctx = TO_CTX(pd);
+	struct osdp *ctx = pd_to_osdp(pd);
 
 	if (ctx->channel_lock[pd->offset] != pd->channel.id) {
 		LOG_ERR("Attempt to release another PD's channel lock");
@@ -415,7 +415,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	uint32_t temp32;
-	struct osdp *ctx = TO_CTX(pd);
+	struct osdp *ctx = pd_to_osdp(pd);
 	int i, ret = OSDP_CP_ERR_GENERIC, pos = 0, t1, t2;
 	struct osdp_event event;
 
@@ -633,7 +633,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < 16; i++) {
 			pd->sc.pd_cryptogram[i] = buf[pos++];
 		}
-		osdp_compute_session_keys(TO_CTX(pd));
+		osdp_compute_session_keys(pd_to_osdp(pd));
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
 			LOG_ERR("Failed to verify PD cryptogram");
 			return OSDP_CP_ERR_GENERIC;
@@ -817,6 +817,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	int64_t elapsed;
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
 	struct osdp_cmd *cmd = NULL;
+	struct osdp *ctx = pd_to_osdp(pd);
 
 	switch (pd->phy_state) {
 	case OSDP_CP_PHY_STATE_WAIT:
@@ -859,9 +860,8 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
 		if (rc == OSDP_CP_ERR_NONE) {
-			if (TO_CTX(pd)->command_complete_callback) {
-				TO_CTX(pd)->command_complete_callback(
-					pd->cmd_id);
+			if (ctx->command_complete_callback) {
+				ctx->command_complete_callback(pd->cmd_id);
 			}
 			if (sc_is_active(pd)) {
 				pd->sc_tstamp = osdp_millis_now();
@@ -926,7 +926,7 @@ static int state_update(struct osdp_pd *pd)
 {
 	bool soft_fail;
 	int phy_state;
-	struct osdp *ctx = TO_CTX(pd);
+	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_cmd_keyset *keyset;
 
 	phy_state = cp_phy_state_update(pd);
@@ -1137,7 +1137,7 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 		"all connected PDs will be affected.");
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = TO_PD(ctx, i);
+		pd = osdp_to_pd(ctx, i);
 		cmd[i] = cp_cmd_alloc(pd);
 		if (cmd[i] == NULL) {
 			res = -1;
@@ -1148,7 +1148,7 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	}
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = TO_PD(ctx, i);
+		pd = osdp_to_pd(ctx, i);
 		if (res < 0 && cmd[i]) {
 			cp_cmd_free(pd, cmd[i]);
 		} else {
@@ -1205,7 +1205,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 	for (i = 0; i < num_pd; i++) {
 		osdp_pd_info_t *p = info + i;
-		pd = TO_PD(ctx, i);
+		pd = osdp_to_pd(ctx, i);
 		pd->offset = i;
 		pd->_parent = ctx;
 		pd->baud_rate = p->baud_rate;
@@ -1228,7 +1228,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		}
 		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
 		if (cp_channel_acquire(pd, &owner) == -1) {
-			SET_FLAG(TO_PD(ctx, owner), PD_FLAG_CHN_SHARED);
+			SET_FLAG(osdp_to_pd(ctx, owner), PD_FLAG_CHN_SHARED);
 			SET_FLAG(pd, PD_FLAG_CHN_SHARED);
 		}
 		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
@@ -1264,7 +1264,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 {
 	input_check(ctx);
 
-	safe_free(TO_PD(ctx, 0));
+	safe_free(osdp_to_pd(ctx, 0));
 	safe_free(TO_OSDP(ctx)->channel_lock);
 	safe_free(ctx);
 }
@@ -1278,7 +1278,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		SET_CURRENT_PD(ctx, i);
-		pd = TO_PD(ctx, i);
+		pd = osdp_to_pd(ctx, i);
 		osdp_log_ctx_set(pd->address);
 
 		if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
@@ -1309,7 +1309,7 @@ OSDP_EXPORT
 int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *p)
 {
 	input_check(ctx, pd);
-	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
+	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
 	struct osdp_cmd *cmd;
 	int cmd_id;
 
@@ -1373,7 +1373,7 @@ OSDP_EXPORT
 int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id)
 {
 	input_check(ctx, pd);
-	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
+	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
 
 	memcpy(id, &pd_ctx->id, sizeof(struct osdp_pd_id));
 	return 0;
@@ -1384,7 +1384,7 @@ int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap)
 {
 	input_check(ctx, pd);
 	int fc;
-	struct osdp_pd *pd_ctx = TO_PD(ctx, pd);
+	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
 
 	fc = cap->function_code;
 	if (fc <= OSDP_PD_CAP_UNUSED || fc >= OSDP_PD_CAP_SENTINEL) {

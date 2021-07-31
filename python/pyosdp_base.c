@@ -1,5 +1,7 @@
 #include "pyosdp.h"
 
+#define TAG "pyosdp_base"
+
 int pyosdp_log_fn(const char *fmt, ...)
 {
 	int len;
@@ -62,33 +64,9 @@ PyObject *pyosdp_get_source_info(pyosdp_base_t *self, PyObject *args)
 	return obj;
 }
 
-static int pyosdp_base_tp_traverse(pyosdp_base_t *self, visitproc visit, void *arg)
-{
-	return 0;
-}
-
-static int pyosdp_base_tp_clear(pyosdp_base_t *self)
-{
-	return 0;
-}
-
 static void pyosdp_base_tp_dealloc(pyosdp_base_t *self)
 {
 	channel_manager_teardown(&self->channel_manager);
-	pyosdp_base_tp_clear(self);
-	PyObject_GC_UnTrack(self);
-	Py_TYPE(self)->tp_free((PyObject *)self);
-}
-
-static PyObject *pyosdp_base_tp_new(PyTypeObject *type, PyObject *args,
-				    PyObject *kwds)
-{
-	pyosdp_base_t *self;
-	self = (pyosdp_base_t *)type->tp_alloc(type, 0);
-	if (self == NULL)
-		return NULL;
-
-	return (PyObject *)self;
 }
 
 static int pyosdp_base_tp_init(pyosdp_base_t *self, PyObject *args, PyObject *kwds)
@@ -109,16 +87,13 @@ static PyMethodDef pyosdp_base_methods[] = {
 };
 
 PyTypeObject OSDPBaseType = {
-	PyVarObject_HEAD_INIT(NULL, 0).tp_name = "custom4.Custom",
+	PyVarObject_HEAD_INIT(NULL, 0).tp_name = "osdp.Base",
 	.tp_doc = "OSDP Base Class",
 	.tp_basicsize = sizeof(pyosdp_base_t),
 	.tp_itemsize = 0,
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
-	.tp_new = pyosdp_base_tp_new,
 	.tp_init = (initproc)pyosdp_base_tp_init,
 	.tp_dealloc = (destructor)pyosdp_base_tp_dealloc,
-	.tp_traverse = (traverseproc)pyosdp_base_tp_traverse,
-	.tp_clear = (inquiry)pyosdp_base_tp_clear,
 	.tp_methods = pyosdp_base_methods,
 };
 

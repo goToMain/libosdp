@@ -6,6 +6,8 @@
 
 #include "pyosdp.h"
 
+#define TAG "pyosdp_pd"
+
 #define pyosdp_pd_is_sc_active_doc                                             \
 	"Get Secure Channel status, (active/inactive)\n"                       \
 	"\n"                                                                   \
@@ -140,7 +142,10 @@ static void pyosdp_pd_tp_dealloc(pyosdp_pd_t *self)
 {
 	if (self->ctx)
 		osdp_pd_teardown(self->ctx);
-	// PyObject_GC_UnTrack(self);
+
+	/* call base class destructor */
+	OSDPBaseType.tp_dealloc((PyObject *)self);
+
 	pyosdp_pd_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }

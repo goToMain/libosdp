@@ -6,6 +6,8 @@
 
 #include "pyosdp.h"
 
+#define TAG "pyosdp_cp"
+
 #define pyosdp_cp_pd_is_online_doc                                             \
 	"Get PD status, (online/offline)\n"                                    \
 	"\n"                                                                   \
@@ -171,7 +173,9 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 	if (self->ctx)
 		osdp_cp_teardown(self->ctx);
 
-	// PyObject_GC_UnTrack(self);
+	/* call base class destructor */
+	OSDPBaseType.tp_dealloc((PyObject *)self);
+
 	pyosdp_cp_tp_clear(self);
 	Py_TYPE(self)->tp_free((PyObject *)self);
 }

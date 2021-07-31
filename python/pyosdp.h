@@ -12,6 +12,7 @@
 #include <structmember.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdio.h>
 
 #include <utils/utils.h>
 #include <utils/strutils.h>
@@ -37,6 +38,9 @@ typedef struct {
 	PyObject *command_cb;
 	osdp_t *ctx;
 } pyosdp_pd_t;
+
+#define DBG_PRINT_Py_REFCNT(x) \
+	fprintf(stderr, "%s: %s:%d Py_REFCNT(%s): %ld (%p)\n", TAG, __FUNCTION__, __LINE__, STR(X) , Py_REFCNT(x), x);
 
 /* from pyosdp_utils.c */
 

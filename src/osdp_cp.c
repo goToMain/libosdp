@@ -1314,7 +1314,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 	int cmd_id;
 
 	if (pd->state != OSDP_CP_STATE_ONLINE) {
-		LOG_WRN("PD not online");
+		LOG_PRINT("PD not online");
 		return -1;
 	}
 
@@ -1348,13 +1348,13 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 			break;
 		}
 		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
-			LOG_ERR("master_key based key set blocked "
-				"due to ENFORCE_SECURE;");
+			LOG_PRINT("master_key based key set blocked "
+				  "due to ENFORCE_SECURE;");
 			return -1;
 		}
 		return osdp_cp_send_command_keyset(ctx, &p->keyset);
 	default:
-		LOG_ERR("Invalid CMD_ID:%d", p->id);
+		LOG_PRINT("Invalid CMD_ID:%d", p->id);
 		return -1;
 	}
 

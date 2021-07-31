@@ -193,7 +193,7 @@ union osdp_ephemeral_data {
 #define LOG_WRN(...)   osdp_log(OSDP_LOG_WARNING, LOG_TAG __VA_ARGS__)
 #define LOG_NOT(...)   osdp_log(OSDP_LOG_NOTICE, LOG_TAG __VA_ARGS__)
 #define LOG_DBG(...)   osdp_log(OSDP_LOG_DEBUG, LOG_TAG __VA_ARGS__)
-#define LOG_PRINT(...) osdp_log(-1, LOG_TAG __VA_ARGS__))
+#define LOG_PRINT(...) osdp_log(-1, LOG_TAG __VA_ARGS__)
 
 #define osdp_dump(b, l, f, ...) hexdump(b, l, f, __VA_ARGS__)
 

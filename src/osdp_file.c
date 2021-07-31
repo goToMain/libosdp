@@ -20,6 +20,7 @@
 
 static inline void osdp_file_state_reset(struct osdp_file *f)
 {
+	f->flags = 0;
 	f->offset = 0;
 	f->length = 0;
 	f->errors = 0;
@@ -62,7 +63,7 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	p->offset = f->offset;
 	p->size = f->size;
 
-	f->length = f->ops->read(f->ops->arg, p->data, buf_available, p->offset);
+	f->length = f->ops.read(f->ops.arg, p->data, buf_available, p->offset);
 	if (f->length < 0) {
 		LOG_ERR("TX_Build: user read failed! rc:%d len:%d off:%d",
 			f->length, buf_available, p->offset);
@@ -107,7 +108,7 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops->close(f->ops->arg);
+		f->ops.close(f->ops.arg);
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("Stat_Decode: File transfer complete");
 	}
@@ -119,17 +120,33 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
+	int rc;
 	struct osdp_file *f = TO_FILE(pd);
 	struct osdp_cmd_file_xfer *p = (struct osdp_cmd_file_xfer *)buf;
+	struct osdp_cmd cmd;
 
 	if (f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
+		if (pd->command_callback) {
+			/**
+			 * Notify app of this command and make sure
+			 * we can proceed
+			 */
+			cmd.id = OSDP_CMD_FILE_TX;
+			cmd.file_tx.flags = f->flags;
+			cmd.file_tx.id = p->type;
+			rc = pd->command_callback(pd->command_callback_arg, &cmd);
+			if (rc < 0)
+				return -1;
+		}
+
 		/* new file write request */
 		int size = (int)p->size;
-		if (f->ops->open(f->ops->arg, p->type, &size) < 0) {
+		if (f->ops.open(f->ops.arg, p->type, &size) < 0) {
 			LOG_ERR("TX_Decode: Open failed! fd:%d", p->type);
 			return -1;
 		}
-		LOG_INF("TX_Decode: Statring file transfer of size: %d", size);
+
+		LOG_INF("TX_Decode: Statring file transfer");
 		osdp_file_state_reset(f);
 		f->file_id = p->type;
 		f->size = size;
@@ -147,7 +164,7 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	f->length = f->ops->write(f->ops->arg, p->data, p->length, p->offset);
+	f->length = f->ops.write(f->ops.arg, p->data, p->length, p->offset);
 	if (f->length != p->length) {
 		LOG_ERR("TX_Decode: user write failed! rc:%d len:%d off:%d",
 			f->length, p->length, p->offset);
@@ -189,7 +206,7 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops->close(f->ops->arg);
+		f->ops.close(f->ops.arg);
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("TX_Decode: File receive complete");
 	}
@@ -203,8 +220,8 @@ void osdp_file_tx_abort(struct osdp_pd *pd)
 {
 	struct osdp_file *f = TO_FILE(pd);
 
-	if (f && f->ops && f->state == OSDP_FILE_INPROG) {
-		f->ops->close(f->ops->arg);
+	if (f && f->state == OSDP_FILE_INPROG) {
+		f->ops.close(f->ops.arg);
 		osdp_file_state_reset(f);
 	}
 }
@@ -234,28 +251,33 @@ bool osdp_file_tx_pending(struct osdp_pd *pd)
  */
 int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
 {
-	int size;
+	int size = 0;
 	struct osdp_file *f = TO_FILE(pd);
-	ARG_UNUSED(flags);
 
-	if (!f || !f->ops) {
-		LOG_WRN("TX_init: File ops not registered!");
+	if (f == NULL) {
+		LOG_PRINT("TX_init: File ops not registered!");
 		return -1;
 	}
 
 	if (f->state != OSDP_FILE_IDLE && f->state != OSDP_FILE_DONE) {
-		LOG_WRN("TX_init: File tx in progress");
+		LOG_PRINT("TX_init: File tx in progress");
 		return -1;
 	}
 
-	if (f->ops->open(f->ops->arg, file_id, &size) < 0) {
-		LOG_ERR("TX_init: Open failed! fd:%d", file_id);
+	if (f->ops.open(f->ops.arg, file_id, &size) < 0) {
+		LOG_PRINT("TX_init: Open failed! fd:%d", file_id);
 		return -1;
 	}
 
-	LOG_INF("TX_init: Statring file transfer of size: %d", size);
+	if (size <= 0) {
+		LOG_PRINT("TX_init: Invalid file size %d", size);
+		return -1;
+	}
+
+	LOG_PRINT("TX_init: Statring file transfer of size: %d", size);
 
 	osdp_file_state_reset(f);
+	f->flags = flags;
 	f->file_id = file_id;
 	f->size = size;
 	f->state = OSDP_FILE_INPROG;
@@ -265,32 +287,32 @@ int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops)
+int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops)
 {
-	input_check(ctx, pd);
-	struct osdp_pd *pd_ctx = osdp_to_pd(ctx, pd);
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 
-	if (!pd_ctx->file) {
-		pd_ctx->file = calloc(1, sizeof(struct osdp_file));
-		if (pd_ctx->file == NULL) {
-			LOG_ERR("Failed to alloc struct osdp_file");
+	if (!pd->file) {
+		pd->file = calloc(1, sizeof(struct osdp_file));
+		if (pd->file == NULL) {
+			LOG_PRINT("Failed to alloc struct osdp_file");
 			return -1;
 		}
 	}
 
-	pd_ctx->file->ops = ops;
-	osdp_file_state_reset(pd_ctx->file);
+	memcpy(&pd->file->ops, ops, sizeof(struct osdp_file_ops));
+	osdp_file_state_reset(pd->file);
 	return 0;
 }
 
 OSDP_EXPORT
-int osdp_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset)
+int osdp_get_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_file *f = TO_FILE(osdp_to_pd(ctx, pd_idx));
 
 	if (f->state != OSDP_FILE_INPROG && f->state != OSDP_FILE_DONE) {
-		LOG_ERR("File TX not in progress");
+		LOG_PRINT("File TX not in progress");
 		return -1;
 	}
 

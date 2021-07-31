@@ -1338,7 +1338,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_FILE_TX:
-		return osdp_file_tx_initiate(pd, p->file_tx.fd,
+		return osdp_file_tx_initiate(pd, p->file_tx.id,
 					     p->file_tx.flags);
 	case OSDP_CMD_KEYSET:
 		if (p->keyset.type == 1) {

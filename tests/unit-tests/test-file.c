@@ -238,7 +238,7 @@ void run_file_tx_tests(struct test *t)
 
 	while (1) {
 		usleep(100 * 1000);
-		rc = osdp_file_tx_status(cp_ctx, 0, &size, &offset);
+		rc = osdp_get_file_tx_status(cp_ctx, 0, &size, &offset);
 		if (rc < 0) {
 			printf(SUB_1 "status query failed!\n");
 			goto error;

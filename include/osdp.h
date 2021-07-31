@@ -492,11 +492,11 @@ struct osdp_cmd_mfg {
 /**
  * @brief File transfer start command
  *
- * @param fd Pre-agreed file ID between CP and PD.
+ * @param id Pre-agreed file ID between CP and PD.
  * @param flags Reserved; set to 0
  */
 struct osdp_cmd_file_tx {
-	int fd;
+	int id;
 	uint32_t flags;
 };
 
@@ -1014,7 +1014,7 @@ struct osdp_file_ops {
  *
  * @retval 0 on success. -1 on errors.
  */
-int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops);
+int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops);
 
 /**
  * @brief Query file transfer status if one is in progress. Calling this method
@@ -1026,7 +1026,7 @@ int osdp_file_register_ops(osdp_t *ctx, int pd, struct osdp_file_ops *ops);
  * @param offset Offset into the file that has been sent/received (CP/PD)
  * @retval 0 on success. -1 on errors.
  */
-int osdp_file_tx_status(osdp_t *ctx, int pd, int *size, int *offset);
+int osdp_get_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset);
 
 #ifdef __cplusplus
 }

@@ -53,7 +53,7 @@ public:
 
 	int file_tx_get_status(int pd, int *size, int *offset)
 	{
-		return osdp_file_tx_status(_ctx, pd, size, offset);
+		return osdp_get_file_tx_status(_ctx, pd, size, offset);
 	}
 
 protected:

@@ -67,13 +67,14 @@ enum file_tx_state_e {
 };
 
 struct osdp_file {
+	uint32_t flags;
 	int file_id;
 	enum file_tx_state_e state;
 	int length;
 	int size;
 	int offset;
 	int errors;
-	struct osdp_file_ops *ops;
+	struct osdp_file_ops ops;
 };
 
 #ifdef CONFIG_OSDP_FILE

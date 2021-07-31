@@ -62,7 +62,7 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	p->offset = f->offset;
 	p->size = f->size;
 
-	f->length = f->ops->read(p->type, p->data, buf_available, p->offset);
+	f->length = f->ops->read(f->ops->arg, p->data, buf_available, p->offset);
 	if (f->length < 0) {
 		LOG_ERR("TX_Build: user read failed! rc:%d len:%d off:%d",
 			f->length, buf_available, p->offset);
@@ -107,7 +107,7 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops->close(f->file_id);
+		f->ops->close(f->ops->arg);
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("Stat_Decode: File transfer complete");
 	}
@@ -125,7 +125,7 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	if (f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
 		/* new file write request */
 		int size = (int)p->size;
-		if (f->ops->open(p->type, &size) < 0) {
+		if (f->ops->open(f->ops->arg, p->type, &size) < 0) {
 			LOG_ERR("TX_Decode: Open failed! fd:%d", p->type);
 			return -1;
 		}
@@ -147,7 +147,7 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	f->length = f->ops->write(f->file_id, p->data, p->length, p->offset);
+	f->length = f->ops->write(f->ops->arg, p->data, p->length, p->offset);
 	if (f->length != p->length) {
 		LOG_ERR("TX_Decode: user write failed! rc:%d len:%d off:%d",
 			f->length, p->length, p->offset);
@@ -189,7 +189,7 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops->close(f->file_id);
+		f->ops->close(f->ops->arg);
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("TX_Decode: File receive complete");
 	}
@@ -204,7 +204,7 @@ void osdp_file_tx_abort(struct osdp_pd *pd)
 	struct osdp_file *f = TO_FILE(pd);
 
 	if (f && f->ops && f->state == OSDP_FILE_INPROG) {
-		f->ops->close(f->file_id);
+		f->ops->close(f->ops->arg);
 		osdp_file_state_reset(f);
 	}
 }
@@ -248,7 +248,7 @@ int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
 		return -1;
 	}
 
-	if (f->ops->open(file_id, &size) < 0) {
+	if (f->ops->open(f->ops->arg, file_id, &size) < 0) {
 		LOG_ERR("TX_init: Open failed! fd:%d", file_id);
 		return -1;
 	}

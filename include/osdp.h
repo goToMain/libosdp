@@ -944,19 +944,28 @@ void osdp_set_command_complete_callback(osdp_t *ctx,
  */
 struct osdp_file_ops {
 	/**
+	 * @brief A opaque pointer to private data that can be filled by the
+	 * application which will be passsed as the first argument for each of
+	 * the below functions. Applications can keep their file context info
+	 * such as the open file discriptors or any other private data here.
+	 */
+	void *arg;
+
+	/**
 	 * @brief Open a pre-agreed file
 	 *
-	 * @param fd File Discriptor of pre-aggreed files between CP and PD
-	 * @param size
+	 * @param arg Opaque pointer to private data passed though by libosdp
+	 * @param file_id File ID of pre-aggreed file between this CP and PD
+	 * @param size Size of the file that was openned (filled by application)
 	 *
 	 * @retval 0 on success. -1 on errors.
 	 */
-	int (*open)(int fd, int *size);
+	int (*open)(void *arg, int file_id, int *size);
 
 	/**
 	 * @brief Read a chunk of file data into buffer
 	 *
-	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 * @param arg Opaque pointer to private data passed though by libosdp
 	 * @param buf Buffer to store file data read
 	 * @param size Number of bytes to read from file into buffer
 	 * @param offset Number of bytes from the beginning of the file to
@@ -967,12 +976,12 @@ struct osdp_file_ops {
 	 * @note LibOSDP will guarantee that size and offset params are always
 	 * positive and size is always greater than or equal to offset.
 	 */
-	int (*read)(int fd, void *buf, int size, int offset);
+	int (*read)(void *arg, void *buf, int size, int offset);
 
 	/**
 	 * @brief Write a chunk of file data from buffer to disk.
 	 *
-	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 * @param arg Opaque pointer to private data passed though by libosdp
 	 * @param buf Buffer with file data to be stored to disk
 	 * @param size Number of bytes to write to disk
 	 * @param offset Number of bytes from the beginning of the file to
@@ -983,16 +992,16 @@ struct osdp_file_ops {
 	 * @note LibOSDP will guarantee that size and offset params are always
 	 * positive and size is always greater than or equal to offset.
 	 */
-	int (*write)(int fd, const void *buf, int size, int offset);
+	int (*write)(void *arg, const void *buf, int size, int offset);
 
 	/**
 	 * @brief Close file that corresponds to a given file discriptor
 	 *
-	 * @param fd File Discriptor of pre-aggreed files between CP and PD
+	 * @param arg Opaque pointer to private data passed though by libosdp
 	 *
 	 * @retval 0 on success. -1 on errors.
 	 */
-	void (*close)(int fd);
+	void (*close)(void *arg);
 };
 
 /**

@@ -11,6 +11,7 @@ import random
 class KeyStore():
     def __init__(self, dir=None):
         self.temp_dir = None
+        self.keys = {}
         if not dir:
             self.temp_dir = tempfile.TemporaryDirectory()
             self.key_dir = self.temp_dir.name
@@ -27,23 +28,37 @@ class KeyStore():
             key.append(random.randint(0, 255))
         return bytes(key)
 
-    def store_key(self, name, key, key_len=16):
-        if not key or not isinstance(key, bytes) or len(key) != key_len:
+    def store_key(self, name):
+        if name not in self.keys:
             raise RuntimeError
+        key = self.keys[name]
         with open(self.key_file(name), "w") as f:
             f.write(key.hex())
 
-    def load_key(self, name, key_len=16, create=False):
+    def get_key(self, name):
+        if name not in self.keys:
+            raise RuntimeError
+        return self.keys[name]
+
+    def new_key(self, name, key_len=16):
+        if name in self.keys:
+            raise RuntimeError
+        self.keys[name] = self.gen_key(key_len)
+        return self.keys[name]
+
+    def update_key(self, name, key):
+        if name not in self.keys:
+            raise RuntimeError
+        self.keys[name] = key
+
+    def load_key(self, name, key_len=16):
         if not os.path.exists(self.key_file(name)):
-            if create:
-                key = self.gen_key()
-                self.store_key(name, key)
-                return key
             raise RuntimeError
         with open(self.key_file(name), "r") as f:
             key = bytes.fromhex(f.read())
         if not key or not isinstance(key, bytes) or len(key) != key_len:
             raise RuntimeError
+        self.keys[name] = key
         return key
 
     def __del__(self):

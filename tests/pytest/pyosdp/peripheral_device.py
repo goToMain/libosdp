@@ -43,6 +43,12 @@ class PeripheralDevice():
             return None
         return cmd
 
+    def is_sc_active(self):
+        return self.ctx.is_sc_active()
+
+    def is_online(self):
+        return self.ctx.is_online()
+
     def start(self):
         if self.thread:
             self.thread.start()
@@ -56,3 +62,7 @@ class PeripheralDevice():
             if not self.thread.is_alive():
                 return True
         return False
+
+    def teardown(self):
+        self.stop()
+        self.ctx = None

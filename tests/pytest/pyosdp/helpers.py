@@ -60,7 +60,7 @@ class _PDCapEntity:
         }
 
 class PDCapabilities:
-    def __init__(self, cap_list):
+    def __init__(self, cap_list=[]):
         self.capabilities = {}
         for cap in cap_list:
             (fc, cl, ni) = cap

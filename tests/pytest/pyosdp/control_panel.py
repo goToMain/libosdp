@@ -85,13 +85,7 @@ class ControlPanel():
         if not self.thread:
             return False
         self.thread.start()
-        tries = 10
-        while tries:
-            time.sleep(1)
-            if self.get_num_online() == len(self.pd_addr):
-                break
-            tries -= 1
-        return tries > 0
+        self.online_wait_all()
 
     def stop(self):
         while self.thread and self.thread.is_alive():
@@ -100,3 +94,40 @@ class ControlPanel():
             if not self.thread.is_alive():
                 return True
         return False
+
+    def online_wait_all(self, timeout=10):
+        count = 10
+        res = False
+        while count < timeout * 2:
+            time.sleep(0.5)
+            if self.get_num_online() == len(self.pd_addr):
+                res = True
+                break
+            count += 1
+        return res
+
+    def online_wait(self, address, timeout=5):
+        count = 10
+        res = False
+        while count < timeout * 2:
+            time.sleep(0.5)
+            if self.is_online(address):
+                res = True
+                break
+            count += 1
+        return res
+
+    def sc_wait(self, address, timeout=5):
+        count = 0
+        res = False
+        while count < timeout * 2:
+            time.sleep(0.5)
+            if self.is_sc_active(address):
+                res = True
+                break
+            count += 1
+        return res
+
+    def teardown(self):
+        self.stop()
+        self.ctx = None

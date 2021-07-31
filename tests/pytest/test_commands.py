@@ -6,7 +6,6 @@
 
 import time
 import pytest
-import copy
 
 from pyosdp import *
 
@@ -44,9 +43,9 @@ def setup_test():
     teardown_test()
 
 def teardown_test():
-    cp.stop()
+    cp.teardown()
     for pd in pd_list:
-        pd.stop()
+        pd.teardown()
 
 def test_command_output():
     test_cmd = {

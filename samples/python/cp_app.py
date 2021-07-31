@@ -94,16 +94,21 @@ cp.set_loglevel(osdp.LOG_DEBUG)
 
 cp.set_event_callback(event_handler)
 
-count = 0  # loop counter
-PD_0 = 0   # PD offset number
+def main():
+    global cp
+    count = 0  # loop counter
+    PD_0 = 0   # PD offset number
 
-while True:
-    cp.refresh()
+    while True:
+        cp.refresh()
 
-    if (count % 100) == 99 and cp.is_sc_active(PD_0):
-        # send a random command to the PD_0
-        r = random.randint(PD_0, len(commands)-1)
-        cp.send_command(PD_0, commands[r])
+        if (count % 100) == 99 and cp.is_sc_active(PD_0):
+            # send a random command to the PD_0
+            r = random.randint(PD_0, len(commands)-1)
+            cp.send_command(PD_0, commands[r])
 
-    count += 1
-    time.sleep(0.020) #sleep for 20ms
+        count += 1
+        time.sleep(0.020) #sleep for 20ms
+
+if __name__ == "__main__":
+    main()

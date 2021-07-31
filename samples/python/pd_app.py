@@ -82,13 +82,14 @@ def handle_command(command):
 
     return { "return_code": 0 }
 
-# Print LibOSDP version and source info
-print("pyosdp", "Version:", osdp.get_version(),
-                "Info:", osdp.get_source_info())
-
 pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
-pd.set_loglevel(osdp.LOG_DEBUG)
 pd.set_command_callback(handle_command)
+
+# Print LibOSDP version and source info
+print("pyosdp", "Version:", pd.get_version(),
+                "Info:", pd.get_source_info())
+pd.set_loglevel(osdp.LOG_DEBUG)
+
 
 card_read_event = {
     "event": osdp.EVENT_CARDREAD,
@@ -104,17 +105,28 @@ keypress_event = {
     "data": bytes([3,1,3,3,7])
 }
 
-events = [ card_read_event, keypress_event ]
+def main():
+    global pd
+    events = [ card_read_event, keypress_event ]
 
-count = 0 # loop counter
+    count = 0 # loop counter
 
-while True:
-    pd.refresh()
+    while True:
+        pd.refresh()
 
-    if (count % 100 == 99) and pd.sc_active():
-        # send a random event to the CP
-        r = random.randint(0, len(events)-1)
-        pd.notify_event(events[r])
+        if (count % 100 == 99) and pd.is_sc_active():
+            # send a random event to the CP
+            r = random.randint(0, len(events)-1)
+            pd.notify_event(events[r])
 
-    count += 1
-    time.sleep(0.020) #sleep for 20ms
+        if count == 50:
+            pd = None
+            print("pd Set to None")
+            time.sleep(5)
+            return 0
+
+        count += 1
+        time.sleep(0.020) #sleep for 20ms
+
+if __name__ == "__main__":
+    main()

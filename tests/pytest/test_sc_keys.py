@@ -8,7 +8,7 @@ from pyosdp import *
 
 def test_set_new_scbk(utils):
     # Created single CP-PD pair
-    pd = utils.create_pd('pd-101', utils.ks.new_key('pd-101'))
+    pd = utils.create_pd('pd-101', utils.ks.new_key('pd-101', force=True))
     cp = utils.create_cp([ 'pd-101' ], utils.ks.get_key('pd-101'))
 
     # Set a new SCBK from the CP side and verify whether it was received

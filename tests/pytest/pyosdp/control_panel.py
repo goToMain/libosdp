@@ -81,6 +81,20 @@ class ControlPanel():
         self.lock.release()
         return ret
 
+    def register_file_ops(self, address, fops):
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.register_file_ops(pd, fops)
+        self.lock.release()
+        return ret
+
+    def get_file_tx_status(self, address):
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.get_file_tx_status(pd)
+        self.lock.release()
+        return ret
+
     def start(self):
         if not self.thread:
             return False

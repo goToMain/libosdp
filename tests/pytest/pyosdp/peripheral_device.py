@@ -43,6 +43,12 @@ class PeripheralDevice():
             return None
         return cmd
 
+    def register_file_ops(self, fops):
+        self.lock.acquire()
+        ret = self.ctx.register_file_ops(0, fops)
+        self.lock.release()
+        return ret
+
     def is_sc_active(self):
         return self.ctx.is_sc_active()
 

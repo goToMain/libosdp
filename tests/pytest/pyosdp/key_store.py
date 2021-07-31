@@ -40,8 +40,8 @@ class KeyStore():
             raise RuntimeError
         return self.keys[name]
 
-    def new_key(self, name, key_len=16):
-        if name in self.keys:
+    def new_key(self, name, key_len=16, force=True):
+        if not force and name in self.keys:
             raise RuntimeError
         self.keys[name] = self.gen_key(key_len)
         return self.keys[name]

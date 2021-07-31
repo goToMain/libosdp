@@ -58,7 +58,7 @@ jobs:
     - name: pytest
       run: |
         make python_install
-        python3 -m pip install -r tests/pytest/requirements.txt
+        python3 -m pip install -r pytest/requirements.txt
         make check
 
   CheckPatch:

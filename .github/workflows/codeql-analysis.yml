@@ -53,6 +53,7 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
     - run: |
+        python3 -m pip install -r pytest/requirements.txt
         cmake .
         make check
 

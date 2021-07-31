@@ -98,6 +98,23 @@ int pyosdp_parse_str(PyObject *obj, char **str)
 	return 0;
 }
 
+int pyosdp_parse_bytes(PyObject *obj, uint8_t **data, int *length)
+{
+	Py_ssize_t len;
+	uint8_t *buf;
+
+	if (!obj || !PyArg_Parse(obj, "y#", &buf, &len))
+		return -1;
+
+	if (buf == NULL || len == 0) {
+		PyErr_Format(PyExc_ValueError, "Unable to extact data bytes");
+		return -1;
+	}
+	*data = buf;
+	*length = len;
+	return 0;
+}
+
 int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str)
 {
 	PyObject *tmp;
@@ -140,8 +157,11 @@ int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data,
 			  int *length)
 {
 	PyObject *obj;
-	uint8_t *buf;
-	Py_ssize_t len;
+
+	if (!PyDict_Check(dict)) {
+		PyErr_SetString(PyExc_TypeError, "arg is not a dict");
+		return -1;
+	}
 
 	obj = PyDict_GetItemString(dict, key);
 	if (obj == NULL) {
@@ -150,14 +170,19 @@ int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **data,
 		return -1;
 	}
 
-	if (!PyArg_Parse(obj, "y#", &buf, &len))
-		return -1;
+	return pyosdp_parse_bytes(obj, data, length);
+}
 
-	if (buf == NULL || len == 0) {
-		PyErr_Format(PyExc_ValueError, "Unable to extact data bytes");
+int pyosdp_dict_get_object(PyObject *dict, const char *key, PyObject **obj)
+{
+	if (!PyDict_Check(dict)) {
+		PyErr_SetString(PyExc_TypeError, "arg is not a dict");
 		return -1;
 	}
-	*data = buf;
-	*length = len;
+
+	*obj = PyDict_GetItemString(dict, key);
+	if (*obj == NULL)
+		return -1;
+
 	return 0;
 }

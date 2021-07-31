@@ -123,6 +123,12 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 					  cmd->mfg.length))
 			return -1;
 		break;
+	case OSDP_CMD_FILE_TX:
+		if (pyosdp_dict_add_int(obj, "flags", cmd->file_tx.flags))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "id", cmd->file_tx.id))
+			return -1;
+		break;
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
 				"command not implemented");
@@ -342,6 +348,24 @@ static int pyosdp_handle_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
+static int pyosdp_handle_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
+{
+	int id, flags;
+	struct osdp_cmd_file_tx *cmd = &p->file_tx;
+
+	p->id = OSDP_CMD_FILE_TX;
+
+	if (pyosdp_dict_get_int(dict, "id", &id))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "flags", &flags))
+		return -1;
+
+	cmd->id = id;
+	cmd->flags = flags;
+	return 0;
+}
+
 int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
 {
 	int cmd_id;
@@ -364,6 +388,8 @@ int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
 		return pyosdp_handle_cmd_comset(cmd, dict);
 	case OSDP_CMD_MFG:
 		return pyosdp_handle_cmd_mfg(cmd, dict);
+	case OSDP_CMD_FILE_TX:
+		return pyosdp_handle_cmd_file_tx(cmd, dict);
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
 				"command not implemented");

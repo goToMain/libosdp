@@ -24,6 +24,15 @@
 typedef struct {
 	PyObject_HEAD
 	struct channel_manager channel_manager;
+	bool is_cp;
+
+	int file_id;
+	struct {
+		PyObject *open_cb;
+		PyObject *read_cb;
+		PyObject *write_cb;
+		PyObject *close_cb;
+	} fops;
 } pyosdp_base_t;
 
 typedef struct {
@@ -49,11 +58,13 @@ int pyosdp_module_add_type(PyObject *module, const char *name,
 
 int pyosdp_parse_int(PyObject *obj, int *res);
 int pyosdp_parse_str(PyObject *obj, char **str);
+int pyosdp_parse_bytes(PyObject *obj, uint8_t **data, int *length);
 
 int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res);
 int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str);
 int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **buf,
 			  int *len);
+int pyosdp_dict_get_object(PyObject *dict, const char *key, PyObject **obj);
 
 int pyosdp_dict_add_int(PyObject *dict, const char *key, int val);
 int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val);

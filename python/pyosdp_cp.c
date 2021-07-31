@@ -203,6 +203,8 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 	if (OSDPBaseType.tp_init((PyObject *)self, args, kwargs) < 0)
 		return -1;
 
+	self->base.is_cp = true;
+
 	/* the string after the : is used as the function name in error messages */
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:pyosdp_cp_init", kwlist,
 					 &PyList_Type, &py_info_list,

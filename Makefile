@@ -13,7 +13,6 @@ include config.mak
 O ?= .
 OBJ_LIBOSDP := $(SRC_LIBOSDP:%.c=$(O)/%.o)
 CCFLAGS += -Wall -Wextra -O3
-UT_DIR := tests/unit-tests
 
 ifeq ($(VERBOSE),)
 MAKE := make -s
@@ -58,28 +57,6 @@ $(O)/cp_app.elf: $(O)/libosdp.a
 $(O)/pd_app.elf: $(O)/libosdp.a
 	@echo "LINK $@"
 	$(Q)$(CC) $(CCFLAGS) samples/c/pd_app.c -o $@ -Iinclude -L. -losdp
-
-## Check
-
-SRC_TEST := $(UT_DIR)/test-commands.c $(UT_DIR)/test-cp-fsm.c $(UT_DIR)/test-cp-phy-fsm.c
-SRC_TEST += $(UT_DIR)/test-cp-phy.c $(UT_DIR)/test-mixed-fsm.c $(UT_DIR)/test.c
-SRC_TEST += $(UT_DIR)/test-file.c
-OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
-
-$(O)/test.elf: CCFLAGS_EXTRA=-Isrc -I. -Iutils/include -Iinclude -DUNIT_TESTING
-$(O)/test.elf: $(OBJ_TEST)
-	@echo "LINK $@"
-	$(Q)$(CC) $(CCFLAGS) -o $@ $^ -L. -ltestosdp -pthread
-
-$(O)/libtestosdp.a: CCFLAGS_EXTRA=-DUNIT_TESTING -DCONFIG_OSDP_FILE
-$(O)/libtestosdp.a: CCFLAGS_EXTRA+=-Iutils/include -Iinclude -Isrc -I.
-$(O)/libtestosdp.a: $(OBJ_LIBOSDP) $(O)/src/osdp_file.o
-	@echo "  AR $@"
-	$(Q)$(AR) qc $@ $^
-
-.PHONY: check
-check: clean $(O)/libtestosdp.a $(O)/test.elf
-	$(Q)$(O)/test.elf
 
 ## Clean
 

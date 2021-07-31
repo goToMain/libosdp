@@ -98,8 +98,7 @@ else()
 endif()
 
 # These variables are used in other parts of this projects for rebuilding
-# LibOSDP as they see fit. For instance tests are built with -DUNIT_TESTING
-# and pyosdp is built by setuptools.
+# LibOSDP as they see fit. For instance pyosdp is built by setuptools.
 set(LIB_OSDP_SOURCES ${LIB_OSDP_SOURCES} PARENT_SCOPE)
 set(LIB_OSDP_LIBRARIES ${LIB_OSDP_LIBRARIES} PARENT_SCOPE)
 set(LIB_OSDP_INCLUDE_DIRS ${LIB_OSDP_INCLUDE_DIRS} PARENT_SCOPE)

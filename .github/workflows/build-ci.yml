@@ -59,7 +59,7 @@ jobs:
       run: |
         make python_install
         python3 -m pip install -r tests/pytest/requirements.txt
-        make pytest
+        make check
 
   CheckPatch:
     runs-on: ubuntu-latest

@@ -54,7 +54,7 @@ jobs:
       with:
         submodules: recursive
     - name: configure
-      run: cmake . -DCONFIG_OSDP_FILE=on
+      run: cmake .
     - name: pytest
       run: |
         make python_install

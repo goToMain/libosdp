@@ -9,7 +9,7 @@ option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 option(CONFIG_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)
 option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
 option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
-option(CONFIG_OSDP_FILE "Enabled support for OSDP File Transfer" OFF)
+option(CONFIG_OSDP_FILE "Enabled support for OSDP File Transfer" ON)
 
 if (CONFIG_OSDP_PACKET_TRACE)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_PACKET_TRACE")
@@ -139,6 +139,7 @@ list(APPEND LIB_OSDP_UTILS_SRC
 	${PROJECT_SOURCE_DIR}/utils/src/list.c
 	${PROJECT_SOURCE_DIR}/utils/src/queue.c
 	${PROJECT_SOURCE_DIR}/utils/src/slab.c
+	${PROJECT_SOURCE_DIR}/utils/src/disjoint_set.c
 )
 set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 

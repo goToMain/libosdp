@@ -25,10 +25,10 @@ void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk)
 	osdp_encrypt(master_key, NULL, scbk, 16);
 }
 
-void osdp_compute_session_keys(struct osdp *ctx)
+void osdp_compute_session_keys(struct osdp_pd *pd)
 {
 	int i;
-	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+	struct osdp *ctx = pd_to_osdp(pd);
 	uint8_t scbk[16];
 
 	if (is_cp_mode(pd) && ISSET_FLAG(pd, PD_FLAG_HAS_SCBK) == false) {

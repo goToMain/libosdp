@@ -633,7 +633,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < 16; i++) {
 			pd->sc.pd_cryptogram[i] = buf[pos++];
 		}
-		osdp_compute_session_keys(pd_to_osdp(pd));
+		osdp_compute_session_keys(pd);
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
 			LOG_ERR("Failed to verify PD cryptogram");
 			return OSDP_CP_ERR_GENERIC;

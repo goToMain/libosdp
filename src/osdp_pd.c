@@ -796,7 +796,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ASSERT_BUF_LEN(REPLY_CCRYPT_LEN);
 		osdp_get_rand(pd->sc.pd_random, 8);
-		osdp_compute_session_keys(pd_to_osdp(pd));
+		osdp_compute_session_keys(pd);
 		osdp_compute_pd_cryptogram(pd);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < 8; i++) {

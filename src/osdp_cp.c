@@ -6,6 +6,8 @@
 
 #include <stdlib.h>
 
+#include <utils/disjoint_set.h>
+
 #include "osdp_common.h"
 #include "osdp_file.h"
 
@@ -1170,66 +1172,120 @@ void osdp_keyset_complete(struct osdp_pd *pd)
 	LOG_INF("SCBK set; restarting SC to verify new SCBK");
 }
 
+static int cp_refresh(struct osdp_pd *pd)
+{
+	int rc;
+	struct osdp *ctx = pd_to_osdp(pd);
+
+	if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
+	    cp_channel_acquire(pd, NULL)) {
+		/* Channel shared and failed to acquire lock */
+		return 0;
+	}
+
+	rc = state_update(pd);
+
+	if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED)) {
+		if (rc == OSDP_CP_ERR_CAN_YIELD) {
+			cp_channel_release(pd);
+		} else if (ctx->num_channels == 1) {
+			/**
+			 * If there is only one channel, there is no point in
+			 * trying to cp_channel_acquire() on the rest of the
+			 * PDs when we know that can never succeed.
+			 */
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int cp_detect_connection_topology(struct osdp *ctx)
+{
+	int i, j;
+	struct osdp_pd *pd;
+	struct disjoint_set set;
+	int channel_lock[OSDP_PD_MAX] = { 0 };
+
+	if (disjoint_set_make(&set, NUM_PD(ctx)))
+		return -1;
+
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = osdp_to_pd(ctx, i);
+		for (j = 0; j < i; j++) {
+			if (channel_lock[j] == pd->channel.id) {
+				SET_FLAG(osdp_to_pd(ctx, j), PD_FLAG_CHN_SHARED);
+				SET_FLAG(pd, PD_FLAG_CHN_SHARED);
+				disjoint_set_union(&set, i, j);
+			}
+		}
+		channel_lock[i] = pd->channel.id;
+	}
+
+	ctx->num_channels = disjoint_set_num_roots(&set);
+	if (ctx->num_channels != NUM_PD(ctx)) {
+		ctx->channel_lock = calloc(1, sizeof(int) * NUM_PD(ctx));
+		if (ctx->channel_lock == NULL) {
+			LOG_PRINT("Failed to allocate osdp channel locks");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
+osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key)
 {
-	int i, owner, scbk_count = 0;
+	int i, scbk_count = 0;
 	struct osdp_pd *pd;
 	struct osdp *ctx;
+	osdp_pd_info_t *info;
 
-	assert(info);
+	assert(info_list);
 	assert(num_pd > 0);
+	assert(num_pd <= OSDP_PD_MAX);
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		LOG_ERR("Failed to allocate osdp context");
+		LOG_PRINT("Failed to allocate osdp context");
 		return NULL;
 	}
 
 	input_check_init(ctx);
 
-	ctx->channel_lock = calloc(1, sizeof(int) * num_pd);
-	if (ctx->channel_lock == NULL) {
-		LOG_ERR("Failed to allocate osdp channel locks");
-		goto error;
-	}
-
 	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
 	if (ctx->pd == NULL) {
-		LOG_ERR("Failed to allocate osdp_pd[] context");
+		LOG_PRINT("Failed to allocate osdp_pd[] context");
 		goto error;
 	}
 	ctx->_num_pd = num_pd;
 
 	for (i = 0; i < num_pd; i++) {
-		osdp_pd_info_t *p = info + i;
+		info = info_list + i;
 		pd = osdp_to_pd(ctx, i);
 		pd->idx = i;
 		pd->osdp_ctx = ctx;
-		pd->baud_rate = p->baud_rate;
-		pd->address = p->address;
-		pd->flags = p->flags;
+		pd->baud_rate = info->baud_rate;
+		pd->address = info->address;
+		pd->flags = info->flags;
 		pd->seq_number = -1;
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
-		if (p->scbk != NULL) {
+		memcpy(&pd->channel, &info->channel, sizeof(osdp_pd_info_t));
+		if (info->scbk != NULL) {
 			scbk_count += 1;
-			memcpy(pd->sc.scbk, p->scbk, 16);
+			memcpy(pd->sc.scbk, info->scbk, 16);
 			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
 			CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
 		} else if (is_enforce_secure(pd)) {
-			LOG_ERR("SCBK must be passed for each PD when"
-				" ENFORCE_SECURE is requested.");
+			LOG_PRINT("SCBK must be passed for each PD when"
+				  " ENFORCE_SECURE is requested.");
 			goto error;
 		}
 		if (cp_cmd_queue_init(pd)) {
 			goto error;
-		}
-		memcpy(&pd->channel, &p->channel, sizeof(struct osdp_channel));
-		if (cp_channel_acquire(pd, &owner) == -1) {
-			SET_FLAG(osdp_to_pd(ctx, owner), PD_FLAG_CHN_SHARED);
-			SET_FLAG(pd, PD_FLAG_CHN_SHARED);
 		}
 		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
@@ -1238,8 +1294,8 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 
 	if (scbk_count != num_pd) {
 		if (master_key != NULL) {
-			LOG_WRN("Masterkey based key derivation is discouraged!"
-				" Consider passing individual SCBKs");
+			LOG_PRINT("MK based key derivation is discouraged!"
+				  " Consider passing individual SCBKs");
 			memcpy(ctx->sc_master_key, master_key, 16);
 			for (i = 0; i < num_pd; i++) {
 				CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
@@ -1247,11 +1303,16 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
 		}
 	}
 
-	memset(ctx->channel_lock, 0, sizeof(int) * num_pd);
+	if (cp_detect_connection_topology(ctx)) {
+		LOG_PRINT("Failed to detect connection topology");
+		goto error;
+	}
+
 	SET_CURRENT_PD(ctx, 0);
 
-	LOG_INF("CP setup (with %d connected PDs) complete - %s %s",
-		num_pd, osdp_get_version(), osdp_get_source_info());
+	LOG_PRINT("Setup complete; PDs:%d Channels:%d - %s %s",
+		  num_pd, ctx->num_channels, osdp_get_version(),
+		  osdp_get_source_info());
 
 	return (osdp_t *)ctx;
 error:
@@ -1273,27 +1334,22 @@ OSDP_EXPORT
 void osdp_cp_refresh(osdp_t *ctx)
 {
 	input_check(ctx);
-	int i, rc;
+	int next_pd_idx, refresh_count = 0;
 	struct osdp_pd *pd;
 
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		SET_CURRENT_PD(ctx, i);
-		pd = osdp_to_pd(ctx, i);
+	do {
+		pd = GET_CURRENT_PD(ctx);
 		osdp_log_ctx_set(pd->address);
 
-		if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
-		    cp_channel_acquire(pd, NULL)) {
-			/* failed to lock shared channel */
-			continue;
-		}
+		if (cp_refresh(pd) < 0)
+			break;
 
-		rc = state_update(pd);
-
-		if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
-		    rc == OSDP_CP_ERR_CAN_YIELD) {
-			cp_channel_release(pd);
+		next_pd_idx = pd->idx + 1;
+		if (next_pd_idx >= NUM_PD(ctx)) {
+			next_pd_idx = 0;
 		}
-	}
+		SET_CURRENT_PD(ctx, next_pd_idx);
+	} while (++refresh_count < NUM_PD(ctx));
 }
 
 OSDP_EXPORT

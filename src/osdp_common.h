@@ -330,6 +330,7 @@ struct osdp {
 	int _num_pd;           /* Number of PDs attached to this context */
 	struct osdp_pd *_current_pd; /* current operational pd's pointer */
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
+	int num_channels;      /* Number of distinct channels */
 	int *channel_lock;     /* array of length NUM_PD() to lock a channel */
 	uint8_t sc_master_key[16]; /* Secure Channel master key (deprecated) */
 

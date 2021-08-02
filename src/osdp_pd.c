@@ -1105,13 +1105,13 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 #ifndef CONFIG_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
-		LOG_ERR("Failed to allocate osdp context");
+		LOG_PRINT("Failed to allocate osdp context");
 		return NULL;
 	}
 
 	ctx->pd = calloc(1, sizeof(struct osdp_pd));
 	if (ctx->pd == NULL) {
-		LOG_ERR("Failed to allocate osdp_pd context");
+		LOG_PRINT("Failed to allocate osdp_pd context");
 		goto error;
 	}
 #else
@@ -1136,6 +1136,8 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	pd->seq_number = -1;
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 
+	osdp_log_ctx_set(pd->address);
+
 	if (pd_event_queue_init(pd)) {
 		goto error;
 	}
@@ -1159,8 +1161,8 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
-	LOG_INF("PD setup complete - %s %s",
-		osdp_get_version(), osdp_get_source_info());
+	LOG_PRINT("Setup complete - %s %s",
+		  osdp_get_version(), osdp_get_source_info());
 
 	return (osdp_t *)ctx;
 error:

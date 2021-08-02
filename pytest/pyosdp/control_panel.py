@@ -18,6 +18,7 @@ class ControlPanel():
     def __init__(self, pd_info_list, log_level: LogLevel=LogLevel.Info):
         self.pd_addr = []
         info_list = []
+        self.num_pds = len(pd_info_list)
         for pd_info in pd_info_list:
             self.pd_addr.append(pd_info.address)
             info_list.append(pd_info.get())
@@ -60,12 +61,16 @@ class ControlPanel():
         self.lock.release()
         return sc_active
 
+    def sc_status(self):
+        self.lock.acquire()
+        mask = self.ctx.sc_status()
+        self.lock.release()
+        return mask
+
     def is_sc_active(self, address):
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.is_sc_active(pd)
-        self.lock.release()
-        return ret
+        mask = self.sc_status()
+        return mask & (1 << pd)
 
     def is_online(self, address):
         pd = self.pd_addr.index(address)
@@ -99,7 +104,6 @@ class ControlPanel():
         if not self.thread:
             return False
         self.thread.start()
-        self.online_wait_all()
 
     def stop(self):
         while self.thread and self.thread.is_alive():
@@ -137,6 +141,18 @@ class ControlPanel():
         while count < timeout * 2:
             time.sleep(0.5)
             if self.is_sc_active(address):
+                res = True
+                break
+            count += 1
+        return res
+
+    def sc_wait_all(self, timeout=5):
+        count = 0
+        res = False
+        all_pd_mask = (1 << self.num_pds) - 1
+        while count < timeout * 2:
+            time.sleep(0.5)
+            if self.sc_status() == all_pd_mask:
                 res = True
                 break
             count += 1

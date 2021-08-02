@@ -9,7 +9,7 @@ import time
 from .constants import Capability, LibFlag
 
 class PDInfo:
-    def __init__(self, address: int, scbk: bytes=None, flags=[], name: str='chn'):
+    def __init__(self, address: int, scbk: bytes=None, name: str='chn', flags=[]):
         self.address = address
         self.flags = flags
         self.scbk = scbk

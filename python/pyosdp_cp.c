@@ -35,31 +35,13 @@ static PyObject *pyosdp_cp_pd_is_online(pyosdp_cp_t *self, PyObject *args)
 		Py_RETURN_FALSE;
 }
 
-#define pyosdp_cp_pd_is_sc_active_doc                                          \
-	"Get PD Secure Channel status, (active/inactive)\n"                    \
+#define pyosdp_cp_sc_status_doc                                                \
+	"Get PD Secure Channel status mask of al connected PDs\n"              \
 	"\n"                                                                   \
-	"@param pd PD offset number\n"                                         \
-	"\n"                                                                   \
-	"@return Secure Channel Status (Bool)"
-static PyObject *pyosdp_cp_pd_is_sc_active(pyosdp_cp_t *self, PyObject *args)
+	"@return Secure Channel Status mask"
+static PyObject *pyosdp_cp_sc_status(pyosdp_cp_t *self, PyObject *args)
 {
-	int pd;
-	uint32_t mask;
-
-	if (!PyArg_ParseTuple(args, "I", &pd))
-		return NULL;
-
-	if (pd < 0 || pd > self->num_pd) {
-		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		return NULL;
-	}
-
-	mask = osdp_get_sc_status_mask(self->ctx);
-
-	if (mask & 1 << pd)
-		Py_RETURN_TRUE;
-	else
-		Py_RETURN_FALSE;
+	return Py_BuildValue("I", osdp_get_sc_status_mask(self->ctx));
 }
 
 int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
@@ -339,8 +321,8 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  METH_VARARGS, pyosdp_cp_send_command_doc },
 	{ "is_online", (PyCFunction)pyosdp_cp_pd_is_online,
 	  METH_VARARGS, pyosdp_cp_pd_is_online_doc },
-	{ "is_sc_active", (PyCFunction)pyosdp_cp_pd_is_sc_active,
-	  METH_VARARGS, pyosdp_cp_pd_is_sc_active_doc },
+	{ "sc_status", (PyCFunction)pyosdp_cp_sc_status,
+	  METH_NOARGS, pyosdp_cp_sc_status_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 

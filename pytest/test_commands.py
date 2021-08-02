@@ -39,6 +39,7 @@ def setup_test():
     for pd in pd_list:
         pd.start()
     cp.start()
+    cp.online_wait_all()
     yield
     teardown_test()
 
@@ -56,8 +57,7 @@ def test_command_output():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
 def test_command_buzzer():
     test_cmd = {
@@ -70,8 +70,7 @@ def test_command_buzzer():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
 def test_command_text():
     test_cmd = {
@@ -85,8 +84,7 @@ def test_command_text():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
 def test_command_led():
     test_cmd = {
@@ -102,8 +100,7 @@ def test_command_led():
         'temporary': True
     }
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
 def test_command_comset():
     test_cmd = {
@@ -113,8 +110,7 @@ def test_command_comset():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
 def test_command_mfg():
     test_cmd = {
@@ -125,8 +121,7 @@ def test_command_mfg():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
 def test_command_keyset():
     test_cmd = {
@@ -136,8 +131,7 @@ def test_command_keyset():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
-    cmd = secure_pd.get_command()
-    assert cmd == test_cmd
+    assert secure_pd.get_command() == test_cmd
 
     # PD must be online and SC active after a KEYSET command
     time.sleep(0.5)

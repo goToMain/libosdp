@@ -65,9 +65,9 @@ receiver_fops = {
 
 def test_file_transfer(utils):
     # Created single CP-PD pair and wait for SC to be setup
-    pd = utils.create_pd('pd-101', utils.ks.new_key('pd-101', force=True))
-    cp = utils.create_cp([ 'pd-101' ], utils.ks.get_key('pd-101'))
-    assert cp.sc_wait(101)
+    pd_info = PDInfo(101, utils.ks.gen_key(), name='file-tx-pd')
+    pd = utils.create_pd(pd_info)
+    cp = utils.create_cp([ pd_info ], sc_wait=True)
 
     # Register file OPs and kick off a transfer
     assert cp.register_file_ops(101, sender_fops)

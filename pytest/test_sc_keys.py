@@ -8,8 +8,9 @@ from pyosdp import *
 
 def test_set_new_scbk(utils):
     # Created single CP-PD pair
-    pd = utils.create_pd('pd-101', utils.ks.new_key('pd-101', force=True))
-    cp = utils.create_cp([ 'pd-101' ], utils.ks.get_key('pd-101'))
+    pd_info = PDInfo(101, utils.ks.new_key('sc-keys-pd'), name='sc-keys-pd')
+    pd = utils.create_pd(pd_info)
+    cp = utils.create_cp([ pd_info ], sc_wait=True)
 
     # Set a new SCBK from the CP side and verify whether it was received
     # by the PD as we intended.
@@ -22,11 +23,12 @@ def test_set_new_scbk(utils):
     assert cp.send_command(101, keyset_cmd)
     cmd = pd.get_command()
     assert cmd == keyset_cmd
-    utils.ks.update_key('pd-101', new_key)
+    utils.ks.update_key('sc-keys-pd', new_key)
 
     # Stop CP and restart SC with new SCBK. PD should accept it
     cp.teardown()
-    cp = utils.create_cp([ 'pd-101' ], utils.ks.get_key('pd-101'))
+    pd_info = PDInfo(101, utils.ks.get_key('sc-keys-pd'), name='sc-keys-pd')
+    cp = utils.create_cp([ pd_info ])
     assert cp.sc_wait(101)
 
     # Cleanup

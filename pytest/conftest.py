@@ -12,18 +12,16 @@ class TestUtils:
     def __init__(self):
         self.ks = KeyStore()
 
-    def create_cp(self, names, key, flag_list=[]):
-        pd_info_list = []
-        for name in names:
-            addr = int(name.split("-")[1])
-            pd_info_list.append(PDInfo(addr, scbk=key, flags=flag_list, name=name))
+    def create_cp(self, pd_info_list, sc_wait=False, online_wait=False):
         cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
         cp.start()
+        if sc_wait:
+            assert cp.sc_wait_all()
+        elif online_wait:
+            assert cp.online_wait_all()
         return cp
 
-    def create_pd(self, name, key, flag_list=[]):
-        addr = int(name.split("-")[1])
-        pd_info = PDInfo(addr, scbk=key, flags=flag_list, name=name)
+    def create_pd(self, pd_info):
         pd = PeripheralDevice(pd_info, PDCapabilities(), log_level=LogLevel.Debug)
         pd.start()
         return pd

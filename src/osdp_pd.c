@@ -919,10 +919,10 @@ static int pd_send_reply(struct osdp_pd *pd)
 
 static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 {
-	int err, len;
+	int err, rc;
 	uint8_t *buf;
 
-	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, &len);
+	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, one_pkt_len);
 
 	/* Translate phy error codes to PD errors */
 	switch(err) {
@@ -934,17 +934,15 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 	default: return err; /* propagate other errors as-is */
 	}
 
-	*one_pkt_len = len;
-
-	len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);
-	if (len <= 0) {
-		if (len == OSDP_ERR_PKT_NACK) {
+	rc = osdp_phy_decode_packet(pd, pd->rx_buf, *one_pkt_len, &buf);
+	if (rc <= 0) {
+		if (rc == OSDP_ERR_PKT_NACK) {
 			return OSDP_PD_ERR_REPLY; /* Send a NAK */
 		}
 		return OSDP_PD_ERR_GENERIC; /* fatal errors */
 	}
 
-	return pd_decode_command(pd, buf, len);
+	return pd_decode_command(pd, buf, rc);
 }
 
 static int pd_receive_and_process_command(struct osdp_pd *pd)

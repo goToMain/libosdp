@@ -990,6 +990,10 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 
 	err = pd_decode_packet(pd, &len);
 
+	if (err == OSDP_PD_ERR_NO_DATA) {
+		return err;
+	}
+
 	/* We are done with the packet (error or not). Remove processed bytes */
 	remaining = pd->rx_buf_len - len;
 	if (remaining) {

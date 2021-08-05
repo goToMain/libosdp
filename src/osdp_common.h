@@ -195,8 +195,6 @@ union osdp_ephemeral_data {
 #define LOG_DBG(...)   osdp_log(OSDP_LOG_DEBUG, LOG_TAG __VA_ARGS__)
 #define LOG_PRINT(...) osdp_log(-1, LOG_TAG __VA_ARGS__)
 
-#define osdp_dump hexdump
-
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,
 	OSDP_CP_PHY_STATE_SEND_CMD,

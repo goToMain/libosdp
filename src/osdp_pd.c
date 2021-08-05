@@ -248,8 +248,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(buf, len, "OSDP: CMD: %s(%02x)",
-				  osdp_cmd_name(pd->cmd_id), pd->cmd_id);
+			hexdump(buf, len, "OSDP: CMD: %s(%02x)",
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 		}
 	}
 
@@ -859,8 +859,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(buf + 1, len - 1, "OSDP: REPLY: %s(%02x)",
-				  osdp_reply_name(buf[0]), buf[0]);
+			hexdump(buf + 1, len - 1, "OSDP: REPLY: %s(%02x)",
+				osdp_reply_name(buf[0]), buf[0]);
 		}
 	}
 
@@ -909,8 +909,8 @@ static int pd_send_reply(struct osdp_pd *pd)
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->rx_buf, len, "OSDP: PD[%d]: Sent",
-				  pd->address);
+			hexdump(pd->rx_buf, len, "OSDP: PD[%d]: Sent",
+				pd->address);
 		}
 	}
 
@@ -981,8 +981,8 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 			pos += 2;
 		}
 		if (pd->rx_buf_len > pos && pd->rx_buf[pos] != CMD_POLL) {
-			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: PD[%d]: Received", pd->address);
+			hexdump(pd->rx_buf, pd->rx_buf_len,
+				"OSDP: PD[%d]: Received", pd->address);
 		}
 	}
 

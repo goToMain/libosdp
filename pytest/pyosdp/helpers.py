@@ -6,21 +6,26 @@ import time
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+import os
 from .constants import Capability, LibFlag
 
 class PDInfo:
-    def __init__(self, address: int, scbk: bytes=None, name: str='chn', flags=[]):
+    def __init__(self, address: int, scbk: bytes=None, name: str='chn', flags=[],
+                 channel_type: str='fifo'):
         self.address = address
         self.flags = flags
         self.scbk = scbk
         self.channel_device = '/tmp/pyosdp-' + name
         self.channel_speed = 115200
-        self.channel_type = 'fifo'
+        self.channel_type = channel_type
         self.version= 1
         self.model= 1
         self.vendor_code= 0xCAFEBABE
         self.serial_number= 0xDEADBEAF
         self.firmware_version= 0x0000F00D
+
+        if self.channel_type == 'unix_bus' and os.path.exists(self.channel_device):
+            os.remove(self.channel_device)
 
     def get_flags(self) -> int:
         ret = 0

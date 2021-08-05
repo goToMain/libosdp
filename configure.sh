@@ -134,6 +134,7 @@ fi
 ## Declare sources
 LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
+LIBOSDP_SOURCES+=" utils/src/disjoint_set.c"
 
 if [[ -z "${STATIC_PD}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_cp.c"
@@ -148,6 +149,9 @@ fi
 
 if [[ ! -z "${OSDPCTL}" ]]; then
 	TARGETS+=" osdpctl.elf"
+	OSDPCTL_SOURCES+=" osdpctl/ini_parser.c osdpctl/config.c osdpctl/arg_parser.c"
+	OSDPCTL_SOURCES+=" osdpctl/osdpctl.c osdpctl/cmd_start.c osdpctl/cmd_send.c"
+	OSDPCTL_SOURCES+=" osdpctl/cmd_others.c"
 fi
 
 if [[ ! -z "${LIB_ONLY}" ]]; then
@@ -187,6 +191,7 @@ CCFLAGS=${CCFLAGS}
 CXXFLAGS=${CXXFLAGS}
 LDFLAGS=${LDFLAGS}
 SRC_LIBOSDP=${LIBOSDP_SOURCES}
+SRC_OSDPCTL=${OSDPCTL_SOURCES}
 TARGETS=${TARGETS}
 ---
 echo

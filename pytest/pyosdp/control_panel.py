@@ -15,7 +15,8 @@ from .helpers import PDInfo
 from .constants import LogLevel
 
 class ControlPanel():
-    def __init__(self, pd_info_list, log_level: LogLevel=LogLevel.Info):
+    def __init__(self, pd_info_list, log_level: LogLevel=LogLevel.Info,
+                 master_key: bytes=None):
         self.pd_addr = []
         info_list = []
         self.num_pds = len(pd_info_list)
@@ -23,7 +24,10 @@ class ControlPanel():
             self.pd_addr.append(pd_info.address)
             info_list.append(pd_info.get())
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
-        self.ctx = osdp.ControlPanel(info_list)
+        if master_key:
+            self.ctx = osdp.ControlPanel(info_list, master_key=master_key)
+        else:
+            self.ctx = osdp.ControlPanel(info_list)
         self.ctx.set_event_callback(self.event_handler)
         self.ctx.set_loglevel(log_level)
         self.event = threading.Event()

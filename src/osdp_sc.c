@@ -31,12 +31,14 @@ void osdp_compute_session_keys(struct osdp_pd *pd)
 	struct osdp *ctx = pd_to_osdp(pd);
 	uint8_t scbk[16];
 
-	if (is_cp_mode(pd) && ISSET_FLAG(pd, PD_FLAG_HAS_SCBK) == false) {
-		osdp_compute_scbk(pd, ctx->sc_master_key, scbk);
-	} else if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+	if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 		memcpy(scbk, osdp_scbk_default, 16);
 	} else {
-		memcpy(scbk, pd->sc.scbk, 16);
+		if (is_cp_mode(pd) && !ISSET_FLAG(pd, PD_FLAG_HAS_SCBK)) {
+			osdp_compute_scbk(pd, ctx->sc_master_key, scbk);
+		} else {
+			memcpy(scbk, pd->sc.scbk, 16);
+		}
 	}
 
 	memset(pd->sc.s_enc, 0, 16);

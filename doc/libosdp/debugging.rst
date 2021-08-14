@@ -8,7 +8,7 @@ default logging methods are very sane which makes this unnecessary for every
 issue. So don't trouble yourself to generate such logs proactively.
 
 A note on the log file
-======================
+----------------------
 
 It is preferable to attach the full logs (from osdp_cp_setup() to point of
 failure). If you feel that you know what the issue is or that the entire log

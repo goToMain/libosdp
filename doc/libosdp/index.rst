@@ -7,3 +7,4 @@ LibOSDP
    build-and-install
    cross-compiling
    secure-channel
+   debugging

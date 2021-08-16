@@ -45,11 +45,11 @@ Commands
 +-----------------+---------+-------------------------------------------------------+-----------+
 | CMD_BIOMATCH    | 0x74    | Scan and match biometric data                         | No        |
 +-----------------+---------+-------------------------------------------------------+-----------+
-| CMD_KEYSET      | 0x75    | Encryption Key Set                                    | No        |
+| CMD_KEYSET      | 0x75    | Encryption Key Set                                    | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
-| CMD_CHLNG       | 0x76    | Challenge and Secure Session Initialization Request   | NO        |
+| CMD_CHLNG       | 0x76    | Challenge and Secure Session Initialization Request   | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
-| CMD_SCRYPT      | 0x77    | Server's Random Number and Server Cryptogram          | NO        |
+| CMD_SCRYPT      | 0x77    | Server's Random Number and Server Cryptogram          | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
 | CMD_ABORT       | 0x7A    | Stop Multi Part Message                               | Yes       |
 +-----------------+---------+-------------------------------------------------------+-----------+
@@ -96,9 +96,9 @@ Responses
 +--------------------+---------+----------------------------------------------------------+-----------+
 | REPLY_BIOMATCHR    | 0x58    | Biometric Match Result                                   | No        |
 +--------------------+---------+----------------------------------------------------------+-----------+
-| REPLY_CCRYPT       | 0x76    | Client's ID and Client's Random Number                   | No        |
+| REPLY_CCRYPT       | 0x76    | Client's ID and Client's Random Number                   | Yes       |
 +--------------------+---------+----------------------------------------------------------+-----------+
-| REPLY_RMAC_I       | 0x78    | Client Cryptogram Packet and the Initial R-MAC           | No        |
+| REPLY_RMAC_I       | 0x78    | Client Cryptogram Packet and the Initial R-MAC           | Yes       |
 +--------------------+---------+----------------------------------------------------------+-----------+
 | REPLY_FTSTAT       | 0x7A    | File transfer status                                     | Yes       |
 +--------------------+---------+----------------------------------------------------------+-----------+

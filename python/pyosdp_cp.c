@@ -8,40 +8,30 @@
 
 #define TAG "pyosdp_cp"
 
-#define pyosdp_cp_pd_is_online_doc                                             \
-	"Get PD status, (online/offline)\n"                                    \
+#define pyosdp_cp_pd_status_doc                                                \
+	"Get PD status, (online/offline) as a bitmask for all connected PDs\n" \
 	"\n"                                                                   \
-	"@param pd PD offset number\n"                                         \
-	"\n"                                                                   \
-	"@return Secure Channel Status (Bool)"
-static PyObject *pyosdp_cp_pd_is_online(pyosdp_cp_t *self, PyObject *args)
+	"@return PD status bitmask"
+static PyObject *pyosdp_cp_pd_status(pyosdp_cp_t *self, PyObject *args)
 {
-	int pd;
-	uint32_t mask;
+	uint64_t bitmask = 0;
 
-	if (!PyArg_ParseTuple(args, "I", &pd))
-		return NULL;
+	osdp_get_status_mask(self->ctx, (uint8_t *)&bitmask);
 
-	if (pd < 0 || pd > self->num_pd) {
-		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		return NULL;
-	}
-
-	mask = osdp_get_status_mask(self->ctx);
-
-	if (mask & 1 << pd)
-		Py_RETURN_TRUE;
-	else
-		Py_RETURN_FALSE;
+	return Py_BuildValue("I", bitmask);
 }
 
 #define pyosdp_cp_sc_status_doc                                                \
-	"Get PD Secure Channel status mask of al connected PDs\n"              \
+	"Get PD Secure Channel status bitmask of all connected PDs\n"          \
 	"\n"                                                                   \
-	"@return Secure Channel Status mask"
+	"@return Secure Channel Status bitmask"
 static PyObject *pyosdp_cp_sc_status(pyosdp_cp_t *self, PyObject *args)
 {
-	return Py_BuildValue("I", osdp_get_sc_status_mask(self->ctx));
+	uint64_t bitmask = 0;
+
+	osdp_get_sc_status_mask(self->ctx, (uint8_t *)&bitmask);
+
+	return Py_BuildValue("I", bitmask);
 }
 
 int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
@@ -319,8 +309,8 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  METH_VARARGS, pyosdp_cp_set_event_callback_doc },
 	{ "send_command", (PyCFunction)pyosdp_cp_send_command,
 	  METH_VARARGS, pyosdp_cp_send_command_doc },
-	{ "is_online", (PyCFunction)pyosdp_cp_pd_is_online,
-	  METH_VARARGS, pyosdp_cp_pd_is_online_doc },
+	{ "status", (PyCFunction)pyosdp_cp_pd_status,
+	  METH_NOARGS, pyosdp_cp_pd_status_doc },
 	{ "sc_status", (PyCFunction)pyosdp_cp_sc_status,
 	  METH_NOARGS, pyosdp_cp_sc_status_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */

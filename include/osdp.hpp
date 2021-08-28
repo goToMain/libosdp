@@ -31,14 +31,14 @@ public:
 		return osdp_get_source_info();
 	}
 
-	uint32_t get_status_mask()
+	void get_status_mask(uint8_t *bitmask)
 	{
-		return osdp_get_status_mask(_ctx);
+		osdp_get_status_mask(_ctx, bitmask);
 	}
 
-	uint32_t get_sc_status_mask()
+	void get_sc_status_mask(uint8_t *bitmask)
 	{
-		return osdp_get_sc_status_mask(_ctx);
+		osdp_get_sc_status_mask(_ctx, bitmask);
 	}
 
 	void set_command_complete_callback(osdp_command_complete_callback_t cb)

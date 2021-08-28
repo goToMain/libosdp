@@ -171,6 +171,34 @@ void stop_cmd_server(struct config_s *c)
 	msgctl(c->cs_recv_msgid, IPC_RMID, NULL);
 }
 
+void print_status(struct config_s *c)
+{
+	int i;
+	char status = 0;
+	uint8_t bitmask[16];
+
+	printf("         \t");
+	for (i = 0; i < c->num_pd; i++)
+		printf("%d\t", i);
+	printf("\n");
+
+	osdp_get_status_mask(c->cp_ctx, bitmask);
+	printf("   Status\t");
+	for (i = 0; i < c->num_pd; i++) {
+		status = (bitmask[i / 8] & (1 << (i % 8))) ? 'x' : ' ';
+		printf("%c\t", status);
+	}
+	printf("\n");
+
+	osdp_get_sc_status_mask(c->cp_ctx, bitmask);
+	printf("SC Status\t");
+	for (i = 0; i < c->num_pd; i++) {
+		status = (bitmask[i / 8] & (1 << (i % 8))) ? 'x' : ' ';
+		printf("%c\t", status);
+	}
+	printf("\n");
+}
+
 void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 {
 	if (p->id < OSDPCTL_CP_CMD_LED || p->id >= OSDPCTL_CP_CMD_SENTINEL) {
@@ -198,9 +226,7 @@ void handle_cp_command(struct config_s *c, struct osdpctl_cmd *p)
 		p->cmd.id = OSDP_CMD_COMSET;
 		break;
 	case OSDPCTL_CMD_STATUS:
-		printf("SC Status: 0x%08x\n",
-		       osdp_get_sc_status_mask(c->cp_ctx));
-		printf("   Status: 0x%08x\n", osdp_get_status_mask(c->cp_ctx));
+		print_status(c);
 		return;
 	}
 

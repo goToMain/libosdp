@@ -914,18 +914,15 @@ const char *osdp_get_source_info();
 
 /**
  * @brief Get a bit mask of number of PD that are online currently.
- *
- * @retval Bit-Mask (max 32 PDs)
+ * `bitmask` must be as large as (num_pds + 7 / 8).
  */
-uint32_t osdp_get_status_mask(osdp_t *ctx);
+void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief Get a bit mask of number of PD that are online and have an active
- * secure channel currently.
- *
- * @retval Bit-Mask (max 32 PDs)
+ * secure channel currently. `bitmask` must be as large as (num_pds + 7 / 8).
  */
-uint32_t osdp_get_sc_status_mask(osdp_t *ctx);
+void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief Set osdp_command_complete_callback_t to subscribe to osdp command or

@@ -244,40 +244,48 @@ const char *osdp_get_source_info()
 }
 
 OSDP_EXPORT
-uint32_t osdp_get_sc_status_mask(osdp_t *ctx)
+void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask)
 {
 	input_check(ctx);
-	int i;
-	uint32_t mask = 0;
+	int i, pos;
+	uint8_t *mask = bitmask;
 	struct osdp_pd *pd;
 
+	*mask = 0;
 	for (i = 0; i < NUM_PD(ctx); i++) {
+		pos = i & 0x07;
+		if (i && pos == 0) {
+			mask++;
+			*mask = 0;
+		}
 		pd = osdp_to_pd(ctx, i);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-			mask |= 1 << i;
+			*mask |= 1 << pos;
 		}
 	}
-
-	return mask;
 }
 
 OSDP_EXPORT
-uint32_t osdp_get_status_mask(osdp_t *ctx)
+void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 {
 	input_check(ctx);
-	int i;
-	uint32_t mask = 0;
+	int i, pos;
+	uint8_t *mask = bitmask;
 	struct osdp_pd *pd;
 
+	*mask = 0;
 	for (i = 0; i < NUM_PD(ctx); i++) {
+		pos = i & 0x07;
+		if (i && pos == 0) {
+			mask++;
+			*mask = 0;
+		}
 		pd = osdp_to_pd(ctx, i);
 		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
 		    pd->state == OSDP_CP_STATE_ONLINE) {
-			mask |= 1 << i;
+			*mask |= 1 << pos;
 		}
 	}
-
-	return mask;
 }
 
 OSDP_EXPORT

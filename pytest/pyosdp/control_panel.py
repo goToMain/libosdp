@@ -47,41 +47,41 @@ class ControlPanel():
         pd = self.pd_addr.index(address)
         self.event_queue[pd].put(address, event)
 
-    def get_num_online(self):
-        online = 0
-        for i in range(len(self.pd_addr)):
-            self.lock.acquire()
-            if self.ctx.is_online(i):
-                online += 1
-            self.lock.release()
-        return online
-
-    def get_num_sc_active(self):
-        sc_active = 0
+    def status(self):
         self.lock.acquire()
-        for i in range(len(self.pd_addr)):
-            if self.ctx.sc_active(i):
-                sc_active += 1
+        bitmask = self.ctx.status()
         self.lock.release()
-        return sc_active
-
-    def sc_status(self):
-        self.lock.acquire()
-        mask = self.ctx.sc_status()
-        self.lock.release()
-        return mask
-
-    def is_sc_active(self, address):
-        pd = self.pd_addr.index(address)
-        mask = self.sc_status()
-        return mask & (1 << pd)
+        return bitmask
 
     def is_online(self, address):
         pd = self.pd_addr.index(address)
+        return bool(self.status() & (1 << pd))
+
+    def get_num_online(self):
+        online = 0
+        bitmask = self.status()
+        for i in range(len(self.pd_addr)):
+            if bitmask & (1 << i):
+                online += 1
+        return online
+
+    def sc_status(self):
         self.lock.acquire()
-        ret = self.ctx.is_online(pd)
+        bitmask = self.ctx.sc_status()
         self.lock.release()
-        return ret
+        return bitmask
+
+    def is_sc_active(self, address):
+        pd = self.pd_addr.index(address)
+        return self.sc_status() & (1 << pd)
+
+    def get_num_sc_active(self):
+        sc_active = 0
+        bitmask = self.sc_status()
+        for i in range(len(self.pd_addr)):
+            if bitmask & (1 << i):
+                sc_active += 1
+        return sc_active
 
     def send_command(self, address, cmd):
         pd = self.pd_addr.index(address)

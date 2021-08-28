@@ -14,9 +14,9 @@
 	"@return Secure Channel Status (Bool)"
 static PyObject *pyosdp_pd_is_sc_active(pyosdp_pd_t *self, PyObject *args)
 {
-	uint32_t mask;
+	uint64_t mask;
 
-	mask = osdp_get_sc_status_mask(self->ctx);
+	osdp_get_sc_status_mask(self->ctx, (uint8_t *)&mask);
 
 	if (mask & 1)
 		Py_RETURN_TRUE;

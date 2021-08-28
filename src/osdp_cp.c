@@ -1125,14 +1125,13 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	struct osdp_cmd *cmd[OSDP_PD_MAX] = { 0 };
 	struct osdp_pd *pd;
 
-	if (osdp_get_sc_status_mask(ctx) != PD_MASK(ctx)) {
-		LOG_WRN("master_key based key set can be performed only when "
-			"all PDs are ONLINE, SC_ACTIVE");
-		return -1;
-	}
-
-	if (NUM_PD(ctx) > OSDP_PD_MAX) {
-		return -1;
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = osdp_to_pd(ctx, i);
+		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+			LOG_WRN("master_key based key set can be performed only"
+				" when all PDs are ONLINE, SC_ACTIVE");
+			return -1;
+		}
 	}
 
 	LOG_INF("master_key based key set is a global command; "

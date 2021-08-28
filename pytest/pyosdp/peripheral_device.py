@@ -52,9 +52,6 @@ class PeripheralDevice():
     def is_sc_active(self):
         return self.ctx.is_sc_active()
 
-    def is_online(self):
-        return self.ctx.is_online()
-
     def start(self):
         if self.thread:
             self.thread.start()

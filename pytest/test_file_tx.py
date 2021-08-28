@@ -7,7 +7,7 @@
 import time
 import random
 
-from pyosdp import *
+from testlib import *
 
 sender_data = [ random.randint(0, 255) for _ in range(4096) ]
 

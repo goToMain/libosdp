@@ -4,7 +4,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-from pyosdp import *
+from testlib import *
 
 def test_set_new_scbk(utils):
     # Create single CP-PD pair

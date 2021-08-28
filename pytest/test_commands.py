@@ -7,7 +7,7 @@
 import time
 import pytest
 
-from pyosdp import *
+from testlib import *
 
 pd_cap = PDCapabilities([
     (Capability.OutputControl, 1, 1),

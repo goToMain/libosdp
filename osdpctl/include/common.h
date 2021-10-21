@@ -33,10 +33,7 @@ struct config_pd_s {
 
 	struct osdp_pd_id id;
 	struct osdp_pd_cap cap[OSDP_PD_CAP_SENTINEL];
-};
-
-struct config_cp_s {
-	uint8_t master_key[16];
+	uint8_t scbk[16];
 };
 
 struct config_s {
@@ -45,9 +42,6 @@ struct config_s {
 	int num_pd;
 	int log_level;
 	int conn_topology;
-
-	/* ini section: "^CP" */
-	struct config_cp_s cp;
 
 	/* ini section: "^PD(-[0-9]+)?" */
 	struct config_pd_s *pd;

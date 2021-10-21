@@ -40,8 +40,6 @@ and use them.
 +------------------+---------------------------------------------------------------+
 | log_file         | Path: file to redirect OSDP logs to (will be created)         |
 +------------------+---------------------------------------------------------------+
-| master_key *     | String: master key for CP mode as hex string (see examples)   |
-+------------------+---------------------------------------------------------------+
 
 PD Configuration Keys
 ---------------------
@@ -64,6 +62,8 @@ The following keys are needed in CP and PD mode.
 | channel_speed      | Integer: When type is "uart" this field is the baud rate   |
 +--------------------+------------------------------------------------------------+
 | channel_device     | String: Path to device. Eg. "/dev/ttyUSB0"                 |
++--------------------+------------------------------------------------------------+
+| scbk *             | String: key for SC as hex string (see examples)            |
 +--------------------+------------------------------------------------------------+
 
 **Note:**

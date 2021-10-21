@@ -320,7 +320,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 
 	if (c->mode == CONFIG_MODE_CP) {
 		c->cp_ctx =
-			osdp_cp_setup(c->num_pd, info_arr, c->cp.master_key);
+			osdp_cp_setup2(c->num_pd, info_arr);
 		if (c->cp_ctx == NULL) {
 			printf("Failed to setup CP context\n");
 			return -1;

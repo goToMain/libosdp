@@ -36,6 +36,7 @@ osdp_pd_info_t pd_info[] = {
 		.flags = 0,
 		.id = {},
 		.cap = nullptr,
+		.scbk = nullptr,
 		.channel = {
 			.data = nullptr,
 			.id = 0,
@@ -52,7 +53,7 @@ int main()
 
 	cp.logger_init(OSDP_LOG_DEBUG, printf);
 
-	cp.setup(1, pd_info, nullptr);
+	cp.setup(1, pd_info);
 
 	while (1) {
 		// your application code.

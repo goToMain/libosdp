@@ -190,20 +190,6 @@ int config_parse_key_num_pd(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
-int config_parse_key_master_key(const char *val, void *data)
-{
-	uint8_t tmp[128];
-	struct config_s *p = data;
-
-	if (hstrtoa(tmp, val) < 0) {
-		printf("Error: failed to parse master key\n");
-		return INI_FAILURE;
-	}
-	memcpy(p->cp.master_key, tmp, 16);
-
-	return INI_SUCCESS;
-}
-
 int config_parse_key_address(const char *val, void *data)
 {
 	struct config_pd_s *p = data;
@@ -290,6 +276,20 @@ int confif_parse_firmware_version(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
+int config_parse_key_scbk(const char *val, void *data)
+{
+	uint8_t tmp[128];
+	struct config_pd_s *p = data;
+
+	if (hstrtoa(tmp, val) < 0) {
+		printf("Error: failed to parse key\n");
+		return INI_FAILURE;
+	}
+	memcpy(p->scbk, tmp, 16);
+
+	return INI_SUCCESS;
+}
+
 struct config_key_s {
 	const char *key;
 	int (*handler)(const char *val, void *data);
@@ -302,7 +302,6 @@ const struct config_key_s g_config_key_global[] = {
 	{ "conn_topology", config_parse_key_channel_topology },
 	{ "pid_file", config_parse_key_pid_file },
 	{ "log_file", config_parse_key_log_file },
-	{ "master_key", config_parse_key_master_key },
 	{ NULL, NULL }
 };
 
@@ -318,6 +317,7 @@ const struct config_key_s g_config_key_pd[] = {
 	{ "version", config_parse_key_version },
 	{ "serial_number", config_parse_serial_number },
 	{ "firmware_version", confif_parse_firmware_version },
+	{ "scbk", config_parse_key_scbk },
 	{ NULL, NULL }
 };
 
@@ -437,10 +437,6 @@ void config_print(struct config_s *config)
 	printf("mode: %d\n", config->mode);
 	printf("conn_topology: %d\n", config->conn_topology);
 	printf("num_pd: %d\n", config->num_pd);
-	if (cp_mode) {
-		atohstr(tmp, config->cp.master_key, 16);
-		printf("master_key: %s\n", tmp);
-	}
 	for (i = 0; i < config->num_pd; i++) {
 		pd = config->pd + i;
 		printf("\nPD-%d:\n", i);
@@ -448,6 +444,8 @@ void config_print(struct config_s *config)
 		printf("channel_type: %d\n", pd->channel_type);
 		printf("channel_device: %s\n", pd->channel_device);
 		printf("address: %d\n", pd->address);
+		atohstr(tmp, pd->scbk, 16);
+		printf("scbk: %s\n", tmp);
 		if (cp_mode)
 			continue;
 		printf("capabilities:\n");

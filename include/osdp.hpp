@@ -71,9 +71,9 @@ public:
 		osdp_cp_teardown(_ctx);
 	}
 
-	bool setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
+	bool setup(int num_pd, osdp_pd_info_t *info)
 	{
-		_ctx = osdp_cp_setup(num_pd, info, master_key);
+		_ctx = osdp_cp_setup2(num_pd, info);
 		return _ctx != nullptr;
 	}
 

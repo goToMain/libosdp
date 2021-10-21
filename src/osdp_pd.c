@@ -588,6 +588,12 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	case CMD_SCRYPT:
 		PD_CMD_CAP_CHECK(pd, &cmd);
 		ASSERT_LENGTH(len, CMD_SCRYPT_DATA_LEN);
+		if (sc_is_active(pd)) {
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			LOG_WRN("Out of order CMD_SCRYPT; has CP gone rogue?");
+			break;
+		}
 		for (i = 0; i < CMD_SCRYPT_DATA_LEN; i++) {
 			pd->sc.cp_cryptogram[i] = buf[pos++];
 		}

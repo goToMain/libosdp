@@ -1315,7 +1315,7 @@ error:
 
 /* --- Exported Methods --- */
 
-OSDP_EXPORT
+OSDP_DEPRECATED_EXPORT
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key)
 {
 	assert(info_list);

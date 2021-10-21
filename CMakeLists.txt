@@ -26,17 +26,17 @@ include(BuildType)
 include(GNUInstallDirs)
 
 ## Global settings
-add_c_compiler_flag(-Wall)
-add_c_compiler_flag(-Wextra)
+add_compile_options(-Wall -Wextra -Werror)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_WARN_DEPRECATED ON)
 
 option(CONFIG_OSDP_STATIC_PD "Setup PD single statically" OFF)
 option(CONFIG_OSDP_LIB_ONLY "Only build the library" OFF)
 
-# Each subdirecttory has it's own CMakeLists.txt
+# Each subdirectory has it's own CMakeLists.txt
 add_subdirectory(utils)
 add_subdirectory(src)
 if (NOT CONFIG_OSDP_STATIC_PD AND NOT CONFIG_OSDP_LIB_ONLY)

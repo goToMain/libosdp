@@ -713,7 +713,8 @@ typedef void (*osdp_command_complete_callback_t)(int id);
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
+osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
+	__attribute__((deprecated("Use osdp_cp_setup2 instead!")));
 
 /**
  * @brief Same as osdp_cp_setup; master_key is NULL here to favour the  more

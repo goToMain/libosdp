@@ -110,6 +110,7 @@ add_definitions(${LIB_OSDP_DEFINITIONS})
 ## build libosdpstatic.a
 
 add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SOURCES})
+set_target_properties(${LIB_OSDP_STATIC} PROPERTIES COMPILE_FLAGS -DOSDP_STATIC_DEFINE)
 target_link_libraries(${LIB_OSDP_STATIC} ${LIB_OSDP_LIBRARIES})
 
 target_include_directories(${LIB_OSDP_STATIC}
@@ -169,7 +170,7 @@ target_include_directories(${LIB_OSDP_SHARED}
 # must be placed after the target definitions.
 include(GenerateExportHeader)
 generate_export_header(${LIB_OSDP_SHARED}
-	EXPORT_MACRO_NAME OSDP_EXPORT
+	BASE_NAME OSDP
 	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
 )
 

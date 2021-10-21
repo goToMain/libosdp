@@ -1233,19 +1233,13 @@ static int cp_detect_connection_topology(struct osdp *ctx)
 	return 0;
 }
 
-/* --- Exported Methods --- */
-
-OSDP_EXPORT
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key)
+static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
+			       uint8_t *master_key)
 {
 	int i, scbk_count = 0;
 	struct osdp_pd *pd;
 	struct osdp *ctx;
 	osdp_pd_info_t *info;
-
-	assert(info_list);
-	assert(num_pd > 0);
-	assert(num_pd <= OSDP_PD_MAX);
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
@@ -1313,10 +1307,32 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key
 		  num_pd, ctx->num_channels, osdp_get_version(),
 		  osdp_get_source_info());
 
-	return (osdp_t *)ctx;
+	return ctx;
 error:
 	osdp_cp_teardown((osdp_t *)ctx);
 	return NULL;
+}
+
+/* --- Exported Methods --- */
+
+OSDP_EXPORT
+osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key)
+{
+	assert(info_list);
+	assert(num_pd > 0);
+	assert(num_pd <= OSDP_PD_MAX);
+
+	return (osdp_t *)__cp_setup(num_pd, info_list, master_key);
+}
+
+OSDP_EXPORT
+osdp_t *osdp_cp_setup2(int num_pd, osdp_pd_info_t *info_list)
+{
+	assert(info_list);
+	assert(num_pd > 0);
+	assert(num_pd <= OSDP_PD_MAX);
+
+	return (osdp_t *)__cp_setup(num_pd, info_list, NULL);
 }
 
 OSDP_EXPORT

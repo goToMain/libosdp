@@ -716,6 +716,19 @@ typedef void (*osdp_command_complete_callback_t)(int id);
 osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key);
 
 /**
+ * @brief Same as osdp_cp_setup; master_key is NULL here to favour the  more
+ * secure individual SCBK approach (passed via osdp_pd_info_t).
+ *
+ * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
+ *        treated as an array of length num_pd.
+ * @param info Pointer to info struct populated by application.
+ *
+ * @retval OSDP Context on success
+ * @retval NULL on errors
+ */
+osdp_t *osdp_cp_setup2(int num_pd, osdp_pd_info_t *info);
+
+/**
  * @brief Periodic refresh method. Must be called by the application at least
  * once every 50ms to meet OSDP timing requirements.
  *

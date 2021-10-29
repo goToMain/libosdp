@@ -134,7 +134,7 @@ fi
 ## Declare sources
 LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
-LIBOSDP_SOURCES+=" utils/src/disjoint_set.c"
+LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c"
 
 if [[ -z "${STATIC_PD}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_cp.c"
@@ -176,6 +176,7 @@ cat > osdp_export.h <<----
 
 #define OSDP_EXPORT
 #define OSDP_NO_EXPORT
+#define OSDP_DEPRECATED_EXPORT
 
 #endif /* OSDP_EXPORT_H */
 ---

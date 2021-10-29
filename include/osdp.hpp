@@ -16,9 +16,9 @@ class Common {
 public:
 	Common() {}
 
-	void logger_init(int log_level, osdp_log_fn_t log_fn)
+	void logger_init(int log_level, osdp_log_puts_fn_t puts_fn)
 	{
-		osdp_logger_init(log_level, log_fn);
+		osdp_logger_init(log_level, puts_fn);
 	}
 
 	const char *get_version()

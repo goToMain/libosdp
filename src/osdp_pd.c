@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #endif
 
-#define LOG_TAG "PD: "
+LOGGER_DECLARE(osdp, "PD");
 
 #define CMD_POLL_DATA_LEN	0
 #define CMD_LSTAT_DATA_LEN	0
@@ -1108,7 +1108,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 
 	assert(info);
 
-	osdp_log_ctx_set(info->address);
+	LOG_SET_PREFIX("PD%d", info->address);
 
 #ifndef CONFIG_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
@@ -1143,8 +1143,6 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	pd->flags = info->flags;
 	pd->seq_number = -1;
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
-
-	osdp_log_ctx_set(pd->address);
 
 	if (pd_event_queue_init(pd)) {
 		goto error;
@@ -1195,7 +1193,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	osdp_log_ctx_set(pd->address);
+	LOG_SET_PREFIX("PD%d", pd->address);
 	osdp_pd_update(pd);
 }
 

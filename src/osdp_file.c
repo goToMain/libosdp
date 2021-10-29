@@ -16,7 +16,7 @@
 
 #include "osdp_file.h"
 
-#define LOG_TAG "FOP: "
+LOGGER_DECLARE(osdp, "FOP");
 
 static inline void osdp_file_state_reset(struct osdp_file *f)
 {

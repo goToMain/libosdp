@@ -16,6 +16,7 @@
 #include <utils/utils.h>
 #include <utils/queue.h>
 #include <utils/slab.h>
+#include <utils/logger.h>
 
 #include <osdp.h>
 #include "osdp_config.h" /* generated */
@@ -183,17 +184,6 @@ union osdp_ephemeral_data {
 #define PD_FLAG_PKT_HAS_MARK   BIT(11) /* Packet has mark byte */
 #define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
 #define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
-
-/* logging short hands */
-#define LOG_EM(...)    osdp_log(OSDP_LOG_EMERG, LOG_TAG __VA_ARGS__)
-#define LOG_ALERT(...) osdp_log(OSDP_LOG_ALERT, LOG_TAG __VA_ARGS__)
-#define LOG_CRIT(...)  osdp_log(OSDP_LOG_CRIT, LOG_TAG __VA_ARGS__)
-#define LOG_ERR(...)   osdp_log(OSDP_LOG_ERROR, LOG_TAG __VA_ARGS__)
-#define LOG_INF(...)   osdp_log(OSDP_LOG_INFO, LOG_TAG __VA_ARGS__)
-#define LOG_WRN(...)   osdp_log(OSDP_LOG_WARNING, LOG_TAG __VA_ARGS__)
-#define LOG_NOT(...)   osdp_log(OSDP_LOG_NOTICE, LOG_TAG __VA_ARGS__)
-#define LOG_DBG(...)   osdp_log(OSDP_LOG_DEBUG, LOG_TAG __VA_ARGS__)
-#define LOG_PRINT(...) osdp_log(-1, LOG_TAG __VA_ARGS__)
 
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,
@@ -423,7 +413,6 @@ __weak int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 void osdp_log(int log_level, const char *fmt, ...);
-void osdp_log_ctx_set(int log_ctx);
 void osdp_log_ctx_reset();
 void osdp_log_ctx_restore();
 

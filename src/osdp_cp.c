@@ -11,7 +11,7 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 
-#define LOG_TAG "CP: "
+LOGGER_DECLARE(osdp, "CP");
 
 #define CMD_POLL_LEN   1
 #define CMD_LSTAT_LEN  1
@@ -1354,7 +1354,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	do {
 		pd = GET_CURRENT_PD(ctx);
-		osdp_log_ctx_set(pd->address);
+		LOG_SET_PREFIX("PD%d", pd->address);
 
 		if (cp_refresh(pd) < 0)
 			break;

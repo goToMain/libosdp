@@ -189,18 +189,6 @@ static PyObject *pyosdp_file_register_ops(pyosdp_base_t *self, PyObject *args)
 	Py_RETURN_TRUE;
 }
 
-int pyosdp_log_fn(const char *fmt, ...)
-{
-	int len;
-	va_list args;
-
-	va_start(args, fmt);
-	len = vfprintf(stderr, fmt, args);
-	va_end(args);
-
-	return len;
-}
-
 #define pyosdp_set_loglevel_doc                                                \
 	"Set OSDP logging level\n"                                             \
 	"\n"                                                                   \
@@ -220,7 +208,7 @@ static PyObject *pyosdp_set_loglevel(pyosdp_base_t *self, PyObject *args)
 		return NULL;
 	}
 
-	osdp_logger_init(log_level, pyosdp_log_fn);
+	osdp_logger_init(log_level, NULL);
 
 	Py_RETURN_NONE;
 }
@@ -269,7 +257,7 @@ static int pyosdp_base_tp_init(pyosdp_base_t *self, PyObject *args, PyObject *kw
 
 	channel_manager_init(&self->channel_manager);
 
-	osdp_logger_init(OSDP_LOG_INFO, pyosdp_log_fn);
+	osdp_logger_init(OSDP_LOG_INFO, NULL);
 
 	return 0;
 }

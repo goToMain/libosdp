@@ -891,24 +891,26 @@ enum osdp_log_level_e {
 };
 
 /**
- * @brief A printf() like method that will be used to write out log lines.
+ * @brief Puts a string to the logging medium
  *
- * @param fmt C printf() style format string. See man 3 printf
+ * @param msg a null-terminated char buffer.
  *
- * @retval number of characters written to the log stream
+ * @retval 0 on success; -ve on errors
  */
-typedef int (*osdp_log_fn_t)(const char *fmt, ...);
+typedef int (*osdp_log_puts_fn_t)(const char *msg);
 
 /**
  * @brief Configure OSDP Logging.
  *
  * @param log_level OSDP log levels of type `enum osdp_log_level_e`. Default is
  *                  LOG_INFO.
- * @param log_fn A printf-like function that will be invoked to write the log
- *               buffer. Can be handy if you want to log to file on a UART
- *               device without putchar redirection.
+ * @param puts_fn A puts() like function that will be invoked to write the log
+ *                buffer. Can be handy if you want to log to file on a UART
+ *                device without putchar redirection. See `osdp_log_puts_fn_t`
+ *                definition to see the behavioral expectations. When this is
+ *                set to NULL, LibOSDP will log to stderr.
  */
-void osdp_logger_init(int log_level, osdp_log_fn_t log_fn);
+void osdp_logger_init(int log_level, osdp_log_puts_fn_t puts_fn);
 
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.

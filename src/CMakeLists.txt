@@ -141,6 +141,7 @@ list(APPEND LIB_OSDP_UTILS_SRC
 	${PROJECT_SOURCE_DIR}/utils/src/queue.c
 	${PROJECT_SOURCE_DIR}/utils/src/slab.c
 	${PROJECT_SOURCE_DIR}/utils/src/disjoint_set.c
+	${PROJECT_SOURCE_DIR}/utils/src/logger.c
 )
 set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 

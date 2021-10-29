@@ -36,14 +36,14 @@ osdp_pd_info_t pd_info[] = {
 		.flags = 0,
 		.id = {},
 		.cap = nullptr,
-		.scbk = nullptr,
 		.channel = {
 			.data = nullptr,
 			.id = 0,
 			.recv = sample_cp_recv_func,
 			.send = sample_cp_send_func,
 			.flush = nullptr
-		}
+		},
+		.scbk = nullptr,
 	}
 };
 

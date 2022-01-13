@@ -67,13 +67,14 @@ commands and replies and their support status in LibOSDP [here][22].
 
 ## Dependencies
 
+  * [goToMain/C-Utils][25] (host, submodule)
   * cmake3 (host)
   * python3 (host, optional)
   * python3-pip (host, optional)
-  * doxygen (host, optional)
-  * OpenSSL (host and target, optional - recommended)
-  * MbedTLS (host and target)
-  * [goToMain/C-Utils][25] (host, submodule)
+  * [doxygen][9] (host, optional; for building the html docs as seen [here][6])
+  * [OpenSSL][8] (host and target, optional - recommended)
+  * [MbedTLS][7] (host and target, optional)
+  * [pytest][5] (host, optional; for running the integrated test suite)
 
 ### For ubuntu
 
@@ -113,19 +114,50 @@ cd libosdp
 mkdir build && cd build
 cmake ..
 make
-
-# optionally
-make check
-make DESTDIR=/your/install/path install
 ```
 
 Refer to [this document][23] for more information on build and cross
 compilation.
 
+### Run the test suite
+
+LibOSDP uses the [pytest][5] python framework to test changes made to ensure
+we aren't breaking existing functionalities while adding newer ones. You can
+install pytest in your development machine with,
+
+```sh
+python3 -m pip install pytest
+```
+
+Running the tests locally before creating a pull request is recommended to make
+sure that your changes aren't breaking any of the existing functionalities. Here
+is how you can run them:
+
+```sh
+mkdir build && cd build
+cmake ..
+make python_install
+make check
+```
+
+To add new tests for the feature you are working one, see the other tests in
+`pytest` directory.
+
 ### Build HTML docs
+
+This sections is for those who want to build the HTML documentation for this
+project locally. The latest version of the doc can always be found at
+[libosdp.gotomain.io][6].
+
+Install the dependencies (one time) with,
 
 ```sh
 pip3 install -r doc/requirements.txt
+```
+
+Build the docs by doing the following:
+
+```sh
 mkdir build && cd build
 cmake ..
 make html_docs # output in ./docs/sphinx/
@@ -159,6 +191,11 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [2]: https://github.com/goToMain/libosdp/releases
 [3]: https://github.com/goTomain/libosdp/workflows/Build%20CI/badge.svg
 [4]: https://github.com/goTomain/libosdp/actions?query=workflow%3A%22Build+CI%22
+[5]: https://docs.pytest.org/en/latest/
+[6]: https://libosdp.gotomain.io/
+[7]: https://github.com/ARMmbed/mbedtls
+[8]: https://www.openssl.org/
+[9]: https://www.doxygen.nl/index.html
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://libosdp.gotomain.io/protocol/

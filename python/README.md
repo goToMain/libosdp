@@ -10,7 +10,7 @@ A python module `osdp` and classes `ControlPanel` and `PeripheralDevice` are
 made available when the sources of this directory is built and installed.
 
 After cloning this repo (with `--recurse-submodules`), you can do the following
-to build the python module.
+(from the repo root) to build the python module.
 
 ```bash
 mkdir build && cd build

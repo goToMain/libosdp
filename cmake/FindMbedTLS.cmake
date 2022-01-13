@@ -10,7 +10,7 @@ include(FindPackageHandleStandardArgs)
 
 find_package_handle_standard_args(
 	MbedTLS
-	"Failed to find sphinx-build executable"
+	"Failed to find MbedTLS executable"
 	MBEDTLS_INCLUDE_DIRS
 	MBEDTLS_LIBRARY
 	MBEDX509_LIBRARY

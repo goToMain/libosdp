@@ -14,7 +14,7 @@ configure_file(setup.py.in setup.py)
 configure_file(pyproject.toml pyproject.toml)
 
 add_custom_target(python_build
-	COMMAND ${Python3_EXECUTABLE} setup.py build
+	COMMAND ${Python3_EXECUTABLE} setup.py build_ext --inplace
 )
 
 add_custom_target(python_install

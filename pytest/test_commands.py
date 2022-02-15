@@ -32,7 +32,7 @@ pd_list = [
     insecure_pd,
 ]
 
-cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
+cp = ControlPanel(pd_info_list)
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():

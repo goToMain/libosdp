@@ -611,24 +611,12 @@ struct osdp_event_mfgrep {
 };
 
 /**
- * @brief OSDP File transfer status event
- *
- * @param fd File ID for which this event is generatated
- * @param status 0: success; -ve on errors.
- */
-struct osdp_event_file_tx {
-	int fd;
-	int status;
-};
-
-/**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
 	OSDP_EVENT_CARDREAD,
 	OSDP_EVENT_KEYPRESS,
 	OSDP_EVENT_MFGREP,
-	OSDP_EVENT_FILE_TX,
 	OSDP_EVENT_SENTINEL
 };
 
@@ -646,7 +634,6 @@ struct osdp_event {
 		struct osdp_event_keypress keypress;
 		struct osdp_event_cardread cardread;
 		struct osdp_event_mfgrep mfgrep;
-		struct osdp_event_file_tx file_tx;
 	};
 };
 

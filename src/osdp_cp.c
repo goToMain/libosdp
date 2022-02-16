@@ -298,6 +298,10 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	case CMD_MFG:
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
 		ASSERT_BUF_LEN(CMD_MFG_LEN + cmd->mfg.length);
+		if (cmd->mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
+			LOG_ERR("Invalid MFG data length (%d)", cmd->mfg.length);
+			return OSDP_CP_ERR_GENERIC;
+		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_1(cmd->mfg.vendor_code);

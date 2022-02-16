@@ -479,8 +479,8 @@ struct osdp_cmd_keyset {
  * @param vendor_code 3-byte IEEE assigned OUI. Most Significat 8-bits are
  *        unused.
  * @param command 1-byte manufacturer defined osdp command
- * @param length Length of command data
- * @param data Command data
+ * @param length Length of command data (optional)
+ * @param data Command data (optional)
  */
 struct osdp_cmd_mfg {
 	uint32_t vendor_code;
@@ -599,9 +599,15 @@ struct osdp_event_keypress {
 /**
  * @brief OSDP Event Manufacturer Specific Command
  *
+ * Note: OSDP spec v2.2 makes this structure fixed at 4 bytes. LibOSDP allows
+ * for some additional data to be passed in this command using the data and
+ * length fields. To be fully compliant with the specification, set the length
+ * field to 0.
+ *
  * @param vendor_code 3-bytes IEEE assigned OUI of manufacturer
- * @param length Length of manufacturer data in bytes
- * @param data manufacturer data of `length` bytes
+ * @param command 1-byte reply code
+ * @param length Length of manufacturer data in bytes (optional)
+ * @param data manufacturer data of `length` bytes (optional)
  */
 struct osdp_event_mfgrep {
 	uint32_t vendor_code;

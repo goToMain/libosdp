@@ -1241,7 +1241,7 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 			       uint8_t *master_key)
 {
 	int i, scbk_count = 0;
-	struct osdp_pd *pd;
+	struct osdp_pd *pd = NULL;
 	struct osdp *ctx;
 	osdp_pd_info_t *info;
 

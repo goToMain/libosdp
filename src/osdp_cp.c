@@ -987,7 +987,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDID) {
-			LOG_ERR("Unexpected REPLY(%02x) for cmd " STR(CMD_CAP),
+			LOG_ERR("Unexpected REPLY(%02x) for cmd " STR(CMD_ID),
 				pd->reply_id);
 			cp_set_offline(pd);
 			break;

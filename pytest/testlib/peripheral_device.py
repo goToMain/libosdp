@@ -16,6 +16,7 @@ class PeripheralDevice():
     def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities,
                  log_level: LogLevel=LogLevel.Info):
         self.command_queue = queue.Queue()
+        self.address = pd_info.address
         self.ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
         self.ctx.set_loglevel(log_level)
         self.ctx.set_command_callback(self.command_handler)
@@ -42,6 +43,12 @@ class PeripheralDevice():
         except queue.Empty:
             return None
         return cmd
+
+    def notify_event(self, event):
+        self.lock.acquire()
+        ret = self.ctx.notify_event(event)
+        self.lock.release()
+        return ret
 
     def register_file_ops(self, fops):
         self.lock.acquire()

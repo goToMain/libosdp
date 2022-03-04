@@ -12,7 +12,7 @@ import queue
 import threading
 
 from .helpers import PDInfo
-from .constants import LogLevel
+from .constants import LibFlag, LogLevel
 
 class ControlPanel():
     def __init__(self, pd_info_list, log_level: LogLevel=LogLevel.Info,
@@ -87,6 +87,20 @@ class ControlPanel():
         pd = self.pd_addr.index(address)
         self.lock.acquire()
         ret = self.ctx.send_command(pd, cmd)
+        self.lock.release()
+        return ret
+
+    def set_flag(self, address, flag: LibFlag):
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.set_flag(pd, flag)
+        self.lock.release()
+        return ret
+
+    def clear_flag(self, address, flag: LibFlag):
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.clear_flag(pd, flag)
         self.lock.release()
         return ret
 

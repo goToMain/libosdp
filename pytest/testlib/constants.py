@@ -9,6 +9,7 @@ import osdp
 class LibFlag:
     EnforceSecure = osdp.FLAG_ENFORCE_SECURE
     InstallMode = osdp.FLAG_INSTALL_MODE
+    IgnoreUnsolicited = osdp.FLAG_IGN_UNSOLICITED
 
 class LogLevel:
     Emergency = osdp.LOG_EMERG

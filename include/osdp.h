@@ -801,6 +801,23 @@ int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
  */
 void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
 
+/**
+ * @brief Set or clear OSDP public flags
+ *
+ * @param ctx OSDP context
+ * @param pd_idx PD offset number as in `pd_info_t *`.
+ * @param flags One or more of the public flags (OSDP_FLAG_XXX) exported from
+ *              osdp.h. Any other bits will cause this method to fail.
+ * @param do_set when true: set `flags` in ctx; when false: clear `flags` in ctx
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ * 
+ * @note It doesn't make sense to call some initialization time flags during
+ * runtime. This method is for dynamic flags that can be turned on/off at runtime.
+ */
+int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set);
+
 /* ------------------------------- */
 /*            PD Methods           */
 /* ------------------------------- */

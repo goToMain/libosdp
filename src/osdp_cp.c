@@ -1483,3 +1483,22 @@ int osdp_cp_get_capability(osdp_t *ctx, int pd_idx, struct osdp_pd_cap *cap)
 	cap->num_items = pd->cap[fc].num_items;
 	return 0;
 }
+
+OSDP_EXPORT
+int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set)
+{
+	input_check(ctx, pd_idx);
+	const uint32_t all_flags = (
+		OSDP_FLAG_ENFORCE_SECURE |
+		OSDP_FLAG_INSTALL_MODE |
+		OSDP_FLAG_IGN_UNSOLICITED
+	);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
+
+	if (flags & ~all_flags) {
+		return -1;
+	}
+
+	do_set ? SET_FLAG(pd, flags) : CLEAR_FLAG(pd, flags);
+	return 0;
+}

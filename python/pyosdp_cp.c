@@ -119,6 +119,50 @@ static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 	Py_RETURN_FALSE;
 }
 
+static PyObject *pyosdp_cp_modify_flag(pyosdp_cp_t *self, PyObject *args, bool do_set)
+{
+	int ret, pd, flags;
+
+	if (!PyArg_ParseTuple(args, "II", &pd, &flags))
+		Py_RETURN_FALSE;
+
+	if (pd < 0 || pd >= self->num_pd) {
+		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
+		Py_RETURN_FALSE;
+	}
+
+	ret = osdp_cp_modify_flag(self->ctx, pd, (uint32_t)flags, do_set);
+
+	if (ret == 0)
+		Py_RETURN_TRUE;
+
+	Py_RETURN_FALSE;
+}
+
+#define pyosdp_cp_set_flag_doc \
+	"Set PD flag\n" \
+	"\n" \
+	"@param pd_idx PD offset number\n" \
+	"@param flag One of the OSDP public flags" \
+	"\n" \
+	"@return boolean status"
+static PyObject *pyosdp_cp_set_flag(pyosdp_cp_t *self, PyObject *args)
+{
+	return pyosdp_cp_modify_flag(self, args, true);
+}
+
+#define pyosdp_cp_clear_flag_doc \
+	"Clear PD flag\n" \
+	"\n" \
+	"@param pd_idx PD offset number\n" \
+	"@param flag One of the OSDP public flags" \
+	"\n" \
+	"@return boolean status"
+static PyObject *pyosdp_cp_clear_flag(pyosdp_cp_t *self, PyObject *args)
+{
+	return pyosdp_cp_modify_flag(self, args, false);
+}
+
 static int pyosdp_cp_tp_clear(pyosdp_cp_t *self)
 {
 	Py_XDECREF(self->event_cb);
@@ -313,6 +357,10 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  METH_NOARGS, pyosdp_cp_pd_status_doc },
 	{ "sc_status", (PyCFunction)pyosdp_cp_sc_status,
 	  METH_NOARGS, pyosdp_cp_sc_status_doc },
+	{ "set_flag", (PyCFunction)pyosdp_cp_set_flag,
+	  METH_NOARGS, pyosdp_cp_set_flag_doc },
+	{ "clear_flag", (PyCFunction)pyosdp_cp_clear_flag,
+	  METH_NOARGS, pyosdp_cp_clear_flag_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 

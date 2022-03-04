@@ -654,6 +654,12 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		sc_activate(pd);
 		ret = OSDP_CP_ERR_NONE;
 		break;
+        case REPLY_ISTATR:
+		/* Ignore unsupported reply without creating error */
+		LOG_WRN("Ignoring unsupport REPLY(%02x)", pd->reply_id);
+		ret = OSDP_CP_ERR_NONE;
+                break;
+
 	default:
 		LOG_ERR("Unexpected REPLY(%02x)", pd->reply_id);
 	}
@@ -980,6 +986,9 @@ static int state_update(struct osdp_pd *pd)
 		}
 		break;
 	case OSDP_CP_STATE_INIT:
+		if (cp_cmd_dispatcher(pd, CMD_POLL) != 0) {
+			break;
+		}
 		cp_set_state(pd, OSDP_CP_STATE_IDREQ);
 		__fallthrough;
 	case OSDP_CP_STATE_IDREQ:
@@ -987,7 +996,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDID) {
-			LOG_ERR("Unexpected REPLY(%02x) for cmd " STR(CMD_CAP),
+			LOG_ERR("Unexpected REPLY(%02x) for cmd " STR(CMD_ID),
 				pd->reply_id);
 			cp_set_offline(pd);
 			break;

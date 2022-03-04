@@ -53,6 +53,7 @@ enum osdp_cp_error_e {
 	OSDP_CP_ERR_RETRY_CMD = -3,
 	OSDP_CP_ERR_CAN_YIELD = -4,
 	OSDP_CP_ERR_INPROG = -5,
+	OSDP_CP_ERR_UNKNOWN = -6,
 };
 
 struct cp_cmd_node {
@@ -654,14 +655,9 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		sc_activate(pd);
 		ret = OSDP_CP_ERR_NONE;
 		break;
-        case REPLY_ISTATR:
-		/* Ignore unsupported reply without creating error */
-		LOG_WRN("Ignoring unsupport REPLY(%02x)", pd->reply_id);
-		ret = OSDP_CP_ERR_NONE;
-                break;
-
 	default:
-		LOG_ERR("Unexpected REPLY(%02x)", pd->reply_id);
+		LOG_WRN("Unexpected REPLY(%02x)", pd->reply_id);
+		ret = OSDP_CP_ERR_UNKNOWN;
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
@@ -881,13 +877,21 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
 			break;
 		}
+		if (rc == OSDP_CP_ERR_UNKNOWN && pd->cmd_id == CMD_POLL &&
+		    ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED)) {
+			if (sc_is_active(pd)) {
+				pd->sc_tstamp = osdp_millis_now();
+			}
+			pd->phy_state = OSDP_CP_PHY_STATE_IDLE;
+			break;
+		}
 		if (rc == OSDP_CP_ERR_RETRY_CMD) {
 			LOG_INF("PD busy; retry last command");
 			pd->phy_tstamp = osdp_millis_now();
 			pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
 			break;
 		}
-		if (rc == OSDP_CP_ERR_GENERIC ||
+		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN ||
 		    osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			if (rc != OSDP_CP_ERR_GENERIC) {
 				LOG_ERR("Response timeout for CMD(%02x)",

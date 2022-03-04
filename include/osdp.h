@@ -44,6 +44,14 @@ extern "C" {
 #define OSDP_FLAG_INSTALL_MODE 0x00020000
 
 /**
+ * @brief When set, CP will not error and fail when the PD sends an unknown,
+ * unsolicited response (in response to osdp_POLL command).
+ *
+ * @note In PD mode this flag has no use.
+ */
+#define OSDP_FLAG_IGN_UNSOLICITED 0x00040000
+
+/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {

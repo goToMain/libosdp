@@ -9,7 +9,7 @@
 int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 {
 	char buf[64];
-	int is_temporary = 0;
+	bool is_temporary = false;
 	PyObject *obj;
 	struct osdp_cmd_led_params *p = &cmd->led.permanent;
 
@@ -35,12 +35,10 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 	case OSDP_CMD_LED:
 		if (cmd->led.temporary.control_code != 0) {
 			p = &cmd->led.temporary;
-			is_temporary = 1;
+			is_temporary = true;
 		}
-		if (is_temporary) {
-			if (pyosdp_dict_add_int(obj, "temporary", 1))
-				return -1;
-		}
+		if (pyosdp_dict_add_bool(obj, "temporary", is_temporary))
+			return -1;
 		if (pyosdp_dict_add_int(obj, "led_number", cmd->led.led_number))
 			return -1;
 		if (pyosdp_dict_add_int(obj, "reader", cmd->led.reader))
@@ -55,7 +53,8 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 			return -1;
 		if (pyosdp_dict_add_int(obj, "off_count", p->off_count))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
+		if (is_temporary &&
+		    pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
 			return -1;
 		break;
 	case OSDP_CMD_BUZZER:
@@ -165,8 +164,9 @@ static int pyosdp_handle_cmd_led(struct osdp_cmd *p, PyObject *dict)
 {
 	int led_number, reader, off_color, on_color, off_count, on_count,
 		timer_count, control_code;
+	bool is_temporary = false;
 	struct osdp_cmd_led *cmd = &p->led;
-	struct osdp_cmd_led_params *tmp = &cmd->permanent;
+	struct osdp_cmd_led_params *params = &cmd->permanent;
 
 	p->id = OSDP_CMD_LED;
 
@@ -176,8 +176,8 @@ static int pyosdp_handle_cmd_led(struct osdp_cmd *p, PyObject *dict)
 	if (pyosdp_dict_get_int(dict, "reader", &reader))
 		return -1;
 
-	if (PyDict_GetItemString(dict, "temporary"))
-		tmp = &cmd->temporary;
+	if (pyosdp_dict_get_bool(dict, "temporary", &is_temporary) < 0)
+		return -1;
 
 	if (pyosdp_dict_get_int(dict, "control_code", &control_code))
 		return -1;
@@ -194,17 +194,20 @@ static int pyosdp_handle_cmd_led(struct osdp_cmd *p, PyObject *dict)
 	if (pyosdp_dict_get_int(dict, "on_count", &on_count))
 		return -1;
 
-	if (pyosdp_dict_get_int(dict, "timer_count", &timer_count))
-		return -1;
+	if (is_temporary) {
+		params = &cmd->temporary;
+		if (pyosdp_dict_get_int(dict, "timer_count", &timer_count))
+			return -1;
+		params->timer_count = (uint8_t)timer_count;
+	}
 
 	cmd->led_number = (uint8_t)led_number;
 	cmd->reader = (uint8_t)reader;
-	tmp->control_code = (uint8_t)control_code;
-	tmp->off_color = (uint8_t)off_color;
-	tmp->on_color = (uint8_t)on_color;
-	tmp->on_count = (uint8_t)on_count;
-	tmp->off_count = (uint8_t)off_count;
-	tmp->timer_count = (uint8_t)timer_count;
+	params->control_code = (uint8_t)control_code;
+	params->off_color = (uint8_t)off_color;
+	params->on_color = (uint8_t)on_color;
+	params->on_count = (uint8_t)on_count;
+	params->off_count = (uint8_t)off_count;
 	return 0;
 }
 

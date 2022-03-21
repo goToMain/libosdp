@@ -102,6 +102,10 @@ def test_command_led():
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
 
+    test_cmd['temporary'] = False
+    assert cp.send_command(secure_pd_addr, test_cmd)
+    assert secure_pd.get_command() == test_cmd
+
 def test_command_comset():
     test_cmd = {
         'command': Command.Comset,

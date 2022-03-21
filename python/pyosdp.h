@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <utils/utils.h>
 #include <utils/strutils.h>
@@ -60,12 +61,14 @@ int pyosdp_parse_int(PyObject *obj, int *res);
 int pyosdp_parse_str(PyObject *obj, char **str);
 int pyosdp_parse_bytes(PyObject *obj, uint8_t **data, int *length);
 
+int pyosdp_dict_get_bool(PyObject *dict, const char *key, bool *res);
 int pyosdp_dict_get_int(PyObject *dict, const char *key, int *res);
 int pyosdp_dict_get_str(PyObject *dict, const char *key, char **str);
 int pyosdp_dict_get_bytes(PyObject *dict, const char *key, uint8_t **buf,
 			  int *len);
 int pyosdp_dict_get_object(PyObject *dict, const char *key, PyObject **obj);
 
+int pyosdp_dict_add_bool(PyObject *dict, const char *key, bool val);
 int pyosdp_dict_add_int(PyObject *dict, const char *key, int val);
 int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val);
 int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data,

@@ -11,7 +11,7 @@ Device lifecycle management
 .. doxygenstruct:: osdp_pd_info_t
    :members:
 
-.. doxygenfunction:: osdp_cp_setup
+.. doxygenfunction:: osdp_cp_setup2
 
 .. doxygenfunction:: osdp_cp_refresh
 

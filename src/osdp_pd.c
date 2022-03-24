@@ -56,9 +56,8 @@ enum osdp_pd_error_e {
 	OSDP_PD_ERR_IGNORE = -4,
 };
 
-/* Implicit cababilities */
+/* Implicit capabilities */
 static struct osdp_pd_cap osdp_pd_cap[] = {
-	/* Driver Implicit cababilities */
 	{
 		OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT,
 		1, /* The PD supports the 16-bit CRC-16 mode */

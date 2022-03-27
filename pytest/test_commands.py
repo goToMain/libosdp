@@ -103,6 +103,8 @@ def test_command_led():
     assert secure_pd.get_command() == test_cmd
 
     test_cmd['temporary'] = False
+    del test_cmd['timer_count']
+
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
 

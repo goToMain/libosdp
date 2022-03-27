@@ -43,7 +43,7 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 	if ((size_t)max_len <= sizeof(struct osdp_cmd_file_xfer)) {
-		LOG_ERR("TX_Build: insufficent space need:%zu have:%d",
+		LOG_ERR("TX_Build: insufficient space need:%zu have:%d",
 			sizeof(struct osdp_cmd_file_xfer), max_len);
 		return -1;
 	}
@@ -186,7 +186,7 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 	if ((size_t)max_len < sizeof(struct osdp_cmd_file_stat)) {
-		LOG_ERR("Stat_Build: insufficent space need:%zu have:%d",
+		LOG_ERR("Stat_Build: insufficient space need:%zu have:%d",
 			sizeof(struct osdp_cmd_file_stat), max_len);
 		return -1;
 	}

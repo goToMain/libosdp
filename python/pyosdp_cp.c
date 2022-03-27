@@ -206,11 +206,10 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs)
 {
 	int i, ret = -1, len;
-	uint8_t *master_key=NULL, *scbk=NULL;
-	Py_ssize_t sc_key_len = 0;
+	uint8_t *scbk = NULL;
 	enum channel_type channel_type;
 	PyObject *py_info_list, *py_info;
-	static char *kwlist[] = { "", "master_key", NULL };
+	static char *kwlist[] = { "", NULL };
 	char *device = NULL, *channel_type_str = NULL;
 	osdp_t *ctx;
 	osdp_pd_info_t *info, *info_list = NULL;
@@ -222,19 +221,9 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 	self->base.is_cp = true;
 
 	/* the string after the : is used as the function name in error messages */
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!|y#:pyosdp_cp_init", kwlist,
-					 &PyList_Type, &py_info_list,
-					 &master_key, &sc_key_len))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!:pyosdp_cp_init",
+					 kwlist, &PyList_Type, &py_info_list))
 		goto error;
-
-	/* Master Key */
-	if (sc_key_len == 0)
-		master_key = NULL;
-	if (master_key && sc_key_len != 16) {
-		PyErr_SetString(PyExc_TypeError,
-				"master_key must be exactly 16 bytes");
-		goto error;
-	}
 
 	self->num_pd = (int)PyList_Size(py_info_list);
 	if (self->num_pd == 0 || self->num_pd > 127) {
@@ -304,7 +293,7 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			    &info->channel.recv, &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info_list, master_key);
+	ctx = osdp_cp_setup2(self->num_pd, info_list);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
 		goto error;

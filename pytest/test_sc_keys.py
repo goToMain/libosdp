@@ -34,16 +34,3 @@ def test_set_new_scbk(utils):
     # Cleanup
     cp.teardown()
     pd.teardown()
-
-def test_master_key_workflow(utils):
-    # Create single CP-PD pair with PD in intall mode
-    pd_info = PDInfo(101, name='sc-keys-pd')
-    pd = utils.create_pd(pd_info)
-    cp = utils.create_cp([ pd_info ], sc_wait=True,
-                         master_key=utils.ks.new_key('sc-keys-pd-mk'))
-
-    assert cp.is_sc_active(101)
-
-    # Cleanup
-    cp.teardown()
-    pd.teardown()

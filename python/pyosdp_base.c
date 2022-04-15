@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "pyosdp.h"
 
 #define TAG "pyosdp_base"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -813,7 +813,7 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  *
  * @retval 0 on success
  * @retval -1 on failure
- * 
+ *
  * @note It doesn't make sense to call some initialization time flags during
  * runtime. This method is for dynamic flags that can be turned on/off at runtime.
  */

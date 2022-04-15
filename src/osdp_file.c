@@ -37,6 +37,11 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	struct osdp_cmd_file_xfer *p = (struct osdp_cmd_file_xfer *)buf;
 	struct osdp_file *f = TO_FILE(pd);
 
+	if (f == NULL) {
+		LOG_ERR("TX_Build: File ops not registered!");
+		return -1;
+	}
+
 	if (f->state != OSDP_FILE_INPROG) {
 		LOG_ERR("TX_Build: File transfer is not in progress!");
 		return -1;
@@ -87,6 +92,11 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	struct osdp_file *f = TO_FILE(pd);
 	struct osdp_cmd_file_stat *p = (struct osdp_cmd_file_stat *)buf;
 
+	if (f == NULL) {
+		LOG_ERR("Stat_Decode: File ops not registered!");
+		return -1;
+	}
+
 	if (f->state != OSDP_FILE_INPROG) {
 		LOG_ERR("Stat_Decode: File transfer is not in progress!");
 		return -1;
@@ -124,6 +134,11 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	struct osdp_file *f = TO_FILE(pd);
 	struct osdp_cmd_file_xfer *p = (struct osdp_cmd_file_xfer *)buf;
 	struct osdp_cmd cmd;
+
+	if (f == NULL) {
+		LOG_ERR("TX_Decode: File ops not registered!");
+		return -1;
+	}
 
 	if (f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
 		if (pd->command_callback) {
@@ -179,6 +194,11 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	struct osdp_cmd_file_stat *p = (struct osdp_cmd_file_stat *)buf;
 	struct osdp_file *f = TO_FILE(pd);
+
+	if (f == NULL) {
+		LOG_ERR("Stat_Build: File ops not registered!");
+		return -1;
+	}
 
 	if (f->state != OSDP_FILE_INPROG) {
 		LOG_ERR("Stat_Build: File transfer is not in progress!");

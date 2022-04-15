@@ -296,7 +296,8 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-	if (pkt_len > OSDP_PACKET_BUF_SIZE) {
+	if (pkt_len > OSDP_PACKET_BUF_SIZE ||
+	    pkt_len < sizeof(struct osdp_packet_header)) {
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
 		return OSDP_ERR_PKT_NACK;

@@ -1283,7 +1283,7 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		pd->flags = info->flags;
 		pd->seq_number = -1;
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
-		memcpy(&pd->channel, &info->channel, sizeof(osdp_pd_info_t));
+		memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
 			scbk_count += 1;
 			memcpy(pd->sc.scbk, info->scbk, 16);

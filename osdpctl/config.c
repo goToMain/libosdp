@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <libgen.h>
 
 #include <utils/memory.h>
 #include <utils/strutils.h>
@@ -153,11 +154,10 @@ int config_parse_key_channel_device(const char *val, void *data)
 {
 	struct config_pd_s *p = data;
 
-	if (val[0] == '/')
-		p->channel_device = safe_strdup(val);
-	else
-		p->channel_device = realpath(val, NULL);
+	if (!val || strlen(val) == 0)
+		return INI_FAILURE;
 
+	p->channel_device = safe_strdup(val);
 	return INI_SUCCESS;
 }
 
@@ -418,8 +418,9 @@ void config_parse(const char *filename, struct config_s *config)
 		if (config->mode == CONFIG_MODE_PD) {
 			if (config->pd->channel_device)
 				free(config->pd->channel_device);
-			config->pd->channel_device =
-				safe_strdup(config->config_file);
+			char *tmp = safe_strdup(config->config_file);
+			config->pd->channel_device = safe_strdup(basename(tmp));
+			free(tmp);
 		}
 	}
 }

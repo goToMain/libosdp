@@ -10,6 +10,7 @@ option(CONFIG_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)
 option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
 option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
 option(CONFIG_OSDP_FILE "Enabled support for OSDP File Transfer" ON)
+option(CONFIG_BUILD_ASAN "Address sanitizer enabled builds" OFF)
 
 if (CONFIG_OSDP_PACKET_TRACE)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_PACKET_TRACE")
@@ -125,7 +126,7 @@ target_include_directories(${LIB_OSDP_STATIC}
 
 # keep all symbols hidden by default (-fvisibility=hidden) for shared library
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_C_VISIBILITY_PRESET   hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 # For shared library (gcc/linux), utils must be recompiled with -fPIC. Right
@@ -174,6 +175,13 @@ generate_export_header(${LIB_OSDP_SHARED}
 	BASE_NAME OSDP
 	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
 )
+
+if (CONFIG_BUILD_ASAN)
+	target_compile_options(${LIB_OSDP_SHARED} PRIVATE -fsanitize=address)
+	target_compile_options(${LIB_OSDP_STATIC} PRIVATE -fsanitize=address)
+	target_link_options(${LIB_OSDP_SHARED} PRIVATE -fsanitize=address)
+	target_link_options(${LIB_OSDP_STATIC} PRIVATE -fsanitize=address)
+endif()
 
 ## Package Configuration
 

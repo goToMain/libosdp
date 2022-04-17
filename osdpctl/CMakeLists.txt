@@ -28,6 +28,11 @@ target_include_directories(${BIN_OSDPCTL}
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+if (CONFIG_BUILD_ASAN)
+	target_compile_options(${BIN_OSDPCTL} PRIVATE -fsanitize=address)
+	target_link_options(${BIN_OSDPCTL} PRIVATE -fsanitize=address)
+endif()
+
 install(
 	TARGETS ${BIN_OSDPCTL}
 	DESTINATION "bin"

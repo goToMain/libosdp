@@ -53,13 +53,9 @@
 
 #define OSDP_QUEUE_SLAB_SIZE                                                   \
 	(OSDP_CP_CMD_POOL_SIZE *                                               \
-	 (sizeof(struct osdp_cmd) + sizeof(queue_node_t)))
+	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
 
-#define safe_free(p)                                                           \
-	if (p)                                                                 \
-	free(p)
-
-/* Unused type only to estmate ephemeral_data size */
+/* Unused type only to estimate ephemeral_data size */
 union osdp_ephemeral_data {
 	struct osdp_cmd cmd;
 	struct osdp_event event;
@@ -67,7 +63,7 @@ union osdp_ephemeral_data {
 #define OSDP_EPHEMERAL_DATA_MAX_LEN sizeof(union osdp_ephemeral_data)
 
 /**
- * OSDP application exposed methor arg checker.
+ * OSDP application exposed method arg checker.
  *
  * Usage:
  *    input_check(ctx);
@@ -286,7 +282,7 @@ struct osdp_pd {
 	int64_t sc_tstamp;     /* Last received secure reply time in ticks */
 	int64_t phy_tstamp;    /* Time in ticks since command was sent */
 
-	uint16_t peer_rx_size; /* Receieve buffer size of the peer PD/CP */
+	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
 
 	/* Raw bytes received from the serial line for this PD */
 	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];

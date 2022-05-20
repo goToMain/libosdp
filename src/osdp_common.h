@@ -55,6 +55,10 @@
 	(OSDP_CP_CMD_POOL_SIZE *                                               \
 	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
 
+#define safe_free(p)                                                           \
+	if (p)                                                                 \
+		free(p)
+
 /* Unused type only to estimate ephemeral_data size */
 union osdp_ephemeral_data {
 	struct osdp_cmd cmd;

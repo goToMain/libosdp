@@ -18,3 +18,14 @@ Status
 .. doxygenfunction:: osdp_get_sc_status_mask
 
 .. doxygenfunction:: osdp_set_command_complete_callback
+
+
+File Operations
+---------------
+
+.. doxygenstruct:: osdp_file_ops
+   :members:
+
+.. doxygenfunction:: osdp_file_register_ops
+
+.. doxygenfunction:: osdp_get_file_tx_status

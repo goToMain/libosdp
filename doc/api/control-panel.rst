@@ -52,3 +52,7 @@ Others
 ------
 
 .. doxygenfunction:: osdp_cp_get_pd_id
+
+.. doxygenfunction:: osdp_cp_modify_flag
+
+.. doxygenfunction:: osdp_cp_get_io_status

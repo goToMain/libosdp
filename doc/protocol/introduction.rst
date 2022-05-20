@@ -7,7 +7,7 @@ protocol implementation over a two-wire RS-485 multi-drop serial communication
 channel Nevertheless, this protocol can be used to transfer secure data over any
 physical channel.
 
-LibOSDP complies with v2.1.7 of the OSDP specification. This page pulls excepts
+LibOSDP complies with v2.2 of the OSDP specification. This page pulls excepts
 from the specification that are crucial points when trying to understand the
 protocol.
 

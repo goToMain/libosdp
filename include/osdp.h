@@ -862,13 +862,7 @@ void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
 
 /**
  * @brief Set callback method for PD command notification. This callback is
- * invoked when the PD receives a command from the CP. This function must
- * return:
- *   - 0 if LibOSDP must send a `osdp_ACK` response
- *   - -ve if LibOSDP must send a `osdp_NAK` response
- *   - +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send a
- *     specific response. This is useful for sending manufacturer specific reply
- *     ``osdp_MFGREP``.
+ * invoked when the PD receives a command from the CP.
  *
  * @param ctx OSDP context
  * @param cb The callback function's pointer

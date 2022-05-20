@@ -626,12 +626,30 @@ struct osdp_event_mfgrep {
 };
 
 /**
+ * @brief OSDP Event input/output status
+ *
+ * This event is used by the PD to indicate input/output status changes. Upto a
+ * maximum of 32 input/output status can be reported. The values of the least
+ * significat N bit of status are considered, where N is the number of items as
+ * described in the correspoding capability codes: OSDP_PD_CAP_OUTPUT_CONTROL
+ * and OSDP_PD_CAP_CONTACT_STATUS_MONITORING.
+ *
+ * @param type 0 - input; 1 - output
+ * @param status bit mask of current input status.
+ */
+struct osdp_event_io {
+	int type;
+	uint32_t status;
+};
+
+/**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
 	OSDP_EVENT_CARDREAD,
 	OSDP_EVENT_KEYPRESS,
 	OSDP_EVENT_MFGREP,
+	OSDP_EVENT_IO,
 	OSDP_EVENT_SENTINEL
 };
 
@@ -649,6 +667,7 @@ struct osdp_event {
 		struct osdp_event_keypress keypress;
 		struct osdp_event_cardread cardread;
 		struct osdp_event_mfgrep mfgrep;
+		struct osdp_event_io io;
 	};
 };
 
@@ -818,6 +837,17 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  * runtime. This method is for dynamic flags that can be turned on/off at runtime.
  */
 int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set);
+
+/**
+ * @brief Get input and output status as reported by the PD.
+ *
+ * @param ctx OSDP context
+ * @param pd_idx PD offset number as in `pd_info_t *`.
+ * @param input[out] Input status as reported by the PD.
+ * @param output[out] Output status as reported by the PD.
+ */
+int osdp_cp_get_io_status(osdp_t *ctx, int pd_idx,
+			  uint32_t *input, uint32_t *output);
 
 /* ------------------------------- */
 /*            PD Methods           */

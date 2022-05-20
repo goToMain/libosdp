@@ -135,7 +135,7 @@ static int pd_event_dequeue(struct osdp_pd *pd, struct osdp_event **event)
 	return 0;
 }
 
-static int pd_translate_event(struct osdp_event *event, uint8_t *data)
+static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 {
 	int reply_code = 0;
 
@@ -154,6 +154,14 @@ static int pd_translate_event(struct osdp_event *event, uint8_t *data)
 	case OSDP_EVENT_KEYPRESS:
 		reply_code = REPLY_KEYPPAD;
 		break;
+	case OSDP_EVENT_IO:
+		if (event->io.type) {
+			pd->output_status = event->io.status;
+			reply_code = REPLY_OSTATR;
+		} else {
+			pd->input_status = event->io.status;
+			reply_code = REPLY_ISTATR;
+		}
 	default:
 		LOG_ERR("Unknown event type %d", event->type);
 		break;
@@ -162,7 +170,7 @@ static int pd_translate_event(struct osdp_event *event, uint8_t *data)
 		/* POLL command cannot fail even when there are errors here */
 		return REPLY_ACK;
 	}
-	memcpy(data, event, sizeof(struct osdp_event));
+	memcpy(pd->ephemeral_data, event, sizeof(struct osdp_event));
 	return reply_code;
 }
 
@@ -290,7 +298,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ASSERT_LENGTH(len, CMD_POLL_DATA_LEN);
 		/* Check if we have external events in the queue */
 		if (pd_event_dequeue(pd, &event) == 0) {
-			ret = pd_translate_event(event, pd->ephemeral_data);
+			ret = pd_translate_event(pd, event);
 			pd->reply_id = ret;
 			pd_event_free(pd, event);
 		} else {
@@ -693,6 +701,22 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			max_len -= REPLY_PDCAP_ENTITY_LEN;
 		}
 		ret = OSDP_PD_ERR_NONE;
+		break;
+	case REPLY_OSTATR:
+		t1 = pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL].num_items;
+		ASSERT_BUF_LEN(t1 + 1);
+		buf[len++] = pd->reply_id;
+		for (i = 0; i < t1; i++) {
+			buf[len++] = pd->output_status & (1 << i);
+		}
+		break;
+	case REPLY_ISTATR:
+		t1 = pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING].num_items;
+		ASSERT_BUF_LEN(t1 + 1);
+		buf[len++] = pd->reply_id;
+		for (i = 0; i < t1; i++) {
+			buf[len++] = pd->input_status & (1 << i);
+		}
 		break;
 	case REPLY_LSTATR:
 		ASSERT_BUF_LEN(REPLY_LSTATR_LEN);

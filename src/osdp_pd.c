@@ -13,40 +13,40 @@
 
 LOGGER_DECLARE(osdp, "PD");
 
-#define CMD_POLL_DATA_LEN	0
-#define CMD_LSTAT_DATA_LEN	0
-#define CMD_ISTAT_DATA_LEN	0
-#define CMD_OSTAT_DATA_LEN	0
-#define CMD_RSTAT_DATA_LEN	0
-#define CMD_ID_DATA_LEN		1
-#define CMD_CAP_DATA_LEN	1
-#define CMD_OUT_DATA_LEN	4
-#define CMD_LED_DATA_LEN	14
-#define CMD_BUZ_DATA_LEN	5
-#define CMD_TEXT_DATA_LEN	6 /* variable length command */
-#define CMD_COMSET_DATA_LEN	5
-#define CMD_MFG_DATA_LEN	4 /* variable length command */
-#define CMD_KEYSET_DATA_LEN	18
-#define CMD_CHLNG_DATA_LEN	8
-#define CMD_SCRYPT_DATA_LEN	16
-#define CMD_ABORT_DATA_LEN	0
-#define CMD_ACURXSIZE_DATA_LEN	2
-#define CMD_KEEPACTIVE_DATA_LEN 2
+#define CMD_POLL_DATA_LEN              0
+#define CMD_LSTAT_DATA_LEN             0
+#define CMD_ISTAT_DATA_LEN             0
+#define CMD_OSTAT_DATA_LEN             0
+#define CMD_RSTAT_DATA_LEN             0
+#define CMD_ID_DATA_LEN                1
+#define CMD_CAP_DATA_LEN               1
+#define CMD_OUT_DATA_LEN               4
+#define CMD_LED_DATA_LEN               14
+#define CMD_BUZ_DATA_LEN               5
+#define CMD_TEXT_DATA_LEN              6   /* variable length command */
+#define CMD_COMSET_DATA_LEN            5
+#define CMD_KEYSET_DATA_LEN            18
+#define CMD_CHLNG_DATA_LEN             8
+#define CMD_SCRYPT_DATA_LEN            16
+#define CMD_ABORT_DATA_LEN             0
+#define CMD_ACURXSIZE_DATA_LEN         2
+#define CMD_KEEPACTIVE_DATA_LEN        2
+#define CMD_MFG_DATA_LEN               4 /* variable length command */
 
-#define REPLY_ACK_LEN	       1
-#define REPLY_PDID_LEN	       13
-#define REPLY_PDCAP_LEN	       1 /* variable length command */
-#define REPLY_PDCAP_ENTITY_LEN 3
-#define REPLY_LSTATR_LEN       3
-#define REPLY_RSTATR_LEN       2
-#define REPLY_KEYPAD_LEN       2
-#define REPLY_RAW_LEN	       4
-#define REPLY_FMT_LEN	       3
-#define REPLY_COM_LEN	       6
-#define REPLY_NAK_LEN	       2
-#define REPLY_MFGREP_LEN       4 /* variable length command */
-#define REPLY_CCRYPT_LEN       33
-#define REPLY_RMAC_I_LEN       17
+#define REPLY_ACK_LEN                  1
+#define REPLY_PDID_LEN                 13
+#define REPLY_PDCAP_LEN                1   /* variable length command */
+#define REPLY_PDCAP_ENTITY_LEN         3
+#define REPLY_LSTATR_LEN               3
+#define REPLY_RSTATR_LEN               2
+#define REPLY_COM_LEN                  6
+#define REPLY_NAK_LEN                  2
+#define REPLY_CCRYPT_LEN               33
+#define REPLY_RMAC_I_LEN               17
+#define REPLY_KEYPAD_LEN               2
+#define REPLY_RAW_LEN	               4
+#define REPLY_FMT_LEN	               3
+#define REPLY_MFGREP_LEN               4 /* variable length command */
 
 enum osdp_pd_error_e {
 	OSDP_PD_ERR_NONE = 0,
@@ -105,13 +105,10 @@ static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 
 static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
 {
-	ARG_UNUSED(pd);
 	struct pd_event_node *n;
 
 	n = CONTAINER_OF(event, struct pd_event_node, object);
-	if (slab_free(n)) {
-		LOG_ERR("Event slab free failed");
-	}
+	slab_free(&pd->event.slab, n);
 }
 
 static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
@@ -276,22 +273,22 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 	}
 
-/* helper macro, can be called from switch cases below */
-#define PD_CMD_CAP_CHECK(pd, cmd)                                              \
-	if (!pd_cmd_cap_ok(pd, cmd)) {                                         \
-		LOG_INF("PD is not capable of handling CMD: %s(%02x); "        \
-			"Reply with NAK_CMD_UNKNOWN",                          \
-			osdp_cmd_name(pd->cmd_id), pd->cmd_id);                \
-		ret = OSDP_PD_ERR_REPLY;                                       \
-		break;                                                         \
-	}
+	/* helper macro, can be called from switch cases below */
+	#define PD_CMD_CAP_CHECK(pd, cmd)                                         \
+		if (!pd_cmd_cap_ok(pd, cmd)) {                                    \
+			LOG_INF("PD is not capable of handling CMD: %s(%02x); "   \
+				"Reply with NAK_CMD_UNKNOWN",                     \
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id);           \
+			ret = OSDP_PD_ERR_REPLY;                                  \
+			break;                                                    \
+		}
 
-#define ASSERT_LENGTH(got, exp)                                                \
-	if (got != exp) {                                                      \
-		LOG_ERR("CMD %s(%02x) length error! Got:%d, Exp:%d",           \
-			osdp_cmd_name(pd->cmd_id), pd->cmd_id, got, exp);      \
-		return OSDP_PD_ERR_GENERIC;                                    \
-	}
+	#define ASSERT_LENGTH(got, exp)                                           \
+		if (got != exp) {                                                 \
+			LOG_ERR("CMD %s(%02x) length error! Got:%d, Exp:%d",      \
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id, got, exp); \
+			return OSDP_PD_ERR_GENERIC;                               \
+		}
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
@@ -330,13 +327,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case CMD_ID:
 		ASSERT_LENGTH(len, CMD_ID_DATA_LEN);
-		pos++; /* Skip reply type info. */
+		pos++;		/* Skip reply type info. */
 		pd->reply_id = REPLY_PDID;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_CAP:
 		ASSERT_LENGTH(len, CMD_CAP_DATA_LEN);
-		pos++; /* Skip reply type info. */
+		pos++;		/* Skip reply type info. */
 		pd->reply_id = REPLY_PDCAP;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -538,7 +535,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		break;
 	case CMD_KEYSET:
-		PD_CMD_CAP_CHECK(pd, &cmd);
+		PD_CMD_CAP_CHECK(pd, NULL);
 		ASSERT_LENGTH(len, CMD_KEYSET_DATA_LEN);
 		/**
 		 * For CMD_KEYSET to be accepted, PD must be
@@ -552,8 +549,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		/* only key_type == 1 (SCBK) and key_len == 16 is supported */
 		if (buf[pos] != 1 || buf[pos + 1] != 16) {
-			LOG_ERR("Keyset invalid len/type: %d/%d", buf[pos],
-				buf[pos + 1]);
+			LOG_ERR("Keyset invalid len/type: %d/%d",
+				buf[pos], buf[pos + 1]);
 			break;
 		}
 		cmd.id = OSDP_CMD_KEYSET;
@@ -565,8 +562,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = pd->command_callback(pd->command_callback_arg,
 						   &cmd);
 		} else {
-			LOG_EM("Keyset without a command callback! The SC new"
-			       "SCBK will be lost when the PD reboots.");
+			LOG_ERR("Keyset without a command callback! The SC new"
+			        "SCBK will be lost when the PD reboots.");
 		}
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -582,7 +579,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_CHLNG:
-		PD_CMD_CAP_CHECK(pd, &cmd);
+		PD_CMD_CAP_CHECK(pd, NULL);
 		ASSERT_LENGTH(len, CMD_CHLNG_DATA_LEN);
 		sc_deactivate(pd);
 		osdp_sc_setup(pd);
@@ -593,7 +590,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_SCRYPT:
-		PD_CMD_CAP_CHECK(pd, &cmd);
+		PD_CMD_CAP_CHECK(pd, NULL);
 		ASSERT_LENGTH(len, CMD_SCRYPT_DATA_LEN);
 		if (sc_is_active(pd)) {
 			pd->reply_id = REPLY_NAK;
@@ -649,13 +646,13 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	buf += data_off;
 	max_len -= data_off;
 
-#define ASSERT_BUF_LEN(need)                                                   \
-	if (max_len < need) {                                                  \
-		LOG_ERR("OOM at build REPLY: %s(%02x) - have:%d, need:%d",     \
-			osdp_reply_name(pd->reply_id), pd->reply_id,           \
-			max_len, need);                                        \
-		return OSDP_PD_ERR_GENERIC;                                    \
-	}
+	#define ASSERT_BUF_LEN(need)                                               \
+		if (max_len < need) {                                              \
+			LOG_ERR("OOM at build REPLY: %s(%02x) - have:%d, need:%d", \
+				osdp_reply_name(pd->reply_id), pd->reply_id,       \
+				max_len, need);                                    \
+			return OSDP_PD_ERR_GENERIC;                                \
+		}
 
 	switch (pd->reply_id) {
 	case REPLY_ACK:
@@ -837,7 +834,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < 16; i++) {
 			buf[len++] = pd->sc.pd_cryptogram[i];
 		}
-		smb[0] = 3; /* length */
+		smb[0] = 3;      /* length */
 		smb[1] = SCS_12; /* type */
 		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
 		ret = OSDP_PD_ERR_NONE;
@@ -852,10 +849,10 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < 16; i++) {
 			buf[len++] = pd->sc.r_mac[i];
 		}
-		smb[0] = 3; /* length */
-		smb[1] = SCS_14; /* type */
+		smb[0] = 3;       /* length */
+		smb[1] = SCS_14;  /* type */
 		if (osdp_verify_cp_cryptogram(pd) == 0) {
-			smb[2] = 1; /* CP auth succeeded */
+			smb[2] = 1;  /* CP auth succeeded */
 			sc_activate(pd);
 			pd->sc_tstamp = osdp_millis_now();
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
@@ -864,7 +861,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 				LOG_INF("SC Active");
 			}
 		} else {
-			smb[2] = 0; /* CP auth failed */
+			smb[2] = 0;  /* CP auth failed */
 			LOG_WRN("failed to verify CP_crypt");
 		}
 		ret = OSDP_PD_ERR_NONE;
@@ -896,12 +893,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	return len;
 }
 
-/**
- * pd_send_reply - blocking send; doesn't handle partials
- * Returns:
- *   0 - success
- *  -1 - failure
- */
 static int pd_send_reply(struct osdp_pd *pd)
 {
 	int ret, len;

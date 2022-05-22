@@ -672,35 +672,35 @@ struct osdp_event {
 };
 
 /**
-* @brief Callback for PD command notifications. After it has been registered
-* with `osdp_pd_set_command_callback`, this method is invoked when the PD
-* receives a command from the CP.
-*
-* @param arg pointer that will was passed to the arg param of
-* `osdp_pd_set_command_callback`.
-* @param cmd pointer to the received command.
-*
-* @retval 0 if LibOSDP must send a `osdp_ACK` response
-* @retval -ve if LibOSDP must send a `osdp_NAK` response
-* @retval +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send
-* a specific response. This is useful for sending manufacturer specific
-* reply ``osdp_MFGREP``.
-*/
+ * @brief Callback for PD command notifications. After it has been registered
+ * with `osdp_pd_set_command_callback`, this method is invoked when the PD
+ * receives a command from the CP.
+ *
+ * @param arg pointer that will was passed to the arg param of
+ * `osdp_pd_set_command_callback`.
+ * @param cmd pointer to the received command.
+ *
+ * @retval 0 if LibOSDP must send a `osdp_ACK` response
+ * @retval -ve if LibOSDP must send a `osdp_NAK` response
+ * @retval +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must send
+ * a specific response. This is useful for sending manufacturer specific
+ * reply ``osdp_MFGREP``.
+ */
 typedef int (*pd_commnand_callback_t)(void *arg, struct osdp_cmd *cmd);
 
 /**
-* @brief Callback for CP event notifications. After is has been registered with
-* `osdp_cp_set_event_callback`, this method is invoked when the CP receives an
-* event from the PD.
-*
-* @param arg pointer that will was passed to the arg param of
-* `osdp_cp_set_event_callback`.
-* @param pd PD offset number as in `pd_info_t *`.
-* @param ev pointer to osdp_event struct (filled by libosdp).
-*
-* @retval 0 on handling the event successfully.
-* @retval -ve on errors.
-*/
+ * @brief Callback for CP event notifications. After is has been registered with
+ * `osdp_cp_set_event_callback`, this method is invoked when the CP receives an
+ * event from the PD.
+ *
+ * @param arg pointer that will was passed to the arg param of
+ * `osdp_cp_set_event_callback`.
+ * @param pd PD offset number as in `pd_info_t *`.
+ * @param ev pointer to osdp_event struct (filled by libosdp).
+ *
+ * @retval 0 on handling the event successfully.
+ * @retval -ve on errors.
+ */
 typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
 
 /**

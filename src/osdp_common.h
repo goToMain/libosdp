@@ -193,7 +193,7 @@ enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_ERR,
 };
 
-enum osdp_state_e {
+enum osdp_cp_state_e {
 	OSDP_CP_STATE_INIT,
 	OSDP_CP_STATE_IDREQ,
 	OSDP_CP_STATE_CAPDET,
@@ -347,19 +347,36 @@ void osdp_phy_state_reset(struct osdp_pd *pd);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 
+/* from osdp_common.c */
+__weak int64_t osdp_millis_now(void);
+int64_t osdp_millis_since(int64_t last);
+uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
+void osdp_log(int log_level, const char *fmt, ...);
+void osdp_log_ctx_reset();
+void osdp_log_ctx_restore();
+
+const char *osdp_cmd_name(int cmd_id);
+const char *osdp_reply_name(int reply_id);
+
+void osdp_crypt_setup();
+void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
+void osdp_get_rand(uint8_t *buf, int len);
+void osdp_crypt_teardown();
+
 /* from osdp_sc.c */
-void osdp_compute_scbk(struct osdp_pd *p, uint8_t *master_key, uint8_t *scbk);
-void osdp_compute_session_keys(struct osdp_pd *p);
-void osdp_compute_cp_cryptogram(struct osdp_pd *p);
-int osdp_verify_cp_cryptogram(struct osdp_pd *p);
-void osdp_compute_pd_cryptogram(struct osdp_pd *p);
-int osdp_verify_pd_cryptogram(struct osdp_pd *p);
-void osdp_compute_rmac_i(struct osdp_pd *p);
-int osdp_decrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
-int osdp_encrypt_data(struct osdp_pd *p, int is_cmd, uint8_t *data, int length);
-int osdp_compute_mac(struct osdp_pd *p, int is_cmd, const uint8_t *data,
-		     int len);
-void osdp_sc_setup(struct osdp_pd *p);
+void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk);
+void osdp_compute_session_keys(struct osdp_pd *pd);
+void osdp_compute_cp_cryptogram(struct osdp_pd *pd);
+int osdp_verify_cp_cryptogram(struct osdp_pd *pd);
+void osdp_compute_pd_cryptogram(struct osdp_pd *pd);
+int osdp_verify_pd_cryptogram(struct osdp_pd *pd);
+void osdp_compute_rmac_i(struct osdp_pd *pd);
+int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
+int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int len);
+int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
+		     const uint8_t *data, int len);
+void osdp_sc_setup(struct osdp_pd *pd);
 void osdp_sc_teardown(struct osdp_pd *pd);
 
 static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
@@ -411,21 +428,4 @@ static inline void sc_deactivate(struct osdp_pd *pd)
 	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
 }
 
-/* from osdp_common.c */
-__weak int64_t osdp_millis_now(void);
-int64_t osdp_millis_since(int64_t last);
-uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
-void osdp_log(int log_level, const char *fmt, ...);
-void osdp_log_ctx_reset();
-void osdp_log_ctx_restore();
-
-const char *osdp_cmd_name(int cmd_id);
-const char *osdp_reply_name(int reply_id);
-
-void osdp_crypt_setup();
-void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-void osdp_get_rand(uint8_t *buf, int len);
-void osdp_crypt_teardown();
-
-#endif /* _OSDP_COMMON_H_ */
+#endif	/* _OSDP_COMMON_H_ */

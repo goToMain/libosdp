@@ -159,6 +159,7 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 			pd->input_status = event->io.status;
 			reply_code = REPLY_ISTATR;
 		}
+		break;
 	default:
 		LOG_ERR("Unknown event type %d", event->type);
 		break;

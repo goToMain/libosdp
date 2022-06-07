@@ -173,22 +173,18 @@ static const char *cp_get_cap_name(int cap)
 	return cap_name[cap];
 }
 
-/**
- * Returns:
- * +ve: length of command
- * -ve: error
- */
 static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	uint8_t *smb;
 	struct osdp_cmd *cmd = NULL;
-	int data_off, i, ret = -1, len = 0;
-
-	data_off = osdp_phy_packet_get_data_offset(pd, buf);
-	smb = osdp_phy_packet_get_smb(pd, buf);
+	int i, ret, len = 0;
+	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
+	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
 
 	buf += data_off;
 	max_len -= data_off;
+	if (max_len <= 0) {
+		return OSDP_CP_ERR_GENERIC;
+	}
 
 	#define ASSERT_BUF_LEN(need)                                         \
 		if (max_len < need) {                                        \
@@ -201,45 +197,37 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	case CMD_POLL:
 		ASSERT_BUF_LEN(CMD_POLL_LEN);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_LSTAT:
 		ASSERT_BUF_LEN(CMD_LSTAT_LEN);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_ISTAT:
 		ASSERT_BUF_LEN(CMD_ISTAT_LEN);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_OSTAT:
 		ASSERT_BUF_LEN(CMD_OSTAT_LEN);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_RSTAT:
 		ASSERT_BUF_LEN(CMD_RSTAT_LEN);
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_ID:
 		ASSERT_BUF_LEN(CMD_ID_LEN);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
-		ret = 0;
 		break;
 	case CMD_CAP:
 		ASSERT_BUF_LEN(CMD_CAP_LEN);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
-		ret = 0;
 		break;
 	case CMD_DIAG:
 		ASSERT_BUF_LEN(CMD_DIAG_LEN);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
-		ret = 0;
 		break;
 	case CMD_OUT:
 		ASSERT_BUF_LEN(CMD_OUT_LEN);
@@ -249,7 +237,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->output.control_code;
 		buf[len++] = BYTE_0(cmd->output.timer_count);
 		buf[len++] = BYTE_1(cmd->output.timer_count);
-		ret = 0;
 		break;
 	case CMD_LED:
 		ASSERT_BUF_LEN(CMD_LED_LEN);
@@ -271,7 +258,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->led.permanent.off_count;
 		buf[len++] = cmd->led.permanent.on_color;
 		buf[len++] = cmd->led.permanent.off_color;
-		ret = 0;
 		break;
 	case CMD_BUZ:
 		ASSERT_BUF_LEN(CMD_BUZ_LEN);
@@ -282,7 +268,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->buzzer.on_count;
 		buf[len++] = cmd->buzzer.off_count;
 		buf[len++] = cmd->buzzer.rep_count;
-		ret = 0;
 		break;
 	case CMD_TEXT:
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
@@ -297,7 +282,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < cmd->text.length; i++) {
 			buf[len++] = cmd->text.data[i];
 		}
-		ret = 0;
 		break;
 	case CMD_COMSET:
 		ASSERT_BUF_LEN(CMD_COMSET_LEN);
@@ -308,7 +292,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_1(cmd->comset.baud_rate);
 		buf[len++] = BYTE_2(cmd->comset.baud_rate);
 		buf[len++] = BYTE_3(cmd->comset.baud_rate);
-		ret = 0;
 		break;
 	case CMD_MFG:
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
@@ -325,23 +308,19 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < cmd->mfg.length; i++) {
 			buf[len++] = cmd->mfg.data[i];
 		}
-		ret = 0;
 		break;
 	case CMD_ACURXSIZE:
 		buf[len++] = pd->cmd_id;
 		buf[len++] = BYTE_0(OSDP_PACKET_BUF_SIZE);
 		buf[len++] = BYTE_1(OSDP_PACKET_BUF_SIZE);
-		ret = 0;
 		break;
 	case CMD_KEEPACTIVE:
 		buf[len++] = pd->cmd_id;
 		buf[len++] = BYTE_0(0); // keepalive in ms time LSB
 		buf[len++] = BYTE_1(0); // keepalive in ms time MSB
-		ret = 0;
 		break;
 	case CMD_ABORT:
 		buf[len++] = pd->cmd_id;
-		ret = 0;
 		break;
 	case CMD_FILETRANSFER:
 		buf[len++] = pd->cmd_id;
@@ -374,12 +353,12 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			return -1;
 		}
 		len += 16;
-		ret = 0;
 		break;
 	case CMD_CHLNG:
 		ASSERT_BUF_LEN(CMD_CHLNG_LEN);
 		if (smb == NULL) {
-			break;
+			LOG_ERR("Invalid secure message block!");
+			return -1;
 		}
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_11;  /* type */
@@ -388,12 +367,12 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < 8; i++) {
 			buf[len++] = pd->sc.cp_random[i];
 		}
-		ret = 0;
 		break;
 	case CMD_SCRYPT:
 		ASSERT_BUF_LEN(CMD_SCRYPT_LEN);
 		if (smb == NULL) {
-			break;
+			LOG_ERR("Invalid secure message block!");
+			return -1;
 		}
 		osdp_compute_cp_cryptogram(pd);
 		smb[0] = 3;       /* length */
@@ -403,7 +382,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < 16; i++) {
 			buf[len++] = pd->sc.cp_cryptogram[i];
 		}
-		ret = 0;
 		break;
 	default:
 		LOG_ERR("Unknown/Unsupported CMD(%02x)", pd->cmd_id);
@@ -418,11 +396,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		 */
 		smb[0] = 2;
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
-	}
-
-	if (ret < 0) {
-		LOG_ERR("Unable to build CMD(%02x)", pd->cmd_id);
-		return OSDP_CP_ERR_GENERIC;
 	}
 
 	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
@@ -793,9 +766,14 @@ static int cp_process_reply(struct osdp_pd *pd)
 
 	/* Translate phy error codes to CP errors */
 	switch (err) {
-	case OSDP_ERR_PKT_NONE: err = OSDP_CP_ERR_NONE; break;
-	case OSDP_ERR_PKT_BUSY: err = OSDP_CP_ERR_RETRY_CMD; break;
-	default: return OSDP_CP_ERR_GENERIC;
+	case OSDP_ERR_PKT_NONE:
+		err = OSDP_CP_ERR_NONE;
+		break;
+	case OSDP_ERR_PKT_BUSY:
+		err = OSDP_CP_ERR_RETRY_CMD;
+		break;
+	default:
+		return OSDP_CP_ERR_GENERIC;
 	}
 
 	if (err == OSDP_ERR_PKT_NONE) {
@@ -857,7 +835,7 @@ static inline void cp_set_offline(struct osdp_pd *pd)
 static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 {
 	return (sc_is_capable(pd) && !sc_is_active(pd) &&
-	        osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
+		osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
 }
 
 static int cp_phy_state_update(struct osdp_pd *pd)
@@ -1040,8 +1018,8 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDID) {
-			LOG_ERR("Unexpected REPLY(%02x) for cmd " STR(CMD_ID),
-				pd->reply_id);
+			LOG_ERR("Unexpected REPLY(%02x) for cmd "
+				STR(CMD_ID), pd->reply_id);
 			cp_set_offline(pd);
 			break;
 		}
@@ -1052,8 +1030,8 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDCAP) {
-			LOG_ERR("Unexpected REPLY(%02x) for cmd " STR(CMD_CAP),
-				pd->reply_id);
+			LOG_ERR("Unexpected REPLY(%02x) for cmd "
+				STR(CMD_CAP), pd->reply_id);
 			cp_set_offline(pd);
 			break;
 		}
@@ -1066,9 +1044,9 @@ static int state_update(struct osdp_pd *pd)
 			LOG_INF("SC disabled or not capable. Set PD offline due "
 				"to ENFORCE_SECURE");
 			cp_set_offline(pd);
-		} else {
-			cp_set_online(pd);
+			break;
 		}
+		cp_set_online(pd);
 		break;
 	case OSDP_CP_STATE_SC_INIT:
 		osdp_sc_setup(pd);
@@ -1103,12 +1081,12 @@ static int state_update(struct osdp_pd *pd)
 				LOG_ERR("CHLNG failed. Set PD offline due to "
 					"ENFORCE_SECURE");
 				cp_set_offline(pd);
-			} else {
-				LOG_ERR("CHLNG failed. Online without SC");
-				pd->sc_tstamp = osdp_millis_now();
-				osdp_phy_state_reset(pd);
-				cp_set_online(pd);
+				break;
 			}
+			LOG_ERR("CHLNG failed. Online without SC");
+			pd->sc_tstamp = osdp_millis_now();
+			osdp_phy_state_reset(pd);
+			cp_set_online(pd);
 			break;
 		}
 		cp_set_state(pd, OSDP_CP_STATE_SC_SCRYPT);
@@ -1122,12 +1100,12 @@ static int state_update(struct osdp_pd *pd)
 				LOG_ERR("SCRYPT failed. Set PD offline due to "
 					"ENFORCE_SECURE");
 				cp_set_offline(pd);
-			} else {
-				LOG_ERR("SCRYPT failed. Online without SC");
-				osdp_phy_state_reset(pd);
-				pd->sc_tstamp = osdp_millis_now();
-				cp_set_online(pd);
+				break;
 			}
+			LOG_ERR("SCRYPT failed. Online without SC");
+			osdp_phy_state_reset(pd);
+			pd->sc_tstamp = osdp_millis_now();
+			cp_set_online(pd);
 			break;
 		}
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
@@ -1159,11 +1137,10 @@ static int state_update(struct osdp_pd *pd)
 				LOG_ERR("Failed to set SCBK; "
 					"Set PD offline due to ENFORCE_SECURE");
 				cp_set_offline(pd);
-			} else {
-				LOG_WRN("Failed to set SCBK; "
-					"Continue with SCBK-D");
-				cp_set_online(pd);
+				break;
 			}
+			LOG_WRN("Failed to set SCBK; continue with SCBK-D");
+			cp_set_online(pd);
 			break;
 		}
 		osdp_keyset_complete(pd);
@@ -1207,10 +1184,10 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = osdp_to_pd(ctx, i);
-		if (res < 0 && cmd[i]) {
-			cp_cmd_free(pd, cmd[i]);
-		} else {
+		if (res == 0) {
 			cp_cmd_enqueue(pd, cmd[i]);
+		} else if (cmd[i]) {
+			cp_cmd_free(pd, cmd[i]);
 		}
 	}
 

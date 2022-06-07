@@ -44,8 +44,8 @@ LOGGER_DECLARE(osdp, "PD");
 #define REPLY_CCRYPT_LEN               33
 #define REPLY_RMAC_I_LEN               17
 #define REPLY_KEYPAD_LEN               2
-#define REPLY_RAW_LEN	               4
-#define REPLY_FMT_LEN	               3
+#define REPLY_RAW_LEN                  4
+#define REPLY_FMT_LEN                  3
 #define REPLY_MFGREP_LEN               4 /* variable length command */
 
 enum osdp_pd_error_e {
@@ -563,8 +563,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = pd->command_callback(pd->command_callback_arg,
 						   &cmd);
 		} else {
-			LOG_ERR("Keyset without a command callback! The SC new"
-			        "SCBK will be lost when the PD reboots.");
+			LOG_ERR("Keyset without a command callback! The SC new "
+				"SCBK will be lost when the PD reboots.");
 		}
 		if (ret != 0) {
 			pd->reply_id = REPLY_NAK;
@@ -613,18 +613,18 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	}
 
-	if (pd->cmd_id != CMD_POLL) {
-		LOG_DBG("CMD: %s(%02x) REPLY: %s(%02x)",
-			osdp_cmd_name(pd->cmd_id), pd->cmd_id,
-			osdp_reply_name(pd->reply_id), pd->reply_id);
-	}
-
 	if (ret != 0 && ret != OSDP_PD_ERR_REPLY) {
 		LOG_ERR("Invalid command structure. CMD: %02x, Len: %d ret: %d",
 			pd->cmd_id, len, ret);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
 		return OSDP_PD_ERR_REPLY;
+	}
+
+	if (pd->cmd_id != CMD_POLL) {
+		LOG_DBG("CMD: %s(%02x) REPLY: %s(%02x)",
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id,
+			osdp_reply_name(pd->reply_id), pd->reply_id);
 	}
 
 	return ret;
@@ -637,13 +637,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
  */
 static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int i, data_off, len = 0, ret = -1;
-	uint8_t t1, *smb;
-	struct osdp_event *event;
+	int i, len = 0, ret = -1;
+	uint8_t t1;
 	struct osdp_cmd *cmd;
+	struct osdp_event *event;
+	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
+	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
 
-	data_off = osdp_phy_packet_get_data_offset(pd, buf);
-	smb = osdp_phy_packet_get_smb(pd, buf);
 	buf += data_off;
 	max_len -= data_off;
 
@@ -946,13 +946,19 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, one_pkt_len);
 
 	/* Translate phy error codes to PD errors */
-	switch(err) {
-	case OSDP_ERR_PKT_NONE: break;
-	case OSDP_ERR_PKT_NACK: return OSDP_PD_ERR_REPLY;
-	case OSDP_ERR_PKT_WAIT: return OSDP_PD_ERR_NO_DATA;
-	case OSDP_ERR_PKT_SKIP: return OSDP_PD_ERR_IGNORE;
-	case OSDP_ERR_PKT_FMT: return OSDP_PD_ERR_GENERIC;
-	default: return err; /* propagate other errors as-is */
+	switch (err) {
+	case OSDP_ERR_PKT_NONE:
+		break;
+	case OSDP_ERR_PKT_NACK:
+		return OSDP_PD_ERR_REPLY;
+	case OSDP_ERR_PKT_WAIT:
+		return OSDP_PD_ERR_NO_DATA;
+	case OSDP_ERR_PKT_SKIP:
+		return OSDP_PD_ERR_IGNORE;
+	case OSDP_ERR_PKT_FMT:
+		return OSDP_PD_ERR_GENERIC;
+	default:
+		return err; /* propagate other errors as-is */
 	}
 
 	rc = osdp_phy_decode_packet(pd, pd->rx_buf, *one_pkt_len, &buf);
@@ -1063,8 +1069,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
 			return;
 		}
-		LOG_DBG("rx_buf: %d", pd->rx_buf_len);
-		hexdump(pd->rx_buf, pd->rx_buf_len, "Buf");
+		hexdump(pd->rx_buf, pd->rx_buf_len, "rx_buf(len:%d):", pd->rx_buf_len);
 	}
 
 	if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {

@@ -8,11 +8,11 @@
 
 LOGGER_DECLARE(osdp, "PHY");
 
-#define OSDP_PKT_MARK	0xFF
-#define OSDP_PKT_SOM	0x53
-#define PKT_CONTROL_SQN 0x03
-#define PKT_CONTROL_CRC 0x04
-#define PKT_CONTROL_SCB 0x08
+#define OSDP_PKT_MARK                  0xFF
+#define OSDP_PKT_SOM                   0x53
+#define PKT_CONTROL_SQN                0x03
+#define PKT_CONTROL_CRC                0x04
+#define PKT_CONTROL_SCB                0x08
 
 struct osdp_packet_header {
 	uint8_t som;
@@ -341,21 +341,21 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	if (is_pd_mode(pd)) {
 		if (comp == 0) {
 			/**
-			* CP is trying to restart communication by sending a 0.
-			* The current PD implementation does not hold any state
-			* between commands so we can just set seq_number to -1
-			* (so it gets incremented to 0 with a call to
-			* phy_get_seq_number()) and invalidate any established
-			* secure channels.
-			*/
+			 * CP is trying to restart communication by sending a 0.
+			 * The current PD implementation does not hold any state
+			 * between commands so we can just set seq_number to -1
+			 * (so it gets incremented to 0 with a call to
+			 * phy_get_seq_number()) and invalidate any established
+			 * secure channels.
+			 */
 			pd->seq_number = -1;
 			sc_deactivate(pd);
 		}
 		if (comp == pd->seq_number) {
 			/**
-			* TODO: PD must resend the last response if CP send the
-			* same sequence number again.
-			*/
+			 * TODO: PD must resend the last response if CP send the
+			 * same sequence number again.
+			 */
 			LOG_ERR("seq-repeat/reply-resend not supported!");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
@@ -454,7 +454,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 		 */
 		if (is_cp_mode(pd) && pd->cmd_id == CMD_KEYSET &&
 		    pkt->data[0] == REPLY_ACK) {
-			    osdp_keyset_complete(pd);
+			osdp_keyset_complete(pd);
 		}
 #endif
 		if (sc_is_active(pd)) {
@@ -486,7 +486,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			 * Only the data portion of message (after id byte)
 			 * is encrypted. While (en/de)crypting, we must skip
 			 * header (6), security block (2) and cmd/reply id (1)
-			 * bytes.
+			 * bytes if cmd/reply has no data, use SCS_15/SCS_16.
 			 *
 			 * At this point, the header and security block is
 			 * already consumed. So we can just skip the cmd/reply

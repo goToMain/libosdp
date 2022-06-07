@@ -14,10 +14,10 @@
 extern "C" {
 #endif
 
-#define OSDP_CMD_TEXT_MAX_LEN	    32
-#define OSDP_CMD_KEYSET_KEY_MAX_LEN 16
-#define OSDP_CMD_MFG_MAX_DATALEN    64
-#define OSDP_EVENT_MAX_DATALEN	    64
+#define OSDP_CMD_TEXT_MAX_LEN          32
+#define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
+#define OSDP_CMD_MFG_MAX_DATALEN       64
+#define OSDP_EVENT_MAX_DATALEN         64
 
 /**
  * @brief OSDP setup flags. See osdp_pd_info_t::flags
@@ -430,7 +430,7 @@ struct osdp_cmd_buzzer {
 };
 
 /**
- * @brief Command to manuplate any display units that the PD supports.
+ * @brief Command to manipulate any display units that the PD supports.
  *
  * @param reader 0 = First Reader, 1 = Second Reader, etc.
  * @param control_code One of the following:
@@ -713,6 +713,70 @@ typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
 typedef void (*osdp_command_complete_callback_t)(int id);
 
 /* ------------------------------- */
+/*            PD Methods           */
+/* ------------------------------- */
+
+/**
+ * @brief This method is used to setup a device in PD mode. Application must
+ * store the returned context poiter and pass it back to all OSDP functions
+ * intact.
+ *
+ * @param info Pointer to iinfo struct populated by application.
+ *
+ * @retval OSDP Context on success
+ * @retval NULL on errors
+ */
+osdp_t *osdp_pd_setup(osdp_pd_info_t *info);
+
+/**
+ * @brief Periodic refresh method. Must be called by the application at least
+ * once every 50ms to meet OSDP timing requirements.
+ *
+ * @param ctx OSDP context
+ */
+void osdp_pd_refresh(osdp_t *ctx);
+
+/**
+ * @brief Cleanup all osdp resources. The context pointer is no longer valid
+ * after this call.
+ *
+ * @param ctx OSDP context
+ */
+void osdp_pd_teardown(osdp_t *ctx);
+
+/**
+ * @brief Set PD's capabilities
+ *
+ * @param ctx OSDP context
+ * @param cap pointer to array of cap (`struct osdp_pd_cap`) terminated by a
+ *        capability with cap->function_code set to 0.
+ */
+void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
+
+/**
+ * @brief Set callback method for PD command notification. This callback is
+ * invoked when the PD receives a command from the CP.
+ *
+ * @param ctx OSDP context
+ * @param cb The callback function's pointer
+ * @param arg A pointer that will be passed as the first argument of `cb`
+ */
+void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb,
+				  void *arg);
+
+/**
+ * @brief API to notify PD events to CP. These events are sent to the CP as an
+ * alternate response to a POLL command.
+ *
+ * @param ctx OSDP context
+ * @param event pointer to event struct. Must be filled by application.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
+
+/* ------------------------------- */
 /*            CP Methods           */
 /* ------------------------------- */
 
@@ -850,70 +914,6 @@ int osdp_cp_get_io_status(osdp_t *ctx, int pd_idx,
 			  uint32_t *input, uint32_t *output);
 
 /* ------------------------------- */
-/*            PD Methods           */
-/* ------------------------------- */
-
-/**
- * @brief This method is used to setup a device in PD mode. Application must
- * store the returned context poiter and pass it back to all OSDP functions
- * intact.
- *
- * @param info Pointer to iinfo struct populated by application.
- *
- * @retval OSDP Context on success
- * @retval NULL on errors
- */
-osdp_t *osdp_pd_setup(osdp_pd_info_t *info);
-
-/**
- * @brief Periodic refresh method. Must be called by the application at least
- * once every 50ms to meet OSDP timing requirements.
- *
- * @param ctx OSDP context
- */
-void osdp_pd_refresh(osdp_t *ctx);
-
-/**
- * @brief Cleanup all osdp resources. The context pointer is no longer valid
- * after this call.
- *
- * @param ctx OSDP context
- */
-void osdp_pd_teardown(osdp_t *ctx);
-
-/**
- * @brief Set PD's capabilities
- *
- * @param ctx OSDP context
- * @param cap pointer to array of cap (`struct osdp_pd_cap`) terminated by a
- *        capability with cap->function_code set to 0.
- */
-void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
-
-/**
- * @brief Set callback method for PD command notification. This callback is
- * invoked when the PD receives a command from the CP.
- *
- * @param ctx OSDP context
- * @param cb The callback function's pointer
- * @param arg A pointer that will be passed as the first argument of `cb`
- */
-void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb,
-				  void *arg);
-
-/**
- * @brief API to notify PD events to CP. These events are sent to the CP as an
- * alternate response to a POLL command.
- *
- * @param ctx OSDP context
- * @param event pointer to event struct. Must be filled by application.
- *
- * @retval 0 on success
- * @retval -1 on failure
- */
-int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
-
-/* ------------------------------- */
 /*          Common Methods         */
 /* ------------------------------- */
 
@@ -973,13 +973,20 @@ const char *osdp_get_source_info();
 
 /**
  * @brief Get a bit mask of number of PD that are online currently.
- * `bitmask` must be as large as (num_pds + 7 / 8).
+ *
+ * @param ctx OSDP context
+ * @param bitmask pointer to an array of bytes. must be as large as
+ *                (num_pds + 7 / 8).
  */
 void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief Get a bit mask of number of PD that are online and have an active
- * secure channel currently. `bitmask` must be as large as (num_pds + 7 / 8).
+ * secure channel currently.
+ *
+ * @param ctx OSDP context
+ * @param bitmask pointer to an array of bytes. must be as large as
+ *                (num_pds + 7 / 8).
  */
 void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
 
@@ -989,6 +996,8 @@ void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
  * such as changing the baud rate of the underlying channel after a COMSET
  * command was acknowledged/issued by a peer.
  *
+ * @param ctx OSDP context
+ * @param cb Callback to be invoked when a command is completed.
  */
 void osdp_set_command_complete_callback(osdp_t *ctx,
 					osdp_command_complete_callback_t cb);
@@ -1088,4 +1097,4 @@ int osdp_get_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset);
 }
 #endif
 
-#endif /* _OSDP_H_ */
+#endif	/* _OSDP_H_ */

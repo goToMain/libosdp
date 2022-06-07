@@ -73,7 +73,7 @@ class ControlPanel():
 
     def is_sc_active(self, address):
         pd = self.pd_addr.index(address)
-        return self.sc_status() & (1 << pd)
+        return bool(self.sc_status() & (1 << pd))
 
     def get_num_sc_active(self):
         sc_active = 0

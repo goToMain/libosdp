@@ -125,6 +125,11 @@ const char *osdp_reply_name(int reply_id)
 	return names[reply_id - REPLY_ACK];
 }
 
+void osdp_keyset_complete(struct osdp_pd *pd)
+{
+	cp_keyset_complete(pd);
+}
+
 /* --- Exported Methods --- */
 
 OSDP_EXPORT

@@ -1143,7 +1143,7 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_online(pd);
 			break;
 		}
-		osdp_keyset_complete(pd);
+		cp_keyset_complete(pd);
 		pd->seq_number = -1;
 		break;
 	default:
@@ -1194,7 +1194,7 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 	return res;
 }
 
-void osdp_keyset_complete(struct osdp_pd *pd)
+void cp_keyset_complete(struct osdp_pd *pd)
 {
 	struct osdp_cmd *c = (struct osdp_cmd *)pd->ephemeral_data;
 
@@ -1411,11 +1411,11 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 }
 
 OSDP_EXPORT
-int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
+int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
-	struct osdp_cmd *cmd;
+	struct osdp_cmd *p;
 	int cmd_id;
 
 	if (pd->state != OSDP_CP_STATE_ONLINE) {
@@ -1423,7 +1423,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 		return -1;
 	}
 
-	switch (p->id) {
+	switch (cmd->id) {
 	case OSDP_CMD_OUTPUT:
 		cmd_id = CMD_OUT;
 		break;
@@ -1443,10 +1443,10 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_FILE_TX:
-		return osdp_file_tx_initiate(pd, p->file_tx.id,
-					     p->file_tx.flags);
+		return osdp_file_tx_initiate(pd, cmd->file_tx.id,
+					     cmd->file_tx.flags);
 	case OSDP_CMD_KEYSET:
-		if (p->keyset.type == 1) {
+		if (cmd->keyset.type == 1) {
 			if (!sc_is_active(pd))
 				return -1;
 			cmd_id = CMD_KEYSET;
@@ -1457,20 +1457,20 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *p)
 				  "due to ENFORCE_SECURE;");
 			return -1;
 		}
-		return osdp_cp_send_command_keyset(ctx, &p->keyset);
+		return osdp_cp_send_command_keyset(ctx, &cmd->keyset);
 	default:
-		LOG_PRINT("Invalid CMD_ID:%d", p->id);
+		LOG_PRINT("Invalid CMD_ID:%d", cmd->id);
 		return -1;
 	}
 
-	cmd = cp_cmd_alloc(pd);
-	if (cmd == NULL) {
+	p = cp_cmd_alloc(pd);
+	if (p == NULL) {
 		return -1;
 	}
 
-	memcpy(cmd, p, sizeof(struct osdp_cmd));
-	cmd->id = cmd_id; /* translate to internal */
-	cp_cmd_enqueue(pd, cmd);
+	memcpy(p, cmd, sizeof(struct osdp_cmd));
+	p->id = cmd_id; /* translate to internal */
+	cp_cmd_enqueue(pd, p);
 	return 0;
 }
 

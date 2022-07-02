@@ -313,7 +313,7 @@ struct osdp_pd {
 
 	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;
-	pd_commnand_callback_t command_callback;
+	pd_command_callback_t command_callback;
 };
 
 struct osdp {

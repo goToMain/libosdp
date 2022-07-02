@@ -126,7 +126,7 @@ public:
 		osdp_pd_refresh(_ctx);
 	}
 
-	void set_command_callback(pd_commnand_callback_t cb)
+	void set_command_callback(pd_command_callback_t cb)
 	{
 		osdp_pd_set_command_callback(_ctx, cb, _ctx);
 	}

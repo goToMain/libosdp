@@ -686,7 +686,7 @@ struct osdp_event {
  * a specific response. This is useful for sending manufacturer specific
  * reply ``osdp_MFGREP``.
  */
-typedef int (*pd_commnand_callback_t)(void *arg, struct osdp_cmd *cmd);
+typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
 
 /**
  * @brief Callback for CP event notifications. After is has been registered with
@@ -761,7 +761,7 @@ void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
  * @param cb The callback function's pointer
  * @param arg A pointer that will be passed as the first argument of `cb`
  */
-void osdp_pd_set_command_callback(osdp_t *ctx, pd_commnand_callback_t cb,
+void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 				  void *arg);
 
 /**

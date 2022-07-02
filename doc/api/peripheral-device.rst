@@ -33,7 +33,7 @@ PD Capabilities
 Commands
 --------
 
-.. doxygentypedef:: pd_commnand_callback_t
+.. doxygentypedef:: pd_command_callback_t
 
 .. doxygenfunction:: osdp_pd_set_command_callback
 

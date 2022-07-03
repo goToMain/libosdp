@@ -1562,3 +1562,19 @@ int osdp_cp_get_io_status(osdp_t *ctx, int pd_idx,
 	*output = pd->output_status;
 	return 0;
 }
+
+#ifdef UNIT_TESTING
+
+/**
+ * Force export some private methods for testing.
+ */
+void (*test_cp_cmd_enqueue)(struct osdp_pd *,
+                            struct osdp_cmd *) = cp_cmd_enqueue;
+struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
+int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
+int (*test_state_update)(struct osdp_pd *) = state_update;
+int (*test_cp_build_packet)(struct osdp_pd *pd) = cp_build_packet;
+const int CP_ERR_CAN_YIELD = OSDP_CP_ERR_CAN_YIELD;
+const int CP_ERR_INPROG = OSDP_CP_ERR_INPROG;
+
+#endif /* UNIT_TESTING */

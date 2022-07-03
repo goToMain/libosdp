@@ -13,6 +13,7 @@ class PDInfo:
         self.address = address
         self.flags = flags
         self.scbk = scbk
+        self.name = name
         self.channel_device = '/tmp/pyosdp-' + name
         self.channel_speed = 115200
         self.channel_type = channel_type
@@ -33,6 +34,7 @@ class PDInfo:
 
     def get(self) -> dict:
         return {
+            'name': self.name,
             'address': self.address,
             'flags': self.get_flags(),
             'scbk': self.scbk,

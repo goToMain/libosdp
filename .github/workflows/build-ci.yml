@@ -59,6 +59,9 @@ jobs:
       run: |
         python3 -m pip install -r pytest/requirements.txt
         make check
+    - name: unit-tests
+      run: |
+        make check-ut
 
   CheckPatch:
     runs-on: ubuntu-latest

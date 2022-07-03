@@ -1174,7 +1174,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 
 	assert(info);
 
-	LOG_SET_PREFIX("PD%d", info->address);
+	LOG_SET_PREFIX(info->name);
 
 #ifndef CONFIG_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
@@ -1204,6 +1204,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 
 	pd->osdp_ctx = ctx;
 	pd->idx = 0;
+	pd->name = info->name;
 	pd->baud_rate = info->baud_rate;
 	pd->address = info->address;
 	pd->flags = info->flags;
@@ -1259,7 +1260,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	LOG_SET_PREFIX("PD%d", pd->address);
+	LOG_SET_PREFIX(pd->name);
 	osdp_pd_update(pd);
 }
 

@@ -275,7 +275,7 @@ typedef int (*osdp_write_fn_t)(void *data, uint8_t *buf, int len);
 typedef void (*osdp_flush_fn_t)(void *data);
 
 /**
- * @brief User defined communication channel abstaction for OSDP devices.
+ * @brief User defined communication channel abstraction for OSDP devices.
  * The methods for read/write/flush are expected to be non-blocking.
  *
  * @param data pointer to a block of memory that will be passed to the
@@ -299,13 +299,14 @@ struct osdp_channel {
 /**
  * @brief OSDP PD Information. This struct is used to describe a PD to LibOSDP.
  *
+ * @param name User provided name for this PD (log messages include this name)
  * @param baud_rate Can be one of 9600/19200/38400/115200/230400
  * @param address 7 bit PD address. the rest of the bits are ignored. The
  *        special address 0x7F is used for broadcast. So there can be 2^7-1
  *        devices on a multi-drop channel
  * @param flags Used to modify the way the context is setup. See `OSDP_FLAG_XXX`
  * @param id Static information that the PD reports to the CP when it received a
- *        `CMD_ID`. These information must be populated by a PD appliication.
+ *        `CMD_ID`. These information must be populated by a PD application.
  * @param cap This is a pointer to an array of structures containing the PD'
  *        capabilities. Use { -1, 0, 0 } to terminate the array. This is used
  *        only PD mode of operation
@@ -316,6 +317,7 @@ struct osdp_channel {
  *        the Master Key (in case of CP).
  */
 typedef struct {
+	const char *name;
 	int baud_rate;
 	int address;
 	int flags;
@@ -326,9 +328,9 @@ typedef struct {
 } osdp_pd_info_t;
 
 /**
- * @brief To keep the OSDP internal data strucutres from polluting the exposed
+ * @brief To keep the OSDP internal data structures from polluting the exposed
  * headers, they are typedefed to void before sending them to the upper layers.
- * This level of abstaction looked reasonable as _technically_ no one should
+ * This level of abstraction looked reasonable as _technically_ no one should
  * attempt to modify it outside fo the LibOSDP and their definition may change
  * at any time.
  */
@@ -485,7 +487,7 @@ struct osdp_cmd_keyset {
 /**
  * @brief Manufacturer Specific Commands
  *
- * @param vendor_code 3-byte IEEE assigned OUI. Most Significat 8-bits are
+ * @param vendor_code 3-byte IEEE assigned OUI. Most Significant 8-bits are
  *        unused.
  * @param command 1-byte manufacturer defined osdp command
  * @param length Length of command data (optional)
@@ -630,8 +632,8 @@ struct osdp_event_mfgrep {
  *
  * This event is used by the PD to indicate input/output status changes. Upto a
  * maximum of 32 input/output status can be reported. The values of the least
- * significat N bit of status are considered, where N is the number of items as
- * described in the correspoding capability codes: OSDP_PD_CAP_OUTPUT_CONTROL
+ * significant N bit of status are considered, where N is the number of items as
+ * described in the corresponding capability codes: OSDP_PD_CAP_OUTPUT_CONTROL
  * and OSDP_PD_CAP_CONTACT_STATUS_MONITORING.
  *
  * @param type 0 - input; 1 - output
@@ -718,7 +720,7 @@ typedef void (*osdp_command_complete_callback_t)(int id);
 
 /**
  * @brief This method is used to setup a device in PD mode. Application must
- * store the returned context poiter and pass it back to all OSDP functions
+ * store the returned context pointer and pass it back to all OSDP functions
  * intact.
  *
  * @param info Pointer to iinfo struct populated by application.
@@ -782,7 +784,7 @@ int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
 
 /**
  * @brief This method is used to setup a device in CP mode. Application must
- * store the returned context poiter and pass it back to all OSDP functions
+ * store the returned context pointer and pass it back to all OSDP functions
  * intact.
  *
  * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
@@ -918,7 +920,7 @@ int osdp_cp_get_io_status(osdp_t *ctx, int pd_idx,
 /* ------------------------------- */
 
 /**
- * @brief Different levels of log messages; based on importace of the message
+ * @brief Different levels of log messages; based on importance of the message
  * with LOG_EMERG being most critical to LOG_DEBUG being the least.
  */
 enum osdp_log_level_e {
@@ -1010,9 +1012,9 @@ void osdp_set_command_complete_callback(osdp_t *ctx,
 struct osdp_file_ops {
 	/**
 	 * @brief A opaque pointer to private data that can be filled by the
-	 * application which will be passsed as the first argument for each of
+	 * application which will be passed as the first argument for each of
 	 * the below functions. Applications can keep their file context info
-	 * such as the open file discriptors or any other private data here.
+	 * such as the open file descriptors or any other private data here.
 	 */
 	void *arg;
 
@@ -1020,8 +1022,8 @@ struct osdp_file_ops {
 	 * @brief Open a pre-agreed file
 	 *
 	 * @param arg Opaque pointer to private data passed though by libosdp
-	 * @param file_id File ID of pre-aggreed file between this CP and PD
-	 * @param size Size of the file that was openned (filled by application)
+	 * @param file_id File ID of pre-agreed file between this CP and PD
+	 * @param size Size of the file that was opened (filled by application)
 	 *
 	 * @retval 0 on success. -1 on errors.
 	 */
@@ -1060,7 +1062,7 @@ struct osdp_file_ops {
 	int (*write)(void *arg, const void *buf, int size, int offset);
 
 	/**
-	 * @brief Close file that corresponds to a given file discriptor
+	 * @brief Close file that corresponds to a given file descriptor
 	 *
 	 * @param arg Opaque pointer to private data passed though by libosdp
 	 *

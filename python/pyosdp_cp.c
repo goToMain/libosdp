@@ -246,6 +246,8 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			goto error;
 		}
 
+		pyosdp_dict_get_str(py_info, "name", &info->name);
+
 		if (pyosdp_dict_get_int(py_info, "address", &info->address))
 			goto error;
 

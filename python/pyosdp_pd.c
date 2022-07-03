@@ -222,6 +222,8 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 					 &py_pd_cap_list))
 		goto error;
 
+	pyosdp_dict_get_str(py_info, "name", &info.name);
+
 	if (py_pd_cap_list && pyosdp_add_pd_cap(py_pd_cap_list, &info))
 		goto error;
 

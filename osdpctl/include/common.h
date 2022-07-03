@@ -23,6 +23,7 @@ enum config_channel_topology_e {
 };
 
 struct config_pd_s {
+	char *name;
 	char *channel_device;
 	enum channel_type channel_type;
 	int channel_speed;

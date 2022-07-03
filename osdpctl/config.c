@@ -91,6 +91,17 @@ int config_parse_key_log_file(const char *val, void *data)
 	return INI_SUCCESS;
 }
 
+int config_parse_key_name(const char *val, void *data)
+{
+	struct config_pd_s *p = data;
+
+	if (!val || val[0] == 0)
+		p->name = NULL;
+	else
+		p->name = strdup(val);
+	return INI_SUCCESS;
+}
+
 int config_parse_key_capabilites(const char *val, void *data)
 {
 	int i, ival[3];
@@ -306,6 +317,7 @@ const struct config_key_s g_config_key_global[] = {
 };
 
 const struct config_key_s g_config_key_pd[] = {
+	{ "name", config_parse_key_name },
 	{ "capabilities", config_parse_key_capabilites },
 	{ "channel_type", config_parse_key_channel_type },
 	{ "channel_speed", config_parse_key_channel_speed },
@@ -441,6 +453,7 @@ void config_print(struct config_s *config)
 	for (i = 0; i < config->num_pd; i++) {
 		pd = config->pd + i;
 		printf("\nPD-%d:\n", i);
+		printf("name: '%s'\n", pd->name);
 		printf("channel_speed: %d\n", pd->channel_speed);
 		printf("channel_type: %d\n", pd->channel_type);
 		printf("channel_device: %s\n", pd->channel_device);

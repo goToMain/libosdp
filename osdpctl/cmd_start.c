@@ -266,7 +266,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	ARG_UNUSED(argc);
 
 	if (c->log_file) {
-		printf("Redirecting stdout and strerr to log_file %s\n",
+		printf("Redirecting stdout and stderr to log_file %s\n",
 		       c->log_file);
 		o_redirect(3, c->log_file);
 	}
@@ -291,6 +291,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	for (i = 0; i < c->num_pd; i++) {
 		info = info_arr + i;
 		pd = c->pd + i;
+		info->name = pd->name;
 		info->address = pd->address;
 		info->baud_rate = pd->channel_speed;
 
@@ -319,8 +320,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 	osdp_logger_init(c->log_level, NULL);
 
 	if (c->mode == CONFIG_MODE_CP) {
-		c->cp_ctx =
-			osdp_cp_setup2(c->num_pd, info_arr);
+		c->cp_ctx = osdp_cp_setup2(c->num_pd, info_arr);
 		if (c->cp_ctx == NULL) {
 			printf("Failed to setup CP context\n");
 			return -1;
@@ -336,8 +336,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 			printf("Failed to setup PD context\n");
 			return -1;
 		}
-		osdp_pd_set_command_callback(c->pd_ctx, pd_command_handler,
-					     NULL);
+		osdp_pd_set_command_callback(c->pd_ctx, pd_command_handler, NULL);
 	}
 
 	free(info_arr);

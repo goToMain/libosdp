@@ -270,6 +270,7 @@ struct osdp_queue {
 };
 
 struct osdp_pd {
+	const char *name;
 	struct osdp *osdp_ctx; /* Ref to osdp * to access shared resources */
 	int idx;               /* Offset into osdp->pd[] for this PD */
 	uint32_t flags;        /* Used with: ISSET_FLAG, SET_FLAG, CLEAR_FLAG */

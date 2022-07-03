@@ -1326,6 +1326,7 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		pd = osdp_to_pd(ctx, i);
 		pd->idx = i;
 		pd->osdp_ctx = ctx;
+		pd->name = info->name;
 		pd->baud_rate = info->baud_rate;
 		pd->address = info->address;
 		pd->flags = info->flags;
@@ -1419,7 +1420,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	do {
 		pd = GET_CURRENT_PD(ctx);
-		LOG_SET_PREFIX("PD%d", pd->address);
+		LOG_SET_PREFIX(pd->name);
 
 		if (cp_refresh(pd) < 0)
 			break;

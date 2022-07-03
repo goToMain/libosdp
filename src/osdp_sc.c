@@ -241,7 +241,7 @@ void osdp_sc_setup(struct osdp_pd *pd)
 		pd->sc.pd_client_uid[6] = BYTE_2(pd->id.serial_number);
 		pd->sc.pd_client_uid[7] = BYTE_3(pd->id.serial_number);
 	} else {
-		osdp_get_rand(pd->sc.cp_random, 8);
+		osdp_fill_random(pd->sc.cp_random, 8);
 	}
 }
 

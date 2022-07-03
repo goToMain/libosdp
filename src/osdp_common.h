@@ -17,6 +17,7 @@
 #include <utils/queue.h>
 #include <utils/slab.h>
 #include <utils/logger.h>
+#include <utils/assert.h>
 
 #include <osdp.h>
 #include "osdp_config.h" /* generated */
@@ -58,6 +59,8 @@
 #define safe_free(p)                                                           \
 	if (p)                                                                 \
 		free(p)
+
+#define osdp_dump hexdump // for zephyr compatibility.
 
 /* Unused type only to estimate ephemeral_data size */
 union osdp_ephemeral_data {
@@ -367,7 +370,7 @@ const char *osdp_reply_name(int reply_id);
 void osdp_crypt_setup();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
-void osdp_get_rand(uint8_t *buf, int len);
+void osdp_fill_random(uint8_t *buf, int len);
 void osdp_crypt_teardown();
 
 /* from osdp_sc.c */

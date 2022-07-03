@@ -46,7 +46,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 	}
 }
 
-void osdp_get_rand(uint8_t *buf, int len)
+void osdp_fill_random(uint8_t *buf, int len)
 {
 	int i, rnd;
 

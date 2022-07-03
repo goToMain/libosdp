@@ -92,7 +92,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int data_len)
 	EVP_CIPHER_CTX_free(ctx);
 }
 
-void osdp_get_rand(uint8_t *buf, int len)
+void osdp_fill_random(uint8_t *buf, int len)
 {
 	if (RAND_bytes(buf, len) != 1) {
 		osdp_openssl_fatal();

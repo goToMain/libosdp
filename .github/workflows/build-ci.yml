@@ -57,7 +57,7 @@ jobs:
       run: cmake .
     - name: pytest
       run: |
-        python3 -m pip install -r pytest/requirements.txt
+        python3 -m pip install -r tests/pytest/requirements.txt
         make check
     - name: unit-tests
       run: |

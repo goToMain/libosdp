@@ -159,7 +159,7 @@ static const char *cp_get_cap_name(int cap)
 		[OSDP_PD_CAP_OUTPUT_CONTROL] = "OutputControl",
 		[OSDP_PD_CAP_CARD_DATA_FORMAT] = "CardDataFormat",
 		[OSDP_PD_CAP_READER_LED_CONTROL] = "LEDControl",
-		[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT] = "AudiableControl",
+		[OSDP_PD_CAP_READER_AUDIBLE_OUTPUT] = "AudibleControl",
 		[OSDP_PD_CAP_READER_TEXT_OUTPUT] = "TextOutput",
 		[OSDP_PD_CAP_TIME_KEEPING] = "TimeKeeping",
 		[OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT] = "CheckCharacter",

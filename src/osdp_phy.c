@@ -161,7 +161,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	uint8_t *data;
 	int i, data_len;
 
-	/* Do a sanity check only; we expect expect header to be prefilled */
+	/* Do a sanity check only; we expect expect header to be pre-filled */
 	if ((unsigned long)len <= sizeof(struct osdp_packet_header)) {
 		LOG_ERR("PKT_F: Invalid header");
 		return OSDP_ERR_PKT_FMT;
@@ -207,7 +207,7 @@ int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			/**
 			 * check if the passed buffer can hold the encrypted
 			 * data where length may be rounded up to the nearest
-			 * 16 byte block bondary.
+			 * 16 byte block boundary.
 			 */
 			if (AES_PAD_LEN(data_len + 1) > max_len) {
 				/* data_len + 1 for OSDP_SC_EOM_MARKER */

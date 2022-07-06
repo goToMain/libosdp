@@ -8,7 +8,7 @@
 #define _OSDP_CONFIG_H_
 
 /**
- * @brief The following macros are defined defined from the variabled in cmake
+ * @brief The following macros are defined defined from the variable in cmake
  * files. All @XXX@ are replaced by the value of XXX as resolved by cmake.
  */
 #define PROJECT_VERSION                "@PROJECT_VERSION@"

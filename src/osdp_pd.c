@@ -1132,7 +1132,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	if (ret != OSDP_PD_ERR_NONE) {
 		/**
 		 * PD received and decoded a valid command from CP but failed to
-		 * send the intended respone?? This should not happen but if it
+		 * send the intended response?? This should not happen but if it
 		 * did, we cannot do anything about it, just complain about it
 		 * and limp back home.
 		 */

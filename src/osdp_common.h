@@ -220,7 +220,7 @@ enum osdp_pkt_errors_e {
 	 */
 	OSDP_ERR_PKT_WAIT = -2,
 	/**
-	 * Messsage to/from an foreign device that can be safely ignored
+	 * Message to/from an foreign device that can be safely ignored
 	 * without altering the state of this PD.
 	 */
 	OSDP_ERR_PKT_SKIP = -3,

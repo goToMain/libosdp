@@ -12,7 +12,7 @@
 #define TO_FILE(pd) (pd)->file
 
 /**
- * @brief OSDP specified command: File Transer:
+ * @brief OSDP specified command: File Transfer:
  *
  * @param type File transfer type
  *        - 1: opaque file contents recognizable by this specific PD
@@ -38,7 +38,7 @@ struct osdp_cmd_file_xfer {
  *        - bit-0: 1 = OK to interleave; 0 = dedicate for filetransfer
  *        - bit-1: 1 = shall leave secure channel for file transfer; 0 = stay in
  *                 secure channel if SC is active
- *        - bit-2: 1 = eparate poll response is available; 0=no other activity
+ *        - bit-2: 1 = separate poll response is available; 0=no other activity
  * @param delay Request CP for a time delay in milliseconds before next
  *        CMD_FILETRANSFER message
  * @param status File transfer status. This is a signed little- endian number

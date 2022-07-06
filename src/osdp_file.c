@@ -161,7 +161,7 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 			return -1;
 		}
 
-		LOG_INF("TX_Decode: Statring file transfer");
+		LOG_INF("TX_Decode: Starting file transfer");
 		osdp_file_state_reset(f);
 		f->file_id = p->type;
 		f->size = size;
@@ -294,7 +294,7 @@ int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
 		return -1;
 	}
 
-	LOG_PRINT("TX_init: Statring file transfer of size: %d", size);
+	LOG_PRINT("TX_init: Starting file transfer of size: %d", size);
 
 	osdp_file_state_reset(f);
 	f->flags = flags;

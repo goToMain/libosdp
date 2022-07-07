@@ -750,7 +750,7 @@ static int cp_send_command(struct osdp_pd *pd)
 		pd->channel.flush(pd->channel.data);
 	}
 
-	ret = pd->channel.send(pd->channel.data, pd->rx_buf, pd->rx_buf_len);
+	ret = osdp_channel_send(pd, pd->rx_buf, pd->rx_buf_len);
 	if (ret != pd->rx_buf_len) {
 		LOG_ERR("Channel send for %d bytes failed! ret: %d",
 			pd->rx_buf_len, ret);
@@ -770,16 +770,12 @@ static int cp_send_command(struct osdp_pd *pd)
 static int cp_process_reply(struct osdp_pd *pd)
 {
 	uint8_t *buf;
-	int err, len, one_pkt_len, remaining;
+	int err, len, one_pkt_len;
 
-	buf = pd->rx_buf + pd->rx_buf_len;
-	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
-
-	len = pd->channel.recv(pd->channel.data, buf, remaining);
+	len = osdp_channel_receive(pd);
 	if (len <= 0) { /* No data received */
 		return OSDP_CP_ERR_NO_DATA;
 	}
-	pd->rx_buf_len += len;
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
@@ -817,11 +813,11 @@ static int cp_process_reply(struct osdp_pd *pd)
 	}
 
 	/* We are done with the packet (error or not). Remove processed bytes */
-	remaining = pd->rx_buf_len - one_pkt_len;
-	if (remaining) {
-		memmove(pd->rx_buf, pd->rx_buf + one_pkt_len, remaining);
+	len = pd->rx_buf_len - one_pkt_len;
+	if (len) {
+		memmove(pd->rx_buf, pd->rx_buf + one_pkt_len, len);
 	}
-	pd->rx_buf_len = remaining;
+	pd->rx_buf_len = len;
 
 	return err;
 }

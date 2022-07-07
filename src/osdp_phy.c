@@ -37,6 +37,39 @@ static inline void packet_set_mark(struct osdp_pd *pd, bool mark)
 	}
 }
 
+int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
+{
+	int sent, total_sent = 0;
+
+	do { /* send can block; so be greedy */
+		sent = pd->channel.send(pd->channel.data,
+					buf + total_sent, len - total_sent);
+		if (sent <= 0) {
+			break;
+		}
+		total_sent += sent;
+	} while (total_sent < len);
+
+	return total_sent;
+}
+
+int osdp_channel_receive(struct osdp_pd *pd)
+{
+	uint8_t *buf;
+	int len, remaining;
+
+	buf = pd->rx_buf + pd->rx_buf_len;
+	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
+
+	len = pd->channel.recv(pd->channel.data, buf, remaining);
+	if (len <= 0) {
+		return len;
+	}
+
+	pd->rx_buf_len += len;
+	return len;
+}
+
 uint8_t osdp_compute_checksum(uint8_t *msg, int length)
 {
 	uint8_t checksum = 0;

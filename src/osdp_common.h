@@ -346,6 +346,8 @@ void cp_keyset_complete(struct osdp_pd *pd);
 void osdp_keyset_complete(struct osdp_pd *pd);
 
 /* from osdp_phy.c */
+int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len);
+int osdp_channel_receive(struct osdp_pd *pd);
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
 			     int len, int max_len);

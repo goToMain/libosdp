@@ -967,7 +967,7 @@ static int pd_send_reply(struct osdp_pd *pd)
 		pd->channel.flush(pd->channel.data);
 	}
 
-	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
+	ret = osdp_channel_send(pd, pd->rx_buf, len);
 	if (ret != len) {
 		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
 		return OSDP_PD_ERR_GENERIC;
@@ -1019,13 +1019,9 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 
 static int pd_receive_and_process_command(struct osdp_pd *pd)
 {
-	uint8_t *buf;
-	int len, err, remaining, pos;
+	int len, err, remaining;
 
-	buf = pd->rx_buf + pd->rx_buf_len;
-	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
-
-	len = pd->channel.recv(pd->channel.data, buf, remaining);
+	len = osdp_channel_receive(pd);
 	if (len <= 0) { /* No data received */
 		return OSDP_PD_ERR_NO_DATA;
 	}
@@ -1037,7 +1033,6 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 	 * own timestamp.
 	 */
 	pd->tstamp = osdp_millis_now();
-	pd->rx_buf_len += len;
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		/**
@@ -1048,11 +1043,11 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 		 * pushed back by 2 bytes if secure channel block is present in
 		 * header.
 		 */
-		pos = OSDP_CMD_ID_OFFSET;
+		len = OSDP_CMD_ID_OFFSET;
 		if (sc_is_active(pd)) {
-			pos += 2;
+			len += 2;
 		}
-		if (pd->rx_buf_len > pos && pd->rx_buf[pos] != CMD_POLL) {
+		if (pd->rx_buf_len > len && pd->rx_buf[len] != CMD_POLL) {
 			osdp_dump(pd->rx_buf, pd->rx_buf_len,
 				  "OSDP: PD[%d]: Received", pd->address);
 		}

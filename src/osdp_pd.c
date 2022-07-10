@@ -193,23 +193,15 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		return 0; /* Remove this when REPLY_OSTATR is supported */
 	case CMD_OUT:
 		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
-		if (cmd->output.output_no + 1 > cap->num_items) {
-			LOG_DBG("CAP check: output_no(%d) > cap->num_items(%d)",
-				cmd->output.output_no + 1, cap->num_items);
-			break;
-		}
-		if (cap->compliance_level == 0) {
+		if (!cmd || cap->compliance_level == 0 ||
+		    cmd->output.output_no + 1 > cap->num_items) {
 			break;
 		}
 		return 1;
 	case CMD_LED:
 		cap = &pd->cap[OSDP_PD_CAP_READER_LED_CONTROL];
-		if (cmd->led.led_number + 1 > cap->num_items) {
-			LOG_DBG("CAP check: LED(%d) > cap->num_items(%d)",
-				cmd->led.led_number + 1, cap->num_items);
-			break;
-		}
-		if (cap->compliance_level == 0) {
+		if (!cmd || cap->compliance_level == 0 ||
+		    cmd->led.led_number + 1 > cap->num_items) {
 			break;
 		}
 		return 1;
@@ -312,10 +304,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case CMD_OSTAT:
 		if (len != CMD_OSTAT_DATA_LEN) {
-			break;
-		}
-		if (!pd_cmd_cap_ok(pd, NULL)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
 		if (!pd_cmd_cap_ok(pd, NULL)) {

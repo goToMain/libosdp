@@ -41,12 +41,14 @@ typedef struct {
 	PyObject *event_cb;
 	int num_pd;
 	osdp_t *ctx;
+	char *name;
 } pyosdp_cp_t;
 
 typedef struct {
 	pyosdp_base_t base;
 	PyObject *command_cb;
 	osdp_t *ctx;
+	char *name;
 } pyosdp_pd_t;
 
 #define DBG_PRINT_Py_REFCNT(x) \

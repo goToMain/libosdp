@@ -37,9 +37,14 @@ static inline void packet_set_mark(struct osdp_pd *pd, bool mark)
 	}
 }
 
-int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
+static int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int sent, total_sent = 0;
+
+	/* flush rx to remove any invalid data. */
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
 
 	do { /* send can block; so be greedy */
 		sent = pd->channel.send(pd->channel.data,
@@ -53,21 +58,34 @@ int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 	return total_sent;
 }
 
-int osdp_channel_receive(struct osdp_pd *pd)
+static int osdp_channel_receive(struct osdp_pd *pd)
 {
-	uint8_t *buf;
-	int len, remaining;
+	uint8_t buf[64];
+	int recv, total_recv = 0;
 
-	buf = pd->rx_buf + pd->rx_buf_len;
-	remaining = sizeof(pd->rx_buf) - pd->rx_buf_len;
-
-	len = pd->channel.recv(pd->channel.data, buf, remaining);
-	if (len <= 0) {
-		return len;
+#ifdef UNIT_TESTING
+	/**
+	 * Some unit tests don't define pd->channel.recv and directly fill
+	 * pd->packet_buf to test if everything else work correctly.
+	 */
+	if (!pd->channel.recv) {
+		return 0;
 	}
+#endif
 
-	pd->rx_buf_len += len;
-	return len;
+	do {
+		recv = pd->channel.recv(pd->channel.data, buf, sizeof(buf));
+		if (recv <= 0) {
+			break;
+		}
+		if (osdp_rb_push_buf(&pd->rx_rb, buf, recv) != recv) {
+			LOG_EM("RX ring buffer overflow!");
+			return -1;
+		}
+		total_recv += recv;
+	} while (recv == sizeof(buf));
+
+	return total_recv;
 }
 
 uint8_t osdp_compute_checksum(uint8_t *msg, int length)
@@ -186,8 +204,8 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	return mark_byte_len + sizeof(struct osdp_packet_header) + scb_len;
 }
 
-int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
-			     int len, int max_len)
+static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
+				    int len, int max_len)
 {
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
@@ -286,27 +304,67 @@ out_of_space_error:
 	return OSDP_ERR_PKT_FMT;
 }
 
-int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
-			  int *one_pkt_len)
+int osdp_phy_send_packet(struct osdp_pd *pd)
 {
-	uint16_t comp, cur;
-	int pd_addr, pkt_len;
-	struct osdp_packet_header *pkt;
+	int ret;
 
-	/* wait till we have the header */
-	if ((unsigned long)len < sizeof(struct osdp_packet_header)) {
-		/* incomplete data */
+	/* finalize packet */
+	ret = osdp_phy_packet_finalize(pd, pd->packet_buf, pd->packet_buf_len,
+				       sizeof(pd->packet_buf));
+	if (ret < 0) {
+		return OSDP_ERR_PKT_BUILD;
+	}
+
+	pd->packet_buf_len = ret;
+
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		if (pd->cmd_id != CMD_POLL) {
+			osdp_dump(pd->packet_buf, pd->packet_buf_len,
+				  "P_TRACE_SEND: %sPD[%d]%s:",
+				  is_cp_mode(pd) ? "CP->" : "",
+				  pd->address,
+				  is_pd_mode(pd) ? "->CP" : "");
+		}
+	}
+
+	ret = osdp_channel_send(pd, pd->packet_buf, pd->packet_buf_len);
+	if (ret != pd->packet_buf_len) {
+		LOG_ERR("Channel send for %d bytes failed! ret: %d",
+			pd->packet_buf_len, ret);
+		return OSDP_ERR_PKT_BUILD;
+	}
+
+	return OSDP_ERR_PKT_NONE;
+}
+
+static int phy_check_header(struct osdp_pd *pd)
+{
+	int pkt_len, len, target_len;
+	struct osdp_packet_header *pkt;
+	uint8_t cur_byte = 0, prev_byte = 0;
+
+	while (pd->packet_buf_len == 0) {
+		if (osdp_rb_pop(&pd->rx_rb, &cur_byte)) {
+			return OSDP_ERR_PKT_NO_DATA;
+		}
+		if (cur_byte == OSDP_PKT_SOM) {
+			pd->packet_buf[0] = OSDP_PKT_SOM;
+			pd->packet_buf_len = 1;
+			packet_set_mark(pd, prev_byte == OSDP_PKT_MARK);
+			break;
+		}
+		prev_byte = cur_byte;
+	}
+
+	target_len = sizeof(struct osdp_packet_header);
+	len = osdp_rb_pop_buf(&pd->rx_rb, pd->packet_buf + pd->packet_buf_len,
+			      target_len - pd->packet_buf_len);
+	pd->packet_buf_len += len;
+	if (pd->packet_buf_len < target_len) {
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-	packet_set_mark(pd, false);
-	if (buf[0] == OSDP_PKT_MARK) {
-		buf += 1;
-		len -= 1;
-		packet_set_mark(pd, true);
-	}
-
-	pkt = (struct osdp_packet_header *)buf;
+	pkt = (struct osdp_packet_header *)pd->packet_buf;
 
 	/* validate packet header */
 	if (pkt->som != OSDP_PKT_SOM) {
@@ -321,19 +379,24 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 
 	/* validate packet length */
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-	if (len < pkt_len) {
-		/* wait for more data? */
-		return OSDP_ERR_PKT_WAIT;
-	}
 
 	if (pkt_len > OSDP_PACKET_BUF_SIZE ||
-	    (unsigned long)pkt_len < sizeof(struct osdp_packet_header)) {
+	    (unsigned long)pkt_len < sizeof(struct osdp_packet_header) + 1) {
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
 		return OSDP_ERR_PKT_NACK;
 	}
 
-	*one_pkt_len = pkt_len + (packet_has_mark(pd) ? 1 : 0);
+	return pkt_len;
+}
+
+static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
+{
+	int pd_addr;
+	uint16_t comp, cur;
+	struct osdp_packet_header *pkt;
+
+	pkt = (struct osdp_packet_header *)buf;
 
 	/* validate CRC/checksum */
 	if (pkt->control & PKT_CONTROL_CRC) {
@@ -418,18 +481,68 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	return OSDP_ERR_PKT_NONE;
 }
 
-int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
-			   uint8_t **pkt_start)
+int osdp_phy_check_packet(struct osdp_pd *pd)
 {
-	uint8_t *data, *mac;
-	int mac_offset, is_cmd;
-	struct osdp_packet_header *pkt;
+	int ret = OSDP_ERR_PKT_FMT;
 
-	if (packet_has_mark(pd)) {
-		/* Consume mark byte */
-		buf += 1;
-		len -= 1;
+	ret = osdp_channel_receive(pd); /* always pull new bytes first */
+
+	/**
+	 * PD mode does not maintain state. When we receive the anything
+	 * from CP, we need to capture the timestamp so we can timeout and
+	 * clear the buffer on errors and stray RX data.
+	 */
+	if (is_pd_mode(pd) && pd->packet_buf_len == 0 && ret > 0) {
+		pd->tstamp = osdp_millis_now();
 	}
+
+	if (pd->packet_len == 0) {
+		ret = phy_check_header(pd);
+		if (ret < 0) {
+			return ret;
+		}
+		pd->packet_len = ret;
+	}
+
+	/* We have a valid header, collect one full packet */
+	ret = osdp_rb_pop_buf(&pd->rx_rb, pd->packet_buf + pd->packet_buf_len,
+				pd->packet_len - pd->packet_buf_len);
+	pd->packet_buf_len += ret;
+	if (pd->packet_buf_len != pd->packet_len)
+		return OSDP_ERR_PKT_WAIT;
+
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		/**
+		 * A crude way of identifying and NOT printing poll messages
+		 * when CONFIG_OSDP_PACKET_TRACE is enabled.
+		 *
+		 * OSDP_CMD_ID_OFFSET + 2 is also checked as the CMD_ID can be
+		 * pushed back by 2 bytes if secure channel block is present in
+		 * header.
+		 */
+		ret = OSDP_CMD_ID_OFFSET;
+		if (sc_is_active(pd)) {
+			ret += 2;
+		}
+		if ((is_cp_mode(pd) && pd->cmd_id != CMD_POLL) ||
+		    (is_pd_mode(pd) && pd->packet_buf_len > ret &&
+		     pd->packet_buf[ret] != CMD_POLL)) {
+			osdp_dump(pd->packet_buf, pd->packet_buf_len,
+				  "P_TRACE_RECV: %sPD[%d]%s:",
+				  is_pd_mode(pd) ? "CP->" : "",
+				  pd->address,
+				  is_cp_mode(pd) ? "->CP" : "");
+		}
+	}
+
+	return phy_check_packet(pd, pd->packet_buf, pd->packet_len);
+}
+
+int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
+{
+	uint8_t *data, *mac, *buf = pd->packet_buf;
+	int mac_offset, is_cmd, len = pd->packet_buf_len;
+	struct osdp_packet_header *pkt;
 
 	pkt = (struct osdp_packet_header *)buf;
 	len -= pkt->control & PKT_CONTROL_CRC ? 2 : 1;
@@ -547,9 +660,20 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 	return len;
 }
 
-void osdp_phy_state_reset(struct osdp_pd *pd)
+void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 {
-	pd->phy_state = 0;
-	pd->seq_number = -1;
-	pd->rx_buf_len = 0;
+	pd->packet_buf_len = 0;
+	pd->packet_len = 0;
+	if (is_error) {
+		pd->phy_state = 0;
+		pd->seq_number = -1;
+	}
+	if (pd->channel.flush) {
+		pd->channel.flush(pd->channel.data);
+	}
 }
+
+#ifdef UNIT_TESTING
+int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
+			int len, int max_len) = osdp_phy_packet_finalize;
+#endif

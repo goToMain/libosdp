@@ -120,7 +120,7 @@ const char *osdp_reply_name(int reply_id)
 	};
 
 	if (reply_id < REPLY_ACK || reply_id > REPLY_XRD) {
-		return NULL;
+		return "UNKNOWN";
 	}
 	return names[reply_id - REPLY_ACK];
 }
@@ -128,6 +128,64 @@ const char *osdp_reply_name(int reply_id)
 void osdp_keyset_complete(struct osdp_pd *pd)
 {
 	cp_keyset_complete(pd);
+}
+
+int osdp_rb_push(struct osdp_rb *p, uint8_t data)
+{
+	size_t next;
+
+	next = p->head + 1;
+	if (next >= sizeof(p->buffer))
+		next = 0;
+
+	if (next == p->tail)
+		return -1;
+
+	p->buffer[p->head] = data;
+	p->head = next;
+	return 0;
+}
+
+int osdp_rb_push_buf(struct osdp_rb *p, uint8_t *buf, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		if (osdp_rb_push(p, buf[i])) {
+			break;
+		}
+	}
+
+	return i;
+}
+
+int osdp_rb_pop(struct osdp_rb *p, uint8_t *data)
+{
+	size_t next;
+
+	if (p->head == p->tail)
+		return -1;
+
+	next = p->tail + 1;
+	if (next >= sizeof(p->buffer))
+		next = 0;
+
+	*data = p->buffer[p->tail];
+	p->tail = next;
+	return 0;
+}
+
+int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
+{
+	int i;
+
+	for (i = 0; i < max_len; i++) {
+		if (osdp_rb_pop(p, buf + i)) {
+			break;
+		}
+	}
+
+	return i;
 }
 
 /* --- Exported Methods --- */

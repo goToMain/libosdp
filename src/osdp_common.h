@@ -216,7 +216,7 @@ enum osdp_pkt_errors_e {
 	 */
 	OSDP_ERR_PKT_FMT = -1,
 	/**
-	 * Not enough data in buffer; wait for more data (or timeout).
+	 * Not enough data in buffer (but we have some); wait for more.
 	 */
 	OSDP_ERR_PKT_WAIT = -2,
 	/**
@@ -240,6 +240,14 @@ enum osdp_pkt_errors_e {
 	 * also filled.
 	 */
 	OSDP_ERR_PKT_NACK = -6,
+	/**
+	 * Packet build errors
+	 */
+	OSDP_ERR_PKT_BUILD = -7,
+	/**
+	 * No data received (do not confuse with OSDP_ERR_PKT_WAIT)
+	 */
+	OSDP_ERR_PKT_NO_DATA = -8,
 };
 
 struct osdp_slab {
@@ -261,6 +269,12 @@ struct osdp_secure_channel {
 	uint8_t pd_client_uid[8];
 	uint8_t cp_cryptogram[16];
 	uint8_t pd_cryptogram[16];
+};
+
+struct osdp_rb {
+    size_t head;
+    size_t tail;
+    uint8_t buffer[OSDP_RX_RB_SIZE];
 };
 
 struct osdp_queue {
@@ -293,9 +307,10 @@ struct osdp_pd {
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
 
 	/* Raw bytes received from the serial line for this PD */
-	uint8_t rx_buf[OSDP_PACKET_BUF_SIZE];
-
-	int rx_buf_len;        /* Number of bytes in pd->rx_buf */
+	struct osdp_rb rx_rb;
+	uint8_t packet_buf[OSDP_PACKET_BUF_SIZE];
+	int packet_len;
+	int packet_buf_len;
 
 	int cmd_id;            /* Currently processing command ID */
 	int reply_id;          /* Currently processing reply ID */
@@ -346,18 +361,13 @@ void cp_keyset_complete(struct osdp_pd *pd);
 void osdp_keyset_complete(struct osdp_pd *pd);
 
 /* from osdp_phy.c */
-int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len);
-int osdp_channel_receive(struct osdp_pd *pd);
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
-int osdp_phy_packet_finalize(struct osdp_pd *p, uint8_t *buf,
-			     int len, int max_len);
-int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
-			  int *one_pkt_len);
-int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t *buf, int len,
-			   uint8_t **pkt_start);
-void osdp_phy_state_reset(struct osdp_pd *pd);
+int osdp_phy_check_packet(struct osdp_pd *pd);
+int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t **pkt_start);
+void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
+int osdp_phy_send_packet(struct osdp_pd *pd);
 
 /* from osdp_common.c */
 __weak int64_t osdp_millis_now(void);
@@ -369,6 +379,11 @@ void osdp_log_ctx_restore();
 
 const char *osdp_cmd_name(int cmd_id);
 const char *osdp_reply_name(int reply_id);
+
+int osdp_rb_push(struct osdp_rb *p, uint8_t data);
+int osdp_rb_push_buf(struct osdp_rb *p, uint8_t *buf, int len);
+int osdp_rb_pop(struct osdp_rb *p, uint8_t *data);
+int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len);
 
 void osdp_crypt_setup();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);

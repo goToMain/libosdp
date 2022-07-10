@@ -694,14 +694,16 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	default:
-		LOG_WRN("Unexpected REPLY(%02x) for CMD(%02x)",
-			pd->cmd_id, pd->reply_id);
+		LOG_WRN("Unexpected reply %s(%02x) for command %s(%02x)",
+			osdp_reply_name(pd->reply_id), pd->reply_id,
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 		return OSDP_CP_ERR_UNKNOWN;
 	}
 
 	if (ret != OSDP_CP_ERR_NONE) {
-		LOG_ERR("Failed to decode response: REPLY(%02x) for CMD(%02x)",
-			pd->cmd_id, pd->reply_id);
+		LOG_ERR("Failed to decode reply %s(%02x) for command %s(%02x)",
+			osdp_reply_name(pd->reply_id), pd->reply_id,
+			osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
@@ -713,55 +715,27 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	return ret;
 }
 
-static int cp_build_packet(struct osdp_pd *pd)
-{
-	int ret, len;
-
-	/* init packet buf with header */
-	len = osdp_phy_packet_init(pd, pd->rx_buf, sizeof(pd->rx_buf));
-	if (len < 0) {
-		return OSDP_CP_ERR_GENERIC;
-	}
-
-	/* fill command data */
-	ret = cp_build_command(pd, pd->rx_buf, sizeof(pd->rx_buf));
-	if (ret < 0) {
-		return OSDP_CP_ERR_GENERIC;
-	}
-	len += ret;
-
-	/* finalize packet */
-	len = osdp_phy_packet_finalize(pd, pd->rx_buf, len, sizeof(pd->rx_buf));
-	if (len < 0) {
-		return OSDP_CP_ERR_GENERIC;
-	}
-
-	pd->rx_buf_len = len;
-
-	return OSDP_CP_ERR_NONE;
-}
-
-static int cp_send_command(struct osdp_pd *pd)
+static int cp_build_and_send_packet(struct osdp_pd *pd)
 {
 	int ret;
 
-	/* flush rx to remove any invalid data. */
-	if (pd->channel.flush) {
-		pd->channel.flush(pd->channel.data);
-	}
-
-	ret = osdp_channel_send(pd, pd->rx_buf, pd->rx_buf_len);
-	if (ret != pd->rx_buf_len) {
-		LOG_ERR("Channel send for %d bytes failed! ret: %d",
-			pd->rx_buf_len, ret);
+	/* init packet buf with header */
+	ret = osdp_phy_packet_init(pd, pd->packet_buf, sizeof(pd->packet_buf));
+	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
+	pd->packet_buf_len = ret;
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: CP->PD[%d]: Sent", pd->idx);
-		}
+	/* fill command data */
+	ret = cp_build_command(pd, pd->packet_buf, sizeof(pd->packet_buf));
+	if (ret < 0) {
+		return OSDP_CP_ERR_GENERIC;
+	}
+	pd->packet_buf_len += ret;
+
+	ret = osdp_phy_send_packet(pd);
+	if (ret < 0) {
+		return OSDP_CP_ERR_GENERIC;
 	}
 
 	return OSDP_CP_ERR_NONE;
@@ -770,56 +744,29 @@ static int cp_send_command(struct osdp_pd *pd)
 static int cp_process_reply(struct osdp_pd *pd)
 {
 	uint8_t *buf;
-	int err, len, one_pkt_len;
+	int err, len;
 
-	len = osdp_channel_receive(pd);
-	if (len <= 0) { /* No data received */
-		return OSDP_CP_ERR_NO_DATA;
-	}
-
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: CP->PD[%d]: Received", pd->idx);
-		}
-	}
-
-	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, &len);
-	if (err == OSDP_ERR_PKT_WAIT) {
-		/* rx_buf_len < pkt->len; wait for more data */
-		return OSDP_CP_ERR_NO_DATA;
-	}
-	one_pkt_len = len;
+	err = osdp_phy_check_packet(pd);
 
 	/* Translate phy error codes to CP errors */
 	switch (err) {
 	case OSDP_ERR_PKT_NONE:
-		err = OSDP_CP_ERR_NONE;
 		break;
+	case OSDP_ERR_PKT_WAIT:
+		return OSDP_CP_ERR_NO_DATA;
 	case OSDP_ERR_PKT_BUSY:
-		err = OSDP_CP_ERR_RETRY_CMD;
-		break;
+		return OSDP_CP_ERR_RETRY_CMD;
 	default:
+		return err; /* propagate other errors as-is */
+	}
+
+	/* Valid OSDP packet in buffer */
+	len = osdp_phy_decode_packet(pd, &buf);
+	if (len <= 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
 
-	if (err == OSDP_ERR_PKT_NONE) {
-		/* Valid OSDP packet in buffer */
-		len = osdp_phy_decode_packet(pd, pd->rx_buf, len, &buf);
-		if (len <= 0) {
-			return OSDP_CP_ERR_GENERIC;
-		}
-		err = cp_decode_response(pd, buf, len);
-	}
-
-	/* We are done with the packet (error or not). Remove processed bytes */
-	len = pd->rx_buf_len - one_pkt_len;
-	if (len) {
-		memmove(pd->rx_buf, pd->rx_buf + one_pkt_len, len);
-	}
-	pd->rx_buf_len = len;
-
-	return err;
+	return cp_decode_response(pd, buf, len);
 }
 
 static void cp_flush_command_queue(struct osdp_pd *pd)
@@ -891,23 +838,18 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->cmd_id = cmd->id;
 		memcpy(pd->ephemeral_data, cmd, sizeof(struct osdp_cmd));
 		cp_cmd_free(pd, cmd);
-		/* fall-thru */
+		__fallthrough;
 	case OSDP_CP_PHY_STATE_SEND_CMD:
-		if (cp_build_packet(pd)) {
+		if (cp_build_and_send_packet(pd)) {
 			LOG_ERR("Failed to build packet for CMD(%d)",
 				pd->cmd_id);
-			ret = OSDP_CP_ERR_GENERIC;
-			break;
-		}
-		if (cp_send_command(pd)) {
-			LOG_ERR("Failed to send CMD(%d)", pd->cmd_id);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
 			ret = OSDP_CP_ERR_GENERIC;
 			break;
 		}
 		ret = OSDP_CP_ERR_INPROG;
+		osdp_phy_state_reset(pd, false);
 		pd->phy_state = OSDP_CP_PHY_STATE_REPLY_WAIT;
-		pd->rx_buf_len = 0; /* reset buf_len for next use */
 		pd->phy_tstamp = osdp_millis_now();
 		break;
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
@@ -942,10 +884,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 				LOG_ERR("Response timeout for CMD(%02x)",
 					pd->cmd_id);
 			}
-			pd->rx_buf_len = 0;
-			if (pd->channel.flush) {
-				pd->channel.flush(pd->channel.data);
-			}
+			osdp_phy_state_reset(pd, false);
 			cp_flush_command_queue(pd);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
 			ret = OSDP_CP_ERR_GENERIC;
@@ -1031,7 +970,7 @@ static int state_update(struct osdp_pd *pd)
 	case OSDP_CP_STATE_OFFLINE:
 		if (osdp_millis_since(pd->tstamp) > pd->wait_ms) {
 			cp_set_state(pd, OSDP_CP_STATE_INIT);
-			osdp_phy_state_reset(pd);
+			osdp_phy_state_reset(pd, true);
 		}
 		break;
 	case OSDP_CP_STATE_INIT:
@@ -1093,7 +1032,7 @@ static int state_update(struct osdp_pd *pd)
 			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 				LOG_INF("SC Failed. Online without SC");
 				pd->sc_tstamp = osdp_millis_now();
-				osdp_phy_state_reset(pd);
+				osdp_phy_state_reset(pd, true);
 				cp_set_online(pd);
 				break;
 			}
@@ -1112,7 +1051,7 @@ static int state_update(struct osdp_pd *pd)
 			}
 			LOG_ERR("CHLNG failed. Online without SC");
 			pd->sc_tstamp = osdp_millis_now();
-			osdp_phy_state_reset(pd);
+			osdp_phy_state_reset(pd, true);
 			cp_set_online(pd);
 			break;
 		}
@@ -1130,7 +1069,7 @@ static int state_update(struct osdp_pd *pd)
 				break;
 			}
 			LOG_ERR("SCRYPT failed. Online without SC");
-			osdp_phy_state_reset(pd);
+			osdp_phy_state_reset(pd, true);
 			pd->sc_tstamp = osdp_millis_now();
 			cp_set_online(pd);
 			break;
@@ -1569,7 +1508,7 @@ void (*test_cp_cmd_enqueue)(struct osdp_pd *,
 struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
-int (*test_cp_build_packet)(struct osdp_pd *pd) = cp_build_packet;
+int (*test_cp_build_and_send_packet)(struct osdp_pd *pd) = cp_build_and_send_packet;
 const int CP_ERR_CAN_YIELD = OSDP_CP_ERR_CAN_YIELD;
 const int CP_ERR_INPROG = OSDP_CP_ERR_INPROG;
 

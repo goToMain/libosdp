@@ -50,10 +50,11 @@ LOGGER_DECLARE(osdp, "PD");
 
 enum osdp_pd_error_e {
 	OSDP_PD_ERR_NONE = 0,
-	OSDP_PD_ERR_NO_DATA = -1,
+	OSDP_PD_ERR_WAIT = -1,
 	OSDP_PD_ERR_GENERIC = -2,
 	OSDP_PD_ERR_REPLY = -3,
 	OSDP_PD_ERR_IGNORE = -4,
+	OSDP_PD_ERR_NO_DATA = -5,
 };
 
 /* Implicit capabilities */
@@ -931,8 +932,8 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			hexdump(buf + 1, len - 1, "OSDP: REPLY: %s(%02x)",
-				osdp_reply_name(buf[0]), buf[0]);
+			osdp_dump(buf + 1, len - 1, "OSDP: REPLY: %s(%02x)",
+				  osdp_reply_name(buf[0]), buf[0]);
 		}
 	}
 
@@ -941,54 +942,36 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 static int pd_send_reply(struct osdp_pd *pd)
 {
-	int ret, len;
+	int ret;
 
 	/* init packet buf with header */
-	len = osdp_phy_packet_init(pd, pd->rx_buf, sizeof(pd->rx_buf));
-	if (len < 0) {
+	ret = osdp_phy_packet_init(pd, pd->packet_buf, sizeof(pd->packet_buf));
+	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
+	pd->packet_buf_len = ret;
 
 	/* fill reply data */
-	ret = pd_build_reply(pd, pd->rx_buf, sizeof(pd->rx_buf));
+	ret = pd_build_reply(pd, pd->packet_buf, sizeof(pd->packet_buf));
 	if (ret <= 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
-	len += ret;
+	pd->packet_buf_len += ret;
 
-	/* finalize packet */
-	len = osdp_phy_packet_finalize(pd, pd->rx_buf, len, sizeof(pd->rx_buf));
-	if (len < 0) {
+	ret = osdp_phy_send_packet(pd);
+	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
-	}
-
-	/* flush rx to remove any invalid data. */
-	if (pd->channel.flush) {
-		pd->channel.flush(pd->channel.data);
-	}
-
-	ret = osdp_channel_send(pd, pd->rx_buf, len);
-	if (ret != len) {
-		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
-		return OSDP_PD_ERR_GENERIC;
-	}
-
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->rx_buf, len,
-				  "OSDP: PD[%d]: Sent", pd->address);
-		}
 	}
 
 	return OSDP_PD_ERR_NONE;
 }
 
-static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
+static int pd_receive_and_process_command(struct osdp_pd *pd)
 {
-	int err, rc;
+	int err, len;
 	uint8_t *buf;
 
-	err = osdp_phy_check_packet(pd, pd->rx_buf, pd->rx_buf_len, one_pkt_len);
+	err = osdp_phy_check_packet(pd);
 
 	/* Translate phy error codes to PD errors */
 	switch (err) {
@@ -996,8 +979,10 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 		break;
 	case OSDP_ERR_PKT_NACK:
 		return OSDP_PD_ERR_REPLY;
-	case OSDP_ERR_PKT_WAIT:
+	case OSDP_ERR_PKT_NO_DATA:
 		return OSDP_PD_ERR_NO_DATA;
+	case OSDP_ERR_PKT_WAIT:
+		return OSDP_PD_ERR_WAIT;
 	case OSDP_ERR_PKT_SKIP:
 		return OSDP_PD_ERR_IGNORE;
 	case OSDP_ERR_PKT_FMT:
@@ -1006,81 +991,21 @@ static int pd_decode_packet(struct osdp_pd *pd, int *one_pkt_len)
 		return err; /* propagate other errors as-is */
 	}
 
-	rc = osdp_phy_decode_packet(pd, pd->rx_buf, *one_pkt_len, &buf);
-	if (rc <= 0) {
-		if (rc == OSDP_ERR_PKT_NACK) {
+	len = osdp_phy_decode_packet(pd, &buf);
+	if (len <= 0) {
+		if (len == OSDP_ERR_PKT_NACK) {
 			return OSDP_PD_ERR_REPLY; /* Send a NAK */
 		}
 		return OSDP_PD_ERR_GENERIC; /* fatal errors */
 	}
 
-	return pd_decode_command(pd, buf, rc);
-}
-
-static int pd_receive_and_process_command(struct osdp_pd *pd)
-{
-	int len, err, remaining;
-
-	len = osdp_channel_receive(pd);
-	if (len <= 0) { /* No data received */
-		return OSDP_PD_ERR_NO_DATA;
-	}
-
-	/**
-	 * We received some data on the bus; update pd->tstamp. A rouge CP can
-	 * send one byte at a time to extend this command's window but that
-	 * shouldn't cause any issues related to secure channel as it has it's
-	 * own timestamp.
-	 */
-	pd->tstamp = osdp_millis_now();
-
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
-		/**
-		 * A crude way of identifying and not printing poll messages
-		 * when CONFIG_OSDP_PACKET_TRACE is enabled. This is an early
-		 * print to catch errors so keeping it simple.
-		 * OSDP_CMD_ID_OFFSET + 2 is also checked as the CMD_ID can be
-		 * pushed back by 2 bytes if secure channel block is present in
-		 * header.
-		 */
-		len = OSDP_CMD_ID_OFFSET;
-		if (sc_is_active(pd)) {
-			len += 2;
-		}
-		if (pd->rx_buf_len > len && pd->rx_buf[len] != CMD_POLL) {
-			osdp_dump(pd->rx_buf, pd->rx_buf_len,
-				  "OSDP: PD[%d]: Received", pd->address);
-		}
-	}
-
-	err = pd_decode_packet(pd, &len);
-
-	if (err == OSDP_PD_ERR_NO_DATA) {
-		return err;
-	}
-
-	/* We are done with the packet (error or not). Remove processed bytes */
-	remaining = pd->rx_buf_len - len;
-	if (remaining) {
-		memmove(pd->rx_buf, pd->rx_buf + len, remaining);
-	}
-
-	/**
-	 * Store remaining length that needs to be processed.
-	 * State machine will be updated accordingly.
-	 */
-	pd->rx_buf_len = remaining;
-
-	return err;
+	return pd_decode_command(pd, buf, len);
 }
 
 static inline void pd_error_reset(struct osdp_pd *pd)
 {
 	sc_deactivate(pd);
-	if (pd->channel.flush) {
-		pd->channel.flush(pd->channel.data);
-	}
-	pd->rx_buf_len = 0;
+	osdp_phy_state_reset(pd, false);
 }
 
 static void osdp_pd_update(struct osdp_pd *pd)
@@ -1100,17 +1025,13 @@ static void osdp_pd_update(struct osdp_pd *pd)
 
 	ret = pd_receive_and_process_command(pd);
 
-	if (ret == OSDP_PD_ERR_IGNORE) {
+	if (ret == OSDP_PD_ERR_IGNORE || ret == OSDP_PD_ERR_NO_DATA) {
 		return;
 	}
 
-	if (ret == OSDP_PD_ERR_NO_DATA) {
-		if (pd->rx_buf_len == 0 ||
-		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
-			return;
-		}
-		osdp_dump(pd->rx_buf, pd->rx_buf_len,
-			  "rx_buf(len:%d):", pd->rx_buf_len);
+	if (ret == OSDP_PD_ERR_WAIT &&
+	    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
+		return;
 	}
 
 	if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {
@@ -1127,14 +1048,15 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	if (ret != OSDP_PD_ERR_NONE) {
 		/**
 		 * PD received and decoded a valid command from CP but failed to
-		 * send the intended response?? This should not happen but if it
-		 * did, we cannot do anything about it, just complain about it
-		 * and limp back home.
+		 * send the intended response?? This should not happen; but if
+		 * it did, we cannot do anything about it, just complain about
+		 * it and limp back home.
 		 */
-		LOG_ERR("REPLY send failed! CP may be waiting..");
+		LOG_EM("REPLY send failed! CP may be waiting..");
 		return;
 	}
 
+	osdp_phy_state_reset(pd, false);
 	if (ctx->command_complete_callback) {
 		ctx->command_complete_callback(pd->cmd_id);
 	}
@@ -1295,13 +1217,3 @@ int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event)
 	pd_event_enqueue(pd, ev);
 	return 0;
 }
-
-#ifdef UNIT_TESTING
-
-/**
- * Force export some private methods for testing.
- */
-void (*test_osdp_pd_update)(struct osdp_pd *pd) = osdp_pd_update;
-int (*test_pd_decode_packet)(struct osdp_pd *pd, int *len) = pd_decode_packet;
-
-#endif /* UNIT_TESTING */

@@ -38,6 +38,7 @@ int pd_command_handler(void *self, struct osdp_cmd *cmd)
 }
 
 osdp_pd_info_t info_pd = {
+	.name = "pd[101]",
 	.baud_rate = 9600,
 	.address = 101,
 	.flags = 0,

@@ -31,6 +31,7 @@ int sample_cp_recv_func(void *data, uint8_t *buf, int len)
 
 osdp_pd_info_t pd_info[] = {
 	{
+		.name = "pd[101]",
 		.baud_rate = 115200,
 		.address = 101,
 		.flags = 0,

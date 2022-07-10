@@ -31,8 +31,6 @@ struct test_async_data {
 
 workqueue_t test_wq;
 
-
-
 int async_runner(void *data)
 {
 	struct test_async_data *td = data;
@@ -86,9 +84,7 @@ int async_runner_stop(int work_id)
 		return -1;
 
 	workqueue_cancel_work(&test_wq, g_test_works[work_id]);
-	while (workqueue_work_is_complete(&test_wq,
-
-	g_test_works[work_id]) == false)
+	while (workqueue_work_is_complete(&test_wq, g_test_works[work_id]) == false)
 		usleep(50 * 1000);
 	g_test_works[work_id] = NULL;
 

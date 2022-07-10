@@ -256,7 +256,6 @@ error:
 	async_runner_stop(cp_runner);
 	async_runner_stop(pd_runner);
 
-
 	osdp_cp_teardown(cp_ctx);
 	osdp_pd_teardown(pd_ctx);
 

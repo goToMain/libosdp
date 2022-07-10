@@ -753,11 +753,12 @@ static int cp_process_reply(struct osdp_pd *pd)
 	case OSDP_ERR_PKT_NONE:
 		break;
 	case OSDP_ERR_PKT_WAIT:
+	case OSDP_ERR_PKT_NO_DATA:
 		return OSDP_CP_ERR_NO_DATA;
 	case OSDP_ERR_PKT_BUSY:
 		return OSDP_CP_ERR_RETRY_CMD;
 	default:
-		return err; /* propagate other errors as-is */
+		return OSDP_CP_ERR_GENERIC;
 	}
 
 	/* Valid OSDP packet in buffer */

@@ -165,7 +165,7 @@ void run_cp_phy_fsm_tests(struct test *t)
 
 	TEST_REPORT(t, result);
 
-	printf("Finished CP fsm state tests -- %s!\n",
+	printf(SUB_1 "Finished CP fsm state tests -- %s!\n",
 	       result ? "success" : "failure");
 
 	test_cp_phy_fsm_teardown(t);

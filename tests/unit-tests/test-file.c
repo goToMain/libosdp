@@ -250,6 +250,8 @@ void run_file_tx_tests(struct test *t)
 	};
 
 	result = test_check_rec_file();
+	printf(SUB_1 "file transfer test %s\n",
+	       result ? "succeeded" : "failed");
 error:
 	async_runner_stop(cp_runner);
 	async_runner_stop(pd_runner);

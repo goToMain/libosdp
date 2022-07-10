@@ -206,7 +206,6 @@ void test_start(struct test *t, int log_level)
 	printf("------------------------------------------\n");
 	printf("            OSDP - Unit Tests             \n");
 	printf("------------------------------------------\n");
-	printf("\n");
 
 	t->tests = 0;
 	t->success = 0;

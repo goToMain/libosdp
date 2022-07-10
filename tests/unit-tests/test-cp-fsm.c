@@ -137,7 +137,7 @@ void run_cp_fsm_tests(struct test *t)
 			break;
 		usleep(1000);
 	}
-	printf(SUB_1 "state_update() complete\n");
+	printf(SUB_1 "state_update test %s\n", result ? "succeeded" : "failed");
 
 	TEST_REPORT(t, result);
 

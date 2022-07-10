@@ -6,7 +6,10 @@
 
 #include "test.h"
 
-static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len,
+int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
+			int len, int max_len);
+
+static int test_cp_build_and_send_packet(struct osdp_pd *p, uint8_t *buf, int len,
 				int maxlen)
 {
 	int cmd_len;
@@ -25,7 +28,7 @@ static int test_cp_build_packet(struct osdp_pd *p, uint8_t *buf, int len,
 	}
 	memcpy(buf + len, cmd_buf, cmd_len);
 	len += cmd_len;
-	if ((len = osdp_phy_packet_finalize(p, buf, len, maxlen)) < 0) {
+	if ((len = test_osdp_phy_packet_finalize(p, buf, len, maxlen)) < 0) {
 		printf("failed to build command\n");
 		return -1;
 	}
@@ -44,8 +47,8 @@ int test_cp_build_packet_poll(struct osdp *ctx)
 		0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90
 	};
 
-	printf("Testing cp_build_packet(CMD_POLL) -- ");
-	if ((len = test_cp_build_packet(p, packet, 1, 512)) < 0) {
+	printf("Testing cp_build_and_send_packet(CMD_POLL) -- ");
+	if ((len = test_cp_build_and_send_packet(p, packet, 1, 512)) < 0) {
 		printf("error!\n");
 	}
 	CHECK_ARRAY(packet, len, expected);
@@ -65,8 +68,8 @@ int test_cp_build_packet_id(struct osdp *ctx)
 		0x53, 0x65, 0x09, 0x00, 0x05, 0x61, 0x00, 0xe9, 0x4d
 	};
 
-	printf("Testing cp_build_packet(CMD_ID) -- ");
-	if ((len = test_cp_build_packet(p, packet, 2, 512)) < 0) {
+	printf("Testing cp_build_and_send_packet(CMD_ID) -- ");
+	if ((len = test_cp_build_and_send_packet(p, packet, 2, 512)) < 0) {
 		printf("error!\n");
 		return -1;
 	}
@@ -89,12 +92,13 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 	uint8_t expected[] = { REPLY_ACK };
 
 	printf("Testing phy_decode_packet(REPLY_ACK) -- ");
-	err = osdp_phy_check_packet(p, packet, sizeof(packet), &len);
+	osdp_rb_push_buf(&p->rx_rb, packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
 	if (err) {
 		printf("failed!\n");
 		return -1;
 	}
-	if ((len = osdp_phy_decode_packet(p, packet, len, &buf)) < 0) {
+	if ((len = osdp_phy_decode_packet(p, &buf)) < 0) {
 		printf("failed!\n");
 		return -1;
 	}

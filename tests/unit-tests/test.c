@@ -15,15 +15,13 @@
 #include "test.h"
 
 #include <utils/workqueue.h>
+#include <utils/circbuf.h>
 
 #define MAX_TEST_WORK 5
-#define MOCK_BUF_LEN 1024
+#define MOCK_BUF_LEN 512
 
-uint8_t test_cp_to_pd_buf[MOCK_BUF_LEN];
-int test_cp_to_pd_buf_length;
-
-uint8_t test_pd_to_cp_buf[MOCK_BUF_LEN];
-int test_pd_to_cp_buf_length;
+CIRCBUF_DEF(uint8_t, cp_to_pd_buf, MOCK_BUF_LEN);
+CIRCBUF_DEF(uint8_t, pd_to_cp_buf, MOCK_BUF_LEN);
 
 struct test_async_data {
 	osdp_t *ctx;
@@ -32,6 +30,8 @@ struct test_async_data {
 };
 
 workqueue_t test_wq;
+
+
 
 int async_runner(void *data)
 {
@@ -97,52 +97,53 @@ int async_runner_stop(int work_id)
 
 int test_mock_cp_send(void *data, uint8_t *buf, int len)
 {
+	int i;
 	ARG_UNUSED(data);
 	assert(len < MOCK_BUF_LEN);
-	memcpy(test_cp_to_pd_buf, buf, len);
-	test_cp_to_pd_buf_length = len;
-	return len;
+
+	for (i = 0; i < len; i++) {
+		if (CIRCBUF_PUSH(cp_to_pd_buf, buf + i))
+			break;
+	}
+	return i;
 }
 
 int test_mock_cp_receive(void *data, uint8_t *buf, int len)
 {
+	int i;
 	ARG_UNUSED(data);
-
-	int ret = test_pd_to_cp_buf_length;
-
 	ARG_UNUSED(len);
 
-	if (ret) {
-		assert(ret < MOCK_BUF_LEN);
-		memcpy(buf, test_pd_to_cp_buf, ret);
-		test_pd_to_cp_buf_length = 0;
+	for (i = 0; i < len; i++) {
+		if (CIRCBUF_POP(pd_to_cp_buf, buf + i))
+			break;
 	}
-	return ret;
+	return i;
 }
 
 int test_mock_pd_send(void *data, uint8_t *buf, int len)
 {
+	int i;
 	ARG_UNUSED(data);
 
-	memcpy(test_pd_to_cp_buf, buf, len);
-	test_pd_to_cp_buf_length = len;
-	return len;
+	for (i = 0; i < len; i++) {
+		if (CIRCBUF_PUSH(pd_to_cp_buf, buf + i))
+			break;
+	}
+	return i;
 }
 
 int test_mock_pd_receive(void *data, uint8_t *buf, int len)
 {
+	int i;
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
 
-	int ret = test_cp_to_pd_buf_length;
-
-	if (test_cp_to_pd_buf_length) {
-		memcpy(buf, test_cp_to_pd_buf,
-		       test_cp_to_pd_buf_length);
-		test_cp_to_pd_buf_length = 0;
+	for (i = 0; i < len; i++) {
+		if (CIRCBUF_POP(cp_to_pd_buf, buf + i))
+			break;
 	}
-
-	return ret;
+	return i;
 }
 
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
@@ -157,7 +158,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 	osdp_pd_info_t info_cp = {
 		.address = 101,
 		.baud_rate = 9600,
-		.flags = OSDP_FLAG_ENFORCE_SECURE,
+		.flags = 0, //OSDP_FLAG_ENFORCE_SECURE,
 		.channel.data = NULL,
 		.channel.send = test_mock_cp_send,
 		.channel.recv = test_mock_cp_receive,
@@ -174,7 +175,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
-		.flags = OSDP_FLAG_ENFORCE_SECURE,
+		.flags = 0, //OSDP_FLAG_ENFORCE_SECURE,
 		.id = {
 			.version = 1,
 			.model = 153,

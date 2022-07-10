@@ -17,7 +17,13 @@ int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
-	switch (buf[OSDP_CMD_ID_OFFSET]) {
+#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+	int cmd_id_offset = OSDP_CMD_ID_OFFSET + 1;
+#else
+	int cmd_id_offset = OSDP_CMD_ID_OFFSET;
+#endif
+
+	switch (buf[cmd_id_offset]) {
 	case 0x60:
 		test_fsm_resp = 1;
 		break;
@@ -28,7 +34,9 @@ int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 		test_fsm_resp = 3;
 		break;
 	default:
-		printf(SUB_1 "invalid ID:0x%02x\n", buf[OSDP_CMD_ID_OFFSET]);
+		printf(SUB_1 "invalid ID:0x%02x\n", buf[cmd_id_offset
+
+		]);
 	}
 	return len;
 }

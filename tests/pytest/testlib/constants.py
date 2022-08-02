@@ -54,7 +54,7 @@ class Capability:
     OutputControl = osdp.CAP_OUTPUT_CONTROL
     CardDataFormat = osdp.CAP_CARD_DATA_FORMAT
     LEDControl = osdp.CAP_READER_LED_CONTROL
-    AudiableControl = osdp.CAP_READER_AUDIBLE_OUTPUT
+    AudibleControl = osdp.CAP_READER_AUDIBLE_OUTPUT
     TextOutput = osdp.CAP_READER_TEXT_OUTPUT
     TimeKeeping = osdp.CAP_TIME_KEEPING
     CheckCharacter = osdp.CAP_CHECK_CHARACTER_SUPPORT

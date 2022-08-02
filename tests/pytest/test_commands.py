@@ -12,7 +12,7 @@ from testlib import *
 pd_cap = PDCapabilities([
     (Capability.OutputControl, 1, 1),
     (Capability.LEDControl, 1, 1),
-    (Capability.AudiableControl, 1, 1),
+    (Capability.AudibleControl, 1, 1),
     (Capability.TextOutput, 1, 1),
 ])
 

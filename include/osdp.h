@@ -622,8 +622,8 @@ struct osdp_event_keypress {
  */
 struct osdp_event_mfgrep {
 	uint32_t vendor_code;
-	int command;
-	int length;
+	uint8_t command;
+	uint8_t length;
 	uint8_t data[OSDP_EVENT_MAX_DATALEN];
 };
 

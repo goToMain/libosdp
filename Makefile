@@ -92,4 +92,4 @@ clean:
 
 .PHONY: distclean
 distclean: clean
-	$(Q)rm -f config.make $(O)/osdp_*.h
+	$(Q)rm -rf config.make $(O)

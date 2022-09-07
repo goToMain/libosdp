@@ -52,6 +52,8 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+mkdir -p ${BUILD_DIR}
+
 if [ -f config.mak ] && [ -z "$FORCE" ]; then
 	echo "LibOSDP already configured! Use --force to re-configure"
 	exit 1

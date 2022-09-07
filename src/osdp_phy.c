@@ -661,9 +661,9 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 	if (is_error) {
 		pd->phy_state = 0;
 		pd->seq_number = -1;
-	}
-	if (pd->channel.flush) {
-		pd->channel.flush(pd->channel.data);
+		if (pd->channel.flush) {
+			pd->channel.flush(pd->channel.data);
+		}
 	}
 }
 

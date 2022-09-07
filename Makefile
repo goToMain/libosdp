@@ -23,7 +23,7 @@ Q :=
 MAKE := make
 endif
 
-all: $(TARGETS)
+all: $(O)/utils/libutils.a $(TARGETS)
 
 $(O)/%.o: %.c
 	@echo "  CC $<"

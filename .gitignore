@@ -63,7 +63,7 @@ tags
 osdp_config.h
 osdp_export.h
 osdpctl/osdpctl
-config.mak
+config.make
 
 ## pytests
 .pytest_cache/

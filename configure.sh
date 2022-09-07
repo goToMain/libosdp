@@ -24,12 +24,13 @@ usage() {
 	  --static-pd                  Setup PD single statically
 	  --lib-only                   Only build the library
 	  --file                       Compile support for file tx command
-	  --osdpctl                    Build osdpctl tool
+	  --build-dir                  Build output directory (default: ./build)
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
 	---
 }
 
+BUILD_DIR="build"
 while [ $# -gt 0 ]; do
 	case $1 in
 	--packet-trace)        PACKET_TRACE=1;;
@@ -43,7 +44,7 @@ while [ $# -gt 0 ]; do
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
 	--file)                FILE=1;;
-	--osdpctl)             OSDPCTL=1;;
+	--build-dir)           BUILD_DIR=$2; shift;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
 	*) echo -e "Unknown option $1\n"; usage; exit 1;;
@@ -138,21 +139,24 @@ LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c"
 
 if [[ -z "${STATIC_PD}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_cp.c"
-	TARGETS="cp_app.elf pd_app.elf"
+	TARGETS="cp_app pd_app"
 else
-	TARGETS="pd_app.elf"
+	TARGETS="pd_app"
 fi
 
 if [[ ! -z "${FILE}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_file.c"
 fi
 
-if [[ ! -z "${OSDPCTL}" ]]; then
-	TARGETS+=" osdpctl.elf"
-	OSDPCTL_SOURCES+=" osdpctl/ini_parser.c osdpctl/config.c osdpctl/arg_parser.c"
-	OSDPCTL_SOURCES+=" osdpctl/osdpctl.c osdpctl/cmd_start.c osdpctl/cmd_send.c"
-	OSDPCTL_SOURCES+=" osdpctl/cmd_others.c"
-fi
+OSDPCTL_SOURCES="osdpctl/ini_parser.c osdpctl/config.c osdpctl/arg_parser.c"
+OSDPCTL_SOURCES+=" osdpctl/osdpctl.c osdpctl/cmd_start.c osdpctl/cmd_send.c"
+OSDPCTL_SOURCES+=" osdpctl/cmd_others.c"
+TARGETS+=" osdpctl"
+
+TEST_SOURCES="tests/unit-tests/test.c tests/unit-tests/test-cp-phy.c tests/unit-tests/test-cp-phy-fsm.c"
+TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c tests/unit-tests/test-file.c"
+TEST_SOURCES+=" ${LIBOSDP_SOURCES} src/osdp_file.c utils/src/workqueue.c utils/src/circbuf.c"
+TEST_SOURCES+=" utils/src/event.c utils/src/fdutils.c"
 
 if [[ ! -z "${LIB_ONLY}" ]]; then
 	TARGETS=""
@@ -160,17 +164,18 @@ fi
 
 ## Generate osdp_config.h
 echo "Generating osdp_config.h"
-cp src/osdp_config.h.in osdp_config.h
-sed -i "" -e "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" osdp_config.h
-sed -i "" -e "s/@PROJECT_NAME@/${PROJECT_NAME}/" osdp_config.h
-sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" osdp_config.h
-sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" osdp_config.h
-sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" osdp_config.h
-sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" osdp_config.h
+CONFIG_OUT=${BUILD_DIR}/osdp_config.h
+cp src/osdp_config.h.in ${CONFIG_OUT}
+sed -i "" -e "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" ${CONFIG_OUT}
+sed -i "" -e "s/@PROJECT_NAME@/${PROJECT_NAME}/" ${CONFIG_OUT}
+sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" ${CONFIG_OUT}
+sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" ${CONFIG_OUT}
+sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" ${CONFIG_OUT}
+sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" ${CONFIG_OUT}
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"
-cat > osdp_export.h <<----
+cat > ${BUILD_DIR}/osdp_export.h <<----
 #ifndef OSDP_EXPORT_H
 #define OSDP_EXPORT_H
 
@@ -182,8 +187,8 @@ cat > osdp_export.h <<----
 ---
 
 ## Generate Makefile
-echo "Generating config.mak"
-cat > config.mak << ---
+echo "Generating config.make"
+cat > config.make << ---
 CC=${CC}
 CXX=${CXX}
 AR=${AR}
@@ -193,7 +198,9 @@ CXXFLAGS=${CXXFLAGS}
 LDFLAGS=${LDFLAGS}
 SRC_LIBOSDP=${LIBOSDP_SOURCES}
 SRC_OSDPCTL=${OSDPCTL_SOURCES}
+SRC_TEST=${TEST_SOURCES}
 TARGETS=${TARGETS}
+BUILD_DIR=$(realpath ${BUILD_DIR})
 ---
 echo
 echo "LibOSDP lean build system configured!"

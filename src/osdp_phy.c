@@ -382,9 +382,7 @@ static int phy_check_header(struct osdp_pd *pd)
 
 	if (pkt_len > OSDP_PACKET_BUF_SIZE ||
 	    (unsigned long)pkt_len < sizeof(struct osdp_packet_header) + 1) {
-		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
-		return OSDP_ERR_PKT_NACK;
+		return OSDP_ERR_PKT_FMT;
 	}
 
 	return pkt_len;
@@ -405,9 +403,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 		comp = osdp_compute_crc16(buf, pkt_len);
 		if (comp != cur) {
 			LOG_ERR("Invalid crc 0x%04x/0x%04x", comp, cur);
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
-			return OSDP_ERR_PKT_NACK;
+			return OSDP_ERR_PKT_FMT;
 		}
 	} else {
 		pkt_len -= 1; /* consume checksum */
@@ -415,9 +411,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 		comp = osdp_compute_checksum(buf, pkt_len);
 		if (comp != cur) {
 			LOG_ERR("Invalid checksum %02x/%02x", comp, cur);
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_MSG_CHK;
-			return OSDP_ERR_PKT_NACK;
+			return OSDP_ERR_PKT_FMT;
 		}
 	}
 

@@ -90,7 +90,7 @@ dependencies but a C compiler. Here is an example of how you can cross compile
 LibOSDP to `arm-none-eabi-gcc`.
 
 ```
-export CROS_COMPILE=arm-none-eabi-
+export CROSS_COMPILE=arm-none-eabi-
 export CCFLAGS=--specs=nosys.specs
 ./configure.sh
 make

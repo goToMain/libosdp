@@ -21,6 +21,7 @@ pd_info_list = [
     PDInfo(102, name='chn-1')
 ]
 
+# TODO remove this.
 secure_pd_addr = pd_info_list[0].address
 secure_pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
 

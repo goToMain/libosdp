@@ -423,22 +423,19 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 		if (pyosdp_dict_add_int(obj, "direction",
 					event->cardread.direction))
 			return -1;
-		if (pyosdp_dict_add_int(obj, "length", event->cardread.length))
-			return -1;
+		tmp = event->cardread.length;
 		if (event->cardread.format == OSDP_CARD_FMT_RAW_UNSPECIFIED ||
-		    event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND)
-			tmp = (event->cardread.length + 7) / 8; // bits to bytes
-		else
-			tmp = event->cardread.length;
-		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data,
-					  tmp))
+		    event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND) {
+			if (pyosdp_dict_add_int(obj, "length", tmp))
+				return -1;
+			tmp = (tmp + 7) / 8; // bits to bytes
+		}
+		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, tmp))
 			return -1;
 		break;
 	case OSDP_EVENT_KEYPRESS:
 		if (pyosdp_dict_add_int(obj, "reader_no",
 					event->keypress.reader_no))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "length", event->keypress.length))
 			return -1;
 		if (pyosdp_dict_add_bytes(obj, "data", event->keypress.data,
 					  event->keypress.length))

@@ -3,7 +3,7 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
-
+import sys
 import os
 import tempfile
 import osdp
@@ -43,9 +43,16 @@ class ControlPanel():
             lock.release()
             time.sleep(0.020) #sleep for 20ms
 
-    def event_handler(self, address, event):
+    def event_handler(self, pd, event):
+        self.event_queue[pd].put(event)
+
+    def get_event(self, address, timeout: int=5):
         pd = self.pd_addr.index(address)
-        self.event_queue[pd].put(address, event)
+        try:
+            event = self.event_queue[pd].get(timeout=timeout)
+        except queue.Empty:
+            return None
+        return event
 
     def status(self):
         self.lock.acquire()

@@ -5,7 +5,7 @@
 #
 
 add_custom_target(check
-    COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python/  py.test -vv --show-capture=no
+    COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python/ python3 -m pytest -vv --show-capture=no
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Running tests.."
 )

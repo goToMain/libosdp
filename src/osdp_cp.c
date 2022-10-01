@@ -559,17 +559,12 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_KEYPPAD:
-		if (len < REPLY_KEYPPAD_DATA_LEN) {
-			break;
-		}
-		pos++; /* reader number; skip */
-		t1 = buf[pos++]; /* key length */
-		if ((len - REPLY_KEYPPAD_DATA_LEN) != t1 || !ctx->event_callback) {
+		if (len < REPLY_KEYPPAD_DATA_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_KEYPRESS;
 		event.keypress.reader_no = buf[pos++];
-		event.keypress.length = buf[pos++]; /* key length */
+		event.keypress.length = buf[pos++];
 		if ((len - REPLY_KEYPPAD_DATA_LEN) != event.keypress.length) {
 			break;
 		}
@@ -580,14 +575,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RAW:
-		if (len < REPLY_RAW_DATA_LEN) {
-			break;
-		}
-		pos++; /* reader number; skip */
-		t1 = buf[pos++];        /* format */
-		t2 = buf[pos++];        /* length LSB */
-		t2 |= buf[pos++] << 8; /* length MSB */
-		if ((len - REPLY_RAW_DATA_LEN) != t2 || !ctx->event_callback) {
+		if (len < REPLY_RAW_DATA_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_CARDREAD;
@@ -603,18 +591,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < t1; i++) {
 			event.cardread.data[i] = buf[pos + i];
 		}
-		ctx->event_callback(ctx->event_callback_arg,
-				    pd->idx, &event);
+		ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FMT:
-		if (len < REPLY_FMT_DATA_LEN) {
-			break;
-		}
-		pos++;	/* reader number; skip */
-		pos++;	/* skip one byte -- TODO: handle reader direction */
-		t1 = buf[pos++]; /* Key length */
-		if ((len - REPLY_FMT_DATA_LEN) != t1 || !ctx->event_callback) {
+		if (len < REPLY_FMT_DATA_LEN || !ctx->event_callback) {
 			break;
 		}
 		event.type = OSDP_EVENT_CARDREAD;
@@ -629,8 +610,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < event.cardread.length; i++) {
 			event.cardread.data[i] = buf[pos + i];
 		}
-		ctx->event_callback(ctx->event_callback_arg,
-				    pd->idx, &event);
+		ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_BUSY:

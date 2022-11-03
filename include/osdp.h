@@ -710,9 +710,11 @@ typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
  * been registered with `osdp_set_command_complete_callback()` this method is
  * invoked after a command has been processed successfully in CP and PD sides.
  *
+ * @param arg pointer that will was passed to the arg param of
+ * `osdp_set_command_complete_callback`.
  * @param id OSDP command ID (Note: this is not `enum osdp_cmd_e`)
  */
-typedef void (*osdp_command_complete_callback_t)(int id);
+typedef void (*osdp_command_complete_callback_t)(void *arg, int id);
 
 /* ------------------------------- */
 /*            PD Methods           */
@@ -1000,9 +1002,11 @@ void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
  *
  * @param ctx OSDP context
  * @param cb Callback to be invoked when a command is completed.
+ * @param arg A pointer that will be passed as the first argument of `cb`
  */
 void osdp_set_command_complete_callback(osdp_t *ctx,
-					osdp_command_complete_callback_t cb);
+					osdp_command_complete_callback_t cb,
+					void *arg);
 
 /**
  * @brief OSDP File operations struct that needs to be filled by the CP/PD

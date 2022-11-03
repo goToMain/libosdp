@@ -344,7 +344,11 @@ struct osdp {
 	int *channel_lock;     /* array of length NUM_PD() to lock a channel */
 	uint8_t sc_master_key[16]; /* Secure Channel master key (deprecated) */
 
-	/* OSDP defined command complete callback subscription */
+	/**
+	 * OSDP defined command complete callback subscription with opaque arg 
+	 * pointer as passed by app
+	 **/
+	void *command_complete_callback_arg;
 	osdp_command_complete_callback_t command_complete_callback;
 
 	/* CP event callback to app with opaque arg pointer as passed by app */

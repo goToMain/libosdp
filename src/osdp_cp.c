@@ -837,7 +837,8 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		rc = cp_process_reply(pd);
 		if (rc == OSDP_CP_ERR_NONE) {
 			if (ctx->command_complete_callback) {
-				ctx->command_complete_callback(pd->cmd_id);
+				ctx->command_complete_callback(ctx->command_complete_callback_arg,
+							       pd->cmd_id);
 			}
 			if (sc_is_active(pd)) {
 				pd->sc_tstamp = osdp_millis_now();

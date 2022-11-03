@@ -1046,7 +1046,8 @@ static void osdp_pd_update(struct osdp_pd *pd)
 
 	osdp_phy_state_reset(pd, false);
 	if (ctx->command_complete_callback) {
-		ctx->command_complete_callback(pd->cmd_id);
+		ctx->command_complete_callback(ctx->command_complete_callback_arg, 
+					       pd->cmd_id);
 	}
 }
 

@@ -184,13 +184,13 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		if (cap->num_items == 0 || cap->compliance_level == 0) {
 			break;
 		}
-		return 0; /* Remove this when REPLY_ISTATR is supported */
+		return 1;
 	case CMD_OSTAT:
 		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
 		if (cap->num_items == 0 || cap->compliance_level == 0) {
 			break;
 		}
-		return 0; /* Remove this when REPLY_OSTATR is supported */
+		return 1;
 	case CMD_OUT:
 		cap = &pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL];
 		if (!cmd || cap->compliance_level == 0 ||
@@ -741,6 +741,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < t1; i++) {
 			buf[len++] = pd->output_status & (1 << i);
 		}
+		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_ISTATR:
 		t1 = pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING].num_items;
@@ -749,6 +750,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		for (i = 0; i < t1; i++) {
 			buf[len++] = pd->input_status & (1 << i);
 		}
+		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_LSTATR:
 		assert_len(REPLY_LSTATR_LEN, max_len);

@@ -223,11 +223,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		buf[len++] = 0x00;
 		break;
-	case CMD_DIAG:
-		assert_len(CMD_DIAG_LEN, max_len);
-		buf[len++] = pd->cmd_id;
-		buf[len++] = 0x00;
-		break;
 	case CMD_OUT:
 		assert_len(CMD_OUT_LEN, max_len);
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;

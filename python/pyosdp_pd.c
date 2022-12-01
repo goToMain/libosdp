@@ -48,6 +48,19 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 	Py_RETURN_TRUE;
 }
 
+#define pyosdp_pd_flush_events_doc                                               \
+	"Deletes all events from the PD's event queue.\n"                                       \
+	"\n"                                                                     \
+	"@return int Count of events dequeued.\n"
+static PyObject *pyosdp_pd_flush_events(pyosdp_pd_t *self)
+{
+	int ret;
+
+	ret = osdp_pd_flush_events(self->ctx);
+
+	return Py_BuildValue("I", ret);
+}
+
 static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 {
 	int ret_val = -1;
@@ -338,6 +351,8 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	  METH_VARARGS, pyosdp_pd_notify_event_doc },
 	{ "is_sc_active", (PyCFunction)pyosdp_pd_is_sc_active,
 	  METH_NOARGS, pyosdp_pd_is_sc_active_doc },
+	{ "flush_events", (PyCFunction)pyosdp_pd_flush_events,
+	  METH_VARARGS, pyosdp_pd_flush_events_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 

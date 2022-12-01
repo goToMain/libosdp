@@ -1208,3 +1208,19 @@ int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event)
 	pd_event_enqueue(pd, ev);
 	return 0;
 }
+
+OSDP_EXPORT
+int osdp_pd_flush_events(osdp_t *ctx)
+{
+	input_check(ctx);
+	int count = 0;
+	struct osdp_event *ev;
+	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+
+	while (pd_event_dequeue(pd, &ev) == 0) {
+		pd_event_free(pd, ev);
+		count++;
+	}
+
+	return count;
+}

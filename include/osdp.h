@@ -780,6 +780,14 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
  */
 int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
 
+/**
+ * @brief Deletes all events from the PD's event queue.
+ *
+ * @param ctx OSDP context
+ * @return int Count of events dequeued.
+ */
+int osdp_pd_flush_events(osdp_t *ctx);
+
 /* ------------------------------- */
 /*            CP Methods           */
 /* ------------------------------- */

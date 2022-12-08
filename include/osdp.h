@@ -500,11 +500,15 @@ struct osdp_cmd_mfg {
 	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
 };
 
+#define OSDP_CMD_FILE_TX_FLAG_CANCEL (1UL << 31)
+
 /**
  * @brief File transfer start command
  *
  * @param id Pre-agreed file ID between CP and PD.
- * @param flags Reserved; set to 0
+ * @param flags Reserved and set to zero by OSDP spec; bit-31 used by libOSDP
+ *              to cancel ongoing transfers (it is not sent on OSDP channel
+ *              to peer).
  */
 struct osdp_cmd_file_tx {
 	int id;

@@ -899,6 +899,24 @@ static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
 	return OSDP_CP_ERR_INPROG;
 }
 
+static inline int cp_enqueue_pending_commands(struct osdp_pd *pd)
+{
+	/*
+	 * For file transfers, don't care if dispatch failed; osdp_file.c
+	 * should handle failures
+	 */
+	switch(osdp_get_file_tx_state(pd)) {
+	case OSDP_FILE_TX_STATE_PENDING:
+		cp_cmd_dispatcher(pd, CMD_FILETRANSFER);
+		return 1;
+	case OSDP_FILE_TX_STATE_ERROR:
+		cp_cmd_dispatcher(pd, CMD_ABORT);
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 static int state_update(struct osdp_pd *pd)
 {
 	bool soft_fail;
@@ -931,12 +949,8 @@ static int state_update(struct osdp_pd *pd)
 			cp_set_state(pd, OSDP_CP_STATE_SC_INIT);
 			break;
 		}
-		if (osdp_file_tx_pending(pd)) {
-			/* Don't care if dispatch failed; osdp_file.c should
-			 * handle failures */
-			cp_cmd_dispatcher(pd, CMD_FILETRANSFER);
+		if (cp_enqueue_pending_commands(pd))
 			break;
-		}
 		if (osdp_millis_since(pd->tstamp) < OSDP_PD_POLL_TIMEOUT_MS) {
 			break;
 		}
@@ -1387,8 +1401,8 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_FILE_TX:
-		return osdp_file_tx_initiate(pd, cmd->file_tx.id,
-					     cmd->file_tx.flags);
+		return osdp_file_tx_command(pd, cmd->file_tx.id,
+					    cmd->file_tx.flags);
 	case OSDP_CMD_KEYSET:
 		if (cmd->keyset.type == 1) {
 			if (!sc_is_active(pd))

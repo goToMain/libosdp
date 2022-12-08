@@ -18,7 +18,7 @@
 
 LOGGER_DECLARE(osdp, "FOP");
 
-static inline void osdp_file_state_reset(struct osdp_file *f)
+static inline void file_state_reset(struct osdp_file *f)
 {
 	f->flags = 0;
 	f->offset = 0;
@@ -27,6 +27,12 @@ static inline void osdp_file_state_reset(struct osdp_file *f)
 	f->size = 0;
 	f->state = OSDP_FILE_IDLE;
 	f->file_id = 0;
+	f->cancel_req = false;
+}
+
+static inline bool file_tx_in_progress(struct osdp_file *f)
+{
+	return f && f->state == OSDP_FILE_INPROG;
 }
 
 /* --- Sender CMD/RESP Handers --- */
@@ -78,7 +84,7 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 	if (f->length == 0) {
 		LOG_WRN("TX_Build: Read 0 length chunk; Aborting transfer!");
-		osdp_file_state_reset(f);
+		file_state_reset(f);
 		return -1;
 	}
 
@@ -162,7 +168,7 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 
 		LOG_INF("TX_Decode: Starting file transfer");
-		osdp_file_state_reset(f);
+		file_state_reset(f);
 		f->file_id = p->type;
 		f->size = size;
 		f->state = OSDP_FILE_INPROG;
@@ -240,63 +246,73 @@ void osdp_file_tx_abort(struct osdp_pd *pd)
 {
 	struct osdp_file *f = TO_FILE(pd);
 
-	if (f && f->state == OSDP_FILE_INPROG) {
+	if (file_tx_in_progress(f)) {
 		f->ops.close(f->ops.arg);
-		osdp_file_state_reset(f);
+		file_state_reset(f);
 	}
 }
 
-/**
- * Return true here to queue a CMD_FILETRANSFER. This function is a critical
- * path so keep it simple.
- */
-bool osdp_file_tx_pending(struct osdp_pd *pd)
+int osdp_get_file_tx_state(struct osdp_pd *pd)
 {
 	struct osdp_file *f = TO_FILE(pd);
 
 	if (!f || f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
-		return false;
+		return OSDP_FILE_TX_STATE_IDLE;
 	}
 
-	if (f->errors > OSDP_FILE_ERROR_RETRY_MAX) {
-		LOG_ERR("File transfer fail count exceeded; Aborting!");
+	if (f->errors > OSDP_FILE_ERROR_RETRY_MAX || f->cancel_req) {
+		LOG_ERR("Aborting transfer of file fd:%d", f->file_id);
 		osdp_file_tx_abort(pd);
+		return OSDP_FILE_TX_STATE_ERROR;
 	}
 
-	return true;
+	return OSDP_FILE_TX_STATE_PENDING;
 }
 
 /**
  * Entry point based on command OSDP_CMD_FILE to kick off a new file transfer.
  */
-int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags)
+int osdp_file_tx_command(struct osdp_pd *pd, int file_id, uint32_t flags)
 {
 	int size = 0;
 	struct osdp_file *f = TO_FILE(pd);
 
 	if (f == NULL) {
-		LOG_PRINT("TX_init: File ops not registered!");
+		LOG_ERR("TX_init: File ops not registered!");
 		return -1;
 	}
 
-	if (f->state != OSDP_FILE_IDLE && f->state != OSDP_FILE_DONE) {
-		LOG_PRINT("TX_init: File tx in progress");
+	if (file_tx_in_progress(f)) {
+		if (flags & OSDP_CMD_FILE_TX_FLAG_CANCEL) {
+			if (file_id == f->file_id) {
+				f->cancel_req = true;
+				return 0;
+			}
+			LOG_ERR("TX_init: invalid cancel request; no such tx!");
+			return -1;
+		}
+		LOG_ERR("TX_init: A file tx is already in progress");
+		return -1;
+	}
+
+	if (flags & OSDP_CMD_FILE_TX_FLAG_CANCEL) {
+		LOG_ERR("TX_init: invalid cancel request");
 		return -1;
 	}
 
 	if (f->ops.open(f->ops.arg, file_id, &size) < 0) {
-		LOG_PRINT("TX_init: Open failed! fd:%d", file_id);
+		LOG_ERR("TX_init: Open failed! fd:%d", file_id);
 		return -1;
 	}
 
 	if (size <= 0) {
-		LOG_PRINT("TX_init: Invalid file size %d", size);
+		LOG_ERR("TX_init: Invalid file size %d", size);
 		return -1;
 	}
 
-	LOG_PRINT("TX_init: Starting file transfer of size: %d", size);
+	LOG_INF("TX_init: Starting file transfer of size: %d", size);
 
-	osdp_file_state_reset(f);
+	file_state_reset(f);
 	f->flags = flags;
 	f->file_id = file_id;
 	f->size = size;
@@ -321,7 +337,7 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops)
 	}
 
 	memcpy(&pd->file->ops, ops, sizeof(struct osdp_file_ops));
-	osdp_file_state_reset(pd->file);
+	file_state_reset(pd->file);
 	return 0;
 }
 

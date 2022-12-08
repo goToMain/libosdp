@@ -527,6 +527,32 @@ static int pyosdp_make_keypress_event_struct(struct osdp_event *p,
 	return 0;
 }
 
+static int pyosdp_make_mfg_reply_event_struct(struct osdp_event *p,
+					      PyObject *dict)
+{
+	int i, data_length, vendor_code, command;
+	struct osdp_event_mfgrep *ev = &p->mfgrep;
+	uint8_t *data_bytes;
+
+	p->type = OSDP_EVENT_MFGREP;
+
+	if (pyosdp_dict_get_int(dict, "vendor_code", &vendor_code))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "mfg_command", &command))
+		return -1;
+
+	if (pyosdp_dict_get_bytes(dict, "data", &data_bytes, &data_length))
+		return -1;
+
+	ev->vendor_code = (uint32_t)vendor_code;
+	ev->command = (uint8_t)command;
+	ev->length = data_length;
+	for (i = 0; i < ev->length; i++)
+		ev->data[i] = data_bytes[i];
+	return 0;
+}
+
 int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
 {
 	int event_type;
@@ -541,6 +567,10 @@ int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
 		break;
 	case OSDP_EVENT_KEYPRESS:
 		if (pyosdp_make_keypress_event_struct(event, dict))
+			return -1;
+		break;
+	case OSDP_EVENT_MFGREP:
+		if (pyosdp_make_mfg_reply_event_struct(event, dict))
 			return -1;
 		break;
 	default:

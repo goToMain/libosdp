@@ -51,6 +51,16 @@ def test_event_keypad():
     secure_pd.notify_event(event)
     assert cp.get_event(secure_pd.address) == event
 
+def test_event_mfg_reply():
+    event = {
+        'event': Event.ManufacturerReply,
+        'vendor_code': 0x153,
+        'mfg_command': 0x10,
+        'data': bytes([9,1,9,2,6,3,1,7,7,0]),
+    }
+    secure_pd.notify_event(event)
+    assert cp.get_event(secure_pd.address) == event
+
 def test_event_cardread_ascii():
     event = {
         'event': Event.CardRead,

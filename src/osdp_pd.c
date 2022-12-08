@@ -161,6 +161,8 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 			reply_code = REPLY_ISTATR;
 		}
 		break;
+	case OSDP_EVENT_MFGREP:
+		reply_code = REPLY_MFGREP;
 	default:
 		LOG_ERR("Unknown event type %d", event->type);
 		break;
@@ -1048,7 +1050,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 
 	osdp_phy_state_reset(pd, false);
 	if (ctx->command_complete_callback) {
-		ctx->command_complete_callback(ctx->command_complete_callback_arg, 
+		ctx->command_complete_callback(ctx->command_complete_callback_arg,
 					       pd->cmd_id);
 	}
 }

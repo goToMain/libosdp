@@ -53,7 +53,7 @@ work_t *g_test_works[MAX_TEST_WORK];
 
 int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
 {
-	int i;
+	int i, rc;
 
 	struct test_async_data *data = malloc(sizeof(struct test_async_data));
 	data->ctx = ctx;
@@ -65,27 +65,35 @@ int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
 	}
 
 	if (i == MAX_TEST_WORK) {
-		printf("test works exhausted\n");
+		printf("async_runner_start: test works exhausted\n");
 		exit(EXIT_FAILURE);
 	}
 
 	g_test_works[i] = malloc(sizeof(work_t));
 	g_test_works[i]->arg = data;
 	g_test_works[i]->work_fn = async_runner;
-	g_test_works[i]->complete_fn = async_runner_free;
+	g_test_works[i]->complete_fn = NULL;
 
-	return workqueue_add_work(&test_wq, g_test_works[i]);
+	rc = workqueue_add_work(&test_wq, g_test_works[i]);
+	if (rc != 0) {
+		printf("async_runner_start: test wq add work failed!\n");
+		exit(EXIT_FAILURE);
+	}
 
+	return i;
 }
 
 int async_runner_stop(int work_id)
 {
-	if (work_id < 0 || work_id > MAX_TEST_WORK || g_test_works[work_id]== NULL)
-		return -1;
+	if (work_id < 0 || work_id > MAX_TEST_WORK || g_test_works[work_id]== NULL) {
+		printf("async_runner_stop: invalid work id!\n");
+		exit(EXIT_FAILURE);
+	}
 
 	workqueue_cancel_work(&test_wq, g_test_works[work_id]);
 	while (workqueue_work_is_complete(&test_wq, g_test_works[work_id]) == false)
 		usleep(50 * 1000);
+	async_runner_free(g_test_works[work_id]);
 	g_test_works[work_id] = NULL;
 
 	return 0;

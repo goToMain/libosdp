@@ -203,6 +203,7 @@ void run_file_tx_tests(struct test *t)
 
 	cp_runner = async_runner_start(cp_ctx, osdp_cp_refresh);
 	pd_runner = async_runner_start(pd_ctx, osdp_pd_refresh);
+	printf("cp_runner: %d pd_runner: %d\n", cp_runner, pd_runner);
 
 	if (cp_runner < 0 || pd_runner < 0) {
 		printf(SUB_1 "Failed to created CP/PD runners\n");

@@ -129,7 +129,7 @@ if [[ ! -z "${CRYPTO_LD_FLAGS}" ]]; then
 fi
 
 ## Declare sources
-LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_pd.c"
+LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_file.c src/osdp_pd.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
 LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c"
 
@@ -140,10 +140,6 @@ else
 	TARGETS="pd_app"
 fi
 
-if [[ ! -z "${FILE}" ]]; then
-	LIBOSDP_SOURCES+=" src/osdp_file.c"
-fi
-
 OSDPCTL_SOURCES="osdpctl/ini_parser.c osdpctl/config.c osdpctl/arg_parser.c"
 OSDPCTL_SOURCES+=" osdpctl/osdpctl.c osdpctl/cmd_start.c osdpctl/cmd_send.c"
 OSDPCTL_SOURCES+=" osdpctl/cmd_others.c"
@@ -151,7 +147,7 @@ TARGETS+=" osdpctl"
 
 TEST_SOURCES="tests/unit-tests/test.c tests/unit-tests/test-cp-phy.c tests/unit-tests/test-cp-phy-fsm.c"
 TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c tests/unit-tests/test-file.c"
-TEST_SOURCES+=" ${LIBOSDP_SOURCES} src/osdp_file.c utils/src/workqueue.c utils/src/circbuf.c"
+TEST_SOURCES+=" ${LIBOSDP_SOURCES} utils/src/workqueue.c utils/src/circbuf.c"
 TEST_SOURCES+=" utils/src/event.c utils/src/fdutils.c"
 
 if [[ ! -z "${LIB_ONLY}" ]]; then

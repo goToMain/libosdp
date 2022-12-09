@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * The following define is just to cheat IDEs; normally it is provided by build
- * system and this file is not complied if not configured.
- */
-#ifndef CONFIG_OSDP_FILE
-#define CONFIG_OSDP_FILE
-#endif
-
 #include <stdlib.h>
 
 #include "osdp_file.h"

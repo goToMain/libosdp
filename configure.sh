@@ -23,7 +23,6 @@ usage() {
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
 	  --lib-only                   Only build the library
-	  --file                       Compile support for file tx command
 	  --build-dir                  Build output directory (default: ./build)
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
@@ -43,7 +42,6 @@ while [ $# -gt 0 ]; do
 	--no-colours)          NO_COLOURS=1;;
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
-	--file)                FILE=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
@@ -93,10 +91,6 @@ fi
 
 if [[ ! -z "${STATIC_PD}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
-fi
-
-if [[ ! -z "${FILE}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_FILE"
 fi
 
 ## Repo meta data

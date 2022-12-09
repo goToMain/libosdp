@@ -51,7 +51,6 @@ define_macros = [
     #('CONFIG_OSDP_DATA_TRACE', 1),
     #('CONFIG_OSDP_SKIP_MARK_BYTE', 1),
     #('CONFIG_DISABLE_PRETTY_LOGGING', 1),
-    #('CONFIG_OSDP_FILE', 1),
 ]
 
 if os.path.exists('@CMAKE_CURRENT_SOURCE_DIR@/README.md'):

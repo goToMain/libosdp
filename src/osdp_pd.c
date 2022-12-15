@@ -977,6 +977,7 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 	case OSDP_ERR_PKT_WAIT:
 		return OSDP_PD_ERR_WAIT;
 	case OSDP_ERR_PKT_SKIP:
+		osdp_phy_state_reset(pd, false);
 		return OSDP_PD_ERR_IGNORE;
 	case OSDP_ERR_PKT_FMT:
 		return OSDP_PD_ERR_GENERIC;

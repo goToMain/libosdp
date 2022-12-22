@@ -239,6 +239,19 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	return 0;
 }
 
+static bool do_command_callback(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	int ret;
+
+	ret = pd->command_callback(pd->command_callback_arg, cmd);
+	if (ret != 0) {
+		pd->reply_id = REPLY_NAK;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+		return false;
+	}
+	return true;
+}
+
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0, tmp;
@@ -348,15 +361,11 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.output.control_code = buf[pos++];
 		cmd.output.timer_count = buf[pos++];
 		cmd.output.timer_count |= buf[pos++] << 8;
+		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		ret = pd->command_callback(pd->command_callback_arg, &cmd);
-		if (ret != 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
-			ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		pd->reply_id = REPLY_ACK;
@@ -383,15 +392,11 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.led.permanent.off_count = buf[pos++];
 		cmd.led.permanent.on_color = buf[pos++];
 		cmd.led.permanent.off_color = buf[pos++];
+		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		ret = pd->command_callback(pd->command_callback_arg, &cmd);
-		if (ret != 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
-			ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		pd->reply_id = REPLY_ACK;
@@ -407,15 +412,11 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.buzzer.on_count = buf[pos++];
 		cmd.buzzer.off_count = buf[pos++];
 		cmd.buzzer.rep_count = buf[pos++];
+		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		ret = pd->command_callback(pd->command_callback_arg, &cmd);
-		if (ret != 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
-			ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		pd->reply_id = REPLY_ACK;
@@ -440,19 +441,11 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd.text.length; i++) {
 			cmd.text.data[i] = buf[pos++];
 		}
+		ret = OSDP_PD_ERR_REPLY;
 		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
-			break;
-		}
-		ret = pd->command_callback(pd->command_callback_arg, &cmd);
-		if (ret != 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
-			ret = OSDP_PD_ERR_REPLY;
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		pd->reply_id = REPLY_ACK;
@@ -477,11 +470,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			LOG_ERR("COMSET Failed! command discarded");
 			cmd.comset.address = pd->address;
 			cmd.comset.baud_rate = pd->baud_rate;
+			break;
 		}
-		ret = pd->command_callback(pd->command_callback_arg, &cmd);
-		if (ret != 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+		if (!do_command_callback(pd, &cmd)) {
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
@@ -506,10 +497,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd.mfg.length; i++) {
 			cmd.mfg.data[i] = buf[pos++];
 		}
-		ret = pd->command_callback(pd->command_callback_arg, &cmd);
-		if (ret < 0) { /* Errors */
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+		if (!do_command_callback(pd, &cmd)) {
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
@@ -582,17 +570,10 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.keyset.type = buf[pos++];
 		cmd.keyset.length = buf[pos++];
 		memcpy(cmd.keyset.data, buf + pos, 16);
-		ret = OSDP_PD_ERR_NONE;
-		if (pd->command_callback) {
-			ret = pd->command_callback(pd->command_callback_arg,
-						   &cmd);
-		} else {
+		if (!pd->command_callback) {
 			LOG_ERR("Keyset without a command callback! The SC new "
 				"SCBK will be lost when the PD reboots.");
-		}
-		if (ret != 0) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+		} else if (!do_command_callback(pd, &cmd)) {
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}

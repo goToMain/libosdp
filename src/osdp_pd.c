@@ -353,20 +353,22 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_OUT:
-		if (len != CMD_OUT_DATA_LEN || !pd->command_callback) {
+		if ((len % CMD_OUT_DATA_LEN) != 0 || !pd->command_callback) {
 			break;
 		}
-		cmd.id = OSDP_CMD_OUTPUT;
-		cmd.output.output_no = buf[pos++];
-		cmd.output.control_code = buf[pos++];
-		cmd.output.timer_count = buf[pos++];
-		cmd.output.timer_count |= buf[pos++] << 8;
 		ret = OSDP_PD_ERR_REPLY;
-		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			break;
-		}
-		if (!do_command_callback(pd, &cmd)) {
-			break;
+		for (i = 0; i < len / CMD_OUT_DATA_LEN; i++) {
+			cmd.id = OSDP_CMD_OUTPUT;
+			cmd.output.output_no = buf[pos++];
+			cmd.output.control_code = buf[pos++];
+			cmd.output.timer_count = buf[pos++];
+			cmd.output.timer_count |= buf[pos++] << 8;
+			if (!pd_cmd_cap_ok(pd, &cmd)) {
+				break;
+			}
+			if (!do_command_callback(pd, &cmd)) {
+				break;
+			}
 		}
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;

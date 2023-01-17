@@ -318,7 +318,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		ret = osdp_file_cmd_tx_build(pd, buf + len, max_len);
 		if (ret <= 0) {
-			break;
+			return OSDP_CP_ERR_GENERIC;
 		}
 		len += ret;
 		break;

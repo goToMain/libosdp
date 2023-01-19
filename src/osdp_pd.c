@@ -901,23 +901,24 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 static int pd_send_reply(struct osdp_pd *pd)
 {
-	int ret;
+	int ret, packet_buf_size = get_tx_buf_size(pd);
 
 	/* init packet buf with header */
-	ret = osdp_phy_packet_init(pd, pd->packet_buf, sizeof(pd->packet_buf));
+	ret = osdp_phy_packet_init(pd, pd->packet_buf, packet_buf_size);
 	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
 	pd->packet_buf_len = ret;
 
 	/* fill reply data */
-	ret = pd_build_reply(pd, pd->packet_buf, sizeof(pd->packet_buf));
+	ret = pd_build_reply(pd, pd->packet_buf, packet_buf_size);
 	if (ret <= 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
 	pd->packet_buf_len += ret;
 
-	ret = osdp_phy_send_packet(pd);
+	ret = osdp_phy_send_packet(pd, pd->packet_buf, pd->packet_buf_len,
+				   packet_buf_size);
 	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}

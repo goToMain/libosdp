@@ -369,7 +369,8 @@ int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t **pkt_start);
 void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
-int osdp_phy_send_packet(struct osdp_pd *pd);
+int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
+			 int len, int max_len);
 
 /* from osdp_common.c */
 __weak int64_t osdp_millis_now(void);
@@ -407,6 +408,16 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len);
 void osdp_sc_setup(struct osdp_pd *pd);
 void osdp_sc_teardown(struct osdp_pd *pd);
+
+static inline int get_tx_buf_size(struct osdp_pd *pd)
+{
+	int packet_buf_size = sizeof(pd->packet_buf);
+
+	if (pd->peer_rx_size) {
+		packet_buf_size = MIN(packet_buf_size, (int)pd->peer_rx_size);
+	}
+	return packet_buf_size;
+}
 
 static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
 {

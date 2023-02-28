@@ -5,12 +5,12 @@
 #
 
 import time
-from pyosdp import *
+from testlib import *
 
-def test_daisy_cained_pds(utils):
+def test_daisy_chained_pds(utils):
     # Created single CP-PD pair
-    pd0_info = PDInfo(101, utils.ks.gen_key(), name='daisy_cained_pd', channel_type='unix_bus')
-    pd1_info = PDInfo(102, utils.ks.gen_key(), name='daisy_cained_pd', channel_type='unix_bus')
+    pd0_info = PDInfo(101, utils.ks.gen_key(), name='daisy_chained_pd', channel_type='unix_bus')
+    pd1_info = PDInfo(102, utils.ks.gen_key(), name='daisy_chained_pd', channel_type='unix_bus')
     pd0 = utils.create_pd(pd0_info)
     pd1 = utils.create_pd(pd1_info)
     cp = utils.create_cp([ pd0_info, pd1_info ], sc_wait=True)

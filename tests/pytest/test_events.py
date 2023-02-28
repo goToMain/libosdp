@@ -4,7 +4,6 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-import time
 import pytest
 
 from testlib import *
@@ -46,6 +45,16 @@ def test_event_keypad():
     event = {
         'event': Event.KeyPress,
         'reader_no': 1,
+        'data': bytes([9,1,9,2,6,3,1,7,7,0]),
+    }
+    secure_pd.notify_event(event)
+    assert cp.get_event(secure_pd.address) == event
+
+def test_event_mfg_reply():
+    event = {
+        'event': Event.ManufacturerReply,
+        'vendor_code': 0x153,
+        'mfg_command': 0x10,
         'data': bytes([9,1,9,2,6,3,1,7,7,0]),
     }
     secure_pd.notify_event(event)

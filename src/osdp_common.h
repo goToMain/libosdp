@@ -102,7 +102,6 @@ union osdp_ephemeral_data {
 #define CMD_POLL	 0x60
 #define CMD_ID		 0x61
 #define CMD_CAP		 0x62
-#define CMD_DIAG	 0x63
 #define CMD_LSTAT	 0x64
 #define CMD_ISTAT	 0x65
 #define CMD_OSTAT	 0x66
@@ -114,22 +113,19 @@ union osdp_ephemeral_data {
 #define CMD_RMODE	 0x6C
 #define CMD_TDSET	 0x6D
 #define CMD_COMSET	 0x6E
-#define CMD_DATA	 0x6F
-#define CMD_XMIT	 0x70
-#define CMD_PROMPT	 0x71
-#define CMD_SPE		 0x72
 #define CMD_BIOREAD	 0x73
 #define CMD_BIOMATCH	 0x74
 #define CMD_KEYSET	 0x75
 #define CMD_CHLNG	 0x76
 #define CMD_SCRYPT	 0x77
-#define CMD_CONT	 0x79
-#define CMD_ABORT	 0x7A
-#define CMD_FILETRANSFER 0x7C
 #define CMD_ACURXSIZE	 0x7B
+#define CMD_FILETRANSFER 0x7C
 #define CMD_MFG		 0x80
-#define CMD_SCDONE	 0xA0
 #define CMD_XWR		 0xA1
+#define CMD_ABORT	 0xA2
+#define CMD_PIVDATA	 0xA3
+#define CMD_GENAUTH	 0xA4
+#define CMD_CRAUTH	 0xA5
 #define CMD_KEEPACTIVE	 0xA7
 
 /**
@@ -145,18 +141,20 @@ union osdp_ephemeral_data {
 #define REPLY_RSTATR	0x4B
 #define REPLY_RAW	0x50
 #define REPLY_FMT	0x51
-#define REPLY_PRES	0x52
 #define REPLY_KEYPPAD	0x53
 #define REPLY_COM	0x54
-#define REPLY_SCREP	0x55
-#define REPLY_SPER	0x56
 #define REPLY_BIOREADR	0x57
 #define REPLY_BIOMATCHR 0x58
 #define REPLY_CCRYPT	0x76
+#define REPLY_BUSY	0x79
 #define REPLY_RMAC_I	0x78
 #define REPLY_FTSTAT	0x7A
+#define REPLY_PIVDATAR	0x80
+#define REPLY_GENAUTHR	0x81
+#define REPLY_CRAUTHR	0x82
+#define REPLY_MFGSTATR	0x83
+#define REPLY_MFGERRR	0x84
 #define REPLY_MFGREP	0x90
-#define REPLY_BUSY	0x79
 #define REPLY_XRD	0xB1
 
 /**
@@ -345,7 +343,7 @@ struct osdp {
 	uint8_t sc_master_key[16]; /* Secure Channel master key (deprecated) */
 
 	/**
-	 * OSDP defined command complete callback subscription with opaque arg 
+	 * OSDP defined command complete callback subscription with opaque arg
 	 * pointer as passed by app
 	 **/
 	void *command_complete_callback_arg;
@@ -371,7 +369,8 @@ int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t **pkt_start);
 void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
-int osdp_phy_send_packet(struct osdp_pd *pd);
+int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
+			 int len, int max_len);
 
 /* from osdp_common.c */
 __weak int64_t osdp_millis_now(void);
@@ -409,6 +408,16 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len);
 void osdp_sc_setup(struct osdp_pd *pd);
 void osdp_sc_teardown(struct osdp_pd *pd);
+
+static inline int get_tx_buf_size(struct osdp_pd *pd)
+{
+	int packet_buf_size = sizeof(pd->packet_buf);
+
+	if (pd->peer_rx_size) {
+		packet_buf_size = MIN(packet_buf_size, (int)pd->peer_rx_size);
+	}
+	return packet_buf_size;
+}
 
 static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
 {

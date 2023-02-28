@@ -38,6 +38,9 @@ class CommandLEDColor:
     Amber = osdp.LED_COLOR_AMBER
     Blue = osdp.LED_COLOR_BLUE
 
+class CommandFileTxFlags:
+    Cancel = osdp.CMD_FILE_TX_FLAG_CANCEL
+
 class Event:
     CardRead = osdp.EVENT_CARDREAD
     KeyPress = osdp.EVENT_KEYPRESS

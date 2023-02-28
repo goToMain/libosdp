@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 cmake_policy(SET CMP0063 NEW)
 
-project(libosdp VERSION 2.1.0)
+project(libosdp VERSION 2.2.0)
 
 set(PROJECT_AUTHOR       "Siddharth Chandrasekaran")
 set(PROJECT_AUTHOR_EMAIL "sidcha.dev@gmail.com")

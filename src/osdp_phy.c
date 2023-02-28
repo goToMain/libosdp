@@ -210,9 +210,9 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
 	uint8_t *data;
-	int i, data_len;
+	int data_len;
 
-	/* Do a sanity check only; we expect expect header to be pre-filled */
+	/* Do a sanity check only; we expect header to be pre-filled */
 	if ((unsigned long)len <= sizeof(struct osdp_packet_header)) {
 		LOG_ERR("PKT_F: Invalid header");
 		return OSDP_ERR_PKT_FMT;
@@ -278,9 +278,7 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		/* compute and extend the buf with 4 MAC bytes */
 		osdp_compute_mac(pd, is_cp_mode(pd), buf, len);
 		data = is_cp_mode(pd) ? pd->sc.c_mac : pd->sc.r_mac;
-		for (i = 0; i < 4; i++) {
-			buf[len + i] = data[i];
-		}
+		memcpy(buf + len, data, 4);
 		len += 4;
 	}
 
@@ -304,22 +302,20 @@ out_of_space_error:
 	return OSDP_ERR_PKT_FMT;
 }
 
-int osdp_phy_send_packet(struct osdp_pd *pd)
+int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
+			 int len, int max_len)
 {
 	int ret;
 
 	/* finalize packet */
-	ret = osdp_phy_packet_finalize(pd, pd->packet_buf, pd->packet_buf_len,
-				       sizeof(pd->packet_buf));
-	if (ret < 0) {
+	len = osdp_phy_packet_finalize(pd, buf, len, max_len);
+	if (len < 0) {
 		return OSDP_ERR_PKT_BUILD;
 	}
 
-	pd->packet_buf_len = ret;
-
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
 		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(pd->packet_buf, pd->packet_buf_len,
+			osdp_dump(buf, len,
 				  "P_TRACE_SEND: %sPD[%d]%s:",
 				  is_cp_mode(pd) ? "CP->" : "",
 				  pd->address,
@@ -327,10 +323,10 @@ int osdp_phy_send_packet(struct osdp_pd *pd)
 		}
 	}
 
-	ret = osdp_channel_send(pd, pd->packet_buf, pd->packet_buf_len);
-	if (ret != pd->packet_buf_len) {
+	ret = osdp_channel_send(pd, buf, len);
+	if (ret != len) {
 		LOG_ERR("Channel send for %d bytes failed! ret: %d",
-			pd->packet_buf_len, ret);
+			len, ret);
 		return OSDP_ERR_PKT_BUILD;
 	}
 

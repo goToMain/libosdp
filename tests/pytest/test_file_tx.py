@@ -6,6 +6,7 @@
 
 import time
 import random
+import pytest
 
 from testlib import *
 
@@ -44,7 +45,7 @@ def receiver_open(file_id: int, file_size: int) -> int:
     return 0 # indicates success. Both CP and PD have the file_size now.
 
 def receiver_read(size: int, offset: int) -> bytes:
-    # receiver should not read anyting
+    # receiver should not read anything
     assert False
 
 def receiver_write(data: bytes, offset: int) -> int:
@@ -63,12 +64,29 @@ receiver_fops = {
     'close': receiver_close
 }
 
-def test_file_transfer(utils):
-    # Created single CP-PD pair and wait for SC to be setup
-    pd_info = PDInfo(101, utils.ks.gen_key(), name='file-tx-pd')
-    pd = utils.create_pd(pd_info)
-    cp = utils.create_cp([ pd_info ], sc_wait=True)
+pd_cap = PDCapabilities([])
 
+pd_info_list = [
+    PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
+]
+
+pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
+
+cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
+
+@pytest.fixture(scope='module', autouse=True)
+def setup_test():
+    pd.start()
+    cp.start()
+    cp.sc_wait_all()
+    yield
+    teardown_test()
+
+def teardown_test():
+    cp.teardown()
+    pd.teardown()
+
+def test_file_transfer(utils):
     # Register file OPs and kick off a transfer
     assert cp.register_file_ops(101, sender_fops)
     assert pd.register_file_ops(receiver_fops)
@@ -78,7 +96,7 @@ def test_file_transfer(utils):
         'flags': 0
     }
     assert cp.send_command(101, file_tx_cmd)
-    assert pd.get_command(101) == file_tx_cmd
+    assert pd.get_command() == file_tx_cmd
 
     # Monitor transfer status
     file_tx_status = False
@@ -99,6 +117,30 @@ def test_file_transfer(utils):
     # Check if the data was sent properly
     assert sender_data == receiver_data
 
-    # Cleanup
-    cp.teardown()
-    pd.teardown()
+def test_file_tx_abort(utils):
+    # Register file OPs and kick off a transfer
+    assert cp.register_file_ops(101, sender_fops)
+    assert pd.register_file_ops(receiver_fops)
+    file_tx_cmd = {
+        'command': Command.FileTransfer,
+        'id': 13,
+        'flags': 0
+    }
+    assert cp.send_command(101, file_tx_cmd)
+    assert pd.get_command() == file_tx_cmd
+
+    # Allow some number of transfers to go through
+    time.sleep(0.5)
+
+    file_tx_abort = {
+        'command': Command.FileTransfer,
+        'id': 13,
+        'flags': CommandFileTxFlags.Cancel
+    }
+    assert cp.send_command(101, file_tx_abort)
+
+    # Allow some time for CP to send the abort to PD
+    time.sleep(0.2)
+
+    status = cp.get_file_tx_status(101)
+    assert status == None

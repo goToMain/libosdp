@@ -9,7 +9,6 @@ option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 option(CONFIG_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)
 option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
 option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
-option(CONFIG_OSDP_FILE "Enabled support for OSDP File Transfer" ON)
 option(CONFIG_BUILD_ASAN "Address sanitizer enabled builds" OFF)
 
 if (CONFIG_OSDP_PACKET_TRACE)
@@ -32,10 +31,6 @@ if (CONFIG_OSDP_STATIC_PD)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_STATIC_PD")
 endif()
 
-if (CONFIG_OSDP_FILE)
-	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_FILE")
-endif()
-
 # static and shared library names
 set(LIB_OSDP_SHARED osdp)
 set(LIB_OSDP_STATIC osdpstatic)
@@ -55,17 +50,12 @@ list(APPEND LIB_OSDP_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_phy.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_pd.c
 	${CMAKE_CURRENT_SOURCE_DIR}/osdp_sc.c
+	${CMAKE_CURRENT_SOURCE_DIR}/osdp_file.c
 )
 
 if (NOT CONFIG_OSDP_STATIC_PD)
 	list(APPEND LIB_OSDP_SOURCES
 		${CMAKE_CURRENT_SOURCE_DIR}/osdp_cp.c
-	)
-endif()
-
-if (CONFIG_OSDP_FILE)
-	list(APPEND LIB_OSDP_SOURCES
-		${CMAKE_CURRENT_SOURCE_DIR}/osdp_file.c
 	)
 endif()
 

@@ -6,8 +6,8 @@
 
 #include "test.h"
 
-int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
-			int len, int max_len);
+extern int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
+					    int len, int max_len);
 
 static int test_cp_build_and_send_packet(struct osdp_pd *p, uint8_t *buf, int len,
 				int maxlen)

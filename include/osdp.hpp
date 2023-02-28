@@ -135,6 +135,11 @@ public:
 	{
 		return osdp_pd_notify_event(_ctx, event);
 	}
+
+	int flush_events()
+	{
+		return osdp_pd_flush_events(_ctx);
+	}
 };
 
 }; /* namespace OSDP */

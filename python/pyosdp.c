@@ -43,6 +43,9 @@ void pyosdp_add_module_constants(PyObject *module)
 	ADD_CONST("CMD_MFG", OSDP_CMD_MFG);
 	ADD_CONST("CMD_FILE_TX", OSDP_CMD_FILE_TX);
 
+	/* For `struct osdp_cmd_file_tx`::flags */
+	ADD_CONST("CMD_FILE_TX_FLAG_CANCEL", OSDP_CMD_FILE_TX_FLAG_CANCEL);
+
 	/* enum osdp_event_type */
 	ADD_CONST("EVENT_CARDREAD", OSDP_EVENT_CARDREAD);
 	ADD_CONST("EVENT_KEYPRESS", OSDP_EVENT_KEYPRESS);

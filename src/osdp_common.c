@@ -50,11 +50,11 @@ int64_t osdp_millis_since(int64_t last)
 
 const char *osdp_cmd_name(int cmd_id)
 {
+	const char *name;
 	static const char * const names[] = {
 		[CMD_POLL         - CMD_POLL] = "POLL",
 		[CMD_ID           - CMD_POLL] = "ID",
 		[CMD_CAP          - CMD_POLL] = "CAP",
-		[CMD_DIAG         - CMD_POLL] = "DIAG",
 		[CMD_LSTAT        - CMD_POLL] = "LSTAT",
 		[CMD_ISTAT        - CMD_POLL] = "ISTAT",
 		[CMD_OSTAT        - CMD_POLL] = "OSTAT",
@@ -66,33 +66,35 @@ const char *osdp_cmd_name(int cmd_id)
 		[CMD_RMODE        - CMD_POLL] = "RMODE",
 		[CMD_TDSET        - CMD_POLL] = "TDSET",
 		[CMD_COMSET       - CMD_POLL] = "COMSET",
-		[CMD_DATA         - CMD_POLL] = "DATA",
-		[CMD_XMIT         - CMD_POLL] = "XMIT",
-		[CMD_PROMPT       - CMD_POLL] = "PROMPT",
-		[CMD_SPE          - CMD_POLL] = "SPE",
 		[CMD_BIOREAD      - CMD_POLL] = "BIOREAD",
 		[CMD_BIOMATCH     - CMD_POLL] = "BIOMATCH",
 		[CMD_KEYSET       - CMD_POLL] = "KEYSET",
 		[CMD_CHLNG        - CMD_POLL] = "CHLNG",
 		[CMD_SCRYPT       - CMD_POLL] = "SCRYPT",
-		[CMD_CONT         - CMD_POLL] = "CONT",
-		[CMD_ABORT        - CMD_POLL] = "ABORT",
-		[CMD_FILETRANSFER - CMD_POLL] = "FILETRANSFER",
 		[CMD_ACURXSIZE    - CMD_POLL] = "ACURXSIZE",
+		[CMD_FILETRANSFER - CMD_POLL] = "FILETRANSFER",
 		[CMD_MFG          - CMD_POLL] = "MFG",
-		[CMD_SCDONE       - CMD_POLL] = "SCDONE",
 		[CMD_XWR          - CMD_POLL] = "XWR",
+		[CMD_ABORT        - CMD_POLL] = "ABORT",
+		[CMD_PIVDATA      - CMD_POLL] = "PIVDATA",
+		[CMD_CRAUTH       - CMD_POLL] = "CRAUTH",
+		[CMD_GENAUTH      - CMD_POLL] = "GENAUTH",
 		[CMD_KEEPACTIVE   - CMD_POLL] = "KEEPACTIVE",
 	};
 
 	if (cmd_id < CMD_POLL || cmd_id > CMD_KEEPACTIVE) {
-		return NULL;
+		return "INVALID";
 	}
-	return names[cmd_id - CMD_POLL];
+	name = names[cmd_id - CMD_POLL];
+	if (name[0] == '\0') {
+		return "UNKNOWN";
+	}
+	return name;
 }
 
 const char *osdp_reply_name(int reply_id)
 {
+	const char *name;
 	static const char * const names[] = {
 		[REPLY_ACK       - REPLY_ACK] = "ACK",
 		[REPLY_NAK       - REPLY_ACK] = "NAK",
@@ -104,11 +106,8 @@ const char *osdp_reply_name(int reply_id)
 		[REPLY_RSTATR    - REPLY_ACK] = "RSTATR",
 		[REPLY_RAW       - REPLY_ACK] = "RAW",
 		[REPLY_FMT       - REPLY_ACK] = "FMT",
-		[REPLY_PRES      - REPLY_ACK] = "PRES",
 		[REPLY_KEYPPAD   - REPLY_ACK] = "KEYPPAD",
 		[REPLY_COM       - REPLY_ACK] = "COM",
-		[REPLY_SCREP     - REPLY_ACK] = "SCREP",
-		[REPLY_SPER      - REPLY_ACK] = "SPER",
 		[REPLY_BIOREADR  - REPLY_ACK] = "BIOREADR",
 		[REPLY_BIOMATCHR - REPLY_ACK] = "BIOMATCHR",
 		[REPLY_CCRYPT    - REPLY_ACK] = "CCRYPT",
@@ -116,13 +115,21 @@ const char *osdp_reply_name(int reply_id)
 		[REPLY_FTSTAT    - REPLY_ACK] = "FTSTAT",
 		[REPLY_MFGREP    - REPLY_ACK] = "MFGREP",
 		[REPLY_BUSY      - REPLY_ACK] = "BUSY",
+		[REPLY_PIVDATAR  - REPLY_ACK] = "PIVDATA",
+		[REPLY_CRAUTHR   - REPLY_ACK] = "CRAUTH",
+		[REPLY_MFGSTATR  - REPLY_ACK] = "MFGSTATR",
+		[REPLY_MFGERRR   - REPLY_ACK] = "MFGERR",
 		[REPLY_XRD       - REPLY_ACK] = "XRD",
 	};
 
 	if (reply_id < REPLY_ACK || reply_id > REPLY_XRD) {
+		return "INVALID";
+	}
+	name = names[reply_id - REPLY_ACK];
+	if (name[0] == '\0') {
 		return "UNKNOWN";
 	}
-	return names[reply_id - REPLY_ACK];
+	return name;
 }
 
 void osdp_keyset_complete(struct osdp_pd *pd)

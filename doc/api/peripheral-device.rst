@@ -49,3 +49,5 @@ Events
    :members:
 
 .. doxygenfunction:: osdp_pd_notify_event
+
+.. doxygenfunction:: osdp_pd_flush_events

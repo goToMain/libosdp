@@ -500,11 +500,15 @@ struct osdp_cmd_mfg {
 	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
 };
 
+#define OSDP_CMD_FILE_TX_FLAG_CANCEL (1UL << 31)
+
 /**
  * @brief File transfer start command
  *
  * @param id Pre-agreed file ID between CP and PD.
- * @param flags Reserved; set to 0
+ * @param flags Reserved and set to zero by OSDP spec; bit-31 used by libOSDP
+ *              to cancel ongoing transfers (it is not sent on OSDP channel
+ *              to peer).
  */
 struct osdp_cmd_file_tx {
 	int id;
@@ -779,6 +783,14 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
  * @retval -1 on failure
  */
 int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
+
+/**
+ * @brief Deletes all events from the PD's event queue.
+ *
+ * @param ctx OSDP context
+ * @return int Count of events dequeued.
+ */
+int osdp_pd_flush_events(osdp_t *ctx);
 
 /* ------------------------------- */
 /*            CP Methods           */

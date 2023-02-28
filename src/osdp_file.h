@@ -11,6 +11,10 @@
 
 #define TO_FILE(pd) (pd)->file
 
+#define OSDP_FILE_TX_STATE_IDLE         0
+#define OSDP_FILE_TX_STATE_PENDING      1
+#define OSDP_FILE_TX_STATE_ERROR       -1
+
 /**
  * @brief OSDP specified command: File Transfer:
  *
@@ -74,72 +78,16 @@ struct osdp_file {
 	int size;
 	int offset;
 	int errors;
+	bool cancel_req;
 	struct osdp_file_ops ops;
 };
-
-#ifdef CONFIG_OSDP_FILE
 
 int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len);
 int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len);
 int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len);
 int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len);
-int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id, uint32_t flags);
-bool osdp_file_tx_pending(struct osdp_pd *pd);
+int osdp_file_tx_command(struct osdp_pd *pd, int file_id, uint32_t flags);
+int osdp_get_file_tx_state(struct osdp_pd *pd);
 void osdp_file_tx_abort(struct osdp_pd *pd);
-
-#else /* CONFIG_OSDP_FILE */
-
-static inline int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf,
-					 int max_len)
-{
-	ARG_UNUSED(pd);
-	ARG_UNUSED(buf);
-	ARG_UNUSED(max_len);
-	return -1;
-}
-static inline int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf,
-					  int len)
-{
-	ARG_UNUSED(pd);
-	ARG_UNUSED(buf);
-	ARG_UNUSED(len);
-	return -1;
-}
-static inline int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf,
-					    int len)
-{
-	ARG_UNUSED(pd);
-	ARG_UNUSED(buf);
-	ARG_UNUSED(len);
-	return -1;
-}
-static inline int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf,
-					   int max_len)
-{
-	ARG_UNUSED(pd);
-	ARG_UNUSED(buf);
-	ARG_UNUSED(max_len);
-	return 0;
-}
-static inline int osdp_file_tx_initiate(struct osdp_pd *pd, int file_id,
-					uint32_t flags)
-{
-	ARG_UNUSED(pd);
-	ARG_UNUSED(file_id);
-	ARG_UNUSED(flags);
-	return -1;
-}
-static inline bool osdp_file_tx_pending(struct osdp_pd *pd)
-{
-	ARG_UNUSED(pd);
-	return false;
-}
-
-static inline void osdp_file_tx_abort(struct osdp_pd *pd)
-{
-	ARG_UNUSED(pd);
-}
-
-#endif /* CONFIG_OSDP_FILE */
 
 #endif /* _OSDP_FILE_H_ */

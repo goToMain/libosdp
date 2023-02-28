@@ -23,6 +23,7 @@ usage() {
 	  --no-colours                 Don't colourize log ouputs
 	  --static-pd                  Setup PD single statically
 	  --lib-only                   Only build the library
+	  --cross-compile PREFIX       Use to pass a compiler prefix
 	  --build-dir                  Build output directory (default: ./build)
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
@@ -52,7 +53,7 @@ done
 
 mkdir -p ${BUILD_DIR}
 
-if [ -f config.mak ] && [ -z "$FORCE" ]; then
+if [ -f config.make ] && [ -z "$FORCE" ]; then
 	echo "LibOSDP already configured! Use --force to re-configure"
 	exit 1
 fi

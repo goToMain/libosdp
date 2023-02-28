@@ -6,7 +6,7 @@ also serves as a starting point for those who intend to consume this library.
 It cannot be used directly in applications as most of the time a lot more
 product specific customizations are needed.
 
-This tool brings in a concept called **chanel** to describe the communication
+This tool brings in a concept called **channel** to describe the communication
 between a CP and PD. Although OSDP defines this protocol to run on RS458
 (serial), it is possible to run this over other mediums too. From a testing
 perspective, running on a unix IPC channel is very convenient. To know
@@ -47,7 +47,7 @@ used to start it.
 
     osdpctl pd-0.cfg stop
 
-Send control commands to a OSDP service
+Send control commands to an OSDP service
 ---------------------------------------
 
 A command to be sent to a running CP/PD service must be of the following format.

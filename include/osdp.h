@@ -226,9 +226,9 @@ struct osdp_pd_cap {
 /**
  * @brief PD ID information advertised by the PD.
  *
- * @param version 3-bytes IEEE assigned OUI
+ * @param version 1-Byte Manufacturer's version number
  * @param model 1-byte Manufacturer's model number
- * @param vendor_code 1-Byte Manufacturer's version number
+ * @param vendor_code 3-bytes IEEE assigned OUI
  * @param serial_number 4-byte serial number for the PD
  * @param firmware_version 3-byte version (major, minor, build)
  */
@@ -331,7 +331,7 @@ typedef struct {
  * @brief To keep the OSDP internal data structures from polluting the exposed
  * headers, they are typedefed to void before sending them to the upper layers.
  * This level of abstraction looked reasonable as _technically_ no one should
- * attempt to modify it outside fo the LibOSDP and their definition may change
+ * attempt to modify it outside of the LibOSDP and their definition may change
  * at any time.
  */
 typedef void osdp_t;
@@ -710,11 +710,11 @@ typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
 typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
 
 /**
- * @brief Callback for for command completion event callbacks. After is has
+ * @brief Callback for command completion event callbacks. After it has
  * been registered with `osdp_set_command_complete_callback()` this method is
  * invoked after a command has been processed successfully in CP and PD sides.
  *
- * @param arg pointer that will was passed to the arg param of
+ * @param arg pointer that was passed to the arg param of
  * `osdp_set_command_complete_callback`.
  * @param id OSDP command ID (Note: this is not `enum osdp_cmd_e`)
  */
@@ -729,7 +729,7 @@ typedef void (*osdp_command_complete_callback_t)(void *arg, int id);
  * store the returned context pointer and pass it back to all OSDP functions
  * intact.
  *
- * @param info Pointer to iinfo struct populated by application.
+ * @param info Pointer to info struct populated by application.
  *
  * @retval OSDP Context on success
  * @retval NULL on errors
@@ -805,7 +805,7 @@ int osdp_pd_flush_events(osdp_t *ctx);
  *        treated as an array of length num_pd.
  * @param info Pointer to info struct populated by application.
  * @param master_key 16 byte Master Key from which the SCBK (Secure Channel Base
- *        KEY) is generated. If this field is NULL, then secure channel is
+ *        Key) is generated. If this field is NULL, then secure channel is
  *        disabled.
  *
  *        Note: Master key based SCBK derivation is discouraged. Pass SCBK for

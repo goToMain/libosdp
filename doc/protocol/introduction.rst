@@ -20,7 +20,7 @@ Signaling
 ---------
 
 Half duplex asynchronous serial 8 data bits, 1 stop bit, no parity bits, with
-either one of 9600, 19200, 38400, 115200 or 320400 baud rates.
+either one of 9600, 19200, 38400, 115200 or 230400 baud rates.
 
 Character Encoding
 ------------------

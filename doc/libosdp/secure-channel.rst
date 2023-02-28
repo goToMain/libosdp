@@ -9,7 +9,7 @@ application developers to better understand the failure logs emitted by LibOSDP
 and it's reasons.
 
 LibOSDP has a working implementation of the secure channel. Any CP/PD that uses
-this library will advertises this as an implicit capability. If for some reason
+this library will advertise this as an implicit capability. If for some reason
 (or for debugging) you don't want to have secure communication, you can call
 osdp_pd_set_capabilities() after osdp_setup() to set the compliance level of
 ``OSDP_PD_CAP_COMMUNICATION_SECURITY`` to 0.
@@ -24,12 +24,12 @@ active endlessly until either party decides to discard it or until a timeout
 
 The CP starts by sending ``CMD_CHLNG`` for which the PD replies with
 ``REPLY_CCRYPT``. With this response the CP is able to authenticate the PD and
-also compute it's session keys. Next, CP sends ``CMD_SCRYPT``, which the PD will
-use to authenticate the CP and compute it's session keys. If everything has gone
+also compute its session keys. Next, CP sends ``CMD_SCRYPT``, which the PD will
+use to authenticate the CP and compute its session keys. If everything has gone
 as expected up to this pont, both CP and PD would have a working set of session
-keys (s-enc, s-mac1, and s-mac2). The final message of the handshake is the the
+keys (s-enc, s-mac1, and s-mac2). The final message of the handshake is the
 ``REPLY_RMAC_I`` response from the PD. This reply has the initial reply MAC
-that the CP will use as the IV for encrypting it's next command (MAC chaining).
+that the CP will use as the IV for encrypting its next command (MAC chaining).
 
 The above process works in this flow if both the CP and PD have the same SCBK.
 If there is a mismatch, the CP will fail to verity PD's authenticity when it
@@ -98,7 +98,7 @@ The ENFORCE_SECURE flag
 -----------------------
 
 Enforce Secure is a flag that LibOSDP has introduced due to the insecure nature
-of the install-mode. A PD/CP can be instructed to operate with the some security
+of the install-mode. A PD/CP can be instructed to operate with some security
 consciousness, thereby not allowing some OSDP specified features such as the
 install-mode.
 

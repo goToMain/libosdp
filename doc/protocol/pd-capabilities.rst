@@ -7,7 +7,7 @@ This section explodes the structure of OSDP capability response
 Message Structure
 -----------------
 
-The REPLY\_PDCAP response is an list of 3 byte sets, with the following
+The REPLY\_PDCAP response is a set of 3 bytes, with the following
 positional meaning.
 
 +--------+--------------------+-------------------------------------------+-------------+
@@ -211,17 +211,16 @@ Compliance Levels:
 
 This field is a bit map of the supported encryption algorithms
 
--  0x01 - (Bit-0) AES128 support 0x02 - (Bit-1) to be defined
-
-This field is encoded to represent the key exchange capabilities
-
--  0x01 - (Bit-0) default AES128 key, as defined in APPENDIX D 0x02 -
-   (Bit-1) to be defined
+-  0x01 - (Bit-0) AES128 support
+-  0x02 - (Bit-1) to be defined
 
 Number of Units:
 ~~~~~~~~~~~~~~~~
 
-N/A, set to 0.
+This field is encoded to represent the key exchange capabilities
+
+-  0x01 - (Bit-0) default AES128 key, as defined in APPENDIX D
+-  0x02 - (Bit-1) to be defined
 
 Function Code 10 - Receive BufferSize
 -------------------------------------

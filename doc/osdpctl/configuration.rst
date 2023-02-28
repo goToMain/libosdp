@@ -13,7 +13,7 @@ Fields indicated with a ``*`` are mandatory in each mode. Some times depending
 on the mode, some more keys are required. Such dependencies are listed below each
 table.
 
-Read mode about `INI file format`_ and you can see some sample configuration
+Read more about `INI file format`_ and you can see some sample configuration
 files `here`_.
 
 .. _INI file format: https://en.wikipedia.org/wiki/INI_file

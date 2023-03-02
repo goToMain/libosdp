@@ -16,10 +16,8 @@ list(APPEND BIN_OSDPCTL_SRC
 	cmd_others.c
 )
 
-find_package(LibOSDP NO_MODULE REQUIRED HINTS ${CMAKE_BINARY_DIR})
-
 add_executable(${BIN_OSDPCTL} ${BIN_OSDPCTL_SRC})
-target_link_libraries(${BIN_OSDPCTL} ${LIBOSDP_LIBRARY} utils pthread)
+target_link_libraries(${BIN_OSDPCTL} osdp utils pthread)
 target_include_directories(${BIN_OSDPCTL}
 	PUBLIC
 		${PROJECT_SOURCE_DIR}/utils/include

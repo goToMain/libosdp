@@ -486,28 +486,46 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		ret = OSDP_CP_ERR_NONE;
 		break;
-	case REPLY_OSTATR:
-		t1 = OSDP_PD_CAP_OUTPUT_CONTROL;
-		if (len != pd->cap[t1].num_items || len > 32) {
+	case REPLY_OSTATR: {
+		uint32_t status_mask = 0;
+		int cap_num = OSDP_PD_CAP_OUTPUT_CONTROL;
+
+		if (len != pd->cap[cap_num].num_items || len > 32) {
 			LOG_ERR("Invalid output status report length %d", len);
 			return OSDP_CP_ERR_GENERIC;
 		}
-		pd->output_status = 0;
 		for (i = 0; i < len; i++) {
-			pd->output_status |= buf[pos++] << i;
+			status_mask |= !!buf[pos++] << i;
 		}
+		if (ctx->event_callback) {
+			event.type = OSDP_EVENT_IO;
+			event.io.type = 1; // output
+			event.io.status = status_mask;
+			ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
+		}
+		ret = OSDP_CP_ERR_NONE;
 		break;
-	case REPLY_ISTATR:
-		t1 = OSDP_PD_CAP_CONTACT_STATUS_MONITORING;
-		if (len != pd->cap[t1].num_items || len > 32) {
+	}
+	case REPLY_ISTATR: {
+		uint32_t status_mask = 0;
+		int cap_num = OSDP_PD_CAP_CONTACT_STATUS_MONITORING;
+
+		if (len != pd->cap[cap_num].num_items || len > 32) {
 			LOG_ERR("Invalid input status report length %d", len);
 			return OSDP_CP_ERR_GENERIC;
 		}
-		pd->input_status = 0;
 		for (i = 0; i < len; i++) {
-			pd->input_status |= buf[pos++] << i;
+			status_mask |= !!buf[pos++] << i;
 		}
+		if (ctx->event_callback) {
+			event.type = OSDP_EVENT_IO;
+			event.io.type = 0; // input
+			event.io.status = status_mask;
+			ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
+		}
+		ret = OSDP_CP_ERR_NONE;
 		break;
+	}
 	case REPLY_LSTATR:
 		if (len != REPLY_LSTATR_DATA_LEN) {
 			break;
@@ -1452,18 +1470,6 @@ int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set)
 	}
 
 	do_set ? SET_FLAG(pd, flags) : CLEAR_FLAG(pd, flags);
-	return 0;
-}
-
-OSDP_EXPORT
-int osdp_cp_get_io_status(osdp_t *ctx, int pd_idx,
-			  uint32_t *input, uint32_t *output)
-{
-	input_check(ctx, pd_idx);
-	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
-
-	*input = pd->input_status;
-	*output = pd->output_status;
 	return 0;
 }
 

@@ -154,10 +154,8 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		break;
 	case OSDP_EVENT_IO:
 		if (event->io.type) {
-			pd->output_status = event->io.status;
 			reply_code = REPLY_OSTATR;
 		} else {
-			pd->input_status = event->io.status;
 			reply_code = REPLY_ISTATR;
 		}
 		break;
@@ -713,9 +711,10 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		int n = pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL].num_items;
 
 		assert_buf_len(n + 1, max_len);
+		event = (struct osdp_event *)pd->ephemeral_data;
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = pd->output_status & (1 << i);
+			buf[len++] = !!(event->io.status & (1 << i));
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -724,9 +723,10 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		int n = pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING].num_items;
 
 		assert_buf_len(n + 1, max_len);
+		event = (struct osdp_event *)pd->ephemeral_data;
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = pd->input_status & (1 << i);
+			buf[len++] = !!(event->io.status & (1 << i));
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;

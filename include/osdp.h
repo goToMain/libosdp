@@ -934,17 +934,6 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  */
 int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set);
 
-/**
- * @brief Get input and output status as reported by the PD.
- *
- * @param ctx OSDP context
- * @param pd_idx PD offset number as in `pd_info_t *`.
- * @param input[out] Input status as reported by the PD.
- * @param output[out] Output status as reported by the PD.
- */
-int osdp_cp_get_io_status(osdp_t *ctx, int pd_idx,
-			  uint32_t *input, uint32_t *output);
-
 /* ------------------------------- */
 /*          Common Methods         */
 /* ------------------------------- */

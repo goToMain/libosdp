@@ -323,9 +323,6 @@ struct osdp_pd {
 	struct osdp_secure_channel sc;   /* Secure Channel session context */
 	struct osdp_file *file;          /* File transfer context */
 
-	uint32_t input_status;
-	uint32_t output_status;
-
 	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;
 	pd_command_callback_t command_callback;

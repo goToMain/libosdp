@@ -512,15 +512,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_LSTATR_DATA_LEN) {
 			break;
 		}
-		if (buf[pos++]) {
-			SET_FLAG(pd, PD_FLAG_TAMPER);
-		} else {
-			CLEAR_FLAG(pd, PD_FLAG_TAMPER);
-		}
-		if (buf[pos++]) {
-			SET_FLAG(pd, PD_FLAG_POWER);
-		} else {
-			CLEAR_FLAG(pd, PD_FLAG_POWER);
+		if (ctx->event_callback) {
+			event.type = OSDP_EVENT_STATUS;
+			event.status.tamper = buf[pos++];
+			event.status.power = buf[pos++];
+			ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
 		}
 		ret = OSDP_CP_ERR_NONE;
 		break;

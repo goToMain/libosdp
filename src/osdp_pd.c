@@ -164,6 +164,9 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 	case OSDP_EVENT_MFGREP:
 		reply_code = REPLY_MFGREP;
 		break;
+	case OSDP_EVENT_STATUS:
+		reply_code = REPLY_LSTATR;
+		break;
 	default:
 		LOG_ERR("Unknown event type %d", event->type);
 		break;
@@ -730,9 +733,10 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 	case REPLY_LSTATR:
 		assert_buf_len(REPLY_LSTATR_LEN, max_len);
+		event = (struct osdp_event *)pd->ephemeral_data;
 		buf[len++] = pd->reply_id;
-		buf[len++] = ISSET_FLAG(pd, PD_FLAG_TAMPER);
-		buf[len++] = ISSET_FLAG(pd, PD_FLAG_POWER);
+		buf[len++] = event->status.tamper;
+		buf[len++] = event->status.power;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:

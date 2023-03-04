@@ -649,6 +649,20 @@ struct osdp_event_io {
 };
 
 /**
+ * @brief OSDP Event tamper and power status
+ *
+ * The event indicates the local tamper and power status of the PD. When either
+ * of these statuses change, PD notifies the CP as a response to POLL command.
+ *
+ * @param tamper tamper status: 0 - normal; 1 - tamper
+ * @param power power status: 0 - normal; 1 - power failure
+ */
+struct osdp_event_status {
+	uint8_t tamper;
+	uint8_t power;
+};
+
+/**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
@@ -656,6 +670,7 @@ enum osdp_event_type {
 	OSDP_EVENT_KEYPRESS,
 	OSDP_EVENT_MFGREP,
 	OSDP_EVENT_IO,
+	OSDP_EVENT_STATUS,
 	OSDP_EVENT_SENTINEL
 };
 
@@ -674,6 +689,7 @@ struct osdp_event {
 		struct osdp_event_cardread cardread;
 		struct osdp_event_mfgrep mfgrep;
 		struct osdp_event_io io;
+		struct osdp_event_status status;
 	};
 };
 

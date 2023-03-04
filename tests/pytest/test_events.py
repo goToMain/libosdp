@@ -9,7 +9,8 @@ import pytest
 from testlib import *
 
 pd_cap = PDCapabilities([
-    (Capability.OutputControl, 1, 1),
+    (Capability.OutputControl, 1, 8),
+    (Capability.ContactStatusMonitoring, 1, 8),
     (Capability.LEDControl, 1, 1),
     (Capability.AudibleControl, 1, 1),
     (Capability.TextOutput, 1, 1),
@@ -81,7 +82,31 @@ def test_event_cardread_wiegand():
         'data': bytes([0x55, 0xAA]),
     }
     secure_pd.notify_event(event)
-    raw = cp.get_event(secure_pd.address)
-    print(raw)
-    print(event)
-    assert raw == event
+    assert cp.get_event(secure_pd.address) == event
+
+def test_event_input():
+    event = {
+        'event': Event.InputOutput,
+        'type': 0, # 0 - input; 1 - output
+        'status': 0xAA, # bit mask of input/output status (upto 32)
+    }
+    secure_pd.notify_event(event)
+    assert cp.get_event(secure_pd.address) == event
+
+def test_event_output():
+    event = {
+        'event': Event.InputOutput,
+        'type': 1, # 0 - input; 1 - output
+        'status': 0x55, # bit mask of input/output status (upto 32)
+    }
+    secure_pd.notify_event(event)
+    assert cp.get_event(secure_pd.address) == event
+
+def test_event_status():
+    event = {
+        'event': Event.Status,
+        'power': 0, # 0 - normal; 1 - power failure
+        'tamper': 1, # 0 - normal; 1 - tamper
+    }
+    secure_pd.notify_event(event)
+    assert cp.get_event(secure_pd.address) == event

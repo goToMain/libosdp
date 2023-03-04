@@ -45,6 +45,8 @@ class Event:
     CardRead = osdp.EVENT_CARDREAD
     KeyPress = osdp.EVENT_KEYPRESS
     ManufacturerReply = osdp.EVENT_MFGREP
+    InputOutput = osdp.EVENT_IO
+    Status = osdp.EVENT_STATUS
 
 class CardFormat:
     Unspecified = osdp.CARD_FMT_RAW_UNSPECIFIED

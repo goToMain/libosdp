@@ -452,6 +452,22 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 					  event->mfgrep.length))
 			return -1;
 		break;
+	case OSDP_EVENT_IO:
+		if (pyosdp_dict_add_int(obj, "type",
+					event->io.type))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "status",
+					event->io.status))
+			return -1;
+		break;
+	case OSDP_EVENT_STATUS:
+		if (pyosdp_dict_add_int(obj, "tamper",
+					event->status.tamper))
+			return -1;
+		if (pyosdp_dict_add_int(obj, "power",
+					event->status.power))
+			return -1;
+		break;
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
 				"event cannot be handled");
@@ -553,6 +569,45 @@ static int pyosdp_make_mfg_reply_event_struct(struct osdp_event *p,
 	return 0;
 }
 
+
+static int pyosdp_make_io_event_struct(struct osdp_event *p,
+				       PyObject *dict)
+{
+	int type, status;
+	struct osdp_event_io *ev = &p->io;
+
+	p->type = OSDP_EVENT_IO;
+
+	if (pyosdp_dict_get_int(dict, "type", &type))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "status", &status))
+		return -1;
+
+	ev->type = type;
+	ev->status = (uint32_t)status;
+	return 0;
+}
+
+static int pyosdp_make_status_event_struct(struct osdp_event *p,
+					   PyObject *dict)
+{
+	int tamper, power;
+	struct osdp_event_status *ev = &p->status;
+
+	p->type = OSDP_EVENT_STATUS;
+
+	if (pyosdp_dict_get_int(dict, "tamper", &tamper))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "power", &power))
+		return -1;
+
+	ev->tamper = (uint8_t)tamper;
+	ev->power = (uint8_t)power;
+	return 0;
+}
+
 int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
 {
 	int event_type;
@@ -571,6 +626,14 @@ int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
 		break;
 	case OSDP_EVENT_MFGREP:
 		if (pyosdp_make_mfg_reply_event_struct(event, dict))
+			return -1;
+		break;
+	case OSDP_EVENT_IO:
+		if (pyosdp_make_io_event_struct(event, dict))
+			return -1;
+		break;
+	case OSDP_EVENT_STATUS:
+		if (pyosdp_make_status_event_struct(event, dict))
 			return -1;
 		break;
 	default:

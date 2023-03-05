@@ -101,19 +101,13 @@ uint8_t osdp_compute_checksum(uint8_t *msg, int length)
 	return checksum;
 }
 
-/**
- * do_inc can be 0, 1, or -1. Non-zero values control which direction the
- * sequence progresses; i.e. moving forward +1 or backward with -1.
- */
 static int osdp_phy_get_seq_number(struct osdp_pd *pd, int do_inc)
 {
 	/* pd->seq_num is set to -1 to reset phy cmd state */
 	if (do_inc) {
-		pd->seq_number += do_inc;
+		pd->seq_number += 1;
 		if (pd->seq_number > 3) {
 			pd->seq_number = 1;
-		} else if (pd->seq_number < 1) {
-			pd->seq_number = 3;
 		}
 	}
 	return pd->seq_number & PKT_CONTROL_SQN;
@@ -443,7 +437,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			pd->seq_number = -1;
 			sc_deactivate(pd);
 		}
-		if (comp == pd->seq_number) {
+		else if (comp == pd->seq_number) {
 			/**
 			 * Sometimes, a CP re-sends the same command without
 			 * incrementing the sequence number. To handle such cases,
@@ -451,7 +445,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			 * set to -1) and then process the packet all over again
 			 * as if it was the first time we are seeing it.
 			 */
-			osdp_phy_get_seq_number(pd, -1);
+			pd->seq_number -= 1;
 			LOG_INF("received a sequence repeat packet!");
 		}
 	} else {

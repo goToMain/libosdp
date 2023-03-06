@@ -1396,6 +1396,9 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
 	case OSDP_CMD_MFG:
 		cmd_id = CMD_MFG;
 		break;
+	case OSDP_CMD_STATUS:
+		cmd_id = CMD_LSTAT;
+		break;
 	case OSDP_CMD_FILE_TX:
 		return osdp_file_tx_command(pd, cmd->file_tx.id,
 					    cmd->file_tx.flags);

@@ -108,7 +108,7 @@ static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 	}
 
 	memset(&cmd, 0, sizeof(struct osdp_cmd));
-	if (pyosdp_cmd_make_struct(&cmd, cmd_dict))
+	if (pyosdp_make_struct_cmd(&cmd, cmd_dict))
 		Py_RETURN_FALSE;
 
 	ret = osdp_cp_send_command(self->ctx, pd, &cmd);

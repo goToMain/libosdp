@@ -67,7 +67,7 @@ static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 	pyosdp_pd_t *self = arg;
 	PyObject *dict, *arglist, *result;
 
-	if (pyosdp_cmd_make_dict(&dict, cmd))
+	if (pyosdp_make_dict_cmd(&dict, cmd))
 		return -1;
 
 	arglist = Py_BuildValue("(O)", dict);
@@ -82,7 +82,7 @@ static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 			 */
 			if (ret_val > 0) {
 				memset(cmd, 0, sizeof(struct osdp_cmd));
-				if (pyosdp_cmd_make_struct(cmd, result) < 0)
+				if (pyosdp_make_struct_cmd(cmd, result) < 0)
 					ret_val = -1;
 				else if (cmd->id != OSDP_CMD_MFG)
 					ret_val = -1;

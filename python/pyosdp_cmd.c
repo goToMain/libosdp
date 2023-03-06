@@ -6,12 +6,130 @@
 
 #include "pyosdp.h"
 
-int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
+int pyosdp_make_dict_cmd_output(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "control_code", cmd->output.control_code))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "output_no", cmd->output.output_no))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "timer_count", cmd->output.timer_count))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_led(PyObject *obj, struct osdp_cmd *cmd)
+{
+	bool is_temporary = false;
+	struct osdp_cmd_led_params *p = &cmd->led.permanent;
+
+	if (cmd->led.temporary.control_code != 0) {
+		p = &cmd->led.temporary;
+		is_temporary = true;
+	}
+	if (pyosdp_dict_add_bool(obj, "temporary", is_temporary))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "led_number", cmd->led.led_number))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "reader", cmd->led.reader))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "control_code", p->control_code))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "off_color", p->off_color))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "on_color", p->on_color))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "on_count", p->on_count))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "off_count", p->off_count))
+		return -1;
+	if (is_temporary && pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_buzzer(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "control_code", cmd->buzzer.control_code))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "on_count", cmd->buzzer.on_count))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "off_count", cmd->buzzer.off_count))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "reader", cmd->buzzer.reader))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "rep_count", cmd->buzzer.rep_count))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_text(PyObject *obj, struct osdp_cmd *cmd)
 {
 	char buf[64];
-	bool is_temporary = false;
+
+	if (pyosdp_dict_add_int(obj, "control_code", cmd->text.control_code))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "temp_time", cmd->text.temp_time))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "offset_col", cmd->text.offset_col))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "offset_row", cmd->text.offset_row))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
+		return -1;
+	if (cmd->text.length > (sizeof(buf) - 1))
+		return -1;
+	memcpy(buf, cmd->text.data, cmd->text.length);
+	buf[cmd->text.length] = '\0';
+	if (pyosdp_dict_add_str(obj, "data", buf))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_keyset(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "type", cmd->keyset.type))
+		return -1;
+	if (cmd->keyset.length > 16)
+		return -1;
+	if (pyosdp_dict_add_bytes(obj, "data", cmd->keyset.data, cmd->keyset.length))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_comset(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "address", cmd->comset.address))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "baud_rate", cmd->comset.baud_rate))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_mfg(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "vendor_code", cmd->mfg.vendor_code))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "mfg_command", cmd->mfg.command))
+		return -1;
+	if (pyosdp_dict_add_bytes(obj, "data", cmd->mfg.data, cmd->mfg.length))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd_file_tx(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "flags", cmd->file_tx.flags))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "id", cmd->file_tx.id))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd)
+{
 	PyObject *obj;
-	struct osdp_cmd_led_params *p = &cmd->led.permanent;
 
 	obj = PyDict_New();
 	if (obj == NULL)
@@ -22,111 +140,28 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 
 	switch (cmd->id) {
 	case OSDP_CMD_OUTPUT:
-		if (pyosdp_dict_add_int(obj, "control_code",
-					cmd->output.control_code))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "output_no",
-					cmd->output.output_no))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "timer_count",
-					cmd->output.timer_count))
-			return -1;
+		pyosdp_make_dict_cmd_output(obj, cmd);
 		break;
 	case OSDP_CMD_LED:
-		if (cmd->led.temporary.control_code != 0) {
-			p = &cmd->led.temporary;
-			is_temporary = true;
-		}
-		if (pyosdp_dict_add_bool(obj, "temporary", is_temporary))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "led_number", cmd->led.led_number))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "reader", cmd->led.reader))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "control_code", p->control_code))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "off_color", p->off_color))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "on_color", p->on_color))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "on_count", p->on_count))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "off_count", p->off_count))
-			return -1;
-		if (is_temporary &&
-		    pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
-			return -1;
+		pyosdp_make_dict_cmd_led(obj, cmd);
 		break;
 	case OSDP_CMD_BUZZER:
-		if (pyosdp_dict_add_int(obj, "control_code",
-					cmd->buzzer.control_code))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "on_count", cmd->buzzer.on_count))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "off_count",
-					cmd->buzzer.off_count))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "reader", cmd->buzzer.reader))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "rep_count",
-					cmd->buzzer.rep_count))
-			return -1;
+		pyosdp_make_dict_cmd_buzzer(obj, cmd);
 		break;
 	case OSDP_CMD_TEXT:
-		if (pyosdp_dict_add_int(obj, "control_code",
-					cmd->text.control_code))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "temp_time",
-					cmd->text.temp_time))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "offset_col",
-					cmd->text.offset_col))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "offset_row",
-					cmd->text.offset_row))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
-			return -1;
-		if (cmd->text.length > (sizeof(buf) - 1))
-			return -1;
-		memcpy(buf, cmd->text.data, cmd->text.length);
-		buf[cmd->text.length] = '\0';
-		if (pyosdp_dict_add_str(obj, "data", buf))
-			return -1;
+		pyosdp_make_dict_cmd_text(obj, cmd);
 		break;
 	case OSDP_CMD_KEYSET:
-		if (pyosdp_dict_add_int(obj, "type", cmd->keyset.type))
-			return -1;
-		if (cmd->keyset.length > 16)
-			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", cmd->keyset.data,
-					  cmd->keyset.length))
-			return -1;
+		pyosdp_make_dict_cmd_keyset(obj, cmd);
 		break;
 	case OSDP_CMD_COMSET:
-		if (pyosdp_dict_add_int(obj, "address", cmd->comset.address))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "baud_rate",
-					cmd->comset.baud_rate))
-			return -1;
+		pyosdp_make_dict_cmd_comset(obj, cmd);
 		break;
 	case OSDP_CMD_MFG:
-		if (pyosdp_dict_add_int(obj, "vendor_code",
-					cmd->mfg.vendor_code))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "mfg_command", cmd->mfg.command))
-			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", cmd->mfg.data,
-					  cmd->mfg.length))
-			return -1;
+		pyosdp_make_dict_cmd_mfg(obj, cmd);
 		break;
 	case OSDP_CMD_FILE_TX:
-		if (pyosdp_dict_add_int(obj, "flags", cmd->file_tx.flags))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "id", cmd->file_tx.id))
-			return -1;
+		pyosdp_make_dict_cmd_file_tx(obj, cmd);
 		break;
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
@@ -138,7 +173,7 @@ int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_output(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_output(struct osdp_cmd *p, PyObject *dict)
 {
 	struct osdp_cmd_output *cmd = &p->output;
 	int output_no, control_code, timer_count;
@@ -160,7 +195,7 @@ static int pyosdp_handle_cmd_output(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_led(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_led(struct osdp_cmd *p, PyObject *dict)
 {
 	int led_number, reader, off_color, on_color, off_count, on_count,
 		timer_count, control_code;
@@ -211,7 +246,7 @@ static int pyosdp_handle_cmd_led(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_buzzer(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_buzzer(struct osdp_cmd *p, PyObject *dict)
 {
 	struct osdp_cmd_buzzer *cmd = &p->buzzer;
 	int reader, on_count, off_count, rep_count, control_code;
@@ -241,7 +276,7 @@ static int pyosdp_handle_cmd_buzzer(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_text(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_text(struct osdp_cmd *p, PyObject *dict)
 {
 	int ret = -1;
 	char *data = NULL;
@@ -285,7 +320,7 @@ exit:
 	return ret;
 }
 
-static int pyosdp_handle_cmd_keyset(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_keyset(struct osdp_cmd *p, PyObject *dict)
 {
 	int type, len;
 	struct osdp_cmd_keyset *cmd = &p->keyset;
@@ -307,7 +342,7 @@ static int pyosdp_handle_cmd_keyset(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_comset(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_comset(struct osdp_cmd *p, PyObject *dict)
 {
 	struct osdp_cmd_comset *cmd = &p->comset;
 	int address, baud_rate;
@@ -325,7 +360,7 @@ static int pyosdp_handle_cmd_comset(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
 {
 	int i, data_length;
 	struct osdp_cmd_mfg *cmd = &p->mfg;
@@ -351,7 +386,7 @@ static int pyosdp_handle_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-static int pyosdp_handle_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
+static int pyosdp_make_struct_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
 {
 	int id, flags;
 	struct osdp_cmd_file_tx *cmd = &p->file_tx;
@@ -369,7 +404,7 @@ static int pyosdp_handle_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
-int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
+int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict)
 {
 	int cmd_id;
 
@@ -378,21 +413,21 @@ int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict)
 
 	switch (cmd_id) {
 	case OSDP_CMD_OUTPUT:
-		return pyosdp_handle_cmd_output(cmd, dict);
+		return pyosdp_make_struct_cmd_output(cmd, dict);
 	case OSDP_CMD_LED:
-		return pyosdp_handle_cmd_led(cmd, dict);
+		return pyosdp_make_struct_cmd_led(cmd, dict);
 	case OSDP_CMD_BUZZER:
-		return pyosdp_handle_cmd_buzzer(cmd, dict);
+		return pyosdp_make_struct_cmd_buzzer(cmd, dict);
 	case OSDP_CMD_TEXT:
-		return pyosdp_handle_cmd_text(cmd, dict);
+		return pyosdp_make_struct_cmd_text(cmd, dict);
 	case OSDP_CMD_KEYSET:
-		return pyosdp_handle_cmd_keyset(cmd, dict);
+		return pyosdp_make_struct_cmd_keyset(cmd, dict);
 	case OSDP_CMD_COMSET:
-		return pyosdp_handle_cmd_comset(cmd, dict);
+		return pyosdp_make_struct_cmd_comset(cmd, dict);
 	case OSDP_CMD_MFG:
-		return pyosdp_handle_cmd_mfg(cmd, dict);
+		return pyosdp_make_struct_cmd_mfg(cmd, dict);
 	case OSDP_CMD_FILE_TX:
-		return pyosdp_handle_cmd_file_tx(cmd, dict);
+		return pyosdp_make_struct_cmd_file_tx(cmd, dict);
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
 				"command not implemented");

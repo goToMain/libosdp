@@ -91,8 +91,8 @@ int pyosdp_add_type_pd(PyObject *module);
 
 /* from pyosdp_cmd.c */
 
-int pyosdp_cmd_make_struct(struct osdp_cmd *cmd, PyObject *dict);
-int pyosdp_cmd_make_dict(PyObject **dict, struct osdp_cmd *cmd);
+int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict);
+int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd);
 int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event);
 int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict);
 

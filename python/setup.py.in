@@ -25,7 +25,7 @@ pyosdp_sources = '@LIB_OSDP_SOURCES@'.split(';') + [
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_base.c',
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_cp.c',
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_pd.c',
-    '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_cmd.c',
+    '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_data.c',
     '@CMAKE_CURRENT_SOURCE_DIR@/pyosdp_utils.c',
 ]
 

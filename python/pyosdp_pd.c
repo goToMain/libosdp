@@ -49,7 +49,7 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 }
 
 #define pyosdp_pd_flush_events_doc                                               \
-	"Deletes all events from the PD's event queue.\n"                                       \
+	"Deletes all events from the PD's event queue.\n"                        \
 	"\n"                                                                     \
 	"@return int Count of events dequeued.\n"
 static PyObject *pyosdp_pd_flush_events(pyosdp_pd_t *self)

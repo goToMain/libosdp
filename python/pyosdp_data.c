@@ -362,6 +362,11 @@ static int pyosdp_make_struct_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
+/* Dummies for commands that don't have any body */
+static int pyosdp_make_struct_cmd_dummy(struct osdp_cmd *cmd, PyObject *obj) { return 0; }
+static int pyosdp_make_dict_cmd_dummy(PyObject *obj, struct osdp_cmd *cmd) { return 0; }
+
+
 /* ------------------------------- */
 /*             EVENTS              */
 /* ------------------------------- */
@@ -540,8 +545,7 @@ static int pyosdp_make_dict_event_status(PyObject *obj, struct osdp_event *event
 	return 0;
 }
 
-static int pyosdp_make_struct_event_status(struct osdp_event *p,
-					   PyObject *dict)
+static int pyosdp_make_struct_event_status(struct osdp_event *p, PyObject *dict)
 {
 	int tamper, power;
 	struct osdp_event_status *ev = &p->status;
@@ -559,6 +563,74 @@ static int pyosdp_make_struct_event_status(struct osdp_event *p,
 	return 0;
 }
 
+static struct {
+	int (*dict_to_struct)(struct osdp_cmd *, PyObject *);
+	int (*struct_to_dict)(PyObject *, struct osdp_cmd *);
+} command_translator[OSDP_CMD_SENTINEL] = {
+	[OSDP_CMD_OUTPUT] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_output,
+		.struct_to_dict = pyosdp_make_dict_cmd_output,
+	},
+	[OSDP_CMD_LED] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_led,
+		.struct_to_dict = pyosdp_make_dict_cmd_led,
+	},
+	[OSDP_CMD_BUZZER] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_buzzer,
+		.struct_to_dict = pyosdp_make_dict_cmd_buzzer,
+	},
+	[OSDP_CMD_TEXT] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_text,
+		.struct_to_dict = pyosdp_make_dict_cmd_text,
+	},
+	[OSDP_CMD_KEYSET] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_keyset,
+		.struct_to_dict = pyosdp_make_dict_cmd_keyset,
+	},
+	[OSDP_CMD_COMSET] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_comset,
+		.struct_to_dict = pyosdp_make_dict_cmd_comset,
+	},
+	[OSDP_CMD_MFG] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_mfg,
+		.struct_to_dict = pyosdp_make_dict_cmd_mfg,
+	},
+	[OSDP_CMD_FILE_TX] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_file_tx,
+		.struct_to_dict = pyosdp_make_dict_cmd_file_tx,
+	},
+	[OSDP_CMD_STATUS] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_dummy,
+		.struct_to_dict = pyosdp_make_dict_cmd_dummy,
+	},
+};
+
+static struct {
+	int (*struct_to_dict)(PyObject *, struct osdp_event *);
+	int (*dict_to_struct)(struct osdp_event *, PyObject *);
+} event_translator[OSDP_EVENT_SENTINEL] = {
+	[OSDP_EVENT_CARDREAD] = {
+		.struct_to_dict = pyosdp_make_dict_event_cardread,
+		.dict_to_struct = pyosdp_make_struct_event_cardread,
+	},
+	[OSDP_EVENT_KEYPRESS] = {
+		.struct_to_dict = pyosdp_make_dict_event_keypress,
+		.dict_to_struct = pyosdp_make_struct_event_keypress,
+	},
+	[OSDP_EVENT_MFGREP] = {
+		.struct_to_dict = pyosdp_make_dict_event_mfg_reply,
+		.dict_to_struct = pyosdp_make_struct_event_mfg_reply,
+	},
+	[OSDP_EVENT_IO] = {
+		.struct_to_dict = pyosdp_make_dict_event_io,
+		.dict_to_struct = pyosdp_make_struct_event_io,
+	},
+	[OSDP_EVENT_STATUS] = {
+		.struct_to_dict = pyosdp_make_dict_event_status,
+		.dict_to_struct = pyosdp_make_struct_event_status,
+	},
+};
+
 /* --- Exposed Methods --- */
 
 int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict)
@@ -567,35 +639,18 @@ int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict)
 
 	if (pyosdp_dict_get_int(dict, "command", &cmd_id))
 		return -1;
-
-	switch (cmd_id) {
-	case OSDP_CMD_OUTPUT:
-		return pyosdp_make_struct_cmd_output(cmd, dict);
-	case OSDP_CMD_LED:
-		return pyosdp_make_struct_cmd_led(cmd, dict);
-	case OSDP_CMD_BUZZER:
-		return pyosdp_make_struct_cmd_buzzer(cmd, dict);
-	case OSDP_CMD_TEXT:
-		return pyosdp_make_struct_cmd_text(cmd, dict);
-	case OSDP_CMD_KEYSET:
-		return pyosdp_make_struct_cmd_keyset(cmd, dict);
-	case OSDP_CMD_COMSET:
-		return pyosdp_make_struct_cmd_comset(cmd, dict);
-	case OSDP_CMD_MFG:
-		return pyosdp_make_struct_cmd_mfg(cmd, dict);
-	case OSDP_CMD_FILE_TX:
-		return pyosdp_make_struct_cmd_file_tx(cmd, dict);
-	default:
-		PyErr_SetString(PyExc_NotImplementedError,
-				"command not implemented");
+	if (cmd_id < OSDP_CMD_OUTPUT || cmd_id >= OSDP_CMD_SENTINEL)
 		return -1;
-	}
-	return 0;
+
+	return command_translator[cmd_id].dict_to_struct(cmd, dict);
 }
 
 int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd)
 {
 	PyObject *obj;
+
+	if (cmd->id < OSDP_CMD_OUTPUT || cmd->id >= OSDP_CMD_SENTINEL)
+		return -1;
 
 	obj = PyDict_New();
 	if (obj == NULL)
@@ -604,73 +659,9 @@ int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd)
 	if (pyosdp_dict_add_int(obj, "command", cmd->id))
 		return -1;
 
-	switch (cmd->id) {
-	case OSDP_CMD_OUTPUT:
-		pyosdp_make_dict_cmd_output(obj, cmd);
-		break;
-	case OSDP_CMD_LED:
-		pyosdp_make_dict_cmd_led(obj, cmd);
-		break;
-	case OSDP_CMD_BUZZER:
-		pyosdp_make_dict_cmd_buzzer(obj, cmd);
-		break;
-	case OSDP_CMD_TEXT:
-		pyosdp_make_dict_cmd_text(obj, cmd);
-		break;
-	case OSDP_CMD_KEYSET:
-		pyosdp_make_dict_cmd_keyset(obj, cmd);
-		break;
-	case OSDP_CMD_COMSET:
-		pyosdp_make_dict_cmd_comset(obj, cmd);
-		break;
-	case OSDP_CMD_MFG:
-		pyosdp_make_dict_cmd_mfg(obj, cmd);
-		break;
-	case OSDP_CMD_FILE_TX:
-		pyosdp_make_dict_cmd_file_tx(obj, cmd);
-		break;
-	default:
-		PyErr_SetString(PyExc_NotImplementedError,
-				"command not implemented");
-		return -1;
-	}
-
-	*dict = obj;
-	return 0;
-}
-
-int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event)
-{
-	PyObject *obj;
-
-	obj = PyDict_New();
-	if (obj == NULL)
+	if (command_translator[cmd->id].struct_to_dict(obj, cmd))
 		return -1;
 
-	if (pyosdp_dict_add_int(obj, "event", event->type))
-		return -1;
-
-	switch (event->type) {
-	case OSDP_EVENT_CARDREAD:
-		pyosdp_make_dict_event_cardread(obj, event);
-		break;
-	case OSDP_EVENT_KEYPRESS:
-		pyosdp_make_dict_event_keypress(obj, event);
-		break;
-	case OSDP_EVENT_MFGREP:
-		pyosdp_make_dict_event_mfg_reply(obj, event);
-		break;
-	case OSDP_EVENT_IO:
-		pyosdp_make_dict_event_io(obj, event);
-		break;
-	case OSDP_EVENT_STATUS:
-		pyosdp_make_dict_event_status(obj, event);
-		break;
-	default:
-		PyErr_SetString(PyExc_NotImplementedError,
-				"event cannot be handled");
-		return -1;
-	}
 	*dict = obj;
 	return 0;
 }
@@ -682,30 +673,26 @@ int pyosdp_make_struct_event(struct osdp_event *event, PyObject *dict)
 	if (pyosdp_dict_get_int(dict, "event", &event_type))
 		return -1;
 
-	switch (event_type) {
-	case OSDP_EVENT_CARDREAD:
-		if (pyosdp_make_struct_event_cardread(event, dict))
-			return -1;
-		break;
-	case OSDP_EVENT_KEYPRESS:
-		if (pyosdp_make_struct_event_keypress(event, dict))
-			return -1;
-		break;
-	case OSDP_EVENT_MFGREP:
-		if (pyosdp_make_struct_event_mfg_reply(event, dict))
-			return -1;
-		break;
-	case OSDP_EVENT_IO:
-		if (pyosdp_make_struct_event_io(event, dict))
-			return -1;
-		break;
-	case OSDP_EVENT_STATUS:
-		if (pyosdp_make_struct_event_status(event, dict))
-			return -1;
-		break;
-	default:
-		PyErr_Format(PyExc_ValueError, "Unknown event");
+	return event_translator[event_type].dict_to_struct(event, dict);
+}
+
+int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event)
+{
+	PyObject *obj;
+
+	if (event->type < OSDP_EVENT_CARDREAD || event->type >= OSDP_EVENT_SENTINEL)
 		return -1;
-	}
+
+	obj = PyDict_New();
+	if (obj == NULL)
+		return -1;
+
+	if (pyosdp_dict_add_int(obj, "event", event->type))
+		return -1;
+
+	if (event_translator[event->type].struct_to_dict(obj, event))
+		return -1;
+
+	*dict = obj;
 	return 0;
 }

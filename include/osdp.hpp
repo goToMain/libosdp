@@ -41,11 +41,6 @@ public:
 		osdp_get_sc_status_mask(_ctx, bitmask);
 	}
 
-	void set_command_complete_callback(osdp_command_complete_callback_t cb, void *arg)
-	{
-		osdp_set_command_complete_callback(_ctx, cb, arg);
-	}
-
 	int file_register_ops(int pd, struct osdp_file_ops *ops)
 	{
 		return osdp_file_register_ops(_ctx, pd, ops);

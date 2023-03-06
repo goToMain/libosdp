@@ -436,9 +436,72 @@ int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict)
 	return 0;
 }
 
-int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
+int pyosdp_make_dict_event_cardread(PyObject *obj, struct osdp_event *event)
 {
 	int tmp;
+
+	if (pyosdp_dict_add_int(obj, "reader_no",
+				event->cardread.reader_no))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "format", event->cardread.format))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "direction",
+				event->cardread.direction))
+		return -1;
+	tmp = event->cardread.length;
+	if (event->cardread.format == OSDP_CARD_FMT_RAW_UNSPECIFIED ||
+		event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND) {
+		if (pyosdp_dict_add_int(obj, "length", tmp))
+			return -1;
+		tmp = (tmp + 7) / 8; // bits to bytes
+	}
+	if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, tmp))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_event_keypress(PyObject *obj, struct osdp_event *event)
+{
+	if (pyosdp_dict_add_int(obj, "reader_no",
+				event->keypress.reader_no))
+		return -1;
+	if (pyosdp_dict_add_bytes(obj, "data", event->keypress.data,
+					event->keypress.length))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_event_mfg_reply(PyObject *obj, struct osdp_event *event)
+{
+	if (pyosdp_dict_add_int(obj, "vendor_code", event->mfgrep.vendor_code))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "mfg_command", event->mfgrep.command))
+		return -1;
+	if (pyosdp_dict_add_bytes(obj, "data", event->mfgrep.data, event->mfgrep.length))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_event_io(PyObject *obj, struct osdp_event *event)
+{
+	if (pyosdp_dict_add_int(obj, "type", event->io.type))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "status", event->io.status))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_event_status(PyObject *obj, struct osdp_event *event)
+{
+	if (pyosdp_dict_add_int(obj, "tamper", event->status.tamper))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "power", event->status.power))
+		return -1;
+	return 0;
+}
+
+int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event)
+{
 	PyObject *obj;
 
 	obj = PyDict_New();
@@ -450,58 +513,19 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 
 	switch (event->type) {
 	case OSDP_EVENT_CARDREAD:
-		if (pyosdp_dict_add_int(obj, "reader_no",
-					event->cardread.reader_no))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "format", event->cardread.format))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "direction",
-					event->cardread.direction))
-			return -1;
-		tmp = event->cardread.length;
-		if (event->cardread.format == OSDP_CARD_FMT_RAW_UNSPECIFIED ||
-		    event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND) {
-			if (pyosdp_dict_add_int(obj, "length", tmp))
-				return -1;
-			tmp = (tmp + 7) / 8; // bits to bytes
-		}
-		if (pyosdp_dict_add_bytes(obj, "data", event->cardread.data, tmp))
-			return -1;
+		pyosdp_make_dict_event_cardread(obj, event);
 		break;
 	case OSDP_EVENT_KEYPRESS:
-		if (pyosdp_dict_add_int(obj, "reader_no",
-					event->keypress.reader_no))
-			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", event->keypress.data,
-					  event->keypress.length))
-			return -1;
+		pyosdp_make_dict_event_keypress(obj, event);
 		break;
 	case OSDP_EVENT_MFGREP:
-		if (pyosdp_dict_add_int(obj, "vendor_code",
-					event->mfgrep.vendor_code))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "mfg_command",
-					event->mfgrep.command))
-			return -1;
-		if (pyosdp_dict_add_bytes(obj, "data", event->mfgrep.data,
-					  event->mfgrep.length))
-			return -1;
+		pyosdp_make_dict_event_mfg_reply(obj, event);
 		break;
 	case OSDP_EVENT_IO:
-		if (pyosdp_dict_add_int(obj, "type",
-					event->io.type))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "status",
-					event->io.status))
-			return -1;
+		pyosdp_make_dict_event_io(obj, event);
 		break;
 	case OSDP_EVENT_STATUS:
-		if (pyosdp_dict_add_int(obj, "tamper",
-					event->status.tamper))
-			return -1;
-		if (pyosdp_dict_add_int(obj, "power",
-					event->status.power))
-			return -1;
+		pyosdp_make_dict_event_status(obj, event);
 		break;
 	default:
 		PyErr_SetString(PyExc_NotImplementedError,
@@ -512,7 +536,7 @@ int pyosdp_make_event_dict(PyObject **dict, struct osdp_event *event)
 	return 0;
 }
 
-static int pyosdp_make_cardread_event_struct(struct osdp_event *p,
+static int pyosdp_make_struct_event_cardread(struct osdp_event *p,
 					     PyObject *dict)
 {
 	int i, data_length, reader_no, format, direction, len_bytes;
@@ -556,7 +580,7 @@ static int pyosdp_make_cardread_event_struct(struct osdp_event *p,
 	return 0;
 }
 
-static int pyosdp_make_keypress_event_struct(struct osdp_event *p,
+static int pyosdp_make_struct_event_keypress(struct osdp_event *p,
 					     PyObject *dict)
 {
 	int i, data_length, reader_no;
@@ -578,7 +602,7 @@ static int pyosdp_make_keypress_event_struct(struct osdp_event *p,
 	return 0;
 }
 
-static int pyosdp_make_mfg_reply_event_struct(struct osdp_event *p,
+static int pyosdp_make_struct_event_mfg_reply(struct osdp_event *p,
 					      PyObject *dict)
 {
 	int i, data_length, vendor_code, command;
@@ -605,7 +629,7 @@ static int pyosdp_make_mfg_reply_event_struct(struct osdp_event *p,
 }
 
 
-static int pyosdp_make_io_event_struct(struct osdp_event *p,
+static int pyosdp_make_struct_event_io(struct osdp_event *p,
 				       PyObject *dict)
 {
 	int type, status;
@@ -624,7 +648,7 @@ static int pyosdp_make_io_event_struct(struct osdp_event *p,
 	return 0;
 }
 
-static int pyosdp_make_status_event_struct(struct osdp_event *p,
+static int pyosdp_make_struct_event_status(struct osdp_event *p,
 					   PyObject *dict)
 {
 	int tamper, power;
@@ -643,7 +667,7 @@ static int pyosdp_make_status_event_struct(struct osdp_event *p,
 	return 0;
 }
 
-int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
+int pyosdp_make_struct_event(struct osdp_event *event, PyObject *dict)
 {
 	int event_type;
 
@@ -652,23 +676,23 @@ int pyosdp_make_event_struct(struct osdp_event *event, PyObject *dict)
 
 	switch (event_type) {
 	case OSDP_EVENT_CARDREAD:
-		if (pyosdp_make_cardread_event_struct(event, dict))
+		if (pyosdp_make_struct_event_cardread(event, dict))
 			return -1;
 		break;
 	case OSDP_EVENT_KEYPRESS:
-		if (pyosdp_make_keypress_event_struct(event, dict))
+		if (pyosdp_make_struct_event_keypress(event, dict))
 			return -1;
 		break;
 	case OSDP_EVENT_MFGREP:
-		if (pyosdp_make_mfg_reply_event_struct(event, dict))
+		if (pyosdp_make_struct_event_mfg_reply(event, dict))
 			return -1;
 		break;
 	case OSDP_EVENT_IO:
-		if (pyosdp_make_io_event_struct(event, dict))
+		if (pyosdp_make_struct_event_io(event, dict))
 			return -1;
 		break;
 	case OSDP_EVENT_STATUS:
-		if (pyosdp_make_status_event_struct(event, dict))
+		if (pyosdp_make_struct_event_status(event, dict))
 			return -1;
 		break;
 	default:

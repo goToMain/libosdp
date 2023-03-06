@@ -39,7 +39,7 @@ int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 	pyosdp_cp_t *self = data;
 	PyObject *arglist, *result, *event_dict;
 
-	if (pyosdp_make_event_dict(&event_dict, event))
+	if (pyosdp_make_dict_event(&event_dict, event))
 		return -1;
 
 	arglist = Py_BuildValue("(IO)", address, event_dict);

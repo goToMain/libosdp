@@ -38,7 +38,7 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O", &event_dict))
 		return NULL;
 
-	if (pyosdp_make_event_struct(&event, event_dict))
+	if (pyosdp_make_struct_event(&event, event_dict))
 		return NULL;
 
 	if (osdp_pd_notify_event(self->ctx, &event)) {

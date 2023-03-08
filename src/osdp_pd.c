@@ -528,7 +528,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_ABORT:
-		if (len < CMD_ABORT_DATA_LEN) {
+		if (len != CMD_ABORT_DATA_LEN) {
 			break;
 		}
 		osdp_file_tx_abort(pd);

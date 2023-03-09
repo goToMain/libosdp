@@ -31,7 +31,8 @@ pyosdp_sources = '@LIB_OSDP_SOURCES@'.split(';') + [
 
 sources = utils_sources + pyosdp_sources
 
-libosdp_include_dirs = ('@LIB_OSDP_INCLUDE_DIRS@'.split(';') +
+libosdp_include_dirs = ('@PROJECT_SOURCE_DIR@/utils/include'.split(';') +
+                        '@PROJECT_SOURCE_DIR@/include'.split(';') +
                         '@LIB_OSDP_PRIVATE_INCLUDE_DIRS@'.split(';'))
 
 libosdp_includes = [ '-I' + path for path in libosdp_include_dirs ]
@@ -39,7 +40,6 @@ libosdp_includes = [ '-I' + path for path in libosdp_include_dirs ]
 libosdp_definitions = '@LIB_OSDP_DEFINITIONS@'.split(';')
 
 libosdp_libraries = '@LIB_OSDP_LIBRARIES@'.split(';')
-libosdp_libraries = libosdp_libraries[1:] # remove utils
 
 compile_args = libosdp_includes + libosdp_definitions
 

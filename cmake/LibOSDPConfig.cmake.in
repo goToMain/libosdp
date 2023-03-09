@@ -4,33 +4,16 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-# Use the following variables to compile and link against LIBOSDP:
-#
-#  LIBOSDP_FOUND              - True if LibOSDP was found on your system
-#  LIBOSDP_DEFINITIONS        - Definitions needed to build with LibOSDP
-#  LIBOSDP_CMAKE_CONFIG_DIR   - Cmake configuration files install directory
-#  LIBOSDP_INCLUDE_DIR        - Directory where osdp.h can be found
-#  LIBOSDP_LIBRARY            - LibOSDP shared library name
-#  LIBOSDP_LIBRARY_STATIC     - LibOSDP static library name
-#  LIBOSDP_LIBRARY_DIR        - Directory containing LibOSDP library
-#  LIBOSDP_ROOT_DIR           - The base directory of LibOSDP
-#
-#  LIBOSDP_VERSION_STRING     - A human-readable string containing the version
-#  LIBOSDP_VERSION_MAJOR      - The major version of LibOSDP
-#  LIBOSDP_VERSION_MINOR      - The minor version of LibOSDP
-#  LIBOSDP_VERSION_PATCH      - The patch version of LibOSDP
+@PACKAGE_INIT@
 
-set(LIBOSDP_FOUND 1)
-set(LIBOSDP_ROOT_DIR         "@LIBOSDP_ROOT_DIR@")
-set(LIBOSDP_DEFINITIONS      "@LIBOSDP_DEFINITIONS@")
-set(LIBOSDP_CMAKE_CONFIG_DIR "@LIBOSDP_ROOT_DIR@/@LIBOSDP_CMAKE_CONFIG_DIR@")
-set(LIBOSDP_INCLUDE_DIR      "@LIBOSDP_ROOT_DIR@/@LIBOSDP_INCLUDE_DIR@")
-set(LIBOSDP_LIBRARY          "@LIBOSDP_LIBRARY@")
-set(LIBOSDP_LIBRARY_STATIC   "@LIBOSDP_LIBRARY_STATIC@")
-set(LIBOSDP_LIBRARY_DIR      "@LIBOSDP_ROOT_DIR@/@LIBOSDP_LIBRARY_DIR@")
-set(LIBOSDP_USE_FILE         "@LIBOSDP_ROOT_DIR@/@LIBOSDP_USE_FILE@")
+include("${CMAKE_CURRENT_LIST_DIR}/LibOSDPTargets.cmake")
 
-set(LIBOSDP_VERSION_STRING   "@LIBOSDP_VERSION_STRING@")
-set(LIBOSDP_VERSION_MAJOR    @LIBOSDP_VERSION_MAJOR@)
-set(LIBOSDP_VERSION_MINOR    @LIBOSDP_VERSION_MINOR@)
-set(LIBOSDP_VERSION_PATCH    @LIBOSDP_VERSION_PATCH@)
+if(@OpenSSL_FOUND@)
+  include(CMakeFindDependencyMacro)
+  find_dependency(OpenSSL)
+endif()
+
+if(@MbedTLS_FOUND@)
+  include(CMakeFindDependencyMacro)
+  find_dependency(MbedTLS)
+endif()

@@ -32,7 +32,7 @@ keys (s-enc, s-mac1, and s-mac2). The final message of the handshake is the
 that the CP will use as the IV for encrypting its next command (MAC chaining).
 
 The above process works in this flow if both the CP and PD have the same SCBK.
-If there is a mismatch, the CP will fail to verity PD's authenticity when it
+If there is a mismatch, the CP will fail to verify the PD's authenticity when it
 receives ``REPLY_CCRYPT``. At this point, LibOSDP will try to initiate a new SC
 handshake with SCBK-default instead to see if that works (it will if the PD was
 set to install-mode). If that too fails, the CP gives up and goes online without
@@ -68,7 +68,7 @@ Install Mode
 ------------
 
 The install-mode is provisioning-time, insecure mode that instructs the PD to
-uses SCBK-Default (hardcoded key specified by OSDP) and allows the CP to set
+use SCBK-Default (hardcoded key specified by OSDP) and allows the CP to set
 a new SCBK. Once the PD receives a new SCBK, it automatically exits the
 install-mode so another SCBK key set is not possible.
 

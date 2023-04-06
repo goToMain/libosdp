@@ -1024,7 +1024,9 @@ void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
  */
 void osdp_set_command_complete_callback(osdp_t *ctx,
 					osdp_command_complete_callback_t cb,
-					void *arg);
+					void *arg)
+	__attribute__((deprecated("Use of this API is discouraged. A future "
+				  "version will remove it.")));
 
 /**
  * @brief OSDP File operations struct that needs to be filled by the CP/PD

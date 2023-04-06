@@ -274,3 +274,14 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 		}
 	}
 }
+
+OSDP_EXPORT
+void osdp_set_command_complete_callback(osdp_t *ctx,
+					osdp_command_complete_callback_t cb,
+					void *arg)
+{
+	input_check(ctx);
+
+	TO_OSDP(ctx)->command_complete_callback = cb;
+	TO_OSDP(ctx)->command_complete_callback_arg = arg;
+}

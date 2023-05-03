@@ -421,6 +421,10 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 		}
 		return OSDP_ERR_PKT_SKIP;
 	}
+	if (is_pd_mode(pd) && (pkt->pd_address & 0x80)) {
+		/* ignore reply from other PD on same address */
+		return OSDP_ERR_PKT_SKIP;
+	}
 
 	/* validate sequence number */
 	comp = pkt->control & PKT_CONTROL_SQN;

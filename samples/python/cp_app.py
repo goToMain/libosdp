@@ -102,7 +102,7 @@ def main():
     while True:
         cp.refresh()
 
-        if (count % 100) == 99 and cp.is_sc_active(PD_0):
+        if (count % 100) == 99 and bool(cp.sc_status() & 1 << PD_0):
             # send a random command to the PD_0
             r = random.randint(PD_0, len(commands)-1)
             cp.send_command(PD_0, commands[r])

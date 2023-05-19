@@ -42,6 +42,7 @@ void pyosdp_add_module_constants(PyObject *module)
 	ADD_CONST("CMD_KEYSET", OSDP_CMD_KEYSET);
 	ADD_CONST("CMD_MFG", OSDP_CMD_MFG);
 	ADD_CONST("CMD_FILE_TX", OSDP_CMD_FILE_TX);
+	ADD_CONST("CMD_STATUS", OSDP_CMD_STATUS);
 
 	/* For `struct osdp_cmd_file_tx`::flags */
 	ADD_CONST("CMD_FILE_TX_FLAG_CANCEL", OSDP_CMD_FILE_TX_FLAG_CANCEL);

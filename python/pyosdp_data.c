@@ -363,7 +363,11 @@ static int pyosdp_make_struct_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
 }
 
 /* Dummies for commands that don't have any body */
-static int pyosdp_make_struct_cmd_dummy(struct osdp_cmd *cmd, PyObject *obj) { return 0; }
+static int pyosdp_make_struct_cmd_dummy(struct osdp_cmd *cmd, PyObject *obj) { 
+	cmd->id = OSDP_CMD_STATUS;
+
+	return 0; 
+}
 static int pyosdp_make_dict_cmd_dummy(PyObject *obj, struct osdp_cmd *cmd) { return 0; }
 
 

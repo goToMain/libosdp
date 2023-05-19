@@ -14,7 +14,7 @@
 	"@return PD status bitmask"
 static PyObject *pyosdp_cp_pd_status(pyosdp_cp_t *self, PyObject *args)
 {
-	uint64_t bitmask = 0;
+	uint32_t bitmask = 0;
 
 	osdp_get_status_mask(self->ctx, (uint8_t *)&bitmask);
 
@@ -27,7 +27,7 @@ static PyObject *pyosdp_cp_pd_status(pyosdp_cp_t *self, PyObject *args)
 	"@return Secure Channel Status bitmask"
 static PyObject *pyosdp_cp_sc_status(pyosdp_cp_t *self, PyObject *args)
 {
-	uint64_t bitmask = 0;
+	uint32_t bitmask = 0;
 
 	osdp_get_sc_status_mask(self->ctx, (uint8_t *)&bitmask);
 

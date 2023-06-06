@@ -470,6 +470,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		    (cmd.comset.baud_rate != 9600 &&
 		     cmd.comset.baud_rate != 19200 &&
 		     cmd.comset.baud_rate != 38400 &&
+		     cmd.comset.baud_rate != 57600 &&
 		     cmd.comset.baud_rate != 115200 &&
 		     cmd.comset.baud_rate != 230400)) {
 			LOG_ERR("COMSET Failed! command discarded");

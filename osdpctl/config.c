@@ -151,8 +151,8 @@ int config_parse_key_channel_speed(const char *val, void *data)
 	if (safe_atoi(val, &baud))
 		return INI_FAILURE;
 
-	if (baud != 9600 && baud != 19200 && baud != 38400 && baud != 115200 &&
-	    baud != 230400) {
+	if (baud != 9600 && baud != 19200 && baud != 38400 && baud != 57600 &&
+		baud != 115200 && baud != 230400) {
 		printf("Error: invalid baudrate %d\n", baud);
 		return INI_FAILURE;
 	}

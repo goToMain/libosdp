@@ -367,6 +367,16 @@ uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 			 int len, int max_len);
 
+//ADDED PROTOTYPES for implicitly declared functions
+int osdp_channel_receive(struct osdp_pd *pd);
+int get_tx_buf_size(struct osdp_pd *pd);
+int osdp_phy_send_packet(struct osdp_pd *pd, const uint8_t *buf, int len, int buf_size);
+int phy_check_header(struct osdp_pd *pd);
+int osdp_rb_pop_buf(struct osdp_rb *rb, const uint8_t *max_len, int min_len); //Note: probably needs more useful variable names
+int phy_check_packet(struct osdp_pd *pd, const uint8_t *buf, int len);
+
+
+
 /* from osdp_common.c */
 __weak int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);

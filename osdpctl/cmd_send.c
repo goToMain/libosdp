@@ -196,8 +196,8 @@ int handle_cmd_comset(int argc, char *argv[], struct osdp_cmd_comset *c)
 	if (address <= 0 || address >= 126)
 		return -1;
 
-	if (baud != 9600 && baud != 19200 && baud != 38400 && baud != 57600 && 
-		baud != 115200 && baud != 230400)
+	if (baud != 9600 && baud != 19200 && baud != 38400 && baud != 57600 &&
+	    baud != 115200 && baud != 230400)
 		return -1;
 
 	c->address = (uint8_t)address;

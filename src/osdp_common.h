@@ -172,6 +172,8 @@ union osdp_ephemeral_data {
 
 /* PD State Flags */
 #define PD_FLAG_SC_CAPABLE     BIT(0)  /* PD secure channel capable */
+#define PD_FLAG_TAMPER         BIT(1)  /* local tamper status */
+#define PD_FLAG_POWER          BIT(2)  /* local power status */
 #define PD_FLAG_R_TAMPER       BIT(3)  /* remote tamper status */
 #define PD_FLAG_AWAIT_RESP     BIT(4)  /* set after command is sent */
 #define PD_FLAG_SKIP_SEQ_CHECK BIT(5)  /* disable seq checks (debug) */

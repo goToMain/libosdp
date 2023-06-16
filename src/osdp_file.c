@@ -116,7 +116,10 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops.close(f->ops.arg);
+		if (f->ops.close(f->ops.arg) < 0) {
+			LOG_ERR("Stat_Decode: Close failed!");
+			return -1;
+		}
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("Stat_Decode: File transfer complete");
 	}
@@ -224,7 +227,10 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops.close(f->ops.arg);
+		if (f->ops.close(f->ops.arg) < 0) {
+			LOG_ERR("Stat_Build: Close failed!");
+			return -1;
+		}
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("TX_Decode: File receive complete");
 	}

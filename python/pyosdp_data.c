@@ -341,6 +341,7 @@ static int pyosdp_make_struct_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
 	if (pyosdp_dict_get_int(dict, "flags", &flags))
 		return -1;
 
+	cmd->id = id;
 	cmd->flags = flags;
 	return 0;
 }

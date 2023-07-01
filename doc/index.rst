@@ -13,9 +13,6 @@ OSDP - Open Supervised Device Protocol
 .. image:: https://github.com/goToMain/libosdp/workflows/Build%20CI/badge.svg
    :target: https://github.com/goToMain/libosdp/actions?query=workflow%3A%22Build+CI%22
    :alt: Build status
-.. image:: https://travis-ci.org/cbsiddharth/libosdp.svg?branch=master
-   :target: https://travis-ci.org/cbsiddharth/libosdp
-   :alt: Travis Build Status
 
 This is an open source implementation of Open Supervised Device Protocol
 (OSDP) developed by `Security Industry Association`_  (SIA).

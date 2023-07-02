@@ -25,6 +25,7 @@ usage() {
 	  --lib-only                   Only build the library
 	  --cross-compile PREFIX       Use to pass a compiler prefix
 	  --build-dir                  Build output directory (default: ./build)
+	  -d, --debug                  Enable debug builds
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
 	---
@@ -44,6 +45,7 @@ while [ $# -gt 0 ]; do
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
+	-d|--debug)            DEBUG=1;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
 	*) echo -e "Unknown option $1\n"; usage; exit 1;;
@@ -92,6 +94,10 @@ fi
 
 if [[ ! -z "${STATIC_PD}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
+fi
+
+if [[ ! -z "${DEBUG}" ]]; then
+	CCFLAGS+=" -g"
 fi
 
 ## Repo meta data

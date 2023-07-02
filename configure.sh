@@ -32,6 +32,8 @@ usage() {
 }
 
 BUILD_DIR="build"
+SCRIPT_DIR="$(dirname $(readlink -f "$0"))"
+
 while [ $# -gt 0 ]; do
 	case $1 in
 	--packet-trace)        PACKET_TRACE=1;;
@@ -171,6 +173,7 @@ sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" ${CONFIG_OUT}
 sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" ${CONFIG_OUT}
 sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" ${CONFIG_OUT}
 sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" ${CONFIG_OUT}
+sed -i "" -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" ${CONFIG_OUT}
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"

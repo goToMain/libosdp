@@ -76,7 +76,7 @@ int main()
 {
 	OSDP::PeripheralDevice pd;
 
-	pd.logger_init(OSDP_LOG_DEBUG, NULL);
+	pd.logger_init("osdp::pd", OSDP_LOG_DEBUG, NULL);
 
 	pd.setup(&info_pd);
 

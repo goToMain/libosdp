@@ -8,8 +8,6 @@
 
 #include "osdp_file.h"
 
-LOGGER_DECLARE(osdp, "FOP");
-
 static inline void file_state_reset(struct osdp_file *f)
 {
 	f->flags = 0;

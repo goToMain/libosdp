@@ -6,8 +6,6 @@
 
 #include "osdp_common.h"
 
-LOGGER_DECLARE(osdp, "PHY");
-
 #define OSDP_PKT_MARK                  0xFF
 #define OSDP_PKT_SOM                   0x53
 #define PKT_CONTROL_SQN                0x03

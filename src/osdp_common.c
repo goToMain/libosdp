@@ -15,12 +15,6 @@
 
 #include "osdp_common.h"
 
-#ifdef CONFIG_DISABLE_PRETTY_LOGGING
-LOGGER_DEFINE(osdp, LOG_INFO, LOGGER_FLAG_NO_COLORS);
-#else
-LOGGER_DEFINE(osdp, LOG_INFO, LOGGER_FLAG_NONE);
-#endif
-
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 {
 	for (; len > 0; len--) {
@@ -198,18 +192,21 @@ int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-void osdp_logger_init(int log_level, osdp_log_puts_fn_t log_fn)
+void osdp_logger_init(const char *name, int log_level,
+		      osdp_log_puts_fn_t log_fn)
 {
-	logger_t *ctx = get_log_ctx(osdp);
+	logger_t ctx;
+	FILE *file = NULL;
+	int flags = LOGGER_FLAG_NONE;
 
-	logger_set_log_level(ctx, log_level);
-	if (log_fn) {
-		logger_set_put_fn(ctx, log_fn);
-		logger_set_file(ctx, NULL);
-	} else {
-		logger_set_put_fn(ctx, NULL);
-		logger_set_file(ctx, stderr);
-	}
+#ifdef CONFIG_DISABLE_PRETTY_LOGGING
+	flags |= LOGGER_FLAG_NO_COLORS;
+#endif
+	if (!log_fn)
+		file = stderr;
+
+	logger_init(&ctx, log_level, name, REPO_ROOT, log_fn, file, flags);
+	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
 OSDP_EXPORT

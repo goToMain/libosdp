@@ -11,8 +11,6 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 
-LOGGER_DECLARE(osdp, "CP");
-
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
 #define CMD_ISTAT_LEN                  1
@@ -1227,6 +1225,7 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 	struct osdp_pd *pd = NULL;
 	struct osdp *ctx;
 	osdp_pd_info_t *info;
+	char name[24] = {0};
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
@@ -1271,6 +1270,10 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
+
+		logger_get_default(&pd->logger);
+		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
+		logger_set_name(&pd->logger, name);
 	}
 
 	if (scbk_count != num_pd) {
@@ -1342,7 +1345,6 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	do {
 		pd = GET_CURRENT_PD(ctx);
-		LOG_SET_PREFIX(pd->name);
 
 		if (cp_refresh(pd) < 0)
 			break;

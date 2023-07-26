@@ -111,6 +111,7 @@ that are exposed by libosdp.
 git clone https://github.com/goToMain/libosdp --recurse-submodules
 # git submodule update --init (if you missed doing --recurse-submodules earlier)
 cd libosdp
+./configure.sh
 mkdir build && cd build
 cmake ..
 make

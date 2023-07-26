@@ -7,7 +7,7 @@ these with your application as needed (-losdp or -losdpstatic). Have a look at
 ``sample/*`` for details on how to consume this library.
 
 .. code:: sh
-
+    ./configure.sh
     mkdir build && cd build
     cmake ..
     make

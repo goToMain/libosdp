@@ -375,52 +375,56 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_LED:
-		if (len != CMD_LED_DATA_LEN || !pd->command_callback) {
+		if ((len % CMD_LED_DATA_LEN) != 0  || !pd->command_callback) {
 			break;
 		}
-		cmd.id = OSDP_CMD_LED;
-		cmd.led.reader = buf[pos++];
-		cmd.led.led_number = buf[pos++];
-
-		cmd.led.temporary.control_code = buf[pos++];
-		cmd.led.temporary.on_count = buf[pos++];
-		cmd.led.temporary.off_count = buf[pos++];
-		cmd.led.temporary.on_color = buf[pos++];
-		cmd.led.temporary.off_color = buf[pos++];
-		cmd.led.temporary.timer_count = buf[pos++];
-		cmd.led.temporary.timer_count |= buf[pos++] << 8;
-
-		cmd.led.permanent.control_code = buf[pos++];
-		cmd.led.permanent.on_count = buf[pos++];
-		cmd.led.permanent.off_count = buf[pos++];
-		cmd.led.permanent.on_color = buf[pos++];
-		cmd.led.permanent.off_color = buf[pos++];
 		ret = OSDP_PD_ERR_REPLY;
-		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			break;
-		}
-		if (!do_command_callback(pd, &cmd)) {
-			break;
+		for (i = 0; i < len / CMD_LED_DATA_LEN; i++) {
+			cmd.id = OSDP_CMD_LED;
+			cmd.led.reader = buf[pos++];
+			cmd.led.led_number = buf[pos++];
+
+			cmd.led.temporary.control_code = buf[pos++];
+			cmd.led.temporary.on_count = buf[pos++];
+			cmd.led.temporary.off_count = buf[pos++];
+			cmd.led.temporary.on_color = buf[pos++];
+			cmd.led.temporary.off_color = buf[pos++];
+			cmd.led.temporary.timer_count = buf[pos++];
+			cmd.led.temporary.timer_count |= buf[pos++] << 8;
+
+			cmd.led.permanent.control_code = buf[pos++];
+			cmd.led.permanent.on_count = buf[pos++];
+			cmd.led.permanent.off_count = buf[pos++];
+			cmd.led.permanent.on_color = buf[pos++];
+			cmd.led.permanent.off_color = buf[pos++];
+			if (!pd_cmd_cap_ok(pd, &cmd)) {
+				break;
+			}
+			if (!do_command_callback(pd, &cmd)) {
+				break;
+			}
 		}
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_BUZ:
-		if (len != CMD_BUZ_DATA_LEN || !pd->command_callback) {
+		if ((len % CMD_BUZ_DATA_LEN) != 0  || !pd->command_callback) {
 			break;
 		}
-		cmd.id = OSDP_CMD_BUZZER;
-		cmd.buzzer.reader = buf[pos++];
-		cmd.buzzer.control_code = buf[pos++];
-		cmd.buzzer.on_count = buf[pos++];
-		cmd.buzzer.off_count = buf[pos++];
-		cmd.buzzer.rep_count = buf[pos++];
 		ret = OSDP_PD_ERR_REPLY;
-		if (!pd_cmd_cap_ok(pd, &cmd)) {
-			break;
-		}
-		if (!do_command_callback(pd, &cmd)) {
-			break;
+		for (i = 0; i < len / CMD_BUZ_DATA_LEN; i++) {
+			cmd.id = OSDP_CMD_BUZZER;
+			cmd.buzzer.reader = buf[pos++];
+			cmd.buzzer.control_code = buf[pos++];
+			cmd.buzzer.on_count = buf[pos++];
+			cmd.buzzer.off_count = buf[pos++];
+			cmd.buzzer.rep_count = buf[pos++];
+			if (!pd_cmd_cap_ok(pd, &cmd)) {
+				break;
+			}
+			if (!do_command_callback(pd, &cmd)) {
+				break;
+			}
 		}
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
@@ -466,6 +470,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		    (cmd.comset.baud_rate != 9600 &&
 		     cmd.comset.baud_rate != 19200 &&
 		     cmd.comset.baud_rate != 38400 &&
+		     cmd.comset.baud_rate != 57600 &&
 		     cmd.comset.baud_rate != 115200 &&
 		     cmd.comset.baud_rate != 230400)) {
 			LOG_ERR("COMSET Failed! command discarded");

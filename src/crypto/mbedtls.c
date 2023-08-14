@@ -52,7 +52,7 @@ void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 		assert(len <= 16);
 		rc = mbedtls_aes_setkey_enc(&aes_ctx, key, 128);
 		assert(rc == 0);
-		rc = mbedtls_aes_crypt_ecb(&aes_ctx, MBEDTLS_AES_DECRYPT,
+		rc = mbedtls_aes_crypt_ecb(&aes_ctx, MBEDTLS_AES_ENCRYPT,
 					   data, data);
 		assert(rc == 0);
 	}

@@ -111,11 +111,14 @@ class PeripheralDevice : public Common {
 public:
 	PeripheralDevice()
 	{
+		_ctx = nullptr;
 	}
 
 	~PeripheralDevice()
 	{
-		osdp_pd_teardown(_ctx);
+		if (_ctx) {
+			osdp_pd_teardown(_ctx);
+		}
 	}
 
 	bool setup(osdp_pd_info_t *info)

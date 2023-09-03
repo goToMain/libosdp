@@ -1092,7 +1092,7 @@ struct osdp_file_ops {
 	 *
 	 * @retval 0 on success. -1 on errors.
 	 */
-	void (*close)(void *arg);
+	int (*close)(void *arg);
 };
 
 /**

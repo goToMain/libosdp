@@ -120,7 +120,7 @@ const char *osdp_reply_name(int reply_id)
 		return "INVALID";
 	}
 	name = names[reply_id - REPLY_ACK];
-	if (name[0] == '\0') {
+	if (!name) {
 		return "UNKNOWN";
 	}
 	return name;

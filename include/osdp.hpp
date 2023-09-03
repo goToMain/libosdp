@@ -64,11 +64,14 @@ class ControlPanel : public Common {
 public:
 	ControlPanel()
 	{
+		_ctx = nullptr;
 	}
 
 	~ControlPanel()
 	{
-		osdp_cp_teardown(_ctx);
+		if (_ctx) {
+			osdp_cp_teardown(_ctx);
+		}
 	}
 
 	bool setup(int num_pd, osdp_pd_info_t *info)
@@ -108,11 +111,14 @@ class PeripheralDevice : public Common {
 public:
 	PeripheralDevice()
 	{
+		_ctx = nullptr;
 	}
 
 	~PeripheralDevice()
 	{
-		osdp_pd_teardown(_ctx);
+		if (_ctx) {
+			osdp_pd_teardown(_ctx);
+		}
 	}
 
 	bool setup(osdp_pd_info_t *info)

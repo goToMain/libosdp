@@ -113,6 +113,6 @@ pd.set_command_callback(handle_command)
 
 see [samples/pd_app.py][3] for more details.
 
-[1]: https://libosdp.gotomain.io/api/
+[1]: https://libosdp.sidcha.dev/api/
 [2]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
 [3]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py

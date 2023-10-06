@@ -289,6 +289,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != CMD_POLL_DATA_LEN) {
 			break;
 		}
+		pd->rx_tstamp = osdp_millis_now();
+		pd->state = OSDP_CP_STATE_ONLINE;
 		/* Check if we have external events in the queue */
 		if (pd_event_dequeue(pd, &event) == 0) {
 			ret = pd_translate_event(pd, event);
@@ -989,6 +991,16 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_TIMEOUT_MS) {
 		LOG_INF("PD SC session timeout!");
 		sc_deactivate(pd);
+		pd->state = OSDP_CP_STATE_OFFLINE;
+	}
+
+	/**
+	 * Check if the session is valid(e.g. we have received a message in the recent past)
+	 */
+       if (pd->state == OSDP_CP_STATE_ONLINE &&
+            osdp_millis_since(pd->rx_tstamp) > OSDP_PD_RX_TIMEOUT_MS) {
+		LOG_INF("PD session timeout!");
+		pd->state = OSDP_CP_STATE_OFFLINE;
 	}
 
 	ret = pd_receive_and_process_command(pd);
@@ -1094,6 +1106,7 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	pd->address = info->address;
 	pd->flags = info->flags;
 	pd->seq_number = -1;
+	pd->state = OSDP_CP_STATE_OFFLINE;
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 
 	logger_get_default(&pd->logger);

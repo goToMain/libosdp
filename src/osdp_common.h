@@ -304,12 +304,13 @@ struct osdp_pd {
 	/* PD Capability; Those received from app + implicit capabilities */
 	struct osdp_pd_cap cap[OSDP_PD_CAP_SENTINEL];
 
-	int state;             /* FSM state (CP mode only) */
+	int state;             /* FSM state */
 	int phy_state;         /* phy layer FSM state (CP mode only) */
 	uint32_t wait_ms;      /* wait time in MS to retry communication */
 	int64_t tstamp;        /* Last POLL command issued time in ticks */
 	int64_t sc_tstamp;     /* Last received secure reply time in ticks */
 	int64_t phy_tstamp;    /* Time in ticks since command was sent */
+	int64_t rx_tstamp;     /* Last time we rx a message in ticks */
 
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
 

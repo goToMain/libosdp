@@ -997,6 +997,9 @@ const char *osdp_get_source_info();
 
 /**
  * @brief Get a bit mask of number of PD that are online currently.
+ * When calling this function as a PD, only the first bit is valid.
+ * If the PD has not received a message from the CP recently,
+ * the status will be 0.
  *
  * @param ctx OSDP context
  * @param bitmask pointer to an array of bytes. must be as large as
@@ -1007,6 +1010,7 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
 /**
  * @brief Get a bit mask of number of PD that are online and have an active
  * secure channel currently.
+ * When calling this function as a PD, only the first bit is valid.
  *
  * @param ctx OSDP context
  * @param bitmask pointer to an array of bytes. must be as large as

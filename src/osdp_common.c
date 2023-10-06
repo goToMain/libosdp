@@ -265,8 +265,7 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 			*mask = 0;
 		}
 		pd = osdp_to_pd(ctx, i);
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
-		    pd->state == OSDP_CP_STATE_ONLINE) {
+		if (pd->state == OSDP_CP_STATE_ONLINE) {
 			*mask |= 1 << pos;
 		}
 	}

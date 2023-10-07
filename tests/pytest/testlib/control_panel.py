@@ -144,7 +144,7 @@ class ControlPanel():
                 break
 
     def online_wait_all(self, timeout=10):
-        count = 10
+        count = 0
         res = False
         while count < timeout * 2:
             time.sleep(0.5)
@@ -155,7 +155,7 @@ class ControlPanel():
         return res
 
     def online_wait(self, address, timeout=5):
-        count = 10
+        count = 0
         res = False
         while count < timeout * 2:
             time.sleep(0.5)

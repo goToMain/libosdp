@@ -20,10 +20,9 @@ class PeripheralDevice():
         self.ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
         self.ctx.set_loglevel(log_level)
         self.ctx.set_command_callback(self.command_handler)
-        self.event = threading.Event()
-        self.lock = threading.Lock()
-        args = (self.event, self.lock, self.ctx,)
-        self.thread = threading.Thread(name='pd', target=self.refresh, args=args)
+        self.event = None
+        self.lock = None
+        self.thread = None
 
     @staticmethod
     def refresh(event, lock, ctx):
@@ -59,19 +58,27 @@ class PeripheralDevice():
     def is_sc_active(self):
         return self.ctx.is_sc_active()
 
+    def is_online(self):
+        return self.ctx.is_online()
+
     def start(self):
         if self.thread:
-            self.thread.start()
-            return True
-        return False
+            raise RuntimeError("Thread already running!")
+        self.event = threading.Event()
+        self.lock = threading.Lock()
+        args = (self.event, self.lock, self.ctx,)
+        self.thread = threading.Thread(name='pd', target=self.refresh, args=args)
+        self.thread.start()
 
     def stop(self):
-        while self.thread and self.thread.is_alive():
+        if not self.thread:
+            raise RuntimeError("Thread not running!")
+        while self.thread.is_alive():
             self.event.set()
             self.thread.join(2)
             if not self.thread.is_alive():
-                return True
-        return False
+                self.thread = None
+                break
 
     def teardown(self):
         self.stop()

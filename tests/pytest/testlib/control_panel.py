@@ -30,10 +30,9 @@ class ControlPanel():
             self.ctx = osdp.ControlPanel(info_list)
         self.ctx.set_event_callback(self.event_handler)
         self.ctx.set_loglevel(log_level)
-        self.event = threading.Event()
-        self.lock = threading.Lock()
-        args = (self.event, self.lock, self.ctx,)
-        self.thread = threading.Thread(name='cp', target=self.refresh, args=args)
+        self.event = None
+        self.lock = None
+        self.thread = None
 
     @staticmethod
     def refresh(event, lock, ctx):
@@ -126,17 +125,23 @@ class ControlPanel():
         return ret
 
     def start(self):
-        if not self.thread:
-            return False
+        if self.thread:
+            raise RuntimeError("Thread already running!")
+        self.event = threading.Event()
+        self.lock = threading.Lock()
+        args=(self.event, self.lock, self.ctx)
+        self.thread = threading.Thread(name='cp', target=self.refresh, args=args)
         self.thread.start()
 
     def stop(self):
-        while self.thread and self.thread.is_alive():
+        if not self.thread:
+            raise RuntimeError("Thread not running!")
+        while self.thread.is_alive():
             self.event.set()
             self.thread.join(2)
             if not self.thread.is_alive():
-                return True
-        return False
+                self.thread = None
+                break
 
     def online_wait_all(self, timeout=10):
         count = 10

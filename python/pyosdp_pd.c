@@ -8,6 +8,22 @@
 
 #define TAG "pyosdp_pd"
 
+#define pyosdp_pd_is_online_doc                                                \
+	"Get PD status, (online/offline)\n"                                    \
+	"\n"                                                                   \
+	"@return PD online status (Bool)"
+static PyObject *pyosdp_pd_is_online(pyosdp_pd_t *self, PyObject *args)
+{
+	uint64_t mask;
+
+	osdp_get_status_mask(self->ctx, (uint8_t *)&mask);
+
+	if (mask & 1)
+		Py_RETURN_TRUE;
+	else
+		Py_RETURN_FALSE;
+}
+
 #define pyosdp_pd_is_sc_active_doc                                             \
 	"Get Secure Channel status, (active/inactive)\n"                       \
 	"\n"                                                                   \
@@ -351,6 +367,8 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	  METH_VARARGS, pyosdp_pd_notify_event_doc },
 	{ "is_sc_active", (PyCFunction)pyosdp_pd_is_sc_active,
 	  METH_NOARGS, pyosdp_pd_is_sc_active_doc },
+	{ "is_online", (PyCFunction)pyosdp_pd_is_online,
+	  METH_NOARGS, pyosdp_pd_is_online_doc },
 	{ "flush_events", (PyCFunction)pyosdp_pd_flush_events,
 	  METH_VARARGS, pyosdp_pd_flush_events_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */

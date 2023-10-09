@@ -84,17 +84,18 @@ static int test_fops_write(void *arg, const void *buf, int size, int offset)
 	return (int)ret;
 }
 
-static void test_fops_close(void *arg)
+static int test_fops_close(void *arg)
 {
 	struct test_data *t = arg;
 
 	if (t->fd == 0) {
 		printf(SUB_1 "%s_close: fd:%d\n",
 			t->is_cp ? "sender" : "receiver", t->fd);
-		return;
+		return -1;
 	}
 	close(t->fd);
 	t->fd = 0;
+	return 0;
 }
 
 static int test_create_file()

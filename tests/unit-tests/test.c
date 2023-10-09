@@ -99,12 +99,54 @@ int async_runner_stop(int work_id)
 	return 0;
 }
 
+volatile bool g_introduce_line_noise;
+unsigned long g_total_packets;
+unsigned long g_corrupted_packets;
+
+void enable_line_noise()
+{
+	g_introduce_line_noise = true;
+}
+
+void disable_line_noise()
+{
+	g_introduce_line_noise = false;
+}
+
+void print_line_noise_stats()
+{
+	printf(SUB_1 "LN-Stats: Total:%lu Corrupted:%lu",
+	       g_total_packets, g_corrupted_packets);
+}
+
+void corrupt_buffer(uint8_t *buf, int len)
+{
+	int p, n = 3;
+
+	while (n--) {
+		p = randint(len);
+		buf[p] = randint(255);
+	}
+}
+
+void maybe_corrupt_buffer(uint8_t *buf, int len)
+{
+	if (!g_introduce_line_noise)
+		return;
+	g_total_packets++;
+	if (randint(10*1000) < (5*1000))
+		return;
+	corrupt_buffer(buf, len);
+	g_corrupted_packets++;
+}
+
 int test_mock_cp_send(void *data, uint8_t *buf, int len)
 {
 	int i;
 	ARG_UNUSED(data);
 	assert(len < MOCK_BUF_LEN);
 
+	maybe_corrupt_buffer(buf, len);
 	for (i = 0; i < len; i++) {
 		if (CIRCBUF_PUSH(cp_to_pd_buf, buf + i))
 			break;
@@ -130,6 +172,7 @@ int test_mock_pd_send(void *data, uint8_t *buf, int len)
 	int i;
 	ARG_UNUSED(data);
 
+	maybe_corrupt_buffer(buf, len);
 	for (i = 0; i < len; i++) {
 		if (CIRCBUF_PUSH(pd_to_cp_buf, buf + i))
 			break;
@@ -251,7 +294,7 @@ int main(int argc, char *argv[])
 
 	run_cp_fsm_tests(&t);
 
-	run_file_tx_tests(&t);
+	run_file_tx_tests(&t, false);
 
 	rc = test_end(&t);
 

@@ -84,17 +84,18 @@ static int test_fops_write(void *arg, const void *buf, int size, int offset)
 	return (int)ret;
 }
 
-static void test_fops_close(void *arg)
+static int test_fops_close(void *arg)
 {
 	struct test_data *t = arg;
 
 	if (t->fd == 0) {
 		printf(SUB_1 "%s_close: fd:%d\n",
 			t->is_cp ? "sender" : "receiver", t->fd);
-		return;
+		return -1;
 	}
 	close(t->fd);
 	t->fd = 0;
+	return 0;
 }
 
 static int test_create_file()
@@ -159,7 +160,7 @@ err:
 	return false;
 }
 
-void run_file_tx_tests(struct test *t)
+void run_file_tx_tests(struct test *t, bool line_noise)
 {
 	bool result = false;
 	int rc, size, offset;
@@ -237,12 +238,16 @@ void run_file_tx_tests(struct test *t)
 	}
 
 	printf(SUB_1 "monitoring file tx progress\n");
+	if (line_noise)
+		enable_line_noise();
 
 	while (1) {
 		usleep(100 * 1000);
 		rc = osdp_get_file_tx_status(cp_ctx, 0, &size, &offset);
 		if (rc < 0) {
 			printf(SUB_1 "status query failed!\n");
+			if (line_noise)
+				print_line_noise_stats();
 			goto error;
 		}
 		if (offset == size)
@@ -253,6 +258,7 @@ void run_file_tx_tests(struct test *t)
 	printf(SUB_1 "file transfer test %s\n",
 	       result ? "succeeded" : "failed");
 error:
+	disable_line_noise();
 	async_runner_stop(cp_runner);
 	async_runner_stop(pd_runner);
 

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef LIBOSDP_OSDP_HPP_
+#define LIBOSDP_OSDP_HPP_
+
 #include <osdp.h>
 
 /**
@@ -149,3 +152,5 @@ public:
 };
 
 }; /* namespace OSDP */
+
+#endif // LIBOSDP_OSDP_HPP_

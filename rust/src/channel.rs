@@ -1,6 +1,7 @@
 use std::{
     io::{Read, Write},
-    ffi::c_void
+    ffi::c_void,
+    sync::Mutex
 };
 
 pub trait Channel: Read + Write {
@@ -8,13 +9,14 @@ pub trait Channel: Read + Write {
 }
 
 pub struct OsdpChannel<'a> {
-    stream: Box<dyn Channel + 'a>,
+    stream: Mutex<Box<dyn Channel + 'a>>,
 }
 
 unsafe extern "C" fn raw_read(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
     let channel = &mut *(data as *mut OsdpChannel);
     let mut read_buf = vec![0u8; len as usize];
-    match channel.stream.read(&mut read_buf) {
+    let mut stream = channel.stream.lock().unwrap();
+    match stream.read(&mut read_buf) {
         Ok(n) => {
             let src_ptr = read_buf.as_mut_ptr();
             std::ptr::copy_nonoverlapping(src_ptr, buf, len as usize);
@@ -28,7 +30,8 @@ unsafe extern "C" fn raw_write(data: *mut c_void, buf:*mut u8, len :i32) -> i32 
     let channel = &mut *(data as *mut OsdpChannel);
     let mut write_buf = vec![0u8; len as usize];
     std::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
-    match channel.stream.write(&write_buf) {
+    let mut stream = channel.stream.lock().unwrap();
+    match stream.write(&write_buf) {
         Ok(n) => {
             n as i32
         },
@@ -38,19 +41,21 @@ unsafe extern "C" fn raw_write(data: *mut c_void, buf:*mut u8, len :i32) -> i32 
 
 unsafe extern "C" fn raw_flush(data: *mut c_void) {
     let channel = &mut *(data as *mut OsdpChannel);
-    let _ = channel.stream.flush();
+    let mut stream = channel.stream.lock().unwrap();
+    let _ = stream.flush();
 }
 
 impl<'a> OsdpChannel<'a> {
     pub fn new<T: Channel + 'a>(stream: Box<dyn Channel + 'a>) -> OsdpChannel<'a> {
         Self {
-            stream,
+            stream: Mutex::new(stream),
         }
     }
 
     pub fn as_struct(&mut self) -> crate::osdp_channel {
+        let id = self.stream.lock().unwrap().get_id();
         crate::osdp_channel {
-            id: self.stream.get_id(),
+            id,
             data: self as *mut _ as *mut c_void,
             recv: Some(raw_read),
             send: Some(raw_write),

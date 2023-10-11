@@ -255,7 +255,12 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 	input_check(ctx);
 	int i, pos;
 	uint8_t *mask = bitmask;
-	struct osdp_pd *pd;
+	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
+
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+		*mask = osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS;
+		return;
+	}
 
 	*mask = 0;
 	for (i = 0; i < NUM_PD(ctx); i++) {
@@ -265,8 +270,7 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 			*mask = 0;
 		}
 		pd = osdp_to_pd(ctx, i);
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
-		    pd->state == OSDP_CP_STATE_ONLINE) {
+		if (pd->state == OSDP_CP_STATE_ONLINE) {
 			*mask |= 1 << pos;
 		}
 	}

@@ -33,6 +33,7 @@ sources = utils_sources + pyosdp_sources
 
 libosdp_include_dirs = ('@PROJECT_SOURCE_DIR@/utils/include'.split(';') +
                         '@PROJECT_SOURCE_DIR@/include'.split(';') +
+                        '@LIB_OSDP_INCLUDE_DIRS@'.split(';') +
                         '@LIB_OSDP_PRIVATE_INCLUDE_DIRS@'.split(';'))
 
 libosdp_includes = [ '-I' + path for path in libosdp_include_dirs ]

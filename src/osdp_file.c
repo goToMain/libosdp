@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,6 @@
 #include <stdlib.h>
 
 #include "osdp_file.h"
-
-LOGGER_DECLARE(osdp, "FOP");
 
 static inline void file_state_reset(struct osdp_file *f)
 {
@@ -116,7 +114,10 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops.close(f->ops.arg);
+		if (f->ops.close(f->ops.arg) < 0) {
+			LOG_ERR("Stat_Decode: Close failed!");
+			return -1;
+		}
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("Stat_Decode: File transfer complete");
 	}
@@ -224,7 +225,10 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
-		f->ops.close(f->ops.arg);
+		if (f->ops.close(f->ops.arg) < 0) {
+			LOG_ERR("Stat_Build: Close failed!");
+			return -1;
+		}
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("TX_Decode: File receive complete");
 	}

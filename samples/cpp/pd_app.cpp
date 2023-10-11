@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,7 +76,7 @@ int main()
 {
 	OSDP::PeripheralDevice pd;
 
-	pd.logger_init(OSDP_LOG_DEBUG, NULL);
+	pd.logger_init("osdp::pd", OSDP_LOG_DEBUG, NULL);
 
 	pd.setup(&info_pd);
 

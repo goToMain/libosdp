@@ -7,4 +7,4 @@ product specific customizations are needed.
 
 Read more about [osdpctl here][1].
 
-[1]: https://libosdp.gotomain.io/osdpctl/introduction.html
+[1]: https://libosdp.sidcha.dev/osdpctl/introduction.html

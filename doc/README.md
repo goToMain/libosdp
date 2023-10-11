@@ -3,7 +3,7 @@
 These files here are source files for sphinx documentation. Individual files and
 links (rendered by github) will not work as you might expect.
 
-Please visit [https://libosdp.gotomain.io/][1] for html documentation.
+Please visit [https://libosdp.sidcha.dev/][1] for html documentation.
 
 ## Build the html doc locally
 
@@ -19,4 +19,4 @@ mkdir build && cd build && cmake ..
 make html_docs
 ```
 
-[1]: https://libosdp.gotomain.io/
+[1]: https://libosdp.sidcha.dev/

@@ -1,8 +1,11 @@
 /*
- * Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#ifndef LIBOSDP_OSDP_HPP_
+#define LIBOSDP_OSDP_HPP_
 
 #include <osdp.h>
 
@@ -16,9 +19,9 @@ class Common {
 public:
 	Common() {}
 
-	void logger_init(int log_level, osdp_log_puts_fn_t puts_fn)
+	void logger_init(const char *name, int log_level, osdp_log_puts_fn_t puts_fn)
 	{
-		osdp_logger_init(log_level, puts_fn);
+		osdp_logger_init(name, log_level, puts_fn);
 	}
 
 	const char *get_version()
@@ -64,11 +67,14 @@ class ControlPanel : public Common {
 public:
 	ControlPanel()
 	{
+		_ctx = nullptr;
 	}
 
 	~ControlPanel()
 	{
-		osdp_cp_teardown(_ctx);
+		if (_ctx) {
+			osdp_cp_teardown(_ctx);
+		}
 	}
 
 	bool setup(int num_pd, osdp_pd_info_t *info)
@@ -108,11 +114,14 @@ class PeripheralDevice : public Common {
 public:
 	PeripheralDevice()
 	{
+		_ctx = nullptr;
 	}
 
 	~PeripheralDevice()
 	{
-		osdp_pd_teardown(_ctx);
+		if (_ctx) {
+			osdp_pd_teardown(_ctx);
+		}
 	}
 
 	bool setup(osdp_pd_info_t *info)
@@ -143,3 +152,5 @@ public:
 };
 
 }; /* namespace OSDP */
+
+#endif // LIBOSDP_OSDP_HPP_

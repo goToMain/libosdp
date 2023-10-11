@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -29,7 +29,6 @@ set(CPACK_SOURCE_IGNORE_FILES
 	/.github/
 	/build*
 	/_config.yml
-	/.travis.yml
 )
 
 # Binaries

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -317,7 +317,7 @@ int cmd_handler_start(int argc, char *argv[], void *data)
 		info->scbk = NULL;
 	}
 
-	osdp_logger_init(c->log_level, NULL);
+	osdp_logger_init("osdp::cp", c->log_level, NULL);
 
 	if (c->mode == CONFIG_MODE_CP) {
 		c->cp_ctx = osdp_cp_setup2(c->num_pd, info_arr);

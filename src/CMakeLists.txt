@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -45,6 +45,7 @@ else()
 endif()
 
 # Generate osdp_config.h in build dir.
+set(REPO_ROOT ${CMAKE_SOURCE_DIR})
 configure_file(osdp_config.h.in osdp_config.h @ONLY)
 
 list(APPEND LIB_OSDP_SOURCES

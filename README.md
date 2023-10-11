@@ -147,7 +147,7 @@ To add new tests for the feature you are working one, see the other tests in
 
 This sections is for those who want to build the HTML documentation for this
 project locally. The latest version of the doc can always be found at
-[libosdp.gotomain.io][6].
+[libosdp.sidcha.dev][6].
 
 Install the dependencies (one time) with,
 
@@ -192,19 +192,19 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [3]: https://github.com/goTomain/libosdp/workflows/Build%20CI/badge.svg
 [4]: https://github.com/goTomain/libosdp/actions?query=workflow%3A%22Build+CI%22
 [5]: https://docs.pytest.org/en/latest/
-[6]: https://libosdp.gotomain.io/
+[6]: https://libosdp.sidcha.dev/
 [7]: https://github.com/ARMmbed/mbedtls
 [8]: https://www.openssl.org/
 [9]: https://www.doxygen.nl/index.html
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
-[21]: https://libosdp.gotomain.io/protocol/
-[22]: https://libosdp.gotomain.io/protocol/commands-and-replies.html
-[23]: https://libosdp.gotomain.io/libosdp/build-and-install.html
+[21]: https://libosdp.sidcha.dev/protocol/
+[22]: https://libosdp.sidcha.dev/protocol/commands-and-replies.html
+[23]: https://libosdp.sidcha.dev/libosdp/build-and-install.html
 [24]: https://github.com/goTomain/libosdp
 [25]: https://github.com/goTomain/c-utils
-[26]: https://libosdp.gotomain.io/api/
-[27]: https://libosdp.gotomain.io/protocol/faq.html
+[26]: https://libosdp.sidcha.dev/api/
+[27]: https://libosdp.sidcha.dev/protocol/faq.html
 [28]: https://github.com/goToMain/libosdp/issues/new/choose
 [29]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
 [30]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py

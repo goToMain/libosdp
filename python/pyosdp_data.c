@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,8 +25,6 @@ static int pyosdp_make_struct_cmd_output(struct osdp_cmd *p, PyObject *dict)
 {
 	struct osdp_cmd_output *cmd = &p->output;
 	int output_no, control_code, timer_count;
-
-	p->id = OSDP_CMD_OUTPUT;
 
 	if (pyosdp_dict_get_int(dict, "output_no", &output_no))
 		return -1;
@@ -80,8 +78,6 @@ static int pyosdp_make_struct_cmd_led(struct osdp_cmd *p, PyObject *dict)
 	bool is_temporary = false;
 	struct osdp_cmd_led *cmd = &p->led;
 	struct osdp_cmd_led_params *params = &cmd->permanent;
-
-	p->id = OSDP_CMD_LED;
 
 	if (pyosdp_dict_get_int(dict, "led_number", &led_number))
 		return -1;
@@ -144,8 +140,6 @@ static int pyosdp_make_struct_cmd_buzzer(struct osdp_cmd *p, PyObject *dict)
 	struct osdp_cmd_buzzer *cmd = &p->buzzer;
 	int reader, on_count, off_count, rep_count, control_code;
 
-	p->id = OSDP_CMD_BUZZER;
-
 	if (pyosdp_dict_get_int(dict, "reader", &reader))
 		return -1;
 
@@ -201,8 +195,6 @@ static int pyosdp_make_struct_cmd_text(struct osdp_cmd *p, PyObject *dict)
 	struct osdp_cmd_text *cmd = &p->text;
 	int length, reader, control_code, offset_row, offset_col, temp_time;
 
-	p->id = OSDP_CMD_TEXT;
-
 	if (pyosdp_dict_get_str(dict, "data", &data))
 		goto exit;
 
@@ -255,8 +247,6 @@ static int pyosdp_make_struct_cmd_keyset(struct osdp_cmd *p, PyObject *dict)
 	struct osdp_cmd_keyset *cmd = &p->keyset;
 	uint8_t *buf;
 
-	p->id = OSDP_CMD_KEYSET;
-
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;
 
@@ -284,8 +274,6 @@ static int pyosdp_make_struct_cmd_comset(struct osdp_cmd *p, PyObject *dict)
 {
 	struct osdp_cmd_comset *cmd = &p->comset;
 	int address, baud_rate;
-
-	p->id = OSDP_CMD_COMSET;
 
 	if (pyosdp_dict_get_int(dict, "address", &address))
 		return -1;
@@ -315,8 +303,6 @@ static int pyosdp_make_struct_cmd_mfg(struct osdp_cmd *p, PyObject *dict)
 	struct osdp_cmd_mfg *cmd = &p->mfg;
 	uint8_t *data_bytes;
 	int vendor_code, mfg_command;
-
-	p->id = OSDP_CMD_MFG;
 
 	if (pyosdp_dict_get_int(dict, "vendor_code", &vendor_code))
 		return -1;
@@ -348,8 +334,6 @@ static int pyosdp_make_struct_cmd_file_tx(struct osdp_cmd *p, PyObject *dict)
 {
 	int id, flags;
 	struct osdp_cmd_file_tx *cmd = &p->file_tx;
-
-	p->id = OSDP_CMD_FILE_TX;
 
 	if (pyosdp_dict_get_int(dict, "id", &id))
 		return -1;
@@ -641,8 +625,11 @@ int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict)
 		return -1;
 	if (cmd_id < OSDP_CMD_OUTPUT || cmd_id >= OSDP_CMD_SENTINEL)
 		return -1;
+	if (command_translator[cmd_id].dict_to_struct(cmd, dict))
+		return -1;
 
-	return command_translator[cmd_id].dict_to_struct(cmd, dict);
+	cmd->id = cmd_id;
+	return 0;
 }
 
 int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd)
@@ -696,3 +683,4 @@ int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event)
 	*dict = obj;
 	return 0;
 }
+

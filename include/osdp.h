@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -967,6 +967,7 @@ typedef int (*osdp_log_puts_fn_t)(const char *msg);
 /**
  * @brief Configure OSDP Logging.
  *
+ * @param name A soft name for this module; will appear in all the log lines.
  * @param log_level OSDP log levels of type `enum osdp_log_level_e`. Default is
  *                  LOG_INFO.
  * @param puts_fn A puts() like function that will be invoked to write the log
@@ -975,7 +976,8 @@ typedef int (*osdp_log_puts_fn_t)(const char *msg);
  *                definition to see the behavioral expectations. When this is
  *                set to NULL, LibOSDP will log to stderr.
  */
-void osdp_logger_init(int log_level, osdp_log_puts_fn_t puts_fn);
+void osdp_logger_init(const char *name, int log_level,
+		      osdp_log_puts_fn_t puts_fn);
 
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.
@@ -1092,7 +1094,7 @@ struct osdp_file_ops {
 	 *
 	 * @retval 0 on success. -1 on errors.
 	 */
-	void (*close)(void *arg);
+	int (*close)(void *arg);
 };
 
 /**

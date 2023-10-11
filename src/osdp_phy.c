@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "osdp_common.h"
-
-LOGGER_DECLARE(osdp, "PHY");
 
 #define OSDP_PKT_MARK                  0xFF
 #define OSDP_PKT_SOM                   0x53

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,7 +152,7 @@ int test_mock_pd_receive(void *data, uint8_t *buf, int len)
 
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 {
-	osdp_logger_init(t->loglevel, NULL);
+	osdp_logger_init("osdp", t->loglevel, NULL);
 
 	uint8_t scbk[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,

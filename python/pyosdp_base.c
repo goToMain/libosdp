@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,7 +214,7 @@ static PyObject *pyosdp_set_loglevel(pyosdp_base_t *self, PyObject *args)
 		return NULL;
 	}
 
-	osdp_logger_init(log_level, NULL);
+	osdp_logger_init("pyosdp", log_level, NULL);
 
 	Py_RETURN_NONE;
 }
@@ -263,7 +263,7 @@ static int pyosdp_base_tp_init(pyosdp_base_t *self, PyObject *args, PyObject *kw
 
 	channel_manager_init(&self->channel_manager);
 
-	osdp_logger_init(OSDP_LOG_INFO, NULL);
+	osdp_logger_init("pyosdp", OSDP_LOG_INFO, NULL);
 
 	return 0;
 }

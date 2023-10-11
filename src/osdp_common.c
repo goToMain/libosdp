@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,12 +14,6 @@
 #include <sys/time.h>
 
 #include "osdp_common.h"
-
-#ifdef CONFIG_DISABLE_PRETTY_LOGGING
-LOGGER_DEFINE(osdp, LOG_INFO, LOGGER_FLAG_NO_COLORS);
-#else
-LOGGER_DEFINE(osdp, LOG_INFO, LOGGER_FLAG_NONE);
-#endif
 
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 {
@@ -126,7 +120,7 @@ const char *osdp_reply_name(int reply_id)
 		return "INVALID";
 	}
 	name = names[reply_id - REPLY_ACK];
-	if (name[0] == '\0') {
+	if (!name) {
 		return "UNKNOWN";
 	}
 	return name;
@@ -198,18 +192,21 @@ int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-void osdp_logger_init(int log_level, osdp_log_puts_fn_t log_fn)
+void osdp_logger_init(const char *name, int log_level,
+		      osdp_log_puts_fn_t log_fn)
 {
-	logger_t *ctx = get_log_ctx(osdp);
+	logger_t ctx;
+	FILE *file = NULL;
+	int flags = LOGGER_FLAG_NONE;
 
-	logger_set_log_level(ctx, log_level);
-	if (log_fn) {
-		logger_set_put_fn(ctx, log_fn);
-		logger_set_file(ctx, NULL);
-	} else {
-		logger_set_put_fn(ctx, NULL);
-		logger_set_file(ctx, stderr);
-	}
+#ifdef CONFIG_DISABLE_PRETTY_LOGGING
+	flags |= LOGGER_FLAG_NO_COLORS;
+#endif
+	if (!log_fn)
+		file = stderr;
+
+	logger_init(&ctx, log_level, name, REPO_ROOT, log_fn, file, flags);
+	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
 OSDP_EXPORT
@@ -258,7 +255,12 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 	input_check(ctx);
 	int i, pos;
 	uint8_t *mask = bitmask;
-	struct osdp_pd *pd;
+	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
+
+	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
+		*mask = osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS;
+		return;
+	}
 
 	*mask = 0;
 	for (i = 0; i < NUM_PD(ctx); i++) {
@@ -268,8 +270,7 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
 			*mask = 0;
 		}
 		pd = osdp_to_pd(ctx, i);
-		if (ISSET_FLAG(pd, PD_FLAG_PD_MODE) ||
-		    pd->state == OSDP_CP_STATE_ONLINE) {
+		if (pd->state == OSDP_CP_STATE_ONLINE) {
 			*mask |= 1 << pos;
 		}
 	}

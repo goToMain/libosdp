@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -76,11 +76,10 @@ $(O)/pd_app.elf: $(O)/libosdp.a
 
 .PHONY: check
 check: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I$(O)
-check: clean $(OBJ_TEST)
+check: $(OBJ_TEST)
 	@echo "LINK $@"
-	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o /tmp/check
-	$(Q)/tmp/check
-	$(Q)rm -rf /tmp/check && make clean
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $(O)/unit-test
+	$(Q)$(O)/unit-test
 
 ## Clean
 

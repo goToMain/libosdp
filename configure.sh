@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -25,12 +25,15 @@ usage() {
 	  --lib-only                   Only build the library
 	  --cross-compile PREFIX       Use to pass a compiler prefix
 	  --build-dir                  Build output directory (default: ./build)
+	  -d, --debug                  Enable debug builds
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
 	---
 }
 
 BUILD_DIR="build"
+SCRIPT_DIR="$(dirname $(readlink -f "$0"))"
+
 while [ $# -gt 0 ]; do
 	case $1 in
 	--packet-trace)        PACKET_TRACE=1;;
@@ -44,6 +47,7 @@ while [ $# -gt 0 ]; do
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
+	-d|--debug)            DEBUG=1;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
 	*) echo -e "Unknown option $1\n"; usage; exit 1;;
@@ -92,6 +96,10 @@ fi
 
 if [[ ! -z "${STATIC_PD}" ]]; then
 	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
+fi
+
+if [[ ! -z "${DEBUG}" ]]; then
+	CCFLAGS+=" -g"
 fi
 
 ## Repo meta data
@@ -165,6 +173,7 @@ sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" ${CONFIG_OUT}
 sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" ${CONFIG_OUT}
 sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" ${CONFIG_OUT}
 sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" ${CONFIG_OUT}
+sed -i "" -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" ${CONFIG_OUT}
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"

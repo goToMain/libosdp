@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 
 use crate::{
-    common::{PdInfo, PdId},
+    common::{PdInfo, PdId, PdCapability, OsdpFlag},
     commands::OsdpCommand,
     events::OsdpEvent,
 };
@@ -82,8 +82,27 @@ impl ControlPanel {
         Ok(pd_id.into())
     }
 
-    // osdp_cp_get_capability
-    // osdp_cp_modify_flag
+    pub fn get_capability(&mut self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
+        let mut cap = cap.as_struct();
+        let rc = unsafe {
+            crate::osdp_cp_get_capability(self.ctx, pd, &mut cap)
+        };
+        if rc < 0 {
+            anyhow::bail!("Failed to read capability")
+        }
+        Ok(cap.into())
+    }
+
+    pub fn set_flag(&mut self, pd: i32, flags: OsdpFlag, value: bool) {
+        let rc = unsafe {
+            crate::osdp_cp_modify_flag(self.ctx, pd, flags.bits(), value)
+        };
+        if rc < 0 {
+            // OsdpFlag should guarantee that we never fail here. If we did,
+            // it's probably best to panic here.
+            panic!("osdp_cp_modify_flag failed!")
+        }
+    }
 }
 
 impl Drop for ControlPanel {

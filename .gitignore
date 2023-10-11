@@ -70,3 +70,7 @@ config.make
 __pycache__/
 .cache/
 *.pyc
+
+## Rust
+/Cargo.lock
+/target/

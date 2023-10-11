@@ -1,9 +1,29 @@
+use std::ffi::c_void;
+
 use crate::{
     common::{PdInfo, PdId},
     commands::OsdpCommand,
+    events::OsdpEvent,
 };
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
+type EventCallback = unsafe extern "C" fn (data: *mut c_void, pd: i32, event: *mut crate::osdp_event) -> i32;
+
+unsafe extern "C" fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut crate::osdp_event) -> i32
+where
+    F: Fn(i32, OsdpEvent) -> i32,
+{
+    let event: OsdpEvent  = (*event).into();
+    let callback = &mut *(data as *mut F);
+    callback(pd, event)
+}
+
+pub fn get_trampoline<F>(_closure: &F) -> EventCallback
+where
+    F: Fn(i32, OsdpEvent) -> i32,
+{
+    trampoline::<F>
+}
 
 pub struct ControlPanel {
     ctx: *mut std::ffi::c_void,
@@ -29,8 +49,8 @@ impl ControlPanel {
 
     pub fn send_command(&mut self, pd: i32, cmd: &OsdpCommand) -> Result<()> {
         let mut cmd = cmd.as_struct();
-        let rc = unsafe { 
-            crate::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd)) 
+        let rc = unsafe {
+            crate::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd))
         };
         if rc < 0 {
             anyhow::bail!("Failed to send command");
@@ -38,8 +58,16 @@ impl ControlPanel {
         Ok(())
     }
 
-    // pub fn set_event_callback(&mut self, callback: fn(OsdpEvent) -> i32) {
-    // }
+    pub fn set_event_callback(&mut self, mut closure: fn(i32, OsdpEvent) -> i32) {
+        let callback = get_trampoline(&closure);
+        unsafe {
+            crate::osdp_cp_set_event_callback(
+                self.ctx,
+                Some(callback),
+                &mut closure as *mut _ as *mut c_void
+            );
+        }
+    }
 
     pub fn get_pd_id(&mut self, pd: i32) -> Result<PdId> {
         let mut pd_id: crate::osdp_pd_id = unsafe {

@@ -189,19 +189,19 @@ bitflags::bitflags! {
     }
 }
 
-pub struct PdInfo<'a> {
+pub struct PdInfo {
     pub name: CString,
     pub address: i32,
     pub baud_rate: i32,
     pub flags: OsdpFlag,
     pub id: PdId,
     pub cap: Vec<crate::osdp_pd_cap>,
-    pub channel: OsdpChannel<'a>,
+    pub channel: OsdpChannel,
     pub scbk: [u8; 16],
 }
 
-impl<'a> PdInfo<'a> {
-    pub fn new(name: &str, address: i32, baud_rate: i32, flags: OsdpFlag, id: PdId, cap: Vec<PdCapability>, channel: OsdpChannel<'a>, scbk: [u8; 16]) -> Self {
+impl<'a> PdInfo {
+    pub fn new(name: &str, address: i32, baud_rate: i32, flags: OsdpFlag, id: PdId, cap: Vec<PdCapability>, channel: OsdpChannel, scbk: [u8; 16]) -> Self {
         Self {
             name: CString::new(name).unwrap(),
             address,

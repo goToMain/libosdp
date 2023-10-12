@@ -8,8 +8,8 @@ pub trait Channel: Read + Write {
     fn get_id(&self) -> i32;
 }
 
-pub struct OsdpChannel<'a> {
-    stream: Mutex<Box<dyn Channel + 'a>>,
+pub struct OsdpChannel {
+    stream: Mutex<Box<dyn Channel>>,
 }
 
 unsafe extern "C" fn raw_read(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
@@ -45,8 +45,8 @@ unsafe extern "C" fn raw_flush(data: *mut c_void) {
     let _ = stream.flush();
 }
 
-impl<'a> OsdpChannel<'a> {
-    pub fn new<T: Channel + 'a>(stream: Box<dyn Channel + 'a>) -> OsdpChannel<'a> {
+impl OsdpChannel {
+    pub fn new<T: Channel>(stream: Box<dyn Channel>) -> OsdpChannel {
         Self {
             stream: Mutex::new(stream),
         }

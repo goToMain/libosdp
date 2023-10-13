@@ -1,11 +1,13 @@
 use std::{
     os::unix::net::{UnixStream, UnixListener},
     path::PathBuf,
-    io::{Read, Write}
+    io::{Read, Write},
+    time::Duration,
+    thread
 };
 use osdp::{
     pd::PeripheralDevice,
-    common::{PdInfo, OsdpFlag, PdId},
+    common::{PdInfo, OsdpFlag, PdId, PdCapability, PdCapEntry},
     channel::{OsdpChannel, Channel},
 };
 
@@ -54,7 +56,8 @@ fn main() -> anyhow::Result<(), anyhow::Error> {
     let stream = UnixChannel::new("/tmp/osdp-conn-1".into())?;
     let channel: OsdpChannel = OsdpChannel::new::<UnixChannel>(Box::new(stream));
     let mut pd_info =  PdInfo::new(
-        "PD 101", 101,
+        "PD 101", 
+        101,
         115200,
         OsdpFlag::EnforceSecure,
         PdId {
@@ -64,11 +67,13 @@ fn main() -> anyhow::Result<(), anyhow::Error> {
             serial_number: 0x04,
             firmware_version: 0x05,
         },
-        vec![],
+        vec![
+            PdCapability::CommunicationSecurity(PdCapEntry { compliance: 1, num_items: 1 }),
+        ],
         channel,
         [
-            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         ]
     );
     let mut pd = PeripheralDevice::new(&mut pd_info)?;
@@ -78,5 +83,6 @@ fn main() -> anyhow::Result<(), anyhow::Error> {
     });
     loop {
         pd.refresh();
+        thread::sleep(Duration::from_millis(50));
     }
 }

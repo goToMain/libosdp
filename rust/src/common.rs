@@ -35,8 +35,8 @@ impl PdId {
 }
 
 pub struct PdCapEntry {
-    compliance: u8,
-    num_items: u8,
+    pub compliance: u8,
+    pub num_items: u8,
 }
 
 pub enum PdCapability {

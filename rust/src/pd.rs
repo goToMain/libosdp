@@ -1,11 +1,11 @@
-use std::ffi::c_void;
+use std::ffi::{c_void, CStr};
 use crate::{
     common::{PdInfo, PdCapability},
     events::OsdpEvent,
     commands::OsdpCommand, file::OsdpFile
 };
-type Result<T> = anyhow::Result<T, anyhow::Error>;
 
+type Result<T> = anyhow::Result<T, anyhow::Error>;
 type CommandCallback = unsafe extern "C" fn (data: *mut c_void, event: *mut crate::osdp_cmd) -> i32;
 
 unsafe extern "C"
@@ -102,6 +102,42 @@ impl PeripheralDevice {
             anyhow::bail!("No file transfer in progress")
         }
         Ok((size, offset))
+    }
+
+    pub fn get_version(&mut self) -> String {
+        let s = unsafe {
+            CStr::from_ptr(crate::osdp_get_version())
+        };
+        s.to_str().unwrap().to_owned()
+    }
+
+    pub fn get_source_info(&mut self) -> String {
+        let s = unsafe {
+            CStr::from_ptr(crate::osdp_get_source_info())
+        };
+        s.to_str().unwrap().to_owned()
+    }
+
+    pub fn is_online(&mut self) -> bool {
+        let mut buf: u8 = 0;
+        unsafe {
+            crate::osdp_get_status_mask(
+                self.ctx,
+                &mut buf as *mut u8
+            )
+        };
+        buf != 0
+    }
+
+    pub fn is_sc_active(&mut self) -> bool {
+        let mut buf: u8 = 0;
+        unsafe {
+            crate::osdp_get_sc_status_mask(
+                self.ctx,
+                &mut buf as *mut u8
+            )
+        };
+        buf != 0
     }
 }
 

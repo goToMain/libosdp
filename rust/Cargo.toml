@@ -2,7 +2,7 @@
 edition = "2021"
 name = "osdp"
 version = "0.1.0"
-authors = ["Siddharth Chandrasekran <sidcha.dev@gmail.com>"]
+authors = ["Siddharth Chandrasekaran <sidcha.dev@gmail.com>"]
 description = "Library implementation of IEC 60839-11-5 OSDP (Open Supervised Device Protocol)"
 documentation = "https://libosdp.sidcha.dev/rust"
 homepage = "https://libosdp.sidcha.dev/"

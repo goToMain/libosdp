@@ -1,5 +1,4 @@
-use std::ffi::c_void;
-
+use std::ffi::{c_void, CStr};
 use crate::{
     common::{PdInfo, PdId, PdCapability, OsdpFlag},
     commands::OsdpCommand,
@@ -33,6 +32,9 @@ pub struct ControlPanel {
 
 impl ControlPanel {
     pub fn new(pd_info: &mut Vec<PdInfo>) -> Result<Self> {
+        if pd_info.len() > 126 {
+            anyhow::bail!("Max PD count exceeded")
+        }
         let mut info: Vec<crate::osdp_pd_info_t> = pd_info.iter_mut().map(|i| -> crate::osdp_pd_info_t { i.as_struct() }).collect();
         let ctx = unsafe {
             crate::osdp_cp_setup2(pd_info.len() as i32, info.as_mut_ptr())
@@ -132,6 +134,46 @@ impl ControlPanel {
             anyhow::bail!("No file transfer in progress")
         }
         Ok((size, offset))
+    }
+
+    pub fn get_version(&mut self) -> String {
+        let s = unsafe {
+            CStr::from_ptr(crate::osdp_get_version())
+        };
+        s.to_str().unwrap().to_owned()
+    }
+
+    pub fn get_source_info(&mut self) -> String {
+        let s = unsafe {
+            CStr::from_ptr(crate::osdp_get_source_info())
+        };
+        s.to_str().unwrap().to_owned()
+    }
+
+    pub fn is_online(&mut self, pd: i32) -> bool {
+        let mut buf: [u8; 16] = [0; 16];
+        unsafe {
+            crate::osdp_get_status_mask(
+                self.ctx,
+                &mut buf as *mut u8
+            )
+        };
+        let pos = pd / 8;
+        let idx = pd % 8;
+        buf[pos as usize] & (1 << idx) != 0
+    }
+
+    pub fn is_sc_active(&mut self, pd: i32) -> bool {
+        let mut buf: [u8; 16] = [0; 16];
+        unsafe {
+            crate::osdp_get_sc_status_mask(
+                self.ctx,
+                &mut buf as *mut u8
+            )
+        };
+        let pos = pd / 8;
+        let idx = pd % 8;
+        buf[pos as usize] & (1 << idx) != 0
     }
 }
 

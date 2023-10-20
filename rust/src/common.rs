@@ -1,5 +1,4 @@
 use std::ffi::CString;
-
 use crate::channel::OsdpChannel;
 
 pub struct PdId {

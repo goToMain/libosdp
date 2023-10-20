@@ -9,3 +9,4 @@ pub mod pd;
 pub mod commands;
 pub mod events;
 pub mod channel;
+pub mod file;

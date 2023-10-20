@@ -12,7 +12,8 @@ pub struct OsdpChannel {
     stream: Mutex<Box<dyn Channel>>,
 }
 
-unsafe extern "C" fn raw_read(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
+unsafe extern "C"
+fn raw_read(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
     let channel = &mut *(data as *mut OsdpChannel);
     let mut read_buf = vec![0u8; len as usize];
     let mut stream = channel.stream.lock().unwrap();
@@ -26,7 +27,8 @@ unsafe extern "C" fn raw_read(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
     }
 }
 
-unsafe extern "C" fn raw_write(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
+unsafe extern "C"
+fn raw_write(data: *mut c_void, buf:*mut u8, len :i32) -> i32 {
     let channel = &mut *(data as *mut OsdpChannel);
     let mut write_buf = vec![0u8; len as usize];
     std::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
@@ -39,7 +41,8 @@ unsafe extern "C" fn raw_write(data: *mut c_void, buf:*mut u8, len :i32) -> i32 
     }
 }
 
-unsafe extern "C" fn raw_flush(data: *mut c_void) {
+unsafe extern "C"
+fn raw_flush(data: *mut c_void) {
     let channel = &mut *(data as *mut OsdpChannel);
     let mut stream = channel.stream.lock().unwrap();
     let _ = stream.flush();

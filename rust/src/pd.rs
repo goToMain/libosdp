@@ -2,13 +2,14 @@ use std::ffi::c_void;
 use crate::{
     common::{PdInfo, PdCapability},
     events::OsdpEvent,
-    commands::OsdpCommand
+    commands::OsdpCommand, file::OsdpFile
 };
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
 type CommandCallback = unsafe extern "C" fn (data: *mut c_void, event: *mut crate::osdp_cmd) -> i32;
 
-unsafe extern "C" fn trampoline<F>(data: *mut c_void, cmd: *mut crate::osdp_cmd) -> i32
+unsafe extern "C"
+fn trampoline<F>(data: *mut c_void, cmd: *mut crate::osdp_cmd) -> i32
 where
     F: Fn(OsdpCommand) -> i32,
 {
@@ -73,6 +74,34 @@ impl PeripheralDevice {
                 &mut closure as *mut _ as *mut c_void
             )
         }
+    }
+
+    pub fn register_file(&self, fm: &mut OsdpFile) -> Result<()> {
+        let mut ops = fm.get_ops_struct();
+        let rc = unsafe {
+            crate::osdp_file_register_ops(self.ctx, 0, &mut ops as *mut crate::osdp_file_ops)
+        };
+        if rc < 0 {
+            anyhow::bail!("Failed to register file")
+        }
+        Ok(())
+    }
+
+    pub fn get_file_transfer_status(&mut self) -> Result<(i32, i32)> {
+        let mut size: i32 = 0;
+        let mut offset: i32 = 0;
+        let rc = unsafe {
+            crate::osdp_get_file_tx_status(
+                self.ctx,
+                0,
+                &mut size as *mut i32,
+                &mut offset as *mut i32
+            )
+        };
+        if rc < 0 {
+            anyhow::bail!("No file transfer in progress")
+        }
+        Ok((size, offset))
     }
 }
 

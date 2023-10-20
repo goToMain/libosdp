@@ -4,12 +4,14 @@ use crate::{
     common::{PdInfo, PdId, PdCapability, OsdpFlag},
     commands::OsdpCommand,
     events::OsdpEvent,
+    file::OsdpFile,
 };
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 type EventCallback = unsafe extern "C" fn (data: *mut c_void, pd: i32, event: *mut crate::osdp_event) -> i32;
 
-unsafe extern "C" fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut crate::osdp_event) -> i32
+unsafe extern "C"
+fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut crate::osdp_event) -> i32
 where
     F: Fn(i32, OsdpEvent) -> i32,
 {
@@ -102,6 +104,34 @@ impl ControlPanel {
             // it's probably best to panic here.
             panic!("osdp_cp_modify_flag failed!")
         }
+    }
+
+    pub fn register_file(&mut self, pd: i32, fm: &mut OsdpFile) -> Result<()> {
+        let mut ops = fm.get_ops_struct();
+        let rc = unsafe {
+            crate::osdp_file_register_ops(self.ctx, pd, &mut ops as *mut crate::osdp_file_ops)
+        };
+        if rc < 0 {
+            anyhow::bail!("Failed to register file")
+        }
+        Ok(())
+    }
+
+    pub fn get_file_transfer_status(&mut self, pd: i32) -> Result<(i32, i32)> {
+        let mut size: i32 = 0;
+        let mut offset: i32 = 0;
+        let rc = unsafe {
+            crate::osdp_get_file_tx_status(
+                self.ctx,
+                pd,
+                &mut size as *mut i32,
+                &mut offset as *mut i32
+            )
+        };
+        if rc < 0 {
+            anyhow::bail!("No file transfer in progress")
+        }
+        Ok((size, offset))
     }
 }
 

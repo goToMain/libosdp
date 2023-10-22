@@ -21,7 +21,7 @@ public:
 
 	void logger_init(const char *name, int log_level, osdp_log_puts_fn_t puts_fn)
 	{
-		osdp_logger_init(name, log_level, puts_fn);
+		osdp_logger_init3(name, log_level, puts_fn);
 	}
 
 	const char *get_version()

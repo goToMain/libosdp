@@ -147,7 +147,7 @@ int test_cp_phy_setup(struct test *t)
 		.channel.flush = NULL,
 		.scbk = NULL,
 	};
-	osdp_logger_init("osdp::cp", t->loglevel, NULL);
+	osdp_logger_init3("osdp::cp", t->loglevel, NULL);
 	struct osdp *ctx = (struct osdp *)osdp_cp_setup2(1, &info);
 	if (ctx == NULL) {
 		printf(SUB_1 "init failed!\n");

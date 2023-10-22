@@ -4,7 +4,7 @@ Miscellaneous
 Debugging and Diagnostics
 -------------------------
 
-.. doxygenfunction:: osdp_logger_init
+.. doxygenfunction:: osdp_logger_init3
 
 .. doxygenfunction:: osdp_get_version
 

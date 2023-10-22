@@ -27,12 +27,12 @@ Log Level
 LibOSDP supports different logging levels with ``LOG_DEBUG`` being the most
 verbose mode. When asking for help, please set the log level to ``LOG_DEBUG``.
 
-This can be done by calling osdp_logger_init() BEFORE calling osdp_cp/pd_setup()
+This can be done by calling osdp_logger_init3() BEFORE calling osdp_cp/pd_setup()
 as,
 
 .. code:: c
 
-    osdp_logger_init("osdp::cp", LOG_DEBUG, uart_puts);
+    osdp_logger_init3("osdp::cp", LOG_DEBUG, uart_puts);
 
 Packet Trace Builds
 -------------------

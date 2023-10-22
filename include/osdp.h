@@ -976,8 +976,23 @@ typedef int (*osdp_log_puts_fn_t)(const char *msg);
  *                definition to see the behavioral expectations. When this is
  *                set to NULL, LibOSDP will log to stderr.
  */
-void osdp_logger_init(const char *name, int log_level,
+void osdp_logger_init3(const char *name, int log_level,
 		      osdp_log_puts_fn_t puts_fn);
+
+/**
+ * @brief Configure OSDP Logging (deprecated). Provided for backward
+ *        compatiblity. Use osdp_logger_init3 instead.
+ *
+ * @param log_level OSDP log levels of type `enum osdp_log_level_e`. Default is
+ *                  LOG_INFO.
+ * @param puts_fn A puts() like function that will be invoked to write the log
+ *                buffer. Can be handy if you want to log to file on a UART
+ *                device without putchar redirection. See `osdp_log_puts_fn_t`
+ *                definition to see the behavioral expectations. When this is
+ *                set to NULL, LibOSDP will log to stderr.
+ */
+void osdp_logger_init(int log_level, osdp_log_puts_fn_t puts_fn)
+	__attribute__((deprecated("Use osdp_logger_init3 instead!")));
 
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.

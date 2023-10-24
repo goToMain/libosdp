@@ -193,7 +193,7 @@ int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
 
 OSDP_EXPORT
 void osdp_logger_init3(const char *name, int log_level,
-		      osdp_log_puts_fn_t log_fn)
+		       osdp_log_puts_fn_t log_fn)
 {
 	logger_t ctx;
 	FILE *file = NULL;
@@ -205,7 +205,7 @@ void osdp_logger_init3(const char *name, int log_level,
 	if (!log_fn)
 		file = stderr;
 
-	logger_init(&ctx, log_level, name, REPO_ROOT, log_fn, file, flags);
+	logger_init(&ctx, log_level, name, REPO_ROOT, log_fn, file, NULL, flags);
 	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
@@ -213,6 +213,16 @@ OSDP_EXPORT
 void osdp_logger_init(int log_level, osdp_log_puts_fn_t log_fn)
 {
 	osdp_logger_init3("osdp", log_level, log_fn);
+}
+
+OSDP_EXPORT
+void osdp_set_log_callback(osdp_log_callback_fn_t cb)
+{
+	logger_t ctx;
+	int flags = LOGGER_FLAG_NONE;
+
+	logger_init(&ctx, 0, NULL, REPO_ROOT, NULL, NULL, cb, flags);
+	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
 OSDP_EXPORT

@@ -965,6 +965,17 @@ enum osdp_log_level_e {
 typedef int (*osdp_log_puts_fn_t)(const char *msg);
 
 /**
+ * @brief A callback function to be used with external loggers
+ *
+ * @param log_level A syslog style log level. See `enum osdp_log_level_e`
+ * @param file Relative path to file which produced the log message
+ * @param line Line number in `file` which produced the log message
+ * @param msg The log message
+ */
+typedef void (*osdp_log_callback_fn_t)(int log_level, const char *file,
+				       unsigned long line, const char *msg);
+
+/**
  * @brief Configure OSDP Logging.
  *
  * @param name A soft name for this module; will appear in all the log lines.
@@ -975,6 +986,9 @@ typedef int (*osdp_log_puts_fn_t)(const char *msg);
  *                device without putchar redirection. See `osdp_log_puts_fn_t`
  *                definition to see the behavioral expectations. When this is
  *                set to NULL, LibOSDP will log to stderr.
+ *
+ * Note: This function has to be called before osdp_{cp,pd}_setup(). Otherwise
+ *       it will be ignored.
  */
 void osdp_logger_init3(const char *name, int log_level,
 		      osdp_log_puts_fn_t puts_fn);
@@ -993,6 +1007,20 @@ void osdp_logger_init3(const char *name, int log_level,
  */
 void osdp_logger_init(int log_level, osdp_log_puts_fn_t puts_fn)
 	__attribute__((deprecated("Use osdp_logger_init3 instead!")));
+
+/**
+ * @brief A callback function that gets called when LibOSDP wants to emit a log
+ *        line. All messages (of all log levels) are passed on to this callback
+ *        without any log formatting. This API is for users who may already have
+ *        a logger configured in their application.
+ *
+ * @param cb The callback function. See `osdp_log_callback_fn_t` for more
+ *           details.
+ *
+ * Note: This function has to be called before osdp_{cp,pd}_setup(). Otherwise
+ *       it will be ignored.
+ */
+void osdp_set_log_callback(osdp_log_callback_fn_t cb);
 
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.

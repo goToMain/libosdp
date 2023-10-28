@@ -994,12 +994,19 @@ void osdp_logger_init3(const char *name, int log_level,
 		      osdp_log_puts_fn_t puts_fn);
 
 /**
- * @brief This macro alias Provided for API compatiblity for existing users who
- * using the old osdp_logger_init() API. For description of parameters and use,
- * see osdp_logger_init3 documentation.
+ * @brief Configure OSDP Logging (deprecated). Provided for backward
+ *        compatiblity. Use osdp_logger_init3 instead.
+ *
+ * @param log_level OSDP log levels of type `enum osdp_log_level_e`. Default is
+ *                  LOG_INFO.
+ * @param puts_fn A puts() like function that will be invoked to write the log
+ *                buffer. Can be handy if you want to log to file on a UART
+ *                device without putchar redirection. See `osdp_log_puts_fn_t`
+ *                definition to see the behavioral expectations. When this is
+ *                set to NULL, LibOSDP will log to stderr.
  */
-#define osdp_logger_init(log_level, log_fn) \
-	osdp_logger_init3("osdp", log_level, log_fn)
+void osdp_logger_init(int log_level, osdp_log_puts_fn_t puts_fn)
+	__attribute__((deprecated("Use osdp_logger_init3 instead!")));
 
 /**
  * @brief A callback function that gets called when LibOSDP wants to emit a log

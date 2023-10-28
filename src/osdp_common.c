@@ -210,12 +210,6 @@ void osdp_logger_init3(const char *name, int log_level,
 }
 
 OSDP_EXPORT
-void osdp_logger_init(int log_level, osdp_log_puts_fn_t log_fn)
-{
-	osdp_logger_init3("osdp", log_level, log_fn);
-}
-
-OSDP_EXPORT
 void osdp_set_log_callback(osdp_log_callback_fn_t cb)
 {
 	logger_t ctx;

@@ -1,4 +1,4 @@
-use std::ffi::{c_void, CStr};
+use std::ffi::c_void;
 use crate::{
     common::{PdInfo, PdId, PdCapability, OsdpFlag},
     commands::OsdpCommand,
@@ -36,6 +36,7 @@ impl ControlPanel {
             anyhow::bail!("Max PD count exceeded")
         }
         let mut info: Vec<crate::osdp_pd_info_t> = pd_info.iter_mut().map(|i| -> crate::osdp_pd_info_t { i.as_struct() }).collect();
+        unsafe { crate::osdp_set_log_callback(Some(crate::common::log_handler)) };
         let ctx = unsafe {
             crate::osdp_cp_setup2(pd_info.len() as i32, info.as_mut_ptr())
         };
@@ -137,17 +138,13 @@ impl ControlPanel {
     }
 
     pub fn get_version(&mut self) -> String {
-        let s = unsafe {
-            CStr::from_ptr(crate::osdp_get_version())
-        };
-        s.to_str().unwrap().to_owned()
+        let s = unsafe { crate::osdp_get_version() };
+        crate::common::cstr_to_string(s)
     }
 
     pub fn get_source_info(&mut self) -> String {
-        let s = unsafe {
-            CStr::from_ptr(crate::osdp_get_source_info())
-        };
-        s.to_str().unwrap().to_owned()
+        let s = unsafe { crate::osdp_get_source_info() };
+        crate::common::cstr_to_string(s)
     }
 
     pub fn is_online(&mut self, pd: i32) -> bool {

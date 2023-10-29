@@ -1,4 +1,4 @@
-use std::ffi::{c_void, CStr};
+use std::ffi::c_void;
 use crate::{
     common::{PdInfo, PdCapability},
     events::OsdpEvent,
@@ -32,6 +32,7 @@ pub struct PeripheralDevice {
 impl PeripheralDevice {
     pub fn new(info: &mut PdInfo) -> Result<Self> {
         let mut info = info.as_struct();
+        unsafe { crate::osdp_set_log_callback(Some(crate::common::log_handler)) };
         let ctx: *mut crate::osdp_t =  unsafe { crate::osdp_pd_setup(&mut info) };
         if ctx.is_null() {
             anyhow::bail!("Failed to setup PD")
@@ -105,17 +106,13 @@ impl PeripheralDevice {
     }
 
     pub fn get_version(&mut self) -> String {
-        let s = unsafe {
-            CStr::from_ptr(crate::osdp_get_version())
-        };
-        s.to_str().unwrap().to_owned()
+        let s = unsafe { crate::osdp_get_version() };
+        crate::common::cstr_to_string(s)
     }
 
     pub fn get_source_info(&mut self) -> String {
-        let s = unsafe {
-            CStr::from_ptr(crate::osdp_get_source_info())
-        };
-        s.to_str().unwrap().to_owned()
+        let s = unsafe { crate::osdp_get_source_info() };
+        crate::common::cstr_to_string(s)
     }
 
     pub fn is_online(&mut self) -> bool {

@@ -20,3 +20,5 @@ bindgen = "0.68.1"
 [dependencies]
 anyhow = "1.0.75"
 bitflags = "2.4.0"
+lazy_static = "1.4.0"
+multiqueue = "0.3.2"

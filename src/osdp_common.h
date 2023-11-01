@@ -22,8 +22,11 @@
 #include <utils/logger.h>
 
 #include <osdp.h>
+
+#ifndef CONFIG_NO_GENERATED_HEADERS
 #include "osdp_config.h" /* generated */
 #include "osdp_export.h" /* generated */
+#endif
 
 #ifndef NULL
 #define NULL ((void *)0)

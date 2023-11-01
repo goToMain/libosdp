@@ -8,6 +8,6 @@ indent_style = tab
 indent_size = 8
 
 # 4 space indentation
-[*.{py.in,py,md,cmake}]
+[*.{py.in,py,md,cmake,rs}]
 indent_style = space
 indent_size = 4

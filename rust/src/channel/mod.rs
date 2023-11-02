@@ -1,7 +1,12 @@
+pub mod thread_bus;
+pub mod unix_channel;
+
 use std::{
     io::{Read, Write},
     ffi::c_void,
-    sync::Mutex
+    sync::Mutex,
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
 };
 
 pub trait Channel: Read + Write {
@@ -65,4 +70,12 @@ impl OsdpChannel {
             flush: Some(raw_flush),
         }
     }
+}
+
+pub fn str_to_channel_id(key: &str) -> i32 {
+    let mut hasher = DefaultHasher::new();
+    key.hash(&mut hasher);
+    let mut id = hasher.finish();
+    id = (id >> 32) ^ id & 0xffffffff;
+    id as i32
 }

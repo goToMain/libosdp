@@ -3,8 +3,9 @@ use std::{
     collections::HashMap, io::Error, io::ErrorKind
 };
 use anyhow::bail;
-use lazy_static::lazy_static;
 use multiqueue::{BroadcastSender, BroadcastReceiver};
+
+use super::Channel;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
@@ -68,7 +69,7 @@ impl BusDepot {
     }
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     static ref ID: Mutex<BusDepot> = Mutex::new(BusDepot::new());
 }
 
@@ -116,7 +117,7 @@ impl std::io::Write for OsdpThreadBus {
     }
 }
 
-impl osdp::channel::Channel for OsdpThreadBus {
+impl Channel for OsdpThreadBus {
     fn get_id(&self) -> i32 {
         self.id
     }

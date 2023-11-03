@@ -296,7 +296,7 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			    &info->channel.recv, &info->channel.flush);
 	}
 
-	ctx = osdp_cp_setup2(self->num_pd, info_list);
+	ctx = osdp_cp_setup(self->num_pd, info_list);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup CP");
 		goto error;

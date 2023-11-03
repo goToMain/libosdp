@@ -1314,18 +1314,8 @@ error:
 
 /* --- Exported Methods --- */
 
-OSDP_DEPRECATED_EXPORT
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key)
-{
-	assert(info_list);
-	assert(num_pd > 0);
-	assert(num_pd <= OSDP_PD_MAX);
-
-	return (osdp_t *)__cp_setup(num_pd, info_list, master_key);
-}
-
 OSDP_EXPORT
-osdp_t *osdp_cp_setup2(int num_pd, osdp_pd_info_t *info_list)
+osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list)
 {
 	assert(info_list);
 	assert(num_pd > 0);

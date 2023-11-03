@@ -84,13 +84,13 @@ int pyosdp_fops_write(void *arg, const void *buf, int size, int offset)
 	return written;
 }
 
-void pyosdp_fops_close(void *arg)
+int  pyosdp_fops_close(void *arg)
 {
 	pyosdp_base_t *self = arg;
 	PyObject *arglist, *result;
 
 	if (!self->fops.close_cb)
-		return;
+		return 0;
 
 	arglist = Py_BuildValue("(I)", self->file_id);
 
@@ -98,6 +98,7 @@ void pyosdp_fops_close(void *arg)
 
 	Py_XDECREF(result);
 	Py_DECREF(arglist);
+	return 0;
 }
 
 #define pyosdp_file_tx_status_doc                                                     \
@@ -214,7 +215,7 @@ static PyObject *pyosdp_set_loglevel(pyosdp_base_t *self, PyObject *args)
 		return NULL;
 	}
 
-	osdp_logger_init3("pyosdp", log_level, NULL);
+	osdp_logger_init("pyosdp", log_level, NULL);
 
 	Py_RETURN_NONE;
 }
@@ -263,7 +264,7 @@ static int pyosdp_base_tp_init(pyosdp_base_t *self, PyObject *args, PyObject *kw
 
 	channel_manager_init(&self->channel_manager);
 
-	osdp_logger_init3("pyosdp", OSDP_LOG_INFO, NULL);
+	osdp_logger_init("pyosdp", OSDP_LOG_INFO, NULL);
 
 	return 0;
 }

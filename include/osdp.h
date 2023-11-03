@@ -816,27 +816,6 @@ int osdp_pd_flush_events(osdp_t *ctx);
 /* ------------------------------- */
 
 /**
- * @brief This method is used to setup a device in CP mode. Application must
- * store the returned context pointer and pass it back to all OSDP functions
- * intact.
- *
- * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
- *        treated as an array of length num_pd.
- * @param info Pointer to info struct populated by application.
- * @param master_key 16 byte Master Key from which the SCBK (Secure Channel Base
- *        Key) is generated. If this field is NULL, then secure channel is
- *        disabled.
- *
- *        Note: Master key based SCBK derivation is discouraged. Pass SCBK for
- *        each connected PD in osdp_pd_info_t::scbk.
- *
- * @retval OSDP Context on success
- * @retval NULL on errors
- */
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
-	__attribute__((deprecated("Use osdp_cp_setup2 instead!")));
-
-/**
  * @brief Same as osdp_cp_setup; master_key is NULL here to favour the  more
  * secure individual SCBK approach (passed via osdp_pd_info_t).
  *
@@ -847,7 +826,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_cp_setup2(int num_pd, osdp_pd_info_t *info);
+osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -992,16 +971,8 @@ typedef void (*osdp_log_callback_fn_t)(int log_level, const char *file,
  * Note: This function has to be called before osdp_{cp,pd}_setup(). Otherwise
  *       it will be ignored.
  */
-void osdp_logger_init3(const char *name, int log_level,
+void osdp_logger_init(const char *name, int log_level,
 		      osdp_log_puts_fn_t puts_fn);
-
-/**
- * @brief This macro alias Provided for API compatiblity for existing users who
- * using the old osdp_logger_init() API. For description of parameters and use,
- * see osdp_logger_init3 documentation.
- */
-#define osdp_logger_init(log_level, log_fn) \
-	osdp_logger_init3("osdp", log_level, log_fn)
 
 /**
  * @brief A callback function that gets called when LibOSDP wants to emit a log
@@ -1051,22 +1022,6 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
  *                (num_pds + 7 / 8).
  */
 void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
-
-/**
- * @brief Set osdp_command_complete_callback_t to subscribe to osdp command or
- * event completion events. This can be used to perform post command actions
- * such as changing the baud rate of the underlying channel after a COMSET
- * command was acknowledged/issued by a peer.
- *
- * @param ctx OSDP context
- * @param cb Callback to be invoked when a command is completed.
- * @param arg A pointer that will be passed as the first argument of `cb`
- */
-void osdp_set_command_complete_callback(osdp_t *ctx,
-					osdp_command_complete_callback_t cb,
-					void *arg)
-	__attribute__((deprecated("Use of this API is discouraged. A future "
-				  "version will remove it.")));
 
 /**
  * @brief OSDP File operations struct that needs to be filled by the CP/PD

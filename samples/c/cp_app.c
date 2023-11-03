@@ -53,9 +53,9 @@ int main()
 {
 	osdp_t *ctx;
 
-	osdp_logger_init3("osdp::cp", OSDP_LOG_DEBUG, NULL);
+	osdp_logger_init("osdp::cp", OSDP_LOG_DEBUG, NULL);
 
-	ctx = osdp_cp_setup2(1, pd_info);
+	ctx = osdp_cp_setup(1, pd_info);
 	if (ctx == NULL) {
 		printf("cp init failed!\n");
 		return -1;

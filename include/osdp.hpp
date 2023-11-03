@@ -19,9 +19,10 @@ class Common {
 public:
 	Common() {}
 
-	void logger_init(const char *name, int log_level, osdp_log_puts_fn_t puts_fn)
+	void logger_init(const char *name, int log_level,
+			 osdp_log_puts_fn_t puts_fn)
 	{
-		osdp_logger_init3(name, log_level, puts_fn);
+		osdp_logger_init(name, log_level, puts_fn);
 	}
 
 	const char *get_version()
@@ -42,11 +43,6 @@ public:
 	void get_sc_status_mask(uint8_t *bitmask)
 	{
 		osdp_get_sc_status_mask(_ctx, bitmask);
-	}
-
-	void set_command_complete_callback(osdp_command_complete_callback_t cb, void *arg)
-	{
-		osdp_set_command_complete_callback(_ctx, cb, arg);
 	}
 
 	int file_register_ops(int pd, struct osdp_file_ops *ops)
@@ -79,7 +75,7 @@ public:
 
 	bool setup(int num_pd, osdp_pd_info_t *info)
 	{
-		_ctx = osdp_cp_setup2(num_pd, info);
+		_ctx = osdp_cp_setup(num_pd, info);
 		return _ctx != nullptr;
 	}
 

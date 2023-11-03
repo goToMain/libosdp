@@ -105,12 +105,12 @@ impl PeripheralDevice {
         Ok((size, offset))
     }
 
-    pub fn get_version(&mut self) -> String {
+    pub fn get_version(&self) -> String {
         let s = unsafe { crate::osdp_get_version() };
         crate::common::cstr_to_string(s)
     }
 
-    pub fn get_source_info(&mut self) -> String {
+    pub fn get_source_info(&self) -> String {
         let s = unsafe { crate::osdp_get_source_info() };
         crate::common::cstr_to_string(s)
     }

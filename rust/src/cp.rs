@@ -38,7 +38,7 @@ impl ControlPanel {
         let mut info: Vec<crate::osdp_pd_info_t> = pd_info.iter_mut().map(|i| -> crate::osdp_pd_info_t { i.as_struct() }).collect();
         unsafe { crate::osdp_set_log_callback(Some(crate::common::log_handler)) };
         let ctx = unsafe {
-            crate::osdp_cp_setup2(pd_info.len() as i32, info.as_mut_ptr())
+            crate::osdp_cp_setup(pd_info.len() as i32, info.as_mut_ptr())
         };
         if ctx.is_null() {
             anyhow::bail!("CP setup failed!")
@@ -74,7 +74,7 @@ impl ControlPanel {
         }
     }
 
-    pub fn get_pd_id(&mut self, pd: i32) -> Result<PdId> {
+    pub fn get_pd_id(&self, pd: i32) -> Result<PdId> {
         let mut pd_id: crate::osdp_pd_id = unsafe {
             std::mem::MaybeUninit::zeroed().assume_init()
         };
@@ -87,7 +87,7 @@ impl ControlPanel {
         Ok(pd_id.into())
     }
 
-    pub fn get_capability(&mut self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
+    pub fn get_capability(&self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
         let mut cap = cap.as_struct();
         let rc = unsafe {
             crate::osdp_cp_get_capability(self.ctx, pd, &mut cap)
@@ -120,7 +120,7 @@ impl ControlPanel {
         Ok(())
     }
 
-    pub fn get_file_transfer_status(&mut self, pd: i32) -> Result<(i32, i32)> {
+    pub fn get_file_transfer_status(&self, pd: i32) -> Result<(i32, i32)> {
         let mut size: i32 = 0;
         let mut offset: i32 = 0;
         let rc = unsafe {
@@ -147,7 +147,7 @@ impl ControlPanel {
         crate::common::cstr_to_string(s)
     }
 
-    pub fn is_online(&mut self, pd: i32) -> bool {
+    pub fn is_online(&self, pd: i32) -> bool {
         let mut buf: [u8; 16] = [0; 16];
         unsafe {
             crate::osdp_get_status_mask(
@@ -160,7 +160,7 @@ impl ControlPanel {
         buf[pos as usize] & (1 << idx) != 0
     }
 
-    pub fn is_sc_active(&mut self, pd: i32) -> bool {
+    pub fn is_sc_active(&self, pd: i32) -> bool {
         let mut buf: [u8; 16] = [0; 16];
         unsafe {
             crate::osdp_get_sc_status_mask(

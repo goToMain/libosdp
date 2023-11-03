@@ -1431,7 +1431,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
 }
 
 OSDP_EXPORT
-int osdp_cp_get_pd_id(osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
+int osdp_cp_get_pd_id(const osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
@@ -1441,7 +1441,7 @@ int osdp_cp_get_pd_id(osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
 }
 
 OSDP_EXPORT
-int osdp_cp_get_capability(osdp_t *ctx, int pd_idx, struct osdp_pd_cap *cap)
+int osdp_cp_get_capability(const osdp_t *ctx, int pd_idx, struct osdp_pd_cap *cap)
 {
 	input_check(ctx, pd_idx);
 	int fc;

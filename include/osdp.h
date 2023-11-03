@@ -872,7 +872,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
  * @retval 0 on success
  * @retval -1 on failure
  */
-int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id);
+int osdp_cp_get_pd_id(const osdp_t *ctx, int pd, struct osdp_pd_id *id);
 
 /**
  * @brief Get capability associated to a function_code that the PD reports in
@@ -887,7 +887,7 @@ int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id);
  * @retval 0 on success
  * @retval -1 on failure
  */
-int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
+int osdp_cp_get_capability(const osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
 
 /**
  * @brief Set callback method for CP event notification. This callback is
@@ -1011,7 +1011,7 @@ const char *osdp_get_source_info();
  * @param bitmask pointer to an array of bytes. must be as large as
  *                (num_pds + 7 / 8).
  */
-void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
+void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief Get a bit mask of number of PD that are online and have an active
@@ -1021,7 +1021,7 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
  * @param bitmask pointer to an array of bytes. must be as large as
  *                (num_pds + 7 / 8).
  */
-void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
+void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief OSDP File operations struct that needs to be filled by the CP/PD
@@ -1112,7 +1112,8 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops);
  * @param offset Offset into the file that has been sent/received (CP/PD)
  * @retval 0 on success. -1 on errors.
  */
-int osdp_get_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset);
+int osdp_get_file_tx_status(const osdp_t *ctx, int pd_idx,
+			    int *size, int *offset);
 
 #ifdef __cplusplus
 }

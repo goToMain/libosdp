@@ -238,7 +238,7 @@ const char *osdp_get_source_info()
 }
 
 OSDP_EXPORT
-void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask)
+void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 {
 	input_check(ctx);
 	int i, pos;
@@ -260,7 +260,7 @@ void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask)
 }
 
 OSDP_EXPORT
-void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask)
+void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 {
 	input_check(ctx);
 	int i, pos;

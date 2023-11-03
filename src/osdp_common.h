@@ -434,17 +434,17 @@ static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
 	return pd->osdp_ctx;
 }
 
-static inline struct osdp_pd *osdp_to_pd(struct osdp *ctx, int pd_idx)
+static inline struct osdp_pd *osdp_to_pd(const struct osdp *ctx, int pd_idx)
 {
 	return ctx->pd + pd_idx;
 }
 
-static inline bool is_pd_mode(struct  osdp_pd *pd)
+static inline bool is_pd_mode(struct osdp_pd *pd)
 {
 	return ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 }
 
-static inline bool is_cp_mode(struct  osdp_pd *pd)
+static inline bool is_cp_mode(struct osdp_pd *pd)
 {
 	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 }

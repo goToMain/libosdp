@@ -338,7 +338,8 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops)
 }
 
 OSDP_EXPORT
-int osdp_get_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset)
+int osdp_get_file_tx_status(const osdp_t *ctx, int pd_idx,
+			    int *size, int *offset)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_file *f = TO_FILE(osdp_to_pd(ctx, pd_idx));

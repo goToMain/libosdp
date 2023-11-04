@@ -2,7 +2,7 @@ use std::{
     time::Duration,
     thread
 };
-use osdp::{
+use libosdp::{
     cp::ControlPanel,
     common::{PdInfo, OsdpFlag, PdId},
     channel::{OsdpChannel, unix_channel::UnixChannel},

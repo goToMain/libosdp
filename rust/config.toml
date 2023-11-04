@@ -2,4 +2,3 @@
 skip_mark_byte = []
 packet_trace = []
 data_trace = []
-

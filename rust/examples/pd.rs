@@ -2,7 +2,7 @@ use std::{
     time::Duration,
     thread
 };
-use osdp::{
+use libosdp::{
     pd::PeripheralDevice,
     common::{PdInfo, OsdpFlag, PdId, PdCapability, PdCapEntry},
     channel::{OsdpChannel, unix_channel::UnixChannel},

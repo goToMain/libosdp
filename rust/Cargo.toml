@@ -1,10 +1,10 @@
 [package]
 edition = "2021"
-name = "osdp"
+name = "libosdp"
 version = "0.1.0"
 authors = ["Siddharth Chandrasekaran <sidcha.dev@gmail.com>"]
 description = "Library implementation of IEC 60839-11-5 OSDP (Open Supervised Device Protocol)"
-documentation = "https://libosdp.sidcha.dev/rust"
+documentation = "https://docs.rs/libosdp"
 homepage = "https://libosdp.sidcha.dev/"
 readme = "README.md"
 repository = "https://github.com/goToMain/libosdp"

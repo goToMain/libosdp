@@ -12,7 +12,7 @@ information.
 
 ## Usage
 
-To add libosdp to your rust project do:
+To add libosdp to your rust project, do:
 
 ```
 cargo add libosdp

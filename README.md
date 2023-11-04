@@ -18,46 +18,38 @@ This protocol is developed and maintained by [Security Industry Association][20]
 
 ## Salient Features of LibOSDP
 
-  - Supports secure channel communication (AES-128).
-  - Can be used to setup a PD or CP mode of operation.
-  - Exposes a well defined contract though a single header file.
-  - No run-time memory allocation. All memory is allocated at init-time.
-  - No external dependencies (for ease of cross compilation).
-  - Fully non-blocking, asynchronous design.
-  - Provides Python3 bindings for the C library for faster testing/integration.
+  - Supports secure channel communication (AES-128)
+  - Can be used to setup a PD or CP mode of operation
+  - Exposes a well defined contract though a single header file
+  - No run-time memory allocation. All memory is allocated at init-time
+  - No external dependencies (for ease of cross compilation)
+  - Fully non-blocking, asynchronous design
+  - Provides Python3 and Rust bindings for the C library for faster
+    testing/integration
 
-## C API
+## Language Support
 
-LibOSDP exposes a [minimal set of API][26] to setup and manage the lifecycle of
-OSDP devices. See `include/osdp.h` for more details.
+### C API
 
-## Python API
+LibOSDP is written in C. It exposes a [minimal set of API][26] to setup and
+manage the lifecycle of OSDP devices. See `include/osdp.h` for more details.
 
-To setup a device as a Control Panel in Python, you'd do something like this:
+### Rust API
 
-```python
-import osdp
+LibOSDP is now available via [crates.io/crates/libosdp][32]. See
+[rust/README.md][33] for more info and usage examples.
 
-## Setup OSDP device in Control Panel mode
-cp = osdp.ControlPanel(pd_info, master_key=key)
+### Python API
 
-## send a output command to PD-1
-cp.send_command(1, output_cmd)
-```
+There are currently two python implementation within this repo:
 
-Similarly, for Peripheral Device,
+1. A [basic wrapper][29] around LibOSDP.
+2. A more [idiomatic python module][30] that builds on top of the basic wrapper.
 
-```python
-import osdp
-
-## Setup OSDP device in Peripheral Device mode
-pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
-
-## Set a handler for incoming commands from CP
-pd.set_command_callback(command_handler_fn)
-```
-
-For more details, look at [cp_app.py][29] and [pd_app.py][30].
+Although both implementations are considered fairly mature, neither have been
+submitted to pypi.org due to lack of time (PRs in this direction are
+appreciated). The plan at this time is to merge both of these implementation
+into `python/`.
 
 ## Supported Commands and Replies
 
@@ -206,6 +198,8 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [26]: https://libosdp.sidcha.dev/api/
 [27]: https://libosdp.sidcha.dev/protocol/faq.html
 [28]: https://github.com/goToMain/libosdp/issues/new/choose
-[29]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
-[30]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py
+[29]: https://github.com/goToMain/libosdp/blob/master/python
+[30]: https://github.com/goToMain/libosdp/tree/master/tests/pytest/testlib
 [31]: https://github.com/goToMain/libosdp/issues
+[32]: https://crates.io/crates/libosdp
+[33]: https://github.com/goToMain/libosdp/tree/master/rust

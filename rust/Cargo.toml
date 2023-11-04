@@ -9,7 +9,7 @@ homepage = "https://libosdp.sidcha.dev/"
 readme = "README.md"
 repository = "https://github.com/goToMain/libosdp"
 license = "Apache-2.0"
-keywords = ["osdp", "libosdp", "access control system", "sia", "weigand" ]
+keywords = ["osdp", "libosdp", "acs", "sia", "weigand" ]
 categories = ["development-tools", "embedded"]
 
 [build-dependencies]

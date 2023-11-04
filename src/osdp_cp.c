@@ -1127,8 +1127,8 @@ static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
 		}
 	}
 
-	LOG_INF("master_key based key set is a global command; "
-		"all connected PDs will be affected.");
+	LOG_PRINT("master_key based key set is a global command; "
+		   "all connected PDs will be affected.");
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = osdp_to_pd(ctx, i);

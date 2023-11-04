@@ -1,3 +1,4 @@
+use crate::libosdp;
 use std::{
     path::PathBuf,
     fs::File,
@@ -81,8 +82,8 @@ impl OsdpFile {
         }
     }
 
-    pub fn get_ops_struct(&mut self) -> crate::osdp_file_ops {
-        crate::osdp_file_ops {
+    pub fn get_ops_struct(&mut self) -> libosdp::osdp_file_ops {
+        libosdp::osdp_file_ops {
             arg: self as *mut _ as *mut c_void,
             open: Some(raw_file_open),
             read: Some(raw_file_read),

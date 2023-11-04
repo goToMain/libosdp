@@ -1,6 +1,7 @@
 pub mod thread_bus;
 pub mod unix_channel;
 
+use crate::libosdp;
 use std::{
     io::{Read, Write},
     ffi::c_void,
@@ -60,9 +61,9 @@ impl OsdpChannel {
         }
     }
 
-    pub fn as_struct(&mut self) -> crate::osdp_channel {
+    pub fn as_struct(&mut self) -> libosdp::osdp_channel {
         let id = self.stream.lock().unwrap().get_id();
-        crate::osdp_channel {
+        libosdp::osdp_channel {
             id,
             data: self as *mut _ as *mut c_void,
             recv: Some(raw_read),

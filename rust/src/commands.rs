@@ -1,3 +1,4 @@
+use crate::libosdp;
 
 pub struct OsdpLedParams {
     control_code: u8,
@@ -8,8 +9,8 @@ pub struct OsdpLedParams {
     timer_count: u16,
 }
 
-impl From <crate::osdp_cmd_led_params> for OsdpLedParams {
-    fn from(value: crate::osdp_cmd_led_params) -> Self {
+impl From <libosdp::osdp_cmd_led_params> for OsdpLedParams {
+    fn from(value: libosdp::osdp_cmd_led_params) -> Self {
         OsdpLedParams {
             control_code: value.control_code,
             on_count: value.on_count,
@@ -22,8 +23,8 @@ impl From <crate::osdp_cmd_led_params> for OsdpLedParams {
 }
 
 impl OsdpLedParams {
-    pub fn as_struct(&self) -> crate::osdp_cmd_led_params {
-        crate::osdp_cmd_led_params {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_led_params {
+        libosdp::osdp_cmd_led_params {
             control_code: self.control_code,
             on_count: self.on_count,
             off_count: self.off_count,
@@ -41,8 +42,8 @@ pub struct OsdpCommandLed {
     permanent: OsdpLedParams
 }
 
-impl From <crate::osdp_cmd_led> for OsdpCommandLed {
-    fn from(value: crate::osdp_cmd_led) -> Self {
+impl From <libosdp::osdp_cmd_led> for OsdpCommandLed {
+    fn from(value: libosdp::osdp_cmd_led) -> Self {
         OsdpCommandLed {
             reader: value.reader,
             led_number: value.reader,
@@ -53,8 +54,8 @@ impl From <crate::osdp_cmd_led> for OsdpCommandLed {
 }
 
 impl OsdpCommandLed {
-    pub fn as_struct(&self) -> crate::osdp_cmd_led {
-        crate::osdp_cmd_led {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_led {
+        libosdp::osdp_cmd_led {
             reader: self.reader,
             led_number: self.led_number,
             temporary: self.temporary.as_struct(),
@@ -71,8 +72,8 @@ pub struct OsdpCommandBuzzer {
     rep_count: u8
 }
 
-impl From <crate::osdp_cmd_buzzer> for OsdpCommandBuzzer {
-    fn from(value: crate::osdp_cmd_buzzer) -> Self {
+impl From <libosdp::osdp_cmd_buzzer> for OsdpCommandBuzzer {
+    fn from(value: libosdp::osdp_cmd_buzzer) -> Self {
         OsdpCommandBuzzer {
             reader: value.reader,
             control_code: value.control_code,
@@ -84,8 +85,8 @@ impl From <crate::osdp_cmd_buzzer> for OsdpCommandBuzzer {
 }
 
 impl OsdpCommandBuzzer {
-    pub fn as_struct(&self) -> crate::osdp_cmd_buzzer {
-        crate::osdp_cmd_buzzer {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_buzzer {
+        libosdp::osdp_cmd_buzzer {
             reader: self.reader,
             control_code: self.control_code,
             on_count: self.on_count,
@@ -96,16 +97,16 @@ impl OsdpCommandBuzzer {
 }
 
 pub struct OsdpCommandText {
-    reader: u8, 
-    control_code: u8, 
-    temp_time: u8, 
-    offset_row: u8, 
-    offset_col: u8, 
+    reader: u8,
+    control_code: u8,
+    temp_time: u8,
+    offset_row: u8,
+    offset_col: u8,
     data: [u8; 32]
 }
 
-impl From <crate::osdp_cmd_text> for OsdpCommandText {
-    fn from(value: crate::osdp_cmd_text) -> Self {
+impl From <libosdp::osdp_cmd_text> for OsdpCommandText {
+    fn from(value: libosdp::osdp_cmd_text) -> Self {
         OsdpCommandText {
             reader: value.reader,
             control_code: value.control_code,
@@ -118,8 +119,8 @@ impl From <crate::osdp_cmd_text> for OsdpCommandText {
 }
 
 impl OsdpCommandText {
-    pub fn as_struct(&self) -> crate::osdp_cmd_text {
-        crate::osdp_cmd_text {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_text {
+        libosdp::osdp_cmd_text {
             reader: self.reader,
             control_code: self.control_code,
             temp_time: self.temp_time,
@@ -137,8 +138,8 @@ pub struct OsdpCommandOutput {
     timer_count: u16
 }
 
-impl From <crate::osdp_cmd_output> for OsdpCommandOutput {
-    fn from(value: crate::osdp_cmd_output) -> Self {
+impl From <libosdp::osdp_cmd_output> for OsdpCommandOutput {
+    fn from(value: libosdp::osdp_cmd_output) -> Self {
         OsdpCommandOutput {
             output_no: value.output_no,
             control_code: value.control_code,
@@ -148,8 +149,8 @@ impl From <crate::osdp_cmd_output> for OsdpCommandOutput {
 }
 
 impl OsdpCommandOutput {
-    pub fn as_struct(&self) -> crate::osdp_cmd_output {
-        crate::osdp_cmd_output {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_output {
+        libosdp::osdp_cmd_output {
             output_no: self.output_no,
             control_code: self.control_code,
             timer_count: self.timer_count,
@@ -162,8 +163,8 @@ pub struct OsdpComSet {
     baud_rate: u32
 }
 
-impl From <crate::osdp_cmd_comset> for OsdpComSet {
-    fn from(value: crate::osdp_cmd_comset) -> Self {
+impl From <libosdp::osdp_cmd_comset> for OsdpComSet {
+    fn from(value: libosdp::osdp_cmd_comset) -> Self {
         OsdpComSet {
             address: value.address,
             baud_rate: value.baud_rate,
@@ -172,8 +173,8 @@ impl From <crate::osdp_cmd_comset> for OsdpComSet {
 }
 
 impl OsdpComSet {
-    pub fn as_struct(&self) -> crate::osdp_cmd_comset {
-        crate::osdp_cmd_comset {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_comset {
+        libosdp::osdp_cmd_comset {
             address: self.address,
             baud_rate: self.baud_rate,
         }
@@ -185,8 +186,8 @@ pub struct OsdpCommandKeyset {
     data: [u8; 32]
 }
 
-impl From <crate::osdp_cmd_keyset> for OsdpCommandKeyset {
-    fn from(value: crate::osdp_cmd_keyset) -> Self {
+impl From <libosdp::osdp_cmd_keyset> for OsdpCommandKeyset {
+    fn from(value: libosdp::osdp_cmd_keyset) -> Self {
         OsdpCommandKeyset {
             key_type: value.type_,
             data: value.data,
@@ -195,8 +196,8 @@ impl From <crate::osdp_cmd_keyset> for OsdpCommandKeyset {
 }
 
 impl OsdpCommandKeyset {
-    pub fn as_struct(&self) -> crate::osdp_cmd_keyset {
-        crate::osdp_cmd_keyset {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_keyset {
+        libosdp::osdp_cmd_keyset {
             type_: self.key_type,
             length: self.data.len() as u8,
             data: self.data,
@@ -210,8 +211,8 @@ pub struct OsdpCommandMfg {
     data: [u8; 64]
 }
 
-impl From <crate::osdp_cmd_mfg> for OsdpCommandMfg {
-    fn from(value: crate::osdp_cmd_mfg) -> Self {
+impl From <libosdp::osdp_cmd_mfg> for OsdpCommandMfg {
+    fn from(value: libosdp::osdp_cmd_mfg) -> Self {
         OsdpCommandMfg {
             vendor_code: value.vendor_code,
             command: value.command,
@@ -221,8 +222,8 @@ impl From <crate::osdp_cmd_mfg> for OsdpCommandMfg {
 }
 
 impl OsdpCommandMfg {
-    pub fn as_struct(&self) -> crate::osdp_cmd_mfg {
-        crate::osdp_cmd_mfg {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_mfg {
+        libosdp::osdp_cmd_mfg {
             vendor_code: self.vendor_code,
             command: self.command,
             length: self.data.len() as u8,
@@ -236,8 +237,8 @@ pub struct OsdpCommandFileTx {
     flags: u32
 }
 
-impl From <crate::osdp_cmd_file_tx> for OsdpCommandFileTx {
-    fn from(value: crate::osdp_cmd_file_tx) -> Self {
+impl From <libosdp::osdp_cmd_file_tx> for OsdpCommandFileTx {
+    fn from(value: libosdp::osdp_cmd_file_tx) -> Self {
         OsdpCommandFileTx {
             id: value.id,
             flags: value.flags,
@@ -246,8 +247,8 @@ impl From <crate::osdp_cmd_file_tx> for OsdpCommandFileTx {
 }
 
 impl OsdpCommandFileTx {
-    pub fn as_struct(&self) -> crate::osdp_cmd_file_tx {
-        crate::osdp_cmd_file_tx {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd_file_tx {
+        libosdp::osdp_cmd_file_tx {
             id: self.id,
             flags: self.flags,
         }
@@ -266,53 +267,53 @@ pub enum OsdpCommand {
 }
 
 impl OsdpCommand {
-    pub fn as_struct(&self) -> crate::osdp_cmd {
+    pub fn as_struct(&self) -> libosdp::osdp_cmd {
         match self {
-            OsdpCommand::Led(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_LED,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::Led(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_LED,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     led: c.as_struct(),
                 },
             },
-            OsdpCommand::Buzzer(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_BUZZER,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::Buzzer(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_BUZZER,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     buzzer: c.as_struct()
                 },
             },
-            OsdpCommand::Text(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_TEXT,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::Text(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_TEXT,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     text: c.as_struct()
                 },
             },
-            OsdpCommand::Output(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_OUTPUT,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::Output(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_OUTPUT,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     output: c.as_struct()
                 },
             },
-            OsdpCommand::ComSet(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_COMSET,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::ComSet(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_COMSET,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     comset: c.as_struct()
                 },
             },
-            OsdpCommand::KeySet(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_KEYSET,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::KeySet(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_KEYSET,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     keyset: c.as_struct()
                 },
             },
-            OsdpCommand::Mfg(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_MFG,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::Mfg(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_MFG,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     mfg: c.as_struct()
                 },
             },
-            OsdpCommand::FileTx(c) => crate::osdp_cmd {
-                id: crate::osdp_cmd_e_OSDP_CMD_FILE_TX,
-                __bindgen_anon_1: crate::osdp_cmd__bindgen_ty_1 {
+            OsdpCommand::FileTx(c) => libosdp::osdp_cmd {
+                id: libosdp::osdp_cmd_e_OSDP_CMD_FILE_TX,
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
                     file_tx: c.as_struct()
                 },
             },
@@ -320,31 +321,31 @@ impl OsdpCommand {
     }
 }
 
-impl From <crate::osdp_cmd> for OsdpCommand {
-    fn from(value: crate::osdp_cmd) -> Self {
+impl From <libosdp::osdp_cmd> for OsdpCommand {
+    fn from(value: libosdp::osdp_cmd) -> Self {
         match value.id {
-            crate::osdp_cmd_e_OSDP_CMD_LED => {
+            libosdp::osdp_cmd_e_OSDP_CMD_LED => {
                 OsdpCommand::Led(unsafe { value.__bindgen_anon_1.led.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_BUZZER => {
+            libosdp::osdp_cmd_e_OSDP_CMD_BUZZER => {
                 OsdpCommand::Buzzer(unsafe { value.__bindgen_anon_1.buzzer.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_TEXT => {
+            libosdp::osdp_cmd_e_OSDP_CMD_TEXT => {
                 OsdpCommand::Text(unsafe { value.__bindgen_anon_1.text.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_OUTPUT => {
+            libosdp::osdp_cmd_e_OSDP_CMD_OUTPUT => {
                 OsdpCommand::Output(unsafe { value.__bindgen_anon_1.output.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_COMSET => {
+            libosdp::osdp_cmd_e_OSDP_CMD_COMSET => {
                 OsdpCommand::ComSet(unsafe { value.__bindgen_anon_1.comset.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_KEYSET => {
+            libosdp::osdp_cmd_e_OSDP_CMD_KEYSET => {
                 OsdpCommand::KeySet(unsafe { value.__bindgen_anon_1.keyset.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_MFG => {
+            libosdp::osdp_cmd_e_OSDP_CMD_MFG => {
                 OsdpCommand::Mfg(unsafe { value.__bindgen_anon_1.mfg.into() })
             },
-            crate::osdp_cmd_e_OSDP_CMD_FILE_TX => {
+            libosdp::osdp_cmd_e_OSDP_CMD_FILE_TX => {
                 OsdpCommand::FileTx(unsafe { value.__bindgen_anon_1.file_tx.into() })
             },
             _ => panic!("Unknown event"),

@@ -12,7 +12,6 @@ include config.make
 
 O ?= $(BUILD_DIR)
 OBJ_LIBOSDP := $(SRC_LIBOSDP:%.c=$(O)/%.o)
-OBJ_OSDPCTL := $(SRC_OSDPCTL:%.c=$(O)/%.o)
 OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
 CCFLAGS += -Wall -Wextra -O3
 
@@ -39,9 +38,6 @@ cp_app: $(O)/cp_app.elf
 .PHONY: libutils
 libutils: $(O)/utils/libutils.a
 
-.PHONY: osdpctl
-osdpctl: libutils libosdp $(O)/osdpctl.elf
-
 $(O)/%.o: %.c
 	@echo "  CC $<"
 	@mkdir -p $(@D)
@@ -54,13 +50,6 @@ $(O)/libosdp.a: $(OBJ_LIBOSDP)
 
 $(O)/utils/libutils.a:
 	$(Q)make -C utils Q=$(Q) O=$(O)/utils CC=$(CC)
-
-## osdpctl
-
-$(O)/osdpctl.elf: CCFLAGS_EXTRA=-Iosdpctl/include -Iutils/include -Iinclude
-$(O)/osdpctl.elf: $(OBJ_OSDPCTL)
-	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) -o $@ $^ -lpthread -L$(O) -losdp -L$(O)/utils -lutils
 
 ## Samples
 
@@ -85,7 +74,7 @@ check: $(OBJ_TEST)
 
 .PHONY: clean
 clean:
-	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_OSDPCTL) $(OBJ_TEST)
+	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_TEST)
 	$(Q)rm -f $(O)/*.a $(O)/*.elf
 	$(Q)make -C utils Q=$(Q) O=$(O)/utils clean
 

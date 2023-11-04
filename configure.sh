@@ -149,11 +149,6 @@ else
 	TARGETS="pd_app"
 fi
 
-OSDPCTL_SOURCES="osdpctl/ini_parser.c osdpctl/config.c osdpctl/arg_parser.c"
-OSDPCTL_SOURCES+=" osdpctl/osdpctl.c osdpctl/cmd_start.c osdpctl/cmd_send.c"
-OSDPCTL_SOURCES+=" osdpctl/cmd_others.c"
-TARGETS+=" osdpctl"
-
 TEST_SOURCES="tests/unit-tests/test.c tests/unit-tests/test-cp-phy.c tests/unit-tests/test-cp-phy-fsm.c"
 TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c tests/unit-tests/test-file.c"
 TEST_SOURCES+=" ${LIBOSDP_SOURCES} utils/src/workqueue.c utils/src/circbuf.c"

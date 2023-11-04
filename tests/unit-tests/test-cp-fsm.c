@@ -94,8 +94,8 @@ int test_cp_fsm_setup(struct test *t)
 		.channel.flush = NULL,
 		.scbk = NULL,
 	};
-	osdp_logger_init3("osdp::cp", t->loglevel, NULL);
-	struct osdp *ctx = (struct osdp *)osdp_cp_setup2(1, &info);
+	osdp_logger_init("osdp::cp", t->loglevel, NULL);
+	struct osdp *ctx = (struct osdp *)osdp_cp_setup(1, &info);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;

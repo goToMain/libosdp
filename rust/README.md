@@ -54,6 +54,6 @@ loop {
 
 See [examples][2] for a working implementation.
 
-1: https://github.cobm/goToMain/liosdp
-2: https://github.com/goToMain/libosdp/blob/master/rust/examples
-3: https://libosdp.sidcha.dev/protocol/commands-and-replies
+[1]: https://github.cobm/goToMain/liosdp
+[2]: https://github.com/goToMain/libosdp/blob/master/rust/examples
+[3]: https://libosdp.sidcha.dev/protocol/commands-and-replies

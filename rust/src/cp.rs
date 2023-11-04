@@ -6,9 +6,31 @@ use crate::{
     events::OsdpEvent,
     file::OsdpFile,
 };
+use log::{info, warn, debug, error};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 type EventCallback = unsafe extern "C" fn (data: *mut c_void, pd: i32, event: *mut libosdp::osdp_event) -> i32;
+
+unsafe extern "C" fn log_handler(
+    log_level: ::std::os::raw::c_int,
+    _file: *const ::std::os::raw::c_char,
+    _line: ::std::os::raw::c_ulong,
+    msg: *const ::std::os::raw::c_char,
+) {
+    let msg = crate::common::cstr_to_string(msg);
+    let msg = msg.trim();
+    match log_level as u32 {
+        libosdp::osdp_log_level_e_OSDP_LOG_EMERG => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_ALERT => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_CRIT => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_ERROR => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_WARNING => warn!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_NOTICE => warn!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_INFO => info!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_DEBUG => debug!("{msg}"),
+        _ => panic!("Unknown log level"),
+    };
+}
 
 unsafe extern "C"
 fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut libosdp::osdp_event) -> i32
@@ -37,7 +59,7 @@ impl ControlPanel {
             anyhow::bail!("Max PD count exceeded")
         }
         let mut info: Vec<libosdp::osdp_pd_info_t> = pd_info.iter_mut().map(|i| -> libosdp::osdp_pd_info_t { i.as_struct() }).collect();
-        unsafe { libosdp::osdp_set_log_callback(Some(crate::common::log_handler)) };
+        unsafe { libosdp::osdp_set_log_callback(Some(log_handler)) };
         let ctx = unsafe {
             libosdp::osdp_cp_setup(pd_info.len() as i32, info.as_mut_ptr())
         };

@@ -1,6 +1,8 @@
 use std::ffi::{CString, CStr};
-use crate::channel::OsdpChannel;
-use crate::libosdp;
+use crate::{
+    libosdp,
+    channel::OsdpChannel
+};
 
 pub struct PdId {
     pub version: i32,
@@ -233,27 +235,4 @@ pub fn cstr_to_string(s: *const ::std::os::raw::c_char) -> String {
         CStr::from_ptr(s)
     };
     s.to_str().unwrap().to_owned()
-}
-
-pub(crate) unsafe extern "C"
-fn log_handler(
-    log_level: ::std::os::raw::c_int,
-    file: *const ::std::os::raw::c_char,
-    line: ::std::os::raw::c_ulong,
-    msg: *const ::std::os::raw::c_char,
-) {
-    let file = cstr_to_string(file);
-    let msg = cstr_to_string(msg);
-    let log_level = match log_level as u32 {
-        libosdp::osdp_log_level_e_OSDP_LOG_EMERG => "EMERG",
-        libosdp::osdp_log_level_e_OSDP_LOG_ALERT => "ALERT",
-        libosdp::osdp_log_level_e_OSDP_LOG_CRIT => "CRIT",
-        libosdp::osdp_log_level_e_OSDP_LOG_ERROR => "ERROR",
-        libosdp::osdp_log_level_e_OSDP_LOG_WARNING => "WARN",
-        libosdp::osdp_log_level_e_OSDP_LOG_NOTICE => "NOTICE",
-        libosdp::osdp_log_level_e_OSDP_LOG_INFO => "INFO",
-        libosdp::osdp_log_level_e_OSDP_LOG_DEBUG => "DEBUG",
-        _ => panic!("Unknown log level"),
-    };
-    println!("osdp: {file}:{line} [{log_level}] {}", msg.trim());
 }

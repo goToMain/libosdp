@@ -5,9 +5,31 @@ use crate::{
     events::OsdpEvent,
     commands::OsdpCommand, file::OsdpFile
 };
+use log::{info, warn, debug, error};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 type CommandCallback = unsafe extern "C" fn (data: *mut c_void, event: *mut libosdp::osdp_cmd) -> i32;
+
+unsafe extern "C" fn log_handler(
+    log_level: ::std::os::raw::c_int,
+    _file: *const ::std::os::raw::c_char,
+    _line: ::std::os::raw::c_ulong,
+    msg: *const ::std::os::raw::c_char,
+) {
+    let msg = crate::common::cstr_to_string(msg);
+    let msg = msg.trim();
+    match log_level as u32 {
+        libosdp::osdp_log_level_e_OSDP_LOG_EMERG => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_ALERT => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_CRIT => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_ERROR => error!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_WARNING => warn!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_NOTICE => warn!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_INFO => info!("{msg}"),
+        libosdp::osdp_log_level_e_OSDP_LOG_DEBUG => debug!("{msg}"),
+        _ => panic!("Unknown log level"),
+    };
+}
 
 unsafe extern "C"
 fn trampoline<F>(data: *mut c_void, cmd: *mut libosdp::osdp_cmd) -> i32
@@ -33,7 +55,7 @@ pub struct PeripheralDevice {
 impl PeripheralDevice {
     pub fn new(info: &mut PdInfo) -> Result<Self> {
         let mut info = info.as_struct();
-        unsafe { libosdp::osdp_set_log_callback(Some(crate::common::log_handler)) };
+        unsafe { libosdp::osdp_set_log_callback(Some(log_handler)) };
         let ctx: *mut libosdp::osdp_t =  unsafe { libosdp::osdp_pd_setup(&mut info) };
         if ctx.is_null() {
             anyhow::bail!("Failed to setup PD")

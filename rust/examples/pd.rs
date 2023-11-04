@@ -7,9 +7,10 @@ use libosdp::{
     common::{PdInfo, OsdpFlag, PdId, PdCapability, PdCapEntry},
     channel::{OsdpChannel, unix_channel::UnixChannel},
 };
+
 fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let stream = UnixChannel::new("conn-1")?;
-    let channel: OsdpChannel = OsdpChannel::new::<UnixChannel>(Box::new(stream));
     let mut pd_info =  PdInfo::new(
         "PD 101",
         101,
@@ -25,7 +26,7 @@ fn main() -> anyhow::Result<()> {
         vec![
             PdCapability::CommunicationSecurity(PdCapEntry { compliance: 1, num_items: 1 }),
         ],
-        channel,
+        OsdpChannel::new::<UnixChannel>(Box::new(stream)),
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,

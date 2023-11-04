@@ -27,6 +27,18 @@ fn get_repo_root() -> std::io::Result<String> {
             return Ok(PathBuf::from(p).into_os_string().into_string().unwrap())
         }
     }
+
+    let mut path_ancestors = path.as_path().ancestors();
+    while let Some(p) = path_ancestors.next() {
+        let has_cargo =
+            std::fs::read_dir(p)?
+                .into_iter()
+                .any(|p| p.unwrap().file_name() == OsString::from("Cargo.lock"));
+        if has_cargo {
+            return Ok(PathBuf::from(p).into_os_string().into_string().unwrap())
+        }
+    }
+
     Err(Error::new(ErrorKind::NotFound, "Unable to determine repo root"))
 }
 

@@ -1,4 +1,7 @@
-use std::ffi::{CString, CStr};
+use std::{
+    ffi::{CString, CStr},
+    str::FromStr
+};
 use crate::{
     libosdp,
     channel::OsdpChannel
@@ -41,6 +44,36 @@ pub struct PdCapEntry {
     pub num_items: u8,
 }
 
+// From "Compliance:10,NumItems:20" to PdCapEntry { compliance: 10, num_items: 20 }
+impl FromStr for PdCapEntry {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (compliance, num_items);
+        if let Some((compliance_str, num_items_str)) = s.split_once(',') {
+            if let Some((key, val)) = compliance_str.split_once(':') {
+                if key != "Compliance" {
+                    return Err(anyhow::anyhow!("First key must be Compliance {s}"))
+                }
+                compliance = val.parse::<u8>().unwrap()
+            } else {
+                return Err(anyhow::anyhow!("Format error {s}"))
+            }
+            if let Some((key, val)) = num_items_str.split_once(':') {
+                if key != "NumItems" {
+                    return Err(anyhow::anyhow!("Second key must be NumItems {s}"))
+                }
+                num_items = val.parse::<u8>().unwrap()
+            } else {
+                return Err(anyhow::anyhow!("Format error {s}"))
+            }
+            Ok(Self{ compliance, num_items })
+        } else {
+            return Err(anyhow::anyhow!("Format error {s}"))
+        }
+    }
+}
+
 pub enum PdCapability {
     ContactStatusMonitoring(PdCapEntry),
     OutputControl(PdCapEntry),
@@ -56,6 +89,34 @@ pub enum PdCapability {
     SmartCardSupport(PdCapEntry),
     Readers(PdCapEntry),
     Biometrics(PdCapEntry),
+}
+
+impl FromStr for PdCapability {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Some((cap, ent)) = s.split_once(':') {
+            match cap {
+                "ContactStatusMonitoring" => Ok(PdCapability::ContactStatusMonitoring(PdCapEntry::from_str(ent)?)),
+                "OutputControl" => Ok(PdCapability::OutputControl(PdCapEntry::from_str(ent)?)),
+                "CardDataFormat" => Ok(PdCapability::CardDataFormat(PdCapEntry::from_str(ent)?)),
+                "LedControl" => Ok(PdCapability::LedControl(PdCapEntry::from_str(ent)?)),
+                "AudibleOutput" => Ok(PdCapability::AudibleOutput(PdCapEntry::from_str(ent)?)),
+                "TextOutput" => Ok(PdCapability::TextOutput(PdCapEntry::from_str(ent)?)),
+                "TimeKeeping" => Ok(PdCapability::TimeKeeping(PdCapEntry::from_str(ent)?)),
+                "CheckCharacterSupport" => Ok(PdCapability::CheckCharacterSupport(PdCapEntry::from_str(ent)?)),
+                "CommunicationSecurity" => Ok(PdCapability::CommunicationSecurity(PdCapEntry::from_str(ent)?)),
+                "ReceiveBufferSize" => Ok(PdCapability::ReceiveBufferSize(PdCapEntry::from_str(ent)?)),
+                "LargestCombinedMessage" => Ok(PdCapability::LargestCombinedMessage(PdCapEntry::from_str(ent)?)),
+                "SmartCardSupport" => Ok(PdCapability::SmartCardSupport(PdCapEntry::from_str(ent)?)),
+                "Readers" => Ok(PdCapability::Readers(PdCapEntry::from_str(ent)?)),
+                "Biometrics" => Ok(PdCapability::Biometrics(PdCapEntry::from_str(ent)?)),
+                _ => Err(anyhow::anyhow!("Unable to parse PdCapability: {s}")),
+            }
+        } else {
+            Err(anyhow::anyhow!("Unable to parse PdCapability: {s}"))
+        }
+    }
 }
 
 impl From<libosdp::osdp_pd_cap> for PdCapability {

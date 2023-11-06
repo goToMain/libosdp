@@ -3,9 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define _GNU_SOURCE /* See feature_test_macros(7) */
-
 #include <stdarg.h>
 #include <stdlib.h>
 #ifndef CONFIG_DISABLE_PRETTY_LOGGING

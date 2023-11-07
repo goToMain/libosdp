@@ -4,13 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-name: Publish Crate libosdp
+name: Publish Crates
 
 on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'Rust-v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'Rust-v*' # Push events to matching Rust-v*, i.e. Rust-v1.0
+      - 'Osdpctl-v*' # Push events to matching Osdpctl-v*, i.e. Osdpctl-v1.0
 
 jobs:
   publish:
@@ -26,5 +27,5 @@ jobs:
         override: true
     - uses: katyo/publish-crates@v2
       with:
-        args: -p libosdp
         registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+	ignore-unpublished-changes: true

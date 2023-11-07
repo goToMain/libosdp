@@ -7,12 +7,25 @@ use crate::{
     channel::OsdpChannel
 };
 
+#[derive(Clone)]
 pub struct PdId {
     pub version: i32,
     pub model: i32,
     pub vendor_code: u32,
     pub serial_number: u32,
     pub firmware_version: u32,
+}
+
+impl Default for PdId {
+    fn default() -> Self {
+        Self {
+            version: 0,
+            model: 0,
+            vendor_code: 0,
+            serial_number: 0,
+            firmware_version: 0,
+        }
+    }
 }
 
 impl From <libosdp::osdp_pd_id> for PdId {
@@ -39,6 +52,7 @@ impl PdId {
     }
 }
 
+#[derive(Clone)]
 pub struct PdCapEntry {
     pub compliance: u8,
     pub num_items: u8,
@@ -74,6 +88,7 @@ impl FromStr for PdCapEntry {
     }
 }
 
+#[derive(Clone)]
 pub enum PdCapability {
     ContactStatusMonitoring(PdCapEntry),
     OutputControl(PdCapEntry),

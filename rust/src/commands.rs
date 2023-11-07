@@ -1,5 +1,6 @@
 use crate::libosdp;
 
+#[derive(Debug)]
 pub struct OsdpLedParams {
     control_code: u8,
     on_count: u8,
@@ -35,6 +36,7 @@ impl OsdpLedParams {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandLed {
     reader: u8,
     led_number: u8,
@@ -64,6 +66,7 @@ impl OsdpCommandLed {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandBuzzer {
     reader: u8,
     control_code: u8,
@@ -96,6 +99,7 @@ impl OsdpCommandBuzzer {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandText {
     reader: u8,
     control_code: u8,
@@ -132,6 +136,7 @@ impl OsdpCommandText {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandOutput {
     output_no: u8,
     control_code: u8,
@@ -158,6 +163,7 @@ impl OsdpCommandOutput {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpComSet {
     address: u8,
     baud_rate: u32
@@ -181,9 +187,10 @@ impl OsdpComSet {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandKeyset {
-    key_type: u8,
-    data: [u8; 32]
+    pub key_type: u8,
+    pub data: [u8; 32]
 }
 
 impl From <libosdp::osdp_cmd_keyset> for OsdpCommandKeyset {
@@ -205,6 +212,7 @@ impl OsdpCommandKeyset {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandMfg {
     vendor_code: u32,
     command: u8,
@@ -232,6 +240,7 @@ impl OsdpCommandMfg {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpCommandFileTx {
     id: i32,
     flags: u32
@@ -255,6 +264,7 @@ impl OsdpCommandFileTx {
     }
 }
 
+#[derive(Debug)]
 pub enum OsdpCommand {
     Led(OsdpCommandLed),
     Buzzer(OsdpCommandBuzzer),

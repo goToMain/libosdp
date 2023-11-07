@@ -1,5 +1,6 @@
 use crate::libosdp;
 
+#[derive(Debug)]
 pub enum OsdpCardFormats {
     Unspecified,
     Weigand,
@@ -33,6 +34,7 @@ impl OsdpCardFormats {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpEventCardRead {
     reader_no: i32,
     format: OsdpCardFormats,
@@ -68,6 +70,7 @@ impl OsdpEventCardRead {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpEventKeyPress {
     reader_no: i32,
     data: [u8; 64],
@@ -92,6 +95,7 @@ impl OsdpEventKeyPress {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpEventMfgReply {
     vendor_code: u32,
     command: u8,
@@ -119,6 +123,7 @@ impl OsdpEventMfgReply {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpEventIO {
     type_: i32,
     status: u32,
@@ -142,6 +147,7 @@ impl OsdpEventIO {
     }
 }
 
+#[derive(Debug)]
 pub struct OsdpEventStatus {
     tamper: u8,
     power: u8,

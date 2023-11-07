@@ -252,6 +252,19 @@ bitflags::bitflags! {
     }
 }
 
+impl FromStr for OsdpFlag {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "EnforceSecure" => Ok(OsdpFlag::EnforceSecure),
+            "InstallMode" => Ok(OsdpFlag::InstallMode),
+            "IgnoreUnsolicited" => Ok(OsdpFlag::IgnoreUnsolicited),
+            _ => Err(anyhow::anyhow!("Parse error {s}"))
+        }
+    }
+}
+
 pub struct PdInfo {
     pub name: CString,
     pub address: i32,

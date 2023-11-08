@@ -21,6 +21,13 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn from(cfg: &Path) -> Result<Self> {
+        if !cfg.exists() {
+            let mut dir = PathBuf::from(cfg);
+            dir.pop();
+            return Ok(Self {
+                device_config_dir: dir,
+            });
+        }
         let mut config = Ini::new();
         let _ = config.load(cfg).unwrap();
         let s = config.get("default", "device_config_dir").unwrap();
@@ -28,13 +35,13 @@ impl AppConfig {
             let mut path = PathBuf::from(cfg);
             path.pop();
             path.push(&s[2..]);
+            path = std::fs::canonicalize(&s)?;
             path
         } else {
-            PathBuf::from(s)
+            let path = std::fs::canonicalize(&s)?;
+            path
         };
-        Ok(Self {
-            device_config_dir,
-        })
+        Ok(Self { device_config_dir })
     }
 }
 
@@ -102,6 +109,7 @@ pub struct CpConfig {
     pub name: String,
     pd_data: Vec<PdData>,
     pub pid_file: PathBuf,
+    pub log_file: PathBuf,
     pub log_level: String,
 }
 
@@ -121,8 +129,9 @@ impl CpConfig {
             });
         }
         let pid_file = PathBuf::from_str(&config.get("Service", "PidFile").unwrap())?;
+        let log_file = PathBuf::from_str(&config.get("Service", "LogFile").unwrap())?;
         let log_level = config.get("Service", "LogLevel").unwrap();
-        Ok(Self { name, pd_data, pid_file, log_level })
+        Ok(Self { name, pd_data, pid_file, log_level, log_file })
     }
 
     pub fn pd_info(&self) -> Result<Vec<PdInfo>> {
@@ -155,6 +164,7 @@ pub struct PdConfig {
     flags: OsdpFlag,
     pub pid_file: PathBuf,
     pub log_level: String,
+    pub log_file: PathBuf,
 }
 
 impl PdConfig {
@@ -184,8 +194,9 @@ impl PdConfig {
             pd_cap.push(PdCapability::from_str(format!("{}:{}", key, val.as_deref().unwrap()).as_str())?);
         }
         let pid_file = PathBuf::from_str(&config.get("Service", "PidFile").unwrap())?;
+        let log_file = PathBuf::from_str(&config.get("Service", "LogFile").unwrap())?;
         let log_level = config.get("Service", "LogLevel").unwrap();
-        Ok(Self { name, channel, address, key_store, pd_id, pd_cap, flags, pid_file, log_level })
+        Ok(Self { name, channel, address, key_store, pd_id, pd_cap, flags, pid_file, log_level, log_file })
     }
 
     pub fn pd_info(&self) -> Result<PdInfo> {

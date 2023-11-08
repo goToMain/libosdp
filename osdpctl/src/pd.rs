@@ -35,6 +35,9 @@ impl PdDaemon {
                 },
                 OsdpCommand::KeySet(c) => {
                     println!("Command: {:?}", c);
+                    let mut key = [0; 16];
+                    key.copy_from_slice(&c.data[0..16]);
+                    dev.key_store.store(key).unwrap();
                 },
                 OsdpCommand::Mfg(c) => {
                     println!("Command: {:?}", c);

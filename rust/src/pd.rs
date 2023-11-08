@@ -89,7 +89,7 @@ impl PeripheralDevice {
         Ok(())
     }
 
-    pub fn set_command_callback(&mut self, mut closure: fn(OsdpCommand) -> i32) {
+    pub fn set_command_callback(&mut self, mut closure: impl Fn(OsdpCommand) -> i32) {
         let callback = get_trampoline(&closure);
         unsafe {
             libosdp::osdp_pd_set_command_callback(

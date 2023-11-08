@@ -86,7 +86,7 @@ impl ControlPanel {
         Ok(())
     }
 
-    pub fn set_event_callback(&mut self, mut closure: fn(i32, OsdpEvent) -> i32) {
+    pub fn set_event_callback(&mut self, mut closure: impl Fn(i32, OsdpEvent) -> i32) {
         let callback = get_trampoline(&closure);
         unsafe {
             libosdp::osdp_cp_set_event_callback(

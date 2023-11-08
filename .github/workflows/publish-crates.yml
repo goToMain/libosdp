@@ -10,8 +10,8 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-      - 'Rust-v*' # Push events to matching Rust-v*, i.e. Rust-v1.0
-      - 'Osdpctl-v*' # Push events to matching Osdpctl-v*, i.e. Osdpctl-v1.0
+    - 'Rust-v*' # Push events to matching Rust-v*, i.e. Rust-v1.0
+    - 'Osdpctl-v*' # Push events to matching Osdpctl-v*, i.e. Osdpctl-v1.0
 
 jobs:
   publish:
@@ -28,4 +28,4 @@ jobs:
     - uses: katyo/publish-crates@v2
       with:
         registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-	ignore-unpublished-changes: true
+        ignore-unpublished-changes: true

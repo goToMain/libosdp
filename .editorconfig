@@ -7,6 +7,10 @@ charset = utf-8
 indent_style = tab
 indent_size = 8
 
+[*.yml]
+indent_style = space
+indent_size = 2
+
 # 4 space indentation
 [*.{py.in,py,md,cmake,rs}]
 indent_style = space

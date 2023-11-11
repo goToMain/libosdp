@@ -1,10 +1,5 @@
 use crate::libosdp;
-use std::{
-    path::PathBuf,
-    fs::File,
-    ffi::c_void,
-    os::unix::prelude::FileExt
-};
+use std::{ffi::c_void, fs::File, os::unix::prelude::FileExt, path::PathBuf};
 
 pub struct OsdpFile {
     id: i32,
@@ -13,8 +8,7 @@ pub struct OsdpFile {
     size: usize,
 }
 
-unsafe extern "C"
-fn raw_file_open(data: *mut c_void, file_id: i32, size: *mut i32) -> i32 {
+unsafe extern "C" fn raw_file_open(data: *mut c_void, file_id: i32, size: *mut i32) -> i32 {
     let ctx = &mut *(data as *mut OsdpFile);
     if ctx.file.is_some() || file_id != ctx.id {
         return -1;
@@ -31,8 +25,12 @@ fn raw_file_open(data: *mut c_void, file_id: i32, size: *mut i32) -> i32 {
     return 0;
 }
 
-unsafe extern "C"
-fn raw_file_read(data: *mut c_void, buf: *mut c_void, size: i32, offset: i32) -> i32 {
+unsafe extern "C" fn raw_file_read(
+    data: *mut c_void,
+    buf: *mut c_void,
+    size: i32,
+    offset: i32,
+) -> i32 {
     let ctx = &mut *(data as *mut OsdpFile);
     if ctx.file.is_none() {
         return -1;
@@ -47,8 +45,12 @@ fn raw_file_read(data: *mut c_void, buf: *mut c_void, size: i32, offset: i32) ->
     return len;
 }
 
-unsafe extern "C"
-fn raw_file_write(data: *mut c_void, buf: *const c_void, size: i32, offset: i32) -> i32 {
+unsafe extern "C" fn raw_file_write(
+    data: *mut c_void,
+    buf: *const c_void,
+    size: i32,
+    offset: i32,
+) -> i32 {
     let ctx = &mut *(data as *mut OsdpFile);
     if ctx.file.is_none() {
         return -1;
@@ -62,8 +64,7 @@ fn raw_file_write(data: *mut c_void, buf: *const c_void, size: i32, offset: i32)
     }
 }
 
-unsafe extern "C"
-fn raw_file_close(data: *mut c_void) -> i32 {
+unsafe extern "C" fn raw_file_close(data: *mut c_void) -> i32 {
     let ctx = &mut *(data as *mut OsdpFile);
     if ctx.file.is_none() {
         return -1;

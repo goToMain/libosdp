@@ -1,9 +1,6 @@
-use std::{
-    sync::Mutex,
-    collections::HashMap, io::Error, io::ErrorKind
-};
 use anyhow::bail;
-use multiqueue::{BroadcastSender, BroadcastReceiver};
+use multiqueue::{BroadcastReceiver, BroadcastSender};
+use std::{collections::HashMap, io::Error, io::ErrorKind, sync::Mutex};
 
 use super::Channel;
 
@@ -39,18 +36,21 @@ impl Bus {
 
 struct BusDepot {
     id_max: i32,
-    bus_map: HashMap<String, Bus>
+    bus_map: HashMap<String, Bus>,
 }
 
 impl BusDepot {
     pub fn new() -> Self {
         Self {
             id_max: 0,
-            bus_map: HashMap::new()
+            bus_map: HashMap::new(),
         }
     }
 
-    pub fn get(&mut self, name: &str) -> (i32, BroadcastSender<Vec<u8>>, BroadcastReceiver<Vec<u8>>) {
+    pub fn get(
+        &mut self,
+        name: &str,
+    ) -> (i32, BroadcastSender<Vec<u8>>, BroadcastReceiver<Vec<u8>>) {
         if self.bus_map.get(name).is_none() {
             self.id_max += 1;
             let bus = Bus::new(self.id_max);
@@ -94,9 +94,10 @@ impl OsdpThreadBus {
 
 impl std::io::Read for OsdpThreadBus {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        let v = self.recv.recv().map_err(|_| {
-            Error::new(ErrorKind::Other, "Bus recv error!")
-        })?;
+        let v = self
+            .recv
+            .recv()
+            .map_err(|_| Error::new(ErrorKind::Other, "Bus recv error!"))?;
         buf[..v.len()].copy_from_slice(&v[..]);
         Ok(v.len())
     }
@@ -105,9 +106,9 @@ impl std::io::Read for OsdpThreadBus {
 impl std::io::Write for OsdpThreadBus {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         let v = buf.into();
-        self.send.try_send(v).map_err(|_| {
-            Error::new(ErrorKind::Other, "Bus send error!")
-        })?;
+        self.send
+            .try_send(v)
+            .map_err(|_| Error::new(ErrorKind::Other, "Bus send error!"))?;
         _ = self.recv.recv(); // get rid of local echo
         Ok(buf.len())
     }

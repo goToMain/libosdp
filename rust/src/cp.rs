@@ -1,15 +1,16 @@
-use std::ffi::c_void;
 use crate::{
-    libosdp,
-    common::{PdInfo, PdId, PdCapability, OsdpFlag},
     commands::OsdpCommand,
+    common::{OsdpFlag, PdCapability, PdId, PdInfo},
     events::OsdpEvent,
     file::OsdpFile,
+    libosdp,
 };
-use log::{info, warn, debug, error};
+use log::{debug, error, info, warn};
+use std::ffi::c_void;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
-type EventCallback = unsafe extern "C" fn (data: *mut c_void, pd: i32, event: *mut libosdp::osdp_event) -> i32;
+type EventCallback =
+    unsafe extern "C" fn(data: *mut c_void, pd: i32, event: *mut libosdp::osdp_event) -> i32;
 
 unsafe extern "C" fn log_handler(
     log_level: ::std::os::raw::c_int,
@@ -32,12 +33,15 @@ unsafe extern "C" fn log_handler(
     };
 }
 
-unsafe extern "C"
-fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut libosdp::osdp_event) -> i32
+unsafe extern "C" fn trampoline<F>(
+    data: *mut c_void,
+    pd: i32,
+    event: *mut libosdp::osdp_event,
+) -> i32
 where
     F: Fn(i32, OsdpEvent) -> i32,
 {
-    let event: OsdpEvent  = (*event).into();
+    let event: OsdpEvent = (*event).into();
     let callback = &mut *(data as *mut F);
     callback(pd, event)
 }
@@ -58,17 +62,16 @@ impl ControlPanel {
         if pd_info.len() > 126 {
             anyhow::bail!("Max PD count exceeded")
         }
-        let mut info: Vec<libosdp::osdp_pd_info_t> = pd_info.iter_mut().map(|i| -> libosdp::osdp_pd_info_t { i.as_struct() }).collect();
+        let mut info: Vec<libosdp::osdp_pd_info_t> = pd_info
+            .iter_mut()
+            .map(|i| -> libosdp::osdp_pd_info_t { i.as_struct() })
+            .collect();
         unsafe { libosdp::osdp_set_log_callback(Some(log_handler)) };
-        let ctx = unsafe {
-            libosdp::osdp_cp_setup(pd_info.len() as i32, info.as_mut_ptr())
-        };
+        let ctx = unsafe { libosdp::osdp_cp_setup(pd_info.len() as i32, info.as_mut_ptr()) };
         if ctx.is_null() {
             anyhow::bail!("CP setup failed!")
         }
-        Ok(Self {
-            ctx
-        })
+        Ok(Self { ctx })
     }
 
     pub fn refresh(&mut self) {
@@ -77,9 +80,7 @@ impl ControlPanel {
 
     pub fn send_command(&mut self, pd: i32, cmd: &OsdpCommand) -> Result<()> {
         let mut cmd = cmd.as_struct();
-        let rc = unsafe {
-            libosdp::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd))
-        };
+        let rc = unsafe { libosdp::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd)) };
         if rc < 0 {
             anyhow::bail!("Failed to send command");
         }
@@ -92,18 +93,15 @@ impl ControlPanel {
             libosdp::osdp_cp_set_event_callback(
                 self.ctx,
                 Some(callback),
-                &mut closure as *mut _ as *mut c_void
+                &mut closure as *mut _ as *mut c_void,
             );
         }
     }
 
     pub fn get_pd_id(&self, pd: i32) -> Result<PdId> {
-        let mut pd_id: libosdp::osdp_pd_id = unsafe {
-            std::mem::MaybeUninit::zeroed().assume_init()
-        };
-        let rc = unsafe {
-            libosdp::osdp_cp_get_pd_id(self.ctx, pd, &mut pd_id)
-        };
+        let mut pd_id: libosdp::osdp_pd_id =
+            unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
+        let rc = unsafe { libosdp::osdp_cp_get_pd_id(self.ctx, pd, &mut pd_id) };
         if rc < 0 {
             anyhow::bail!("Failed to get PD ID");
         }
@@ -112,9 +110,7 @@ impl ControlPanel {
 
     pub fn get_capability(&self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
         let mut cap = cap.as_struct();
-        let rc = unsafe {
-            libosdp::osdp_cp_get_capability(self.ctx, pd, &mut cap)
-        };
+        let rc = unsafe { libosdp::osdp_cp_get_capability(self.ctx, pd, &mut cap) };
         if rc < 0 {
             anyhow::bail!("Failed to read capability")
         }
@@ -122,9 +118,7 @@ impl ControlPanel {
     }
 
     pub fn set_flag(&mut self, pd: i32, flags: OsdpFlag, value: bool) {
-        let rc = unsafe {
-            libosdp::osdp_cp_modify_flag(self.ctx, pd, flags.bits(), value)
-        };
+        let rc = unsafe { libosdp::osdp_cp_modify_flag(self.ctx, pd, flags.bits(), value) };
         if rc < 0 {
             // OsdpFlag should guarantee that we never fail here. If we did,
             // it's probably best to panic here.
@@ -151,7 +145,7 @@ impl ControlPanel {
                 self.ctx,
                 pd,
                 &mut size as *mut i32,
-                &mut offset as *mut i32
+                &mut offset as *mut i32,
             )
         };
         if rc < 0 {
@@ -172,12 +166,7 @@ impl ControlPanel {
 
     pub fn is_online(&self, pd: i32) -> bool {
         let mut buf: [u8; 16] = [0; 16];
-        unsafe {
-            libosdp::osdp_get_status_mask(
-                self.ctx,
-                &mut buf as *mut u8
-            )
-        };
+        unsafe { libosdp::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
         let pos = pd / 8;
         let idx = pd % 8;
         buf[pos as usize] & (1 << idx) != 0
@@ -185,12 +174,7 @@ impl ControlPanel {
 
     pub fn is_sc_active(&self, pd: i32) -> bool {
         let mut buf: [u8; 16] = [0; 16];
-        unsafe {
-            libosdp::osdp_get_sc_status_mask(
-                self.ctx,
-                &mut buf as *mut u8
-            )
-        };
+        unsafe { libosdp::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };
         let pos = pd / 8;
         let idx = pd % 8;
         buf[pos as usize] & (1 << idx) != 0

@@ -7,13 +7,17 @@ pub enum OsdpCardFormats {
     Ascii,
 }
 
-impl From <u32> for OsdpCardFormats {
+impl From<u32> for OsdpCardFormats {
     fn from(value: u32) -> Self {
         match value {
-            libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_UNSPECIFIED => OsdpCardFormats::Unspecified,
-            libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND => OsdpCardFormats::Weigand,
+            libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_UNSPECIFIED => {
+                OsdpCardFormats::Unspecified
+            }
+            libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND => {
+                OsdpCardFormats::Weigand
+            }
             libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII => OsdpCardFormats::Ascii,
-            _ => panic!("Unknown osdp card format")
+            _ => panic!("Unknown osdp card format"),
         }
     }
 }
@@ -23,7 +27,7 @@ impl OsdpCardFormats {
         match self {
             OsdpCardFormats::Unspecified => {
                 libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_UNSPECIFIED
-            },
+            }
             OsdpCardFormats::Weigand => {
                 libosdp::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND
             },
@@ -42,13 +46,9 @@ pub struct OsdpEventCardRead {
     data: [u8; 64],
 }
 
-impl From <libosdp::osdp_event_cardread> for OsdpEventCardRead {
+impl From<libosdp::osdp_event_cardread> for OsdpEventCardRead {
     fn from(value: libosdp::osdp_event_cardread) -> Self {
-        let direction = if value.direction == 1 {
-            true
-        } else {
-            false
-        };
+        let direction = if value.direction == 1 { true } else { false };
         OsdpEventCardRead {
             reader_no: value.reader_no,
             format: value.format.into(),
@@ -76,7 +76,7 @@ pub struct OsdpEventKeyPress {
     data: [u8; 64],
 }
 
-impl From <libosdp::osdp_event_keypress> for OsdpEventKeyPress {
+impl From<libosdp::osdp_event_keypress> for OsdpEventKeyPress {
     fn from(value: libosdp::osdp_event_keypress) -> Self {
         OsdpEventKeyPress {
             reader_no: value.reader_no,
@@ -102,7 +102,7 @@ pub struct OsdpEventMfgReply {
     data: [u8; 64],
 }
 
-impl From <libosdp::osdp_event_mfgrep> for OsdpEventMfgReply {
+impl From<libosdp::osdp_event_mfgrep> for OsdpEventMfgReply {
     fn from(value: libosdp::osdp_event_mfgrep) -> Self {
         OsdpEventMfgReply {
             vendor_code: value.vendor_code,
@@ -129,7 +129,7 @@ pub struct OsdpEventIO {
     status: u32,
 }
 
-impl From <libosdp::osdp_event_io> for OsdpEventIO {
+impl From<libosdp::osdp_event_io> for OsdpEventIO {
     fn from(value: libosdp::osdp_event_io) -> Self {
         OsdpEventIO {
             type_: value.type_,
@@ -162,7 +162,7 @@ impl OsdpEventStatus {
     }
 }
 
-impl From <libosdp::osdp_event_status> for OsdpEventStatus {
+impl From<libosdp::osdp_event_status> for OsdpEventStatus {
     fn from(value: libosdp::osdp_event_status) -> Self {
         OsdpEventStatus {
             tamper: value.tamper,
@@ -182,68 +182,56 @@ pub enum OsdpEvent {
 impl OsdpEvent {
     pub fn as_struct(&self) -> libosdp::osdp_event {
         match self {
-            OsdpEvent::CardRead(e) => {
-                libosdp::osdp_event {
-                    type_: libosdp::osdp_event_type_OSDP_EVENT_CARDREAD,
-                    __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
-                        cardread: e.as_struct(),
-                    },
-                }
+            OsdpEvent::CardRead(e) => libosdp::osdp_event {
+                type_: libosdp::osdp_event_type_OSDP_EVENT_CARDREAD,
+                __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
+                    cardread: e.as_struct(),
+                },
             },
-            OsdpEvent::KeyPress(e) => {
-                libosdp::osdp_event {
-                    type_: libosdp::osdp_event_type_OSDP_EVENT_KEYPRESS,
-                    __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
-                        keypress: e.as_struct()
-                    },
-                }
+            OsdpEvent::KeyPress(e) => libosdp::osdp_event {
+                type_: libosdp::osdp_event_type_OSDP_EVENT_KEYPRESS,
+                __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
+                    keypress: e.as_struct(),
+                },
             },
-            OsdpEvent::MfgReply(e) => {
-                libosdp::osdp_event {
-                    type_: libosdp::osdp_event_type_OSDP_EVENT_MFGREP,
-                    __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
-                        mfgrep: e.as_struct()
-                    },
-                }
+            OsdpEvent::MfgReply(e) => libosdp::osdp_event {
+                type_: libosdp::osdp_event_type_OSDP_EVENT_MFGREP,
+                __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
+                    mfgrep: e.as_struct(),
+                },
             },
-            OsdpEvent::IO(e) => {
-                libosdp::osdp_event {
-                    type_: libosdp::osdp_event_type_OSDP_EVENT_IO,
-                    __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
-                        io: e.as_struct()
-                    },
-                }
+            OsdpEvent::IO(e) => libosdp::osdp_event {
+                type_: libosdp::osdp_event_type_OSDP_EVENT_IO,
+                __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 { io: e.as_struct() },
             },
-            OsdpEvent::Status(e) => {
-                libosdp::osdp_event {
-                    type_: libosdp::osdp_event_type_OSDP_EVENT_STATUS,
-                    __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
-                        status: e.as_struct()
-                    },
-                }
+            OsdpEvent::Status(e) => libosdp::osdp_event {
+                type_: libosdp::osdp_event_type_OSDP_EVENT_STATUS,
+                __bindgen_anon_1: libosdp::osdp_event__bindgen_ty_1 {
+                    status: e.as_struct(),
+                },
             },
         }
     }
 }
 
-impl From <libosdp::osdp_event> for OsdpEvent {
+impl From<libosdp::osdp_event> for OsdpEvent {
     fn from(value: libosdp::osdp_event) -> Self {
         match value.type_ {
             libosdp::osdp_event_type_OSDP_EVENT_CARDREAD => {
                 OsdpEvent::CardRead(unsafe { value.__bindgen_anon_1.cardread.into() })
-            },
+            }
             libosdp::osdp_event_type_OSDP_EVENT_KEYPRESS => {
                 OsdpEvent::KeyPress(unsafe { value.__bindgen_anon_1.keypress.into() })
-            },
+            }
             libosdp::osdp_event_type_OSDP_EVENT_MFGREP => {
                 OsdpEvent::MfgReply(unsafe { value.__bindgen_anon_1.mfgrep.into() })
-            },
+            }
             libosdp::osdp_event_type_OSDP_EVENT_IO => {
                 OsdpEvent::IO(unsafe { value.__bindgen_anon_1.io.into() })
-            },
+            }
             libosdp::osdp_event_type_OSDP_EVENT_STATUS => {
                 OsdpEvent::Status(unsafe { value.__bindgen_anon_1.status.into() })
-            },
+            }
             _ => panic!("Unknown event"),
         }
     }

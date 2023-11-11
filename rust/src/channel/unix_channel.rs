@@ -1,10 +1,10 @@
+use super::Channel;
 use std::{
-    io::{Read,Write},
-    os::unix::net::{UnixStream, UnixListener},
+    io::{Read, Write},
+    os::unix::net::{UnixListener, UnixStream},
     path::PathBuf,
     str::FromStr,
 };
-use super::Channel;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
@@ -18,10 +18,7 @@ impl UnixChannel {
         let path = format!("/tmp/osdp-{name}");
         let id = super::str_to_channel_id(&path);
         let stream = UnixStream::connect(&path)?;
-        Ok(Self {
-            id,
-            stream,
-        })
+        Ok(Self { id, stream })
     }
 
     pub fn new(name: &str) -> Result<Self> {
@@ -34,10 +31,7 @@ impl UnixChannel {
         let listener = UnixListener::bind(&path)?;
         println!("Waiting for connection to unix::{}", path.display());
         let (stream, _) = listener.accept()?;
-        Ok(Self {
-            id,
-            stream,
-        })
+        Ok(Self { id, stream })
     }
 }
 

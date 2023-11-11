@@ -10,7 +10,7 @@ pub struct OsdpLedParams {
     timer_count: u16,
 }
 
-impl From <libosdp::osdp_cmd_led_params> for OsdpLedParams {
+impl From<libosdp::osdp_cmd_led_params> for OsdpLedParams {
     fn from(value: libosdp::osdp_cmd_led_params) -> Self {
         OsdpLedParams {
             control_code: value.control_code,
@@ -41,10 +41,10 @@ pub struct OsdpCommandLed {
     reader: u8,
     led_number: u8,
     temporary: OsdpLedParams,
-    permanent: OsdpLedParams
+    permanent: OsdpLedParams,
 }
 
-impl From <libosdp::osdp_cmd_led> for OsdpCommandLed {
+impl From<libosdp::osdp_cmd_led> for OsdpCommandLed {
     fn from(value: libosdp::osdp_cmd_led) -> Self {
         OsdpCommandLed {
             reader: value.reader,
@@ -72,10 +72,10 @@ pub struct OsdpCommandBuzzer {
     control_code: u8,
     on_count: u8,
     off_count: u8,
-    rep_count: u8
+    rep_count: u8,
 }
 
-impl From <libosdp::osdp_cmd_buzzer> for OsdpCommandBuzzer {
+impl From<libosdp::osdp_cmd_buzzer> for OsdpCommandBuzzer {
     fn from(value: libosdp::osdp_cmd_buzzer) -> Self {
         OsdpCommandBuzzer {
             reader: value.reader,
@@ -106,10 +106,10 @@ pub struct OsdpCommandText {
     temp_time: u8,
     offset_row: u8,
     offset_col: u8,
-    data: [u8; 32]
+    data: [u8; 32],
 }
 
-impl From <libosdp::osdp_cmd_text> for OsdpCommandText {
+impl From<libosdp::osdp_cmd_text> for OsdpCommandText {
     fn from(value: libosdp::osdp_cmd_text) -> Self {
         OsdpCommandText {
             reader: value.reader,
@@ -140,10 +140,10 @@ impl OsdpCommandText {
 pub struct OsdpCommandOutput {
     output_no: u8,
     control_code: u8,
-    timer_count: u16
+    timer_count: u16,
 }
 
-impl From <libosdp::osdp_cmd_output> for OsdpCommandOutput {
+impl From<libosdp::osdp_cmd_output> for OsdpCommandOutput {
     fn from(value: libosdp::osdp_cmd_output) -> Self {
         OsdpCommandOutput {
             output_no: value.output_no,
@@ -166,10 +166,10 @@ impl OsdpCommandOutput {
 #[derive(Debug)]
 pub struct OsdpComSet {
     address: u8,
-    baud_rate: u32
+    baud_rate: u32,
 }
 
-impl From <libosdp::osdp_cmd_comset> for OsdpComSet {
+impl From<libosdp::osdp_cmd_comset> for OsdpComSet {
     fn from(value: libosdp::osdp_cmd_comset) -> Self {
         OsdpComSet {
             address: value.address,
@@ -190,10 +190,10 @@ impl OsdpComSet {
 #[derive(Debug)]
 pub struct OsdpCommandKeyset {
     pub key_type: u8,
-    pub data: [u8; 32]
+    pub data: [u8; 32],
 }
 
-impl From <libosdp::osdp_cmd_keyset> for OsdpCommandKeyset {
+impl From<libosdp::osdp_cmd_keyset> for OsdpCommandKeyset {
     fn from(value: libosdp::osdp_cmd_keyset) -> Self {
         OsdpCommandKeyset {
             key_type: value.type_,
@@ -216,10 +216,10 @@ impl OsdpCommandKeyset {
 pub struct OsdpCommandMfg {
     vendor_code: u32,
     command: u8,
-    data: [u8; 64]
+    data: [u8; 64],
 }
 
-impl From <libosdp::osdp_cmd_mfg> for OsdpCommandMfg {
+impl From<libosdp::osdp_cmd_mfg> for OsdpCommandMfg {
     fn from(value: libosdp::osdp_cmd_mfg) -> Self {
         OsdpCommandMfg {
             vendor_code: value.vendor_code,
@@ -243,10 +243,10 @@ impl OsdpCommandMfg {
 #[derive(Debug)]
 pub struct OsdpCommandFileTx {
     id: i32,
-    flags: u32
+    flags: u32,
 }
 
-impl From <libosdp::osdp_cmd_file_tx> for OsdpCommandFileTx {
+impl From<libosdp::osdp_cmd_file_tx> for OsdpCommandFileTx {
     fn from(value: libosdp::osdp_cmd_file_tx) -> Self {
         OsdpCommandFileTx {
             id: value.id,
@@ -281,83 +281,79 @@ impl OsdpCommand {
         match self {
             OsdpCommand::Led(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_LED,
-                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    led: c.as_struct(),
-                },
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 { led: c.as_struct() },
             },
             OsdpCommand::Buzzer(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_BUZZER,
                 __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    buzzer: c.as_struct()
+                    buzzer: c.as_struct(),
                 },
             },
             OsdpCommand::Text(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_TEXT,
                 __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    text: c.as_struct()
+                    text: c.as_struct(),
                 },
             },
             OsdpCommand::Output(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_OUTPUT,
                 __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    output: c.as_struct()
+                    output: c.as_struct(),
                 },
             },
             OsdpCommand::ComSet(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_COMSET,
                 __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    comset: c.as_struct()
+                    comset: c.as_struct(),
                 },
             },
             OsdpCommand::KeySet(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_KEYSET,
                 __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    keyset: c.as_struct()
+                    keyset: c.as_struct(),
                 },
             },
             OsdpCommand::Mfg(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_MFG,
-                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    mfg: c.as_struct()
-                },
+                __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 { mfg: c.as_struct() },
             },
             OsdpCommand::FileTx(c) => libosdp::osdp_cmd {
                 id: libosdp::osdp_cmd_e_OSDP_CMD_FILE_TX,
                 __bindgen_anon_1: libosdp::osdp_cmd__bindgen_ty_1 {
-                    file_tx: c.as_struct()
+                    file_tx: c.as_struct(),
                 },
             },
         }
     }
 }
 
-impl From <libosdp::osdp_cmd> for OsdpCommand {
+impl From<libosdp::osdp_cmd> for OsdpCommand {
     fn from(value: libosdp::osdp_cmd) -> Self {
         match value.id {
             libosdp::osdp_cmd_e_OSDP_CMD_LED => {
                 OsdpCommand::Led(unsafe { value.__bindgen_anon_1.led.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_BUZZER => {
                 OsdpCommand::Buzzer(unsafe { value.__bindgen_anon_1.buzzer.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_TEXT => {
                 OsdpCommand::Text(unsafe { value.__bindgen_anon_1.text.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_OUTPUT => {
                 OsdpCommand::Output(unsafe { value.__bindgen_anon_1.output.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_COMSET => {
                 OsdpCommand::ComSet(unsafe { value.__bindgen_anon_1.comset.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_KEYSET => {
                 OsdpCommand::KeySet(unsafe { value.__bindgen_anon_1.keyset.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_MFG => {
                 OsdpCommand::Mfg(unsafe { value.__bindgen_anon_1.mfg.into() })
-            },
+            }
             libosdp::osdp_cmd_e_OSDP_CMD_FILE_TX => {
                 OsdpCommand::FileTx(unsafe { value.__bindgen_anon_1.file_tx.into() })
-            },
+            }
             _ => panic!("Unknown event"),
         }
     }

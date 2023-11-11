@@ -1,22 +1,18 @@
-use std::{
-    path::{Path, PathBuf},
-    str::FromStr,
-    fmt::Write
-};
 use configparser::ini::Ini;
 use libosdp::{
-    common::{
-        OsdpFlag, PdId, PdCapability, PdInfo
-    },
-    channel::{
-        unix_channel::UnixChannel, OsdpChannel
-    }
+    channel::{unix_channel::UnixChannel, OsdpChannel},
+    common::{OsdpFlag, PdCapability, PdId, PdInfo},
+};
+use std::{
+    fmt::Write,
+    path::{Path, PathBuf},
+    str::FromStr,
 };
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
 pub struct AppConfig {
-    pub device_config_dir: PathBuf
+    pub device_config_dir: PathBuf,
 }
 
 impl AppConfig {
@@ -29,8 +25,8 @@ impl AppConfig {
             });
         }
         let mut config = Ini::new();
-        let _ = config.load(cfg).unwrap();
-        let s = config.get("default", "device_config_dir").unwrap();
+        config.load(cfg).map_err(|e| anyhow::anyhow!(e))?;
+        let s = config.get("default", "DeviceDir").unwrap();
         let device_config_dir = if s.starts_with("./") {
             let mut path = PathBuf::from(cfg);
             path.pop();
@@ -51,15 +47,13 @@ fn vec_to_array<T, const N: usize>(v: Vec<T>) -> [T; N] {
 }
 
 pub struct KeyStore {
-    store: PathBuf
+    store: PathBuf,
 }
 
 impl KeyStore {
     pub fn from_path(path: &str) -> Self {
         let store = PathBuf::from_str(path).unwrap();
-        Self {
-            store,
-        }
+        Self { store }
     }
 
     pub fn decode_hex(&self, s: &str) -> anyhow::Result<Vec<u8>, std::num::ParseIntError> {
@@ -102,14 +96,14 @@ pub struct PdData {
     channel: String,
     address: i32,
     pub key_store: KeyStore,
-    flags: OsdpFlag
+    flags: OsdpFlag,
 }
 
 pub struct CpConfig {
     pub name: String,
     pd_data: Vec<PdData>,
     pub pid_file: PathBuf,
-    pub log_file: PathBuf,
+    pub log_dir: PathBuf,
     pub log_level: String,
 }
 
@@ -129,9 +123,15 @@ impl CpConfig {
             });
         }
         let pid_file = PathBuf::from_str(&config.get("Service", "PidFile").unwrap())?;
-        let log_file = PathBuf::from_str(&config.get("Service", "LogFile").unwrap())?;
+        let log_dir = PathBuf::from_str(&config.get("Service", "LogDir").unwrap())?;
         let log_level = config.get("Service", "LogLevel").unwrap();
-        Ok(Self { name, pd_data, pid_file, log_level, log_file })
+        Ok(Self {
+            name,
+            pd_data,
+            pid_file,
+            log_level,
+            log_dir,
+        })
     }
 
     pub fn pd_info(&self) -> Result<Vec<PdInfo>> {
@@ -155,7 +155,7 @@ impl CpConfig {
 }
 
 pub struct PdConfig {
-    name: String,
+    pub name: String,
     channel: String,
     address: i32,
     pub key_store: KeyStore,
@@ -164,7 +164,7 @@ pub struct PdConfig {
     flags: OsdpFlag,
     pub pid_file: PathBuf,
     pub log_level: String,
-    pub log_file: PathBuf,
+    pub log_dir: PathBuf,
 }
 
 impl PdConfig {
@@ -174,7 +174,7 @@ impl PdConfig {
             model: config.getuint("PdId", "Model").unwrap().unwrap() as i32,
             vendor_code: config.getuint("PdId", "VendorCode").unwrap().unwrap() as u32,
             serial_number: config.getuint("PdId", "SerialNumber").unwrap().unwrap() as u32,
-            firmware_version: config.getuint("PdId", "FirmwareVersion").unwrap().unwrap() as u32
+            firmware_version: config.getuint("PdId", "FirmwareVersion").unwrap().unwrap() as u32,
         };
         let mut flags = OsdpFlag::empty();
         if let Some(val) = config.get("default", "Flags") {
@@ -191,12 +191,25 @@ impl PdConfig {
         let cap_map = map.get("PdCapability").unwrap();
         let mut pd_cap = Vec::new();
         for (key, val) in cap_map {
-            pd_cap.push(PdCapability::from_str(format!("{}:{}", key, val.as_deref().unwrap()).as_str())?);
+            pd_cap.push(PdCapability::from_str(
+                format!("{}:{}", key, val.as_deref().unwrap()).as_str(),
+            )?);
         }
         let pid_file = PathBuf::from_str(&config.get("Service", "PidFile").unwrap())?;
-        let log_file = PathBuf::from_str(&config.get("Service", "LogFile").unwrap())?;
+        let log_dir = PathBuf::from_str(&config.get("Service", "LogDir").unwrap())?;
         let log_level = config.get("Service", "LogLevel").unwrap();
-        Ok(Self { name, channel, address, key_store, pd_id, pd_cap, flags, pid_file, log_level, log_file })
+        Ok(Self {
+            name,
+            channel,
+            address,
+            key_store,
+            pd_id,
+            pd_cap,
+            flags,
+            pid_file,
+            log_level,
+            log_dir,
+        })
     }
 
     pub fn pd_info(&self) -> Result<PdInfo> {

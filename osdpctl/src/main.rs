@@ -2,14 +2,16 @@ mod config;
 mod cp;
 mod pd;
 
-use std::{
-    path::PathBuf,
-    collections::HashMap,
-};
+use std::{collections::HashMap, path::PathBuf};
 
 use clap::{arg, Command};
 use config::{AppConfig, DeviceConfig};
 use cp::CpDaemon;
+use log4rs::{
+    append::console::ConsoleAppender,
+    config::{Appender, Root},
+    Config,
+};
 use pd::PdDaemon;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
@@ -20,10 +22,7 @@ fn cli() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
-        .subcommand(
-            Command::new("list")
-                .about("List configured OSDP devices")
-        )
+        .subcommand(Command::new("list").about("List configured OSDP devices"))
         .subcommand(
             Command::new("start")
                 .about("Start a OSDP device")
@@ -50,7 +49,8 @@ fn osdpctl_config_dir() -> Result<PathBuf> {
         cfg_dir = std::fs::canonicalize(&dir)?;
     } else {
         cfg_dir = dirs::config_dir()
-            .or_else(|| Some(PathBuf::from("/tmp/.config/"))).unwrap();
+            .or_else(|| Some(PathBuf::from("/tmp/.config/")))
+            .unwrap();
         cfg_dir.push("osdp");
         if !cfg_dir.is_dir() {
             std::fs::create_dir_all(&cfg_dir)?;
@@ -60,6 +60,13 @@ fn osdpctl_config_dir() -> Result<PathBuf> {
 }
 
 fn main() -> Result<()> {
+    let stdout = ConsoleAppender::builder().build();
+    let log_level = log::LevelFilter::Info;
+    let config = Config::builder()
+        .appender(Appender::builder().build("stdout", Box::new(stdout)))
+        .build(Root::builder().appender("stdout").build(log_level))?;
+    let _ = log4rs::init_config(config).unwrap();
+
     let cfg_dir = osdpctl_config_dir()?;
     let config = AppConfig::from(&cfg_dir.join("osdpctl.cfg"))?;
 
@@ -82,30 +89,33 @@ fn main() -> Result<()> {
             }
         }
         Some(("start", sub_matches)) => {
-            let name = sub_matches.get_one::<String>("DEV")
+            let name = sub_matches
+                .get_one::<String>("DEV")
                 .expect("device name is required");
             if let Some(dev) = device_map.get(name) {
                 match dev {
                     DeviceConfig::CpConfig(c) => {
                         let mut daemon = CpDaemon::new(c)?;
                         daemon.run();
-                    },
+                    }
                     DeviceConfig::PdConfig(c) => {
                         let mut daemon = PdDaemon::new(c)?;
                         daemon.run();
-                    },
+                    }
                 };
             }
         }
         Some(("stop", sub_matches)) => {
-            let name = sub_matches.get_one::<String>("DEV")
+            let name = sub_matches
+                .get_one::<String>("DEV")
                 .expect("device name is required");
             if let Some(dev) = device_map.get(name) {
                 println!("stop: {}", dev.name());
             }
         }
         Some(("attach", sub_matches)) => {
-            let name = sub_matches.get_one::<String>("DEV")
+            let name = sub_matches
+                .get_one::<String>("DEV")
                 .expect("device name is required");
             if let Some(dev) = device_map.get(name) {
                 println!("attach: {}", dev.name());

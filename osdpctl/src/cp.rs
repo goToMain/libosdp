@@ -1,9 +1,7 @@
-use std::{fs::File, thread, time::Duration};
-use daemonize::Daemonize;
-use libosdp::{
-    cp::ControlPanel, events::OsdpEvent
-};
 use crate::config::CpConfig;
+use daemonize::Daemonize;
+use libosdp::{cp::ControlPanel, events::OsdpEvent};
+use std::{fs::File, thread, time::Duration};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
@@ -18,25 +16,33 @@ impl CpDaemon {
         cp.set_event_callback(|pd, event| {
             match event {
                 OsdpEvent::CardRead(e) => {
-                    println!("Event: PD-{pd} {:?}", e);
-                },
+                    log::info!("Event: PD-{pd} {:?}", e);
+                }
                 OsdpEvent::KeyPress(e) => {
-                    println!("Event: PD-{pd} {:?}", e);
-                },
+                    log::info!("Event: PD-{pd} {:?}", e);
+                }
                 OsdpEvent::MfgReply(e) => {
-                    println!("Event: PD-{pd} {:?}", e);
-                },
+                    log::info!("Event: PD-{pd} {:?}", e);
+                }
                 OsdpEvent::IO(e) => {
-                    println!("Event: PD-{pd} {:?}", e);
-                },
+                    log::info!("Event: PD-{pd} {:?}", e);
+                }
                 OsdpEvent::Status(e) => {
-                    println!("Event: PD-{pd} {:?}", e);
-                },
+                    log::info!("Event: PD-{pd} {:?}", e);
+                }
             }
             0
         });
-        let stdout = File::create("/tmp/daemon.out").unwrap();
-        let stderr = File::create("/tmp/daemon.err").unwrap();
+        let stdout = File::create(
+            dev.log_dir
+                .as_path()
+                .join(format!("pd-{}.out.log", &dev.name).as_str()),
+        )?;
+        let stderr = File::create(
+            dev.log_dir
+                .as_path()
+                .join(format!("pd-{}.err.log", &dev.name).as_str()),
+        )?;
         let daemon = Daemonize::new()
             .pid_file(&dev.pid_file)
             .chown_pid_file(true)

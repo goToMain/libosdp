@@ -1,4 +1,4 @@
-use crate::libosdp;
+use crate::osdp_sys;
 use std::{ffi::c_void, fs::File, os::unix::prelude::FileExt, path::PathBuf};
 
 #[derive(Debug)]
@@ -84,8 +84,8 @@ impl OsdpFile {
         }
     }
 
-    pub fn get_ops_struct(&mut self) -> libosdp::osdp_file_ops {
-        libosdp::osdp_file_ops {
+    pub fn get_ops_struct(&mut self) -> osdp_sys::osdp_file_ops {
+        osdp_sys::osdp_file_ops {
             arg: self as *mut _ as *mut c_void,
             open: Some(raw_file_open),
             read: Some(raw_file_read),

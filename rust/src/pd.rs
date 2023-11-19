@@ -3,14 +3,14 @@ use crate::{
     common::{PdCapability, PdInfo},
     events::OsdpEvent,
     file::OsdpFile,
-    libosdp,
+    osdp_sys,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 type CommandCallback =
-    unsafe extern "C" fn(data: *mut c_void, event: *mut libosdp::osdp_cmd) -> i32;
+    unsafe extern "C" fn(data: *mut c_void, event: *mut osdp_sys::osdp_cmd) -> i32;
 
 unsafe extern "C" fn log_handler(
     log_level: ::std::os::raw::c_int,
@@ -21,19 +21,19 @@ unsafe extern "C" fn log_handler(
     let msg = crate::common::cstr_to_string(msg);
     let msg = msg.trim();
     match log_level as u32 {
-        libosdp::osdp_log_level_e_OSDP_LOG_EMERG => error!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_ALERT => error!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_CRIT => error!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_ERROR => error!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_WARNING => warn!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_NOTICE => warn!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_INFO => info!("{msg}"),
-        libosdp::osdp_log_level_e_OSDP_LOG_DEBUG => debug!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_EMERG => error!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_ALERT => error!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_CRIT => error!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_ERROR => error!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_WARNING => warn!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_NOTICE => warn!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_INFO => info!("{msg}"),
+        osdp_sys::osdp_log_level_e_OSDP_LOG_DEBUG => debug!("{msg}"),
         _ => panic!("Unknown log level"),
     };
 }
 
-unsafe extern "C" fn trampoline<F>(data: *mut c_void, cmd: *mut libosdp::osdp_cmd) -> i32
+unsafe extern "C" fn trampoline<F>(data: *mut c_void, cmd: *mut osdp_sys::osdp_cmd) -> i32
 where
     F: Fn(OsdpCommand) -> i32,
 {
@@ -51,14 +51,14 @@ where
 
 #[derive(Debug)]
 pub struct PeripheralDevice {
-    ctx: *mut libosdp::osdp_t,
+    ctx: *mut osdp_sys::osdp_t,
 }
 
 impl PeripheralDevice {
     pub fn new(info: &mut PdInfo) -> Result<Self> {
         let mut info = info.as_struct();
-        unsafe { libosdp::osdp_set_log_callback(Some(log_handler)) };
-        let ctx: *mut libosdp::osdp_t = unsafe { libosdp::osdp_pd_setup(&mut info) };
+        unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
+        let ctx: *mut osdp_sys::osdp_t = unsafe { osdp_sys::osdp_pd_setup(&mut info) };
         if ctx.is_null() {
             anyhow::bail!("Failed to setup PD")
         }
@@ -66,24 +66,24 @@ impl PeripheralDevice {
     }
 
     pub fn refresh(&mut self) {
-        unsafe { libosdp::osdp_pd_refresh(self.ctx) }
+        unsafe { osdp_sys::osdp_pd_refresh(self.ctx) }
     }
 
     pub fn set_capabilities(&self, cap: &mut Vec<PdCapability>) {
-        let mut cap: Vec<libosdp::osdp_pd_cap> = cap
+        let mut cap: Vec<osdp_sys::osdp_pd_cap> = cap
             .iter_mut()
-            .map(|c| -> libosdp::osdp_pd_cap { c.as_struct() })
+            .map(|c| -> osdp_sys::osdp_pd_cap { c.as_struct() })
             .collect();
-        unsafe { libosdp::osdp_pd_set_capabilities(self.ctx, cap.as_mut_ptr()) }
+        unsafe { osdp_sys::osdp_pd_set_capabilities(self.ctx, cap.as_mut_ptr()) }
     }
 
     pub fn flush_events(&mut self) {
-        let _ = unsafe { libosdp::osdp_pd_flush_events(self.ctx) };
+        let _ = unsafe { osdp_sys::osdp_pd_flush_events(self.ctx) };
     }
 
     pub fn notify_event(&mut self, event: OsdpEvent) -> Result<()> {
         let mut event = event.as_struct();
-        let rc = unsafe { libosdp::osdp_pd_notify_event(self.ctx, &mut event) };
+        let rc = unsafe { osdp_sys::osdp_pd_notify_event(self.ctx, &mut event) };
         if rc < 0 {
             anyhow::bail!("Event notify failed!");
         }
@@ -93,7 +93,7 @@ impl PeripheralDevice {
     pub fn set_command_callback(&mut self, mut closure: impl Fn(OsdpCommand) -> i32) {
         let callback = get_trampoline(&closure);
         unsafe {
-            libosdp::osdp_pd_set_command_callback(
+            osdp_sys::osdp_pd_set_command_callback(
                 self.ctx,
                 Some(callback),
                 &mut closure as *mut _ as *mut c_void,
@@ -104,7 +104,7 @@ impl PeripheralDevice {
     pub fn register_file(&self, fm: &mut OsdpFile) -> Result<()> {
         let mut ops = fm.get_ops_struct();
         let rc = unsafe {
-            libosdp::osdp_file_register_ops(self.ctx, 0, &mut ops as *mut libosdp::osdp_file_ops)
+            osdp_sys::osdp_file_register_ops(self.ctx, 0, &mut ops as *mut osdp_sys::osdp_file_ops)
         };
         if rc < 0 {
             anyhow::bail!("Failed to register file")
@@ -116,7 +116,7 @@ impl PeripheralDevice {
         let mut size: i32 = 0;
         let mut offset: i32 = 0;
         let rc = unsafe {
-            libosdp::osdp_get_file_tx_status(
+            osdp_sys::osdp_get_file_tx_status(
                 self.ctx,
                 0,
                 &mut size as *mut i32,
@@ -130,30 +130,30 @@ impl PeripheralDevice {
     }
 
     pub fn get_version(&self) -> String {
-        let s = unsafe { libosdp::osdp_get_version() };
+        let s = unsafe { osdp_sys::osdp_get_version() };
         crate::common::cstr_to_string(s)
     }
 
     pub fn get_source_info(&self) -> String {
-        let s = unsafe { libosdp::osdp_get_source_info() };
+        let s = unsafe { osdp_sys::osdp_get_source_info() };
         crate::common::cstr_to_string(s)
     }
 
     pub fn is_online(&mut self) -> bool {
         let mut buf: u8 = 0;
-        unsafe { libosdp::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
+        unsafe { osdp_sys::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
         buf != 0
     }
 
     pub fn is_sc_active(&mut self) -> bool {
         let mut buf: u8 = 0;
-        unsafe { libosdp::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };
+        unsafe { osdp_sys::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };
         buf != 0
     }
 }
 
 impl Drop for PeripheralDevice {
     fn drop(&mut self) {
-        unsafe { libosdp::osdp_pd_teardown(self.ctx) }
+        unsafe { osdp_sys::osdp_pd_teardown(self.ctx) }
     }
 }

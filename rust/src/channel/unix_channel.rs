@@ -8,6 +8,7 @@ use std::{
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
+#[derive(Debug)]
 pub struct UnixChannel {
     id: i32,
     stream: UnixStream,

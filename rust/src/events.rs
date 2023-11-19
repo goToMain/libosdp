@@ -1,6 +1,8 @@
 use crate::libosdp;
+use serde::{Serialize, Deserialize};
+use serde_with::{serde_as, Bytes};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum OsdpCardFormats {
     Unspecified,
     Weigand,
@@ -38,11 +40,13 @@ impl OsdpCardFormats {
     }
 }
 
-#[derive(Debug)]
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OsdpEventCardRead {
     reader_no: i32,
     format: OsdpCardFormats,
     direction: bool,
+    #[serde_as(as = "Bytes")]
     data: [u8; 64],
 }
 
@@ -70,9 +74,11 @@ impl OsdpEventCardRead {
     }
 }
 
-#[derive(Debug)]
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OsdpEventKeyPress {
     reader_no: i32,
+    #[serde_as(as = "Bytes")]
     data: [u8; 64],
 }
 
@@ -95,10 +101,12 @@ impl OsdpEventKeyPress {
     }
 }
 
-#[derive(Debug)]
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OsdpEventMfgReply {
     vendor_code: u32,
     command: u8,
+    #[serde_as(as = "Bytes")]
     data: [u8; 64],
 }
 
@@ -123,7 +131,7 @@ impl OsdpEventMfgReply {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OsdpEventIO {
     type_: i32,
     status: u32,
@@ -147,7 +155,7 @@ impl OsdpEventIO {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OsdpEventStatus {
     tamper: u8,
     power: u8,
@@ -171,6 +179,7 @@ impl From<libosdp::osdp_event_status> for OsdpEventStatus {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum OsdpEvent {
     CardRead(OsdpEventCardRead),
     KeyPress(OsdpEventKeyPress),

@@ -1,6 +1,7 @@
 use crate::libosdp;
 use std::{ffi::c_void, fs::File, os::unix::prelude::FileExt, path::PathBuf};
 
+#[derive(Debug)]
 pub struct OsdpFile {
     id: i32,
     path: PathBuf,

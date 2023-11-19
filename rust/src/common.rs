@@ -7,7 +7,7 @@ use crate::{
     channel::OsdpChannel
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PdId {
     pub version: i32,
     pub model: i32,
@@ -52,7 +52,7 @@ impl PdId {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PdCapEntry {
     pub compliance: u8,
     pub num_items: u8,
@@ -88,7 +88,7 @@ impl FromStr for PdCapEntry {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PdCapability {
     ContactStatusMonitoring(PdCapEntry),
     OutputControl(PdCapEntry),
@@ -280,6 +280,7 @@ impl FromStr for OsdpFlag {
     }
 }
 
+#[derive(Debug)]
 pub struct PdInfo {
     pub name: CString,
     pub address: i32,

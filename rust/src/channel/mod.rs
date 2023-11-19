@@ -18,6 +18,16 @@ pub struct OsdpChannel {
     stream: Mutex<Box<dyn Channel>>,
 }
 
+impl std::fmt::Debug for OsdpChannel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OsdpChannel")
+            .field(
+                "stream",
+                &format!("{}", self.stream.lock().unwrap().get_id()))
+            .finish()
+    }
+}
+
 unsafe extern "C" fn raw_read(data: *mut c_void, buf: *mut u8, len: i32) -> i32 {
     let channel = &mut *(data as *mut OsdpChannel);
     let mut read_buf = vec![0u8; len as usize];

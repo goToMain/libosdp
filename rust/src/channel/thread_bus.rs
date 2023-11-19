@@ -80,6 +80,17 @@ pub struct OsdpThreadBus {
     recv: BroadcastReceiver<Vec<u8>>,
 }
 
+impl std::fmt::Debug for OsdpThreadBus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OsdpThreadBus")
+            .field("name", &self.name)
+            .field("id", &self.id)
+            .field("send", &format!("BroadcastSender::<Vec<u8>>"))
+            .field("recv", &self.recv)
+        .finish()
+    }
+}
+
 impl OsdpThreadBus {
     pub fn join(name: &str) -> Self {
         let (id, send, recv) = ID.lock().unwrap().get(name);

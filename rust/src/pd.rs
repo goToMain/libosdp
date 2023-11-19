@@ -49,6 +49,7 @@ where
     trampoline::<F>
 }
 
+#[derive(Debug)]
 pub struct PeripheralDevice {
     ctx: *mut libosdp::osdp_t,
 }

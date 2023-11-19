@@ -53,6 +53,7 @@ where
     trampoline::<F>
 }
 
+#[derive(Debug)]
 pub struct ControlPanel {
     ctx: *mut std::ffi::c_void,
 }

@@ -24,3 +24,5 @@ env_logger = "0.10.0"
 lazy_static = "1.4.0"
 log = "0.4.20"
 multiqueue = "0.3.2"
+serde = { version = "1.0.192", features = ["derive"] }
+serde_with = "3.4.0"

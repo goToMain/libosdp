@@ -2,7 +2,7 @@ use crate::osdp_sys;
 use serde::{Serialize, Deserialize};
 use serde_with::{serde_as, Bytes};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpLedParams {
     control_code: u8,
     on_count: u8,
@@ -38,7 +38,7 @@ impl From<OsdpLedParams> for osdp_sys::osdp_cmd_led_params{
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpCommandLed {
     reader: u8,
     led_number: u8,
@@ -68,7 +68,7 @@ impl From<OsdpCommandLed> for osdp_sys::osdp_cmd_led {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpCommandBuzzer {
     reader: u8,
     control_code: u8,
@@ -101,7 +101,7 @@ impl From<OsdpCommandBuzzer> for osdp_sys::osdp_cmd_buzzer {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpCommandText {
     reader: u8,
     control_code: u8,
@@ -138,7 +138,7 @@ impl From<OsdpCommandText> for osdp_sys::osdp_cmd_text {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpCommandOutput {
     output_no: u8,
     control_code: u8,
@@ -165,7 +165,7 @@ impl From<OsdpCommandOutput> for osdp_sys::osdp_cmd_output {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpComSet {
     address: u8,
     baud_rate: u32,
@@ -189,7 +189,7 @@ impl From<OsdpComSet> for osdp_sys::osdp_cmd_comset {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpCommandKeyset {
     pub key_type: u8,
     pub data: [u8; 32],
@@ -223,6 +223,16 @@ pub struct OsdpCommandMfg {
     data: [u8; 64],
 }
 
+impl Default for OsdpCommandMfg {
+    fn default() -> Self {
+        Self {
+            vendor_code: Default::default(),
+            command: Default::default(),
+            data: [0; 64]
+        }
+    }
+}
+
 impl From<osdp_sys::osdp_cmd_mfg> for OsdpCommandMfg {
     fn from(value: osdp_sys::osdp_cmd_mfg) -> Self {
         OsdpCommandMfg {
@@ -244,7 +254,7 @@ impl From<OsdpCommandMfg> for osdp_sys::osdp_cmd_mfg {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpCommandFileTx {
     id: i32,
     flags: u32,

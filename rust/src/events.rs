@@ -2,10 +2,11 @@ use crate::osdp_sys;
 use serde::{Serialize, Deserialize};
 use serde_with::{serde_as, Bytes};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub enum OsdpCardFormats {
     Unspecified,
     Weigand,
+    #[default]
     Ascii,
 }
 
@@ -50,6 +51,17 @@ pub struct OsdpEventCardRead {
     data: [u8; 64],
 }
 
+impl Default for OsdpEventCardRead {
+    fn default() -> Self {
+        Self {
+            reader_no: Default::default(),
+            format: Default::default(),
+            direction: Default::default(),
+            data: [0; 64]
+        }
+    }
+}
+
 impl From<osdp_sys::osdp_event_cardread> for OsdpEventCardRead {
     fn from(value: osdp_sys::osdp_event_cardread) -> Self {
         let direction = if value.direction == 1 { true } else { false };
@@ -82,6 +94,15 @@ pub struct OsdpEventKeyPress {
     data: [u8; 64],
 }
 
+impl Default for OsdpEventKeyPress {
+    fn default() -> Self {
+        Self {
+            reader_no: Default::default(),
+            data: [0; 64]
+        }
+    }
+}
+
 impl From<osdp_sys::osdp_event_keypress> for OsdpEventKeyPress {
     fn from(value: osdp_sys::osdp_event_keypress) -> Self {
         OsdpEventKeyPress {
@@ -110,6 +131,16 @@ pub struct OsdpEventMfgReply {
     data: [u8; 64],
 }
 
+impl Default for OsdpEventMfgReply {
+    fn default() -> Self {
+        Self {
+            vendor_code: Default::default(),
+            command: Default::default(),
+            data: [0; 64]
+        }
+    }
+}
+
 impl From<osdp_sys::osdp_event_mfgrep> for OsdpEventMfgReply {
     fn from(value: osdp_sys::osdp_event_mfgrep) -> Self {
         OsdpEventMfgReply {
@@ -131,7 +162,7 @@ impl From<OsdpEventMfgReply> for osdp_sys::osdp_event_mfgrep {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpEventIO {
     type_: i32,
     status: u32,
@@ -155,7 +186,7 @@ impl From<OsdpEventIO> for osdp_sys::osdp_event_io {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpEventStatus {
     tamper: u8,
     power: u8,

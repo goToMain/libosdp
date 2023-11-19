@@ -2,7 +2,7 @@ use crate::osdp_sys;
 use serde::{Serialize, Deserialize};
 use serde_with::{serde_as, Bytes};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpLedParams {
     control_code: u8,
     on_count: u8,
@@ -25,20 +25,20 @@ impl From<osdp_sys::osdp_cmd_led_params> for OsdpLedParams {
     }
 }
 
-impl OsdpLedParams {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_led_params {
+impl From<OsdpLedParams> for osdp_sys::osdp_cmd_led_params{
+    fn from(value: OsdpLedParams) -> Self {
         osdp_sys::osdp_cmd_led_params {
-            control_code: self.control_code,
-            on_count: self.on_count,
-            off_count: self.off_count,
-            on_color: self.on_color,
-            off_color: self.off_color,
-            timer_count: self.timer_count,
+            control_code: value.control_code,
+            on_count: value.on_count,
+            off_count: value.off_count,
+            on_color: value.on_color,
+            off_color: value.off_color,
+            timer_count: value.timer_count,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandLed {
     reader: u8,
     led_number: u8,
@@ -57,18 +57,18 @@ impl From<osdp_sys::osdp_cmd_led> for OsdpCommandLed {
     }
 }
 
-impl OsdpCommandLed {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_led {
+impl From<OsdpCommandLed> for osdp_sys::osdp_cmd_led {
+    fn from(value: OsdpCommandLed) -> Self {
         osdp_sys::osdp_cmd_led {
-            reader: self.reader,
-            led_number: self.led_number,
-            temporary: self.temporary.as_struct(),
-            permanent: self.permanent.as_struct(),
+            reader: value.reader,
+            led_number: value.led_number,
+            temporary: value.temporary.into(),
+            permanent: value.permanent.into(),
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandBuzzer {
     reader: u8,
     control_code: u8,
@@ -89,19 +89,19 @@ impl From<osdp_sys::osdp_cmd_buzzer> for OsdpCommandBuzzer {
     }
 }
 
-impl OsdpCommandBuzzer {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_buzzer {
+impl From<OsdpCommandBuzzer> for osdp_sys::osdp_cmd_buzzer {
+    fn from(value: OsdpCommandBuzzer) -> Self {
         osdp_sys::osdp_cmd_buzzer {
-            reader: self.reader,
-            control_code: self.control_code,
-            on_count: self.on_count,
-            off_count: self.off_count,
-            rep_count: self.rep_count,
+            reader: value.reader,
+            control_code: value.control_code,
+            on_count: value.on_count,
+            off_count: value.off_count,
+            rep_count: value.rep_count,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandText {
     reader: u8,
     control_code: u8,
@@ -124,21 +124,21 @@ impl From<osdp_sys::osdp_cmd_text> for OsdpCommandText {
     }
 }
 
-impl OsdpCommandText {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_text {
+impl From<OsdpCommandText> for osdp_sys::osdp_cmd_text {
+    fn from(value: OsdpCommandText) -> Self {
         osdp_sys::osdp_cmd_text {
-            reader: self.reader,
-            control_code: self.control_code,
-            temp_time: self.temp_time,
-            offset_row: self.offset_row,
-            offset_col: self.offset_col,
-            length: self.data.len() as u8,
-            data: self.data,
+            reader: value.reader,
+            control_code: value.control_code,
+            temp_time: value.temp_time,
+            offset_row: value.offset_row,
+            offset_col: value.offset_col,
+            length: value.data.len() as u8,
+            data: value.data,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandOutput {
     output_no: u8,
     control_code: u8,
@@ -155,17 +155,17 @@ impl From<osdp_sys::osdp_cmd_output> for OsdpCommandOutput {
     }
 }
 
-impl OsdpCommandOutput {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_output {
+impl From<OsdpCommandOutput> for osdp_sys::osdp_cmd_output {
+    fn from(value: OsdpCommandOutput) -> Self {
         osdp_sys::osdp_cmd_output {
-            output_no: self.output_no,
-            control_code: self.control_code,
-            timer_count: self.timer_count,
+            output_no: value.output_no,
+            control_code: value.control_code,
+            timer_count: value.timer_count,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpComSet {
     address: u8,
     baud_rate: u32,
@@ -180,16 +180,16 @@ impl From<osdp_sys::osdp_cmd_comset> for OsdpComSet {
     }
 }
 
-impl OsdpComSet {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_comset {
+impl From<OsdpComSet> for osdp_sys::osdp_cmd_comset {
+    fn from(value: OsdpComSet) -> Self {
         osdp_sys::osdp_cmd_comset {
-            address: self.address,
-            baud_rate: self.baud_rate,
+            address: value.address,
+            baud_rate: value.baud_rate,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandKeyset {
     pub key_type: u8,
     pub data: [u8; 32],
@@ -204,18 +204,18 @@ impl From<osdp_sys::osdp_cmd_keyset> for OsdpCommandKeyset {
     }
 }
 
-impl OsdpCommandKeyset {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_keyset {
+impl From<OsdpCommandKeyset> for osdp_sys::osdp_cmd_keyset {
+    fn from(value: OsdpCommandKeyset) -> Self {
         osdp_sys::osdp_cmd_keyset {
-            type_: self.key_type,
-            length: self.data.len() as u8,
-            data: self.data,
+            type_: value.key_type,
+            length: value.data.len() as u8,
+            data: value.data,
         }
     }
 }
 
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandMfg {
     vendor_code: u32,
     command: u8,
@@ -233,18 +233,18 @@ impl From<osdp_sys::osdp_cmd_mfg> for OsdpCommandMfg {
     }
 }
 
-impl OsdpCommandMfg {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_mfg {
+impl From<OsdpCommandMfg> for osdp_sys::osdp_cmd_mfg {
+    fn from(value: OsdpCommandMfg) -> Self {
         osdp_sys::osdp_cmd_mfg {
-            vendor_code: self.vendor_code,
-            command: self.command,
-            length: self.data.len() as u8,
-            data: self.data,
+            vendor_code: value.vendor_code,
+            command: value.command,
+            length: value.data.len() as u8,
+            data: value.data,
         }
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpCommandFileTx {
     id: i32,
     flags: u32,
@@ -259,11 +259,11 @@ impl From<osdp_sys::osdp_cmd_file_tx> for OsdpCommandFileTx {
     }
 }
 
-impl OsdpCommandFileTx {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd_file_tx {
+impl From<OsdpCommandFileTx> for osdp_sys::osdp_cmd_file_tx {
+    fn from(value: OsdpCommandFileTx) -> Self {
         osdp_sys::osdp_cmd_file_tx {
-            id: self.id,
-            flags: self.flags,
+            id: value.id,
+            flags: value.flags,
         }
     }
 }
@@ -285,46 +285,50 @@ impl OsdpCommand {
         match self {
             OsdpCommand::Led(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_LED,
-                __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 { led: c.as_struct() },
+                __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
+                    led: c.clone().into()
+                },
             },
             OsdpCommand::Buzzer(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_BUZZER,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
-                    buzzer: c.as_struct(),
+                    buzzer: c.clone().into(),
                 },
             },
             OsdpCommand::Text(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_TEXT,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
-                    text: c.as_struct(),
+                    text: c.clone().into(),
                 },
             },
             OsdpCommand::Output(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_OUTPUT,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
-                    output: c.as_struct(),
+                    output: c.clone().into(),
                 },
             },
             OsdpCommand::ComSet(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_COMSET,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
-                    comset: c.as_struct(),
+                    comset: c.clone().into(),
                 },
             },
             OsdpCommand::KeySet(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_KEYSET,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
-                    keyset: c.as_struct(),
+                    keyset: c.clone().into(),
                 },
             },
             OsdpCommand::Mfg(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_MFG,
-                __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 { mfg: c.as_struct() },
+                __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
+                    mfg: c.clone().into()
+                },
             },
             OsdpCommand::FileTx(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_FILE_TX,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
-                    file_tx: c.as_struct(),
+                    file_tx: c.clone().into(),
                 },
             },
         }

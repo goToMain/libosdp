@@ -4,11 +4,12 @@ use crate::{
     events::OsdpEvent,
     file::OsdpFile,
     osdp_sys,
+    error::OsdpError,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
 
-type Result<T> = anyhow::Result<T, anyhow::Error>;
+type Result<T> = std::result::Result<T, OsdpError>;
 type CommandCallback =
     unsafe extern "C" fn(data: *mut c_void, event: *mut osdp_sys::osdp_cmd) -> i32;
 
@@ -42,11 +43,22 @@ where
     callback(cmd)
 }
 
-pub fn get_trampoline<F>(_closure: &F) -> CommandCallback
+fn get_trampoline<F>(_closure: &F) -> CommandCallback
 where
     F: Fn(OsdpCommand) -> i32,
 {
     trampoline::<F>
+}
+
+fn pd_setup(info: &mut PdInfo) -> Result<*mut c_void> {
+    let ctx = unsafe {
+        osdp_sys::osdp_pd_setup(&mut info.as_struct())
+    };
+    if ctx.is_null() {
+        Err(OsdpError::Setup)
+    } else {
+        Ok(ctx)
+    }
 }
 
 #[derive(Debug)]
@@ -56,13 +68,8 @@ pub struct PeripheralDevice {
 
 impl PeripheralDevice {
     pub fn new(info: &mut PdInfo) -> Result<Self> {
-        let mut info = info.as_struct();
         unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
-        let ctx: *mut osdp_sys::osdp_t = unsafe { osdp_sys::osdp_pd_setup(&mut info) };
-        if ctx.is_null() {
-            anyhow::bail!("Failed to setup PD")
-        }
-        Ok(Self { ctx })
+        Ok(Self { ctx: pd_setup(info)? })
     }
 
     pub fn refresh(&mut self) {
@@ -84,9 +91,10 @@ impl PeripheralDevice {
         let mut event = event.into();
         let rc = unsafe { osdp_sys::osdp_pd_notify_event(self.ctx, &mut event) };
         if rc < 0 {
-            anyhow::bail!("Event notify failed!");
+            Err(OsdpError::Event)
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     pub fn set_command_callback(&mut self, mut closure: impl Fn(OsdpCommand) -> i32) {
@@ -106,9 +114,10 @@ impl PeripheralDevice {
             osdp_sys::osdp_file_register_ops(self.ctx, 0, &mut ops as *mut osdp_sys::osdp_file_ops)
         };
         if rc < 0 {
-            anyhow::bail!("Failed to register file")
+            Err(OsdpError::FileTransfer("ops register"))
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     pub fn get_file_transfer_status(&mut self) -> Result<(i32, i32)> {
@@ -123,9 +132,10 @@ impl PeripheralDevice {
             )
         };
         if rc < 0 {
-            anyhow::bail!("No file transfer in progress")
+            Err(OsdpError::FileTransfer("transfer status query"))
+        } else {
+            Ok((size, offset))
         }
-        Ok((size, offset))
     }
 
     pub fn get_version(&self) -> String {

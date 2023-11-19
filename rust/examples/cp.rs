@@ -1,14 +1,16 @@
 use std::{
     time::Duration,
-    thread
+    thread,
+    result::Result,
 };
 use libosdp::{
     cp::ControlPanel,
     common::{PdInfo, OsdpFlag, PdId},
     channel::{OsdpChannel, unix_channel::UnixChannel},
+    error::OsdpError,
 };
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), OsdpError> {
     env_logger::init();
     let stream = UnixChannel::connect("conn-1")?;
     let mut pd_info = vec![

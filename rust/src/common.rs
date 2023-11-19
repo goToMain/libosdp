@@ -1,4 +1,4 @@
-use crate::{osdp_sys, channel::OsdpChannel};
+use crate::{osdp_sys, channel::OsdpChannel, error::OsdpError};
 use std::{ffi::{CString, CStr}, str::FromStr};
 
 #[derive(Clone, Debug, Default)]
@@ -42,30 +42,30 @@ pub struct PdCapEntry {
 
 // From "Compliance:10,NumItems:20" to PdCapEntry { compliance: 10, num_items: 20 }
 impl FromStr for PdCapEntry {
-    type Err = anyhow::Error;
+    type Err = OsdpError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (compliance, num_items);
         if let Some((compliance_str, num_items_str)) = s.split_once(',') {
             if let Some((key, val)) = compliance_str.split_once(':') {
                 if key != "Compliance" {
-                    return Err(anyhow::anyhow!("First key must be Compliance {s}"))
+                    return Err(OsdpError::Parse(format!("PdCapEntry: {s}")))
                 }
                 compliance = val.parse::<u8>().unwrap()
             } else {
-                return Err(anyhow::anyhow!("Format error {s}"))
+                return Err(OsdpError::Parse(format!("PdCapEntry: {s}")))
             }
             if let Some((key, val)) = num_items_str.split_once(':') {
                 if key != "NumItems" {
-                    return Err(anyhow::anyhow!("Second key must be NumItems {s}"))
+                    return Err(OsdpError::Parse(format!("PdCapEntry: {s}")))
                 }
                 num_items = val.parse::<u8>().unwrap()
             } else {
-                return Err(anyhow::anyhow!("Format error {s}"))
+                return Err(OsdpError::Parse(format!("PdCapEntry: {s}")))
             }
             Ok(Self{ compliance, num_items })
         } else {
-            return Err(anyhow::anyhow!("Format error {s}"))
+            return Err(OsdpError::Parse(format!("PdCapEntry: {s}")))
         }
     }
 }
@@ -89,7 +89,7 @@ pub enum PdCapability {
 }
 
 impl FromStr for PdCapability {
-    type Err = anyhow::Error;
+    type Err = OsdpError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if let Some((cap, ent)) = s.split_once(':') {
@@ -108,10 +108,10 @@ impl FromStr for PdCapability {
                 "SmartCardSupport" => Ok(PdCapability::SmartCardSupport(PdCapEntry::from_str(ent)?)),
                 "Readers" => Ok(PdCapability::Readers(PdCapEntry::from_str(ent)?)),
                 "Biometrics" => Ok(PdCapability::Biometrics(PdCapEntry::from_str(ent)?)),
-                _ => Err(anyhow::anyhow!("Unable to parse PdCapability: {s}")),
+                _ => Err(OsdpError::Parse(format!("PdCapability: {s}"))),
             }
         } else {
-            Err(anyhow::anyhow!("Unable to parse PdCapability: {s}"))
+            Err(OsdpError::Parse(format!("PdCapability: {s}")))
         }
     }
 }
@@ -253,14 +253,14 @@ bitflags::bitflags! {
 }
 
 impl FromStr for OsdpFlag {
-    type Err = anyhow::Error;
+    type Err = OsdpError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "EnforceSecure" => Ok(OsdpFlag::EnforceSecure),
             "InstallMode" => Ok(OsdpFlag::InstallMode),
             "IgnoreUnsolicited" => Ok(OsdpFlag::IgnoreUnsolicited),
-            _ => Err(anyhow::anyhow!("Parse error {s}"))
+            _ => Err(OsdpError::Parse(format!("OsdpFlag: {s}")))
         }
     }
 }

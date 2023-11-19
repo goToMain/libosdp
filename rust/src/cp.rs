@@ -4,11 +4,12 @@ use crate::{
     events::OsdpEvent,
     file::OsdpFile,
     osdp_sys,
+    error::OsdpError,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
 
-type Result<T> = anyhow::Result<T, anyhow::Error>;
+type Result<T> = std::result::Result<T, OsdpError>;
 type EventCallback =
     unsafe extern "C" fn(data: *mut c_void, pd: i32, event: *mut osdp_sys::osdp_event) -> i32;
 
@@ -53,6 +54,17 @@ where
     trampoline::<F>
 }
 
+fn cp_setup(mut info: Vec<osdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
+    let ctx = unsafe {
+        osdp_sys::osdp_cp_setup(info.len() as i32, info.as_mut_ptr())
+    };
+    if ctx.is_null() {
+        Err(OsdpError::Setup)
+    } else {
+        Ok(ctx)
+    }
+}
+
 #[derive(Debug)]
 pub struct ControlPanel {
     ctx: *mut std::ffi::c_void,
@@ -61,18 +73,14 @@ pub struct ControlPanel {
 impl ControlPanel {
     pub fn new(pd_info: &mut Vec<PdInfo>) -> Result<Self> {
         if pd_info.len() > 126 {
-            anyhow::bail!("Max PD count exceeded")
+            return Err(OsdpError::PdInfo("max PD count exceeded"))
         }
-        let mut info: Vec<osdp_sys::osdp_pd_info_t> = pd_info
+        let info: Vec<osdp_sys::osdp_pd_info_t> = pd_info
             .iter_mut()
             .map(|i| { i.as_struct() })
             .collect();
         unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
-        let ctx = unsafe { osdp_sys::osdp_cp_setup(pd_info.len() as i32, info.as_mut_ptr()) };
-        if ctx.is_null() {
-            anyhow::bail!("CP setup failed!")
-        }
-        Ok(Self { ctx })
+        Ok(Self { ctx: cp_setup(info)? })
     }
 
     pub fn refresh(&mut self) {
@@ -83,9 +91,10 @@ impl ControlPanel {
         let mut cmd = cmd.into();
         let rc = unsafe { osdp_sys::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd)) };
         if rc < 0 {
-            anyhow::bail!("Failed to send command");
+            Err(OsdpError::Command)
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     pub fn set_event_callback(&mut self, mut closure: impl Fn(i32, OsdpEvent) -> i32) {
@@ -104,18 +113,20 @@ impl ControlPanel {
             unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
         let rc = unsafe { osdp_sys::osdp_cp_get_pd_id(self.ctx, pd, &mut pd_id) };
         if rc < 0 {
-            anyhow::bail!("Failed to get PD ID");
+            Err(OsdpError::Query("PdId"))
+        } else {
+            Ok(pd_id.into())
         }
-        Ok(pd_id.into())
     }
 
     pub fn get_capability(&self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
         let mut cap = cap.into();
         let rc = unsafe { osdp_sys::osdp_cp_get_capability(self.ctx, pd, &mut cap) };
         if rc < 0 {
-            anyhow::bail!("Failed to read capability")
+            Err(OsdpError::Query("capability"))
+        } else {
+            Ok(cap.into())
         }
-        Ok(cap.into())
     }
 
     pub fn set_flag(&mut self, pd: i32, flags: OsdpFlag, value: bool) {
@@ -133,9 +144,10 @@ impl ControlPanel {
             osdp_sys::osdp_file_register_ops(self.ctx, pd, &mut ops as *mut osdp_sys::osdp_file_ops)
         };
         if rc < 0 {
-            anyhow::bail!("Failed to register file")
+            Err(OsdpError::FileTransfer("ops register"))
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     pub fn get_file_transfer_status(&self, pd: i32) -> Result<(i32, i32)> {
@@ -150,9 +162,10 @@ impl ControlPanel {
             )
         };
         if rc < 0 {
-            anyhow::bail!("No file transfer in progress")
+            Err(OsdpError::FileTransfer("transfer status query"))
+        } else {
+            Ok((size, offset))
         }
-        Ok((size, offset))
     }
 
     pub fn get_version(&self) -> String {

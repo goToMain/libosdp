@@ -1,14 +1,16 @@
 use std::{
     time::Duration,
-    thread
+    thread,
+    result::Result,
 };
 use libosdp::{
     pd::PeripheralDevice,
     common::{PdInfo, OsdpFlag, PdId, PdCapability, PdCapEntry},
     channel::{OsdpChannel, unix_channel::UnixChannel},
+    error::OsdpError,
 };
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<(), OsdpError> {
     env_logger::init();
     let stream = UnixChannel::new("conn-1")?;
     let mut pd_info =  PdInfo::new(

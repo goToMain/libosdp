@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-type Result<T> = anyhow::Result<T, anyhow::Error>;
+type Result<T> = std::result::Result<T, crate::error::OsdpError>;
 
 #[derive(Debug)]
 pub struct UnixChannel {

@@ -1,10 +1,10 @@
-use anyhow::bail;
 use multiqueue::{BroadcastReceiver, BroadcastSender};
 use std::{collections::HashMap, io::Error, io::ErrorKind, sync::Mutex};
+use crate::error::OsdpError;
 
 use super::Channel;
 
-type Result<T> = anyhow::Result<T, anyhow::Error>;
+type Result<T> = std::result::Result<T, OsdpError>;
 
 struct Bus {
     id: i32,
@@ -62,10 +62,15 @@ impl BusDepot {
     pub fn put(&mut self, name: &str) -> Result<()> {
         if let Some(bus) = self.bus_map.get_mut(name) {
             bus.put();
+            Ok(())
         } else {
-            bail!("Key does not exist");
+            Err(OsdpError::Io(
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "Key does not exist",
+                )
+            ))
         }
-        Ok(())
     }
 }
 

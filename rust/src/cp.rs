@@ -65,7 +65,7 @@ impl ControlPanel {
         }
         let mut info: Vec<osdp_sys::osdp_pd_info_t> = pd_info
             .iter_mut()
-            .map(|i| -> osdp_sys::osdp_pd_info_t { i.as_struct() })
+            .map(|i| { i.as_struct() })
             .collect();
         unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
         let ctx = unsafe { osdp_sys::osdp_cp_setup(pd_info.len() as i32, info.as_mut_ptr()) };
@@ -79,8 +79,8 @@ impl ControlPanel {
         unsafe { osdp_sys::osdp_cp_refresh(self.ctx) }
     }
 
-    pub fn send_command(&mut self, pd: i32, cmd: &OsdpCommand) -> Result<()> {
-        let mut cmd = cmd.as_struct();
+    pub fn send_command(&mut self, pd: i32, cmd: OsdpCommand) -> Result<()> {
+        let mut cmd = cmd.into();
         let rc = unsafe { osdp_sys::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd)) };
         if rc < 0 {
             anyhow::bail!("Failed to send command");
@@ -110,7 +110,7 @@ impl ControlPanel {
     }
 
     pub fn get_capability(&self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
-        let mut cap = cap.as_struct();
+        let mut cap = cap.into();
         let rc = unsafe { osdp_sys::osdp_cp_get_capability(self.ctx, pd, &mut cap) };
         if rc < 0 {
             anyhow::bail!("Failed to read capability")

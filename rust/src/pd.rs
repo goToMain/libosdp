@@ -70,9 +70,8 @@ impl PeripheralDevice {
     }
 
     pub fn set_capabilities(&self, cap: &mut Vec<PdCapability>) {
-        let mut cap: Vec<osdp_sys::osdp_pd_cap> = cap
-            .iter_mut()
-            .map(|c| -> osdp_sys::osdp_pd_cap { c.as_struct() })
+        let mut cap: Vec<osdp_sys::osdp_pd_cap> = cap.iter_mut()
+            .map(|c| -> osdp_sys::osdp_pd_cap { c.clone().into() })
             .collect();
         unsafe { osdp_sys::osdp_pd_set_capabilities(self.ctx, cap.as_mut_ptr()) }
     }
@@ -82,7 +81,7 @@ impl PeripheralDevice {
     }
 
     pub fn notify_event(&mut self, event: OsdpEvent) -> Result<()> {
-        let mut event = event.as_struct();
+        let mut event = event.into();
         let rc = unsafe { osdp_sys::osdp_pd_notify_event(self.ctx, &mut event) };
         if rc < 0 {
             anyhow::bail!("Event notify failed!");

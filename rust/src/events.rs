@@ -219,9 +219,9 @@ pub enum OsdpEvent {
     Status(OsdpEventStatus),
 }
 
-impl OsdpEvent {
-    pub fn as_struct(&self) -> osdp_sys::osdp_event {
-        match self {
+impl From<OsdpEvent> for osdp_sys::osdp_event {
+    fn from(value: OsdpEvent) -> Self {
+        match value {
             OsdpEvent::CardRead(e) => osdp_sys::osdp_event {
                 type_: osdp_sys::osdp_event_type_OSDP_EVENT_CARDREAD,
                 __bindgen_anon_1: osdp_sys::osdp_event__bindgen_ty_1 {

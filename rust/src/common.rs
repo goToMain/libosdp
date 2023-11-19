@@ -1,25 +1,13 @@
 use crate::{osdp_sys, channel::OsdpChannel};
 use std::{ffi::{CString, CStr}, str::FromStr};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct PdId {
     pub version: i32,
     pub model: i32,
     pub vendor_code: u32,
     pub serial_number: u32,
     pub firmware_version: u32,
-}
-
-impl Default for PdId {
-    fn default() -> Self {
-        Self {
-            version: 0,
-            model: 0,
-            vendor_code: 0,
-            serial_number: 0,
-            firmware_version: 0,
-        }
-    }
 }
 
 impl From <osdp_sys::osdp_pd_id> for PdId {
@@ -34,19 +22,19 @@ impl From <osdp_sys::osdp_pd_id> for PdId {
     }
 }
 
-impl PdId {
-    fn as_struct(&self) -> osdp_sys::osdp_pd_id {
+impl From<PdId> for osdp_sys::osdp_pd_id {
+    fn from(value: PdId) -> Self {
         osdp_sys::osdp_pd_id {
-            version: self.version,
-            model: self.model,
-            vendor_code: self.vendor_code,
-            serial_number: self.serial_number,
-            firmware_version: self.firmware_version,
+            version: value.version,
+            model: value.model,
+            vendor_code: value.vendor_code,
+            serial_number: value.serial_number,
+            firmware_version: value.firmware_version,
         }
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct PdCapEntry {
     pub compliance: u8,
     pub num_items: u8,
@@ -155,8 +143,8 @@ impl From<osdp_sys::osdp_pd_cap> for PdCapability {
     }
 }
 
-impl PdCapability {
-    pub fn as_u8(&self) -> u8 {
+impl Into<u8> for PdCapability {
+    fn into(self) -> u8 {
         match self {
             PdCapability::ContactStatusMonitoring(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CONTACT_STATUS_MONITORING as u8,
             PdCapability::OutputControl(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OUTPUT_CONTROL as u8,
@@ -174,77 +162,80 @@ impl PdCapability {
             PdCapability::Biometrics(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_BIOMETRICS as u8,
         }
     }
+}
 
-    pub fn as_struct(&self) -> osdp_sys::osdp_pd_cap {
-        match self {
+impl From<PdCapability> for osdp_sys::osdp_pd_cap {
+    fn from(value: PdCapability) -> Self {
+        let function_code: u8 = value.clone().into();
+        match value {
             PdCapability::ContactStatusMonitoring(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::OutputControl(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::CardDataFormat(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::LedControl(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
 
             },
             PdCapability::AudibleOutput(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::TextOutput(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::TimeKeeping(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::CheckCharacterSupport(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::CommunicationSecurity(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::ReceiveBufferSize(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::LargestCombinedMessage(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::SmartCardSupport(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::Readers(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
             PdCapability::Biometrics(e) => osdp_sys::osdp_pd_cap {
-                function_code: self.as_u8(),
+                function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
@@ -286,18 +277,13 @@ pub struct PdInfo {
     pub scbk: [u8; 16],
 }
 
-impl<'a> PdInfo {
+impl PdInfo {
     pub fn new(name: &str, address: i32, baud_rate: i32, flags: OsdpFlag, id: PdId, cap: Vec<PdCapability>, channel: OsdpChannel, scbk: [u8; 16]) -> Self {
-        Self {
-            name: CString::new(name).unwrap(),
-            address,
-            baud_rate,
-            flags,
-            id,
-            cap: cap.iter().map(|c| -> osdp_sys::osdp_pd_cap { c.as_struct() }).collect(),
-            channel,
-            scbk,
-        }
+        let name = CString::new(name).unwrap();
+        let cap = cap.iter()
+            .map(|c| { c.clone().into() })
+            .collect();
+        Self { name, address, baud_rate, flags, id, cap, channel, scbk }
     }
 
     pub fn as_struct(&mut self) -> osdp_sys::osdp_pd_info_t {
@@ -306,7 +292,7 @@ impl<'a> PdInfo {
             baud_rate: self.baud_rate,
             address: self.address,
             flags: self.flags.bits() as i32,
-            id: self.id.as_struct(),
+            id: self.id.clone().into(),
             cap: self.cap.as_mut_ptr(),
             channel: self.channel.as_struct(),
             scbk: self.scbk.as_mut_ptr(),

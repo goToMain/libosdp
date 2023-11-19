@@ -290,9 +290,9 @@ pub enum OsdpCommand {
     FileTx(OsdpCommandFileTx),
 }
 
-impl OsdpCommand {
-    pub fn as_struct(&self) -> osdp_sys::osdp_cmd {
-        match self {
+impl From<OsdpCommand> for osdp_sys::osdp_cmd {
+    fn from(value: OsdpCommand) -> Self {
+        match value {
             OsdpCommand::Led(c) => osdp_sys::osdp_cmd {
                 id: osdp_sys::osdp_cmd_e_OSDP_CMD_LED,
                 __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {

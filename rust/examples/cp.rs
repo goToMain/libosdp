@@ -11,7 +11,11 @@ use libosdp::{
 };
 
 fn main() -> Result<(), OsdpError> {
-    env_logger::init();
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .format_target(false)
+        .format_timestamp(None)
+        .init();
     let stream = UnixChannel::connect("conn-1")?;
     let pd_info = vec![
         PdInfo::new(

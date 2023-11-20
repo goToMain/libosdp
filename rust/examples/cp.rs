@@ -13,7 +13,7 @@ use libosdp::{
 fn main() -> Result<(), OsdpError> {
     env_logger::init();
     let stream = UnixChannel::connect("conn-1")?;
-    let mut pd_info = vec![
+    let pd_info = vec![
         PdInfo::new(
             "PD 101", 101,
             115200,
@@ -33,7 +33,7 @@ fn main() -> Result<(), OsdpError> {
             ]
         ),
     ];
-    let mut cp = ControlPanel::new(&mut pd_info)?;
+    let mut cp = ControlPanel::new(pd_info)?;
     loop {
         cp.refresh();
         thread::sleep(Duration::from_millis(50));

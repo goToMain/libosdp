@@ -13,7 +13,7 @@ use libosdp::{
 fn main() -> Result<(), OsdpError> {
     env_logger::init();
     let stream = UnixChannel::new("conn-1")?;
-    let mut pd_info =  PdInfo::new(
+    let pd_info =  PdInfo::new(
         "PD 101",
         101,
         115200,
@@ -26,7 +26,7 @@ fn main() -> Result<(), OsdpError> {
             firmware_version: 0x05,
         },
         vec![
-            PdCapability::CommunicationSecurity(PdCapEntry { compliance: 1, num_items: 1 }),
+            PdCapability::CommunicationSecurity(PdCapEntry::new(1, 1)),
         ],
         OsdpChannel::new::<UnixChannel>(Box::new(stream)),
         [
@@ -34,7 +34,7 @@ fn main() -> Result<(), OsdpError> {
             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         ]
     );
-    let mut pd = PeripheralDevice::new(&mut pd_info)?;
+    let mut pd = PeripheralDevice::new(pd_info)?;
     pd.set_command_callback(|_| {
         println!("Received command!");
         0

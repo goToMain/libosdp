@@ -7,15 +7,16 @@ use std::{
     ffi::c_void,
     hash::{Hash, Hasher},
     io::{Read, Write},
-    sync::Mutex,
+    sync::{Mutex, Arc},
 };
 
 pub trait Channel: Read + Write {
     fn get_id(&self) -> i32;
 }
 
+#[derive(Clone)]
 pub struct OsdpChannel {
-    stream: Mutex<Box<dyn Channel>>,
+    stream: Arc<Mutex<Box<dyn Channel>>>,
 }
 
 impl std::fmt::Debug for OsdpChannel {
@@ -62,7 +63,7 @@ unsafe extern "C" fn raw_flush(data: *mut c_void) {
 impl OsdpChannel {
     pub fn new<T: Channel>(stream: Box<dyn Channel>) -> OsdpChannel {
         Self {
-            stream: Mutex::new(stream),
+            stream: Arc::new(Mutex::new(stream)),
         }
     }
 

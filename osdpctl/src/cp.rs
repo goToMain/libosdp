@@ -11,8 +11,8 @@ pub struct CpDaemon {
 
 impl CpDaemon {
     pub fn new(dev: &CpConfig) -> Result<Self> {
-        let mut pd_info = dev.pd_info()?;
-        let mut cp = ControlPanel::new(&mut pd_info)?;
+        let pd_info = dev.pd_info()?;
+        let mut cp = ControlPanel::new(pd_info)?;
         cp.set_event_callback(|pd, event| {
             match event {
                 OsdpEvent::CardRead(e) => {

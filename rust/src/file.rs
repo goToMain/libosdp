@@ -76,12 +76,7 @@ unsafe extern "C" fn raw_file_close(data: *mut c_void) -> i32 {
 
 impl OsdpFile {
     pub fn new(id: i32, path: PathBuf) -> Self {
-        Self {
-            id,
-            path,
-            file: None,
-            size: 0,
-        }
+        Self { id, path, file: None, size: 0, }
     }
 
     pub fn get_ops_struct(&mut self) -> osdp_sys::osdp_file_ops {

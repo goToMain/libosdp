@@ -11,8 +11,8 @@ pub struct PdDaemon {
 
 impl PdDaemon {
     pub fn new(dev: &PdConfig) -> Result<Self> {
-        let mut pd_info = dev.pd_info()?;
-        let mut pd = PeripheralDevice::new(&mut pd_info)?;
+        let pd_info = dev.pd_info()?;
+        let mut pd = PeripheralDevice::new(pd_info)?;
         pd.set_command_callback(|command| {
             match command {
                 OsdpCommand::Led(c) => {

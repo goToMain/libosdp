@@ -50,9 +50,10 @@ where
     trampoline::<F>
 }
 
-fn pd_setup(info: &mut PdInfo) -> Result<*mut c_void> {
+fn pd_setup(info: PdInfo) -> Result<*mut c_void> {
+    let info = info.as_struct();
     let ctx = unsafe {
-        osdp_sys::osdp_pd_setup(&mut info.as_struct())
+        osdp_sys::osdp_pd_setup(&info)
     };
     if ctx.is_null() {
         Err(OsdpError::Setup)
@@ -67,7 +68,7 @@ pub struct PeripheralDevice {
 }
 
 impl PeripheralDevice {
-    pub fn new(info: &mut PdInfo) -> Result<Self> {
+    pub fn new(info: PdInfo) -> Result<Self> {
         unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
         Ok(Self { ctx: pd_setup(info)? })
     }
@@ -76,11 +77,11 @@ impl PeripheralDevice {
         unsafe { osdp_sys::osdp_pd_refresh(self.ctx) }
     }
 
-    pub fn set_capabilities(&self, cap: &mut Vec<PdCapability>) {
-        let mut cap: Vec<osdp_sys::osdp_pd_cap> = cap.iter_mut()
+    pub fn set_capabilities(&self, cap: &Vec<PdCapability>) {
+        let cap: Vec<osdp_sys::osdp_pd_cap> = cap.iter()
             .map(|c| -> osdp_sys::osdp_pd_cap { c.clone().into() })
             .collect();
-        unsafe { osdp_sys::osdp_pd_set_capabilities(self.ctx, cap.as_mut_ptr()) }
+        unsafe { osdp_sys::osdp_pd_set_capabilities(self.ctx, cap.as_ptr()) }
     }
 
     pub fn flush_events(&mut self) {
@@ -88,8 +89,7 @@ impl PeripheralDevice {
     }
 
     pub fn notify_event(&mut self, event: OsdpEvent) -> Result<()> {
-        let mut event = event.into();
-        let rc = unsafe { osdp_sys::osdp_pd_notify_event(self.ctx, &mut event) };
+        let rc = unsafe { osdp_sys::osdp_pd_notify_event(self.ctx, &event.into()) };
         if rc < 0 {
             Err(OsdpError::Event)
         } else {
@@ -120,7 +120,7 @@ impl PeripheralDevice {
         }
     }
 
-    pub fn get_file_transfer_status(&mut self) -> Result<(i32, i32)> {
+    pub fn get_file_transfer_status(&self) -> Result<(i32, i32)> {
         let mut size: i32 = 0;
         let mut offset: i32 = 0;
         let rc = unsafe {
@@ -148,13 +148,13 @@ impl PeripheralDevice {
         crate::common::cstr_to_string(s)
     }
 
-    pub fn is_online(&mut self) -> bool {
+    pub fn is_online(&self) -> bool {
         let mut buf: u8 = 0;
         unsafe { osdp_sys::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
         buf != 0
     }
 
-    pub fn is_sc_active(&mut self) -> bool {
+    pub fn is_sc_active(&self) -> bool {
         let mut buf: u8 = 0;
         unsafe { osdp_sys::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };
         buf != 0

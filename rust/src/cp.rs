@@ -54,9 +54,9 @@ where
     trampoline::<F>
 }
 
-fn cp_setup(mut info: Vec<osdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
+fn cp_setup(info: Vec<osdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
     let ctx = unsafe {
-        osdp_sys::osdp_cp_setup(info.len() as i32, info.as_mut_ptr())
+        osdp_sys::osdp_cp_setup(info.len() as i32, info.as_ptr())
     };
     if ctx.is_null() {
         Err(OsdpError::Setup)
@@ -71,12 +71,12 @@ pub struct ControlPanel {
 }
 
 impl ControlPanel {
-    pub fn new(pd_info: &mut Vec<PdInfo>) -> Result<Self> {
+    pub fn new(pd_info: Vec<PdInfo>) -> Result<Self> {
         if pd_info.len() > 126 {
             return Err(OsdpError::PdInfo("max PD count exceeded"))
         }
         let info: Vec<osdp_sys::osdp_pd_info_t> = pd_info
-            .iter_mut()
+            .iter()
             .map(|i| { i.as_struct() })
             .collect();
         unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
@@ -88,8 +88,7 @@ impl ControlPanel {
     }
 
     pub fn send_command(&mut self, pd: i32, cmd: OsdpCommand) -> Result<()> {
-        let mut cmd = cmd.into();
-        let rc = unsafe { osdp_sys::osdp_cp_send_command(self.ctx, pd, std::ptr::addr_of_mut!(cmd)) };
+        let rc = unsafe { osdp_sys::osdp_cp_send_command(self.ctx, pd, &cmd.into()) };
         if rc < 0 {
             Err(OsdpError::Command)
         } else {

@@ -36,8 +36,14 @@ impl From<PdId> for osdp_sys::osdp_pd_id {
 
 #[derive(Clone, Debug, Default)]
 pub struct PdCapEntry {
-    pub compliance: u8,
-    pub num_items: u8,
+    compliance: u8,
+    num_items: u8,
+}
+
+impl PdCapEntry {
+    pub fn new(compliance: u8, num_items: u8) -> Self {
+        Self { compliance, num_items }
+    }
 }
 
 // From "Compliance:10,NumItems:20" to PdCapEntry { compliance: 10, num_items: 20 }
@@ -286,16 +292,16 @@ impl PdInfo {
         Self { name, address, baud_rate, flags, id, cap, channel, scbk }
     }
 
-    pub fn as_struct(&mut self) -> osdp_sys::osdp_pd_info_t {
+    pub fn as_struct(&self) -> osdp_sys::osdp_pd_info_t {
         osdp_sys::osdp_pd_info_t {
             name: self.name.as_ptr(),
             baud_rate: self.baud_rate,
             address: self.address,
             flags: self.flags.bits() as i32,
             id: self.id.clone().into(),
-            cap: self.cap.as_mut_ptr(),
-            channel: self.channel.as_struct(),
-            scbk: self.scbk.as_mut_ptr(),
+            cap: self.cap.as_ptr(),
+            channel: self.channel.clone().as_struct(),
+            scbk: self.scbk.as_ptr(),
         }
     }
 }

@@ -286,8 +286,8 @@ pub struct PdInfo {
 impl PdInfo {
     pub fn new(name: &str, address: i32, baud_rate: i32, flags: OsdpFlag, id: PdId, cap: Vec<PdCapability>, channel: OsdpChannel, scbk: [u8; 16]) -> Self {
         let name = CString::new(name).unwrap();
-        let cap = cap.iter()
-            .map(|c| { c.clone().into() })
+        let cap = cap.into_iter()
+            .map(|c| { c.into() })
             .collect();
         Self { name, address, baud_rate, flags, id, cap, channel, scbk }
     }
@@ -300,7 +300,7 @@ impl PdInfo {
             flags: self.flags.bits() as i32,
             id: self.id.clone().into(),
             cap: self.cap.as_ptr(),
-            channel: self.channel.clone().as_struct(),
+            channel: self.channel.as_struct(),
             scbk: self.scbk.as_ptr(),
         }
     }

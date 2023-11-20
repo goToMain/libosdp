@@ -183,6 +183,7 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 {
 	PyObject *py_pd_cap;
 	int i, cap_list_size, function_code, compliance_level, num_items;
+	struct osdp_pd_cap *cap;
 
 	cap_list_size = (int)PyList_Size(obj);
 	if (cap_list_size == 0)
@@ -192,8 +193,8 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 		return -1;
 	}
 
-	info->cap = calloc(cap_list_size + 1, sizeof(struct osdp_pd_cap));
-	if (info->cap == NULL) {
+	cap = calloc(cap_list_size + 1, sizeof(struct osdp_pd_cap));
+	if (cap == NULL) {
 		PyErr_SetString(PyExc_MemoryError, "pd cap alloc error");
 		return -1;
 	}
@@ -212,10 +213,11 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 		if (pyosdp_dict_get_int(py_pd_cap, "num_items", &num_items))
 			return -1;
 
-		info->cap[i].function_code = (uint8_t)function_code;
-		info->cap[i].compliance_level = (uint8_t)compliance_level;
-		info->cap[i].num_items = (uint8_t)num_items;
+		cap[i].function_code = (uint8_t)function_code;
+		cap[i].compliance_level = (uint8_t)compliance_level;
+		cap[i].num_items = (uint8_t)num_items;
 	}
+	info->cap = cap;
 
 	return 0;
 }
@@ -324,12 +326,12 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 	self->ctx = ctx;
 	safe_free(channel_type_str);
 	safe_free(device);
-	safe_free(info.cap);
+	safe_free((void *)info.cap);
 	return 0;
 error:
 	safe_free(channel_type_str);
 	safe_free(device);
-	safe_free(info.cap);
+	safe_free((void *)info.cap);
 	return -1;
 }
 

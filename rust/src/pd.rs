@@ -1,10 +1,10 @@
 use crate::{
     commands::OsdpCommand,
-    common::{PdCapability, PdInfo},
+    pdinfo::PdInfo,
     events::OsdpEvent,
     file::OsdpFile,
     osdp_sys,
-    error::OsdpError,
+    error::OsdpError, pdcap::PdCapability,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
@@ -19,7 +19,7 @@ unsafe extern "C" fn log_handler(
     _line: ::std::os::raw::c_ulong,
     msg: *const ::std::os::raw::c_char,
 ) {
-    let msg = crate::common::cstr_to_string(msg);
+    let msg = crate::cstr_to_string(msg);
     let msg = msg.trim();
     match log_level as u32 {
         osdp_sys::osdp_log_level_e_OSDP_LOG_EMERG => error!("{msg}"),
@@ -140,12 +140,12 @@ impl PeripheralDevice {
 
     pub fn get_version(&self) -> String {
         let s = unsafe { osdp_sys::osdp_get_version() };
-        crate::common::cstr_to_string(s)
+        crate::cstr_to_string(s)
     }
 
     pub fn get_source_info(&self) -> String {
         let s = unsafe { osdp_sys::osdp_get_source_info() };
-        crate::common::cstr_to_string(s)
+        crate::cstr_to_string(s)
     }
 
     pub fn is_online(&self) -> bool {

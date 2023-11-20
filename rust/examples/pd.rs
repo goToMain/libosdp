@@ -5,9 +5,11 @@ use std::{
 };
 use libosdp::{
     pd::PeripheralDevice,
-    common::{PdInfo, OsdpFlag, PdId, PdCapability, PdCapEntry},
+    pdinfo::{PdInfo, OsdpFlag},
     channel::{OsdpChannel, unix_channel::UnixChannel},
     error::OsdpError,
+    pdid::PdId,
+    pdcap::{PdCapability, PdCapEntry},
 };
 
 fn main() -> Result<(), OsdpError> {

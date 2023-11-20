@@ -1112,7 +1112,7 @@ static int state_update(struct osdp_pd *pd)
 	return OSDP_CP_ERR_CAN_YIELD;
 }
 
-static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
+static int osdp_cp_send_command_keyset(osdp_t *ctx, const struct osdp_cmd_keyset *p)
 {
 	int i, res = 0;
 	struct osdp_cmd *cmd[OSDP_PD_MAX] = { 0 };
@@ -1226,13 +1226,12 @@ static int cp_detect_connection_topology(struct osdp *ctx)
 	return 0;
 }
 
-static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
-			       uint8_t *master_key)
+static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 {
-	int i, scbk_count = 0;
+	int i;
 	struct osdp_pd *pd = NULL;
 	struct osdp *ctx;
-	osdp_pd_info_t *info;
+	const osdp_pd_info_t *info;
 	char name[24] = {0};
 
 	ctx = calloc(1, sizeof(struct osdp));
@@ -1263,7 +1262,6 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
 		memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
-			scbk_count += 1;
 			memcpy(pd->sc.scbk, info->scbk, 16);
 			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
 			CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
@@ -1282,17 +1280,6 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		logger_get_default(&pd->logger);
 		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
 		logger_set_name(&pd->logger, name);
-	}
-
-	if (scbk_count != num_pd) {
-		if (master_key != NULL) {
-			LOG_PRINT("MK based key derivation is discouraged!"
-				  " Consider passing individual SCBKs");
-			memcpy(ctx->sc_master_key, master_key, 16);
-			for (i = 0; i < num_pd; i++) {
-				CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
-			}
-		}
 	}
 
 	if (cp_detect_connection_topology(ctx)) {
@@ -1315,13 +1302,13 @@ error:
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list)
+osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 {
 	assert(info_list);
 	assert(num_pd > 0);
 	assert(num_pd <= OSDP_PD_MAX);
 
-	return (osdp_t *)__cp_setup(num_pd, info_list, NULL);
+	return (osdp_t *)__cp_setup(num_pd, info_list);
 }
 
 OSDP_EXPORT
@@ -1365,7 +1352,7 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 }
 
 OSDP_EXPORT
-int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
+int osdp_cp_send_command(osdp_t *ctx, int pd_idx, const struct osdp_cmd *cmd)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);

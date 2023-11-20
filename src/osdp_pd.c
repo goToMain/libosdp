@@ -1040,8 +1040,9 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	}
 }
 
-static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
-				   struct osdp_pd_id *id)
+static void osdp_pd_set_attributes(struct osdp_pd *pd,
+				   const struct osdp_pd_cap *cap,
+				   const struct osdp_pd_id *id)
 {
 	int fc;
 
@@ -1062,7 +1063,7 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
+osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 {
 	struct osdp_pd *pd;
 	struct osdp *ctx;
@@ -1162,7 +1163,7 @@ void osdp_pd_refresh(osdp_t *ctx)
 }
 
 OSDP_EXPORT
-void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap)
+void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap)
 {
 	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
@@ -1182,7 +1183,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 }
 
 OSDP_EXPORT
-int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event)
+int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
 {
 	input_check(ctx);
 	struct osdp_event *ev;

@@ -319,7 +319,8 @@ int osdp_file_tx_command(struct osdp_pd *pd, int file_id, uint32_t flags)
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops)
+int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
+			   const struct osdp_file_ops *ops)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);

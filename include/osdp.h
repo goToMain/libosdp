@@ -322,9 +322,9 @@ typedef struct {
 	int address;
 	int flags;
 	struct osdp_pd_id id;
-	struct osdp_pd_cap *cap;
+	const struct osdp_pd_cap *cap;
 	struct osdp_channel channel;
-	uint8_t *scbk;
+	const uint8_t *scbk;
 } osdp_pd_info_t;
 
 /**
@@ -753,7 +753,7 @@ typedef void (*osdp_command_complete_callback_t)(void *arg, int id);
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_pd_setup(osdp_pd_info_t *info);
+osdp_t *osdp_pd_setup(const osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -778,7 +778,7 @@ void osdp_pd_teardown(osdp_t *ctx);
  * @param cap pointer to array of cap (`struct osdp_pd_cap`) terminated by a
  *        capability with cap->function_code set to 0.
  */
-void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
+void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap);
 
 /**
  * @brief Set callback method for PD command notification. This callback is
@@ -801,7 +801,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
  * @retval 0 on success
  * @retval -1 on failure
  */
-int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
+int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event);
 
 /**
  * @brief Deletes all events from the PD's event queue.
@@ -826,7 +826,7 @@ int osdp_pd_flush_events(osdp_t *ctx);
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info);
+osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -857,7 +857,7 @@ void osdp_cp_teardown(osdp_t *ctx);
  * @note This method only adds the command on to a particular PD's command
  * queue. The command itself can fail due to various reasons.
  */
-int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
+int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd);
 
 /**
  * @brief Get PD ID information as reported by the PD. Calling this method
@@ -1100,7 +1100,8 @@ struct osdp_file_ops {
  *
  * @retval 0 on success. -1 on errors.
  */
-int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops);
+int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
+			   const struct osdp_file_ops *ops);
 
 /**
  * @brief Query file transfer status if one is in progress. Calling this method

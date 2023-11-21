@@ -7,7 +7,7 @@
 import os
 import time
 import random
-import osdp
+import osdp_sys as osdp
 
 pd_cap = [
     {

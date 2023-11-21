@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "pyosdp.h"
+#include "module.h"
 
 int pyosdp_dict_add_bool(PyObject *dict, const char *key, bool val)
 {

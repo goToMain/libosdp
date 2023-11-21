@@ -70,6 +70,7 @@ config.make
 __pycache__/
 .cache/
 *.pyc
+.venv/
 
 ## Rust
 /Cargo.lock

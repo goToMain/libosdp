@@ -6,7 +6,7 @@
 
 import pytest
 
-from testlib import *
+from osdp import *
 
 pd_cap = PDCapabilities([
     (Capability.OutputControl, 1, 8),

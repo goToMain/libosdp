@@ -5,7 +5,7 @@
 #
 
 import time
-from testlib import *
+from osdp import *
 
 def test_daisy_chained_pds(utils):
     # Created single CP-PD pair

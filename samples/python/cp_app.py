@@ -6,7 +6,7 @@
 
 import time
 import random
-import osdp
+import osdp_sys as osdp
 
 output_cmd = {
     "command": osdp.CMD_OUTPUT,

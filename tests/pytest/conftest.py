@@ -5,8 +5,7 @@
 #
 
 import pytest
-
-from testlib import *
+from osdp import *
 
 class TestUtils:
     def __init__(self):

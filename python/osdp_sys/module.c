@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "pyosdp.h"
+#include "module.h"
 #include <stdio.h>
 
-static PyModuleDef osdp_module = {
+static PyModuleDef osdp_sys_module = {
 	PyModuleDef_HEAD_INIT,
-	.m_name = "osdp",
+	.m_name = "osdp_sys",
 	.m_doc = "Open Supervised Device Protocol",
 	.m_size = -1,
 };
@@ -90,11 +90,11 @@ void pyosdp_add_module_constants(PyObject *module)
 #undef ADD_CONST
 }
 
-PyMODINIT_FUNC PyInit_osdp(void)
+PyMODINIT_FUNC PyInit_osdp_sys(void)
 {
 	PyObject *module;
 
-	module = PyModule_Create(&osdp_module);
+	module = PyModule_Create(&osdp_sys_module);
 	if (module == NULL)
 		return NULL;
 

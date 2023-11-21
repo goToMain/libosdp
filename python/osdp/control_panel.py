@@ -6,7 +6,7 @@
 import sys
 import os
 import tempfile
-import osdp
+import osdp_sys
 import time
 import queue
 import threading
@@ -25,9 +25,9 @@ class ControlPanel():
             info_list.append(pd_info.get())
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
         if master_key:
-            self.ctx = osdp.ControlPanel(info_list, master_key=master_key)
+            self.ctx = osdp_sys.ControlPanel(info_list, master_key=master_key)
         else:
-            self.ctx = osdp.ControlPanel(info_list)
+            self.ctx = osdp_sys.ControlPanel(info_list)
         self.ctx.set_event_callback(self.event_handler)
         self.ctx.set_loglevel(log_level)
         self.event = None

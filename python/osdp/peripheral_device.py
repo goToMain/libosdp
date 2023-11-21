@@ -4,7 +4,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-import osdp
+import osdp_sys
 import time
 import queue
 import threading
@@ -17,7 +17,7 @@ class PeripheralDevice():
                  log_level: LogLevel=LogLevel.Info):
         self.command_queue = queue.Queue()
         self.address = pd_info.address
-        self.ctx = osdp.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
+        self.ctx = osdp_sys.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
         self.ctx.set_loglevel(log_level)
         self.ctx.set_command_callback(self.command_handler)
         self.event = None

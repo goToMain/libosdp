@@ -45,7 +45,6 @@ if (NOT CONFIG_OSDP_STATIC_PD AND NOT CONFIG_OSDP_LIB_ONLY)
 	add_subdirectory(samples/c)
 	add_subdirectory(samples/cpp)
 	add_subdirectory(doc)
-	add_subdirectory(python)
 endif()
 
 ## uninstall target

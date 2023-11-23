@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: Publish PyPI
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'Python-v*' # Push events to matching Python-v*, i.e. Python-v2.4.0
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/<your-pypi-project-name>
+    permissions:
+      id-token: write # Trusted Publishing is setup for this workflow file
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install pypa/build
+        run: |
+          python3 -m pip install build --user
+      - name: Build a binary wheel and a source tarball
+        run: |
+          pushd python
+          python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: python/dist/
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/

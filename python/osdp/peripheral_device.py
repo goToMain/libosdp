@@ -62,6 +62,17 @@ class PeripheralDevice():
     def is_online(self):
         return self.ctx.is_online()
 
+    def sc_wait(self, timeout=5):
+        count = 0
+        res = False
+        while count < timeout * 2:
+            time.sleep(0.5)
+            if self.is_sc_active():
+                res = True
+                break
+            count += 1
+        return res
+
     def start(self):
         if self.thread:
             raise RuntimeError("Thread already running!")

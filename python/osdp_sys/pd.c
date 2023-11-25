@@ -204,29 +204,31 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 
 		if (pyosdp_dict_get_int(py_pd_cap, "function_code",
 					&function_code))
-			return -1;
+			goto error;
 
 		if (pyosdp_dict_get_int(py_pd_cap, "compliance_level",
 					&compliance_level))
-			return -1;
+			goto error;
 
 		if (pyosdp_dict_get_int(py_pd_cap, "num_items", &num_items))
-			return -1;
+			goto error;
 
 		cap[i].function_code = (uint8_t)function_code;
 		cap[i].compliance_level = (uint8_t)compliance_level;
 		cap[i].num_items = (uint8_t)num_items;
 	}
 	info->cap = cap;
-
 	return 0;
+error:
+	safe_free(cap);
+	return -1;
 }
 
 #define pyosdp_pd_tp_init_doc                                                                         \
 	"OSDP Peripheral Device Class\n"                                                              \
 	"\n"                                                                                          \
-	"@param pd_info A dict with osdp_pd_info_t keys and valuse. See osdp.h for more info.\n"      \
-	"@param capabilities A list of osdp_pd_cap_t keys and valuse. See osdp.h for more details.\n" \
+	"@param pd_info A dict with osdp_pd_info_t keys and values. See osdp.h for more info.\n"      \
+	"@param capabilities A list of osdp_pd_cap_t keys and values. See osdp.h for more details.\n" \
 	"@param scbk A hexadecimal string representation of the PD secure channel base key\n"         \
 	"\n"                                                                                          \
 	"@return None"

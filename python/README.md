@@ -1,57 +1,40 @@
-# Python3 Bindings for LibOSDP
+# LibOSDP for Python
 
-This is an initial effort at enabling python3 support for LibOSDP. This document
-assumes that you are already familiar with [LibOSDP API][1] and device life
-cycle management.
+This package exposes the C/C++ library for OSDP devices to python to enable rapid
+prototyping of these devices. There are two modules exposed by this package:
 
-## Build/Install
+- `osdp_sys`: A thin wrapper around the C/C++ API; this has been around for a long
+time now and hence has the most tested surface.
 
-A python module `osdp` and classes `ControlPanel` and `PeripheralDevice` are
-made available when the sources of this directory is built and installed.
+- `osdp`: Another wrapper over `osdp_sys` to provide a python friendly API; this
+is a new implementation which is not powering the integration testing suit used
+for all changes made to this project. Over time, this will be the primary means
+of interacting with this library.
 
-After cloning this repo (with `--recurse-submodules`), you can do the following
-(from the repo root) to build the python module.
+## Install
 
-```bash
-mkdir build && cd build
-cmake ..
-make python
-make python_install
+You can install LibOSDP from PyPI using,
+
+```sh
+pip install libosdp
 ```
 
-If you want to undo this install, you can run `make python_uninstall`.
-
-## How to use this module?
+## Usage
 
 ### Control Panel Mode
 
 ```python
-import osdp
-
-## Master key for secure channel
-key = '01020304050607080910111213141516'
+from osdp import *
 
 ## populate osdp_pd_info_t from python
 pd_info = [
-    {
-        "address": 101,
-        "channel_type": "uart",
-        "channel_speed": 115200,
-        "channel_device": '/dev/ttyUSB0',
-    },
-    {
-        "address": 102,
-        "channel_type": "uart",
-        "channel_speed": 115200,
-        "channel_device": '/dev/ttyUSB1',
-    }
+    PDInfo(101, scbk=KeyStore.gen_key(), name='chn-0'),
 ]
 
-## Setup OSDP device in Control Panel mode
-cp = osdp.ControlPanel(pd_info, master_key=key)
-
-## call this refresh method once every 50ms
-cp.refresh()
+## Create a CP device and kick-off the handler thread
+cp = ControlPanel(pd_info, log_level=LogLevel.Debug)
+cp.start()
+cp.sc_wait_all()
 
 ## create and output command
 output_cmd = {
@@ -61,8 +44,28 @@ output_cmd = {
     "timer_count": 10
 }
 
-## send a output command to PD-1
-cp.send_command(1, output_cmd)
+## create a LED Command to be used later
+led_cmd = {
+    'command': Command.LED,
+    'reader': 1,
+    'led_number': 0,
+    'control_code': 1,
+    'on_count': 10,
+    'off_count': 10,
+    'on_color': CommandLEDColor.Red,
+    'off_color': CommandLEDColor.Black,
+    'timer_count': 10,
+    'temporary': True
+}
+
+while True:
+    ## Check if we have an event from PD
+    event = cp.get_event(pd_info[0].address)
+    if event:
+        print(f"PD-0 Sent Event {event}")
+
+    # Send LED command to PD-0
+    cp.send_command(pd_info[0].address, led_cmd)
 ```
 
 see [samples/cp_app.py][2] for more details.
@@ -70,45 +73,40 @@ see [samples/cp_app.py][2] for more details.
 ### Peripheral Device mode:
 
 ```python
-## Describe the PD
-pd_info = {
-    "address": 101,
-    "channel_type": "uart",
-    "channel_speed": 115200,
-    "channel_device": '/dev/ttyUSB0',
+from osdp import *
 
-    "version": 1,
-    "model": 1,
-    "vendor_code": 0xCAFEBABE,
-    "serial_number": 0xDEADBEAF,
-    "firmware_version": 0x0000F00D
-}
+## Describe the PD (setting scbk=None puts the PD in install mode)
+pd_info = PDInfo(101, scbk=None, name='chn-0')
 
 ## Indicate the PD's capabilities to LibOSDP.
-pd_cap = [
-    {
-        # PD is capable of handling output commands
-        "function_code": osdp.CAP_OUTPUT_CONTROL,
-        "compliance_level": 1,
-        "num_items": 1
-    },
-]
+pd_cap = PDCapabilities([
+    (Capability.OutputControl, 1, 1),
+    (Capability.LEDControl, 1, 1),
+    (Capability.AudibleControl, 1, 1),
+    (Capability.TextOutput, 1, 1),
+])
 
-## Setup OSDP device in Peripheral Device mode
-pd = osdp.PeripheralDevice(pd_info, capabilities=pd_cap)
+## Create a PD device and kick-off the handler thread
+pd = PeripheralDevice(pd_info, PDCapabilities(), log_level=LogLevel.Debug)
+pd.start()
 
-## call this refresh method periodically (at lease once every 50ms)
-pd.refresh()
+## create a card read event to be used later
+card_event = {
+    'event': Event.CardRead,
+    'reader_no': 1,
+    'direction': 1,
+    'format': CardFormat.ASCII,
+    'data': bytes([9,1,9,2,6,3,1,7,7,0]),
+}
 
-## Define a callback handler. Must return 0 on success, -ve on failures.
-def handle_command(address, command):
-    if address != pd_info['address']:
-        return { "return_code": -1 }
-    print("PD received command: ", command)
-    return { "return_code": 0 }
+while True:
+    ## Send a card read event to CP
+    pd.notify_event(card_event)
 
-## Set a handler for incoming commands from CP
-pd.set_command_callback(handle_command)
+    ## Check if we have any commands from the CP
+    cmd = pd.get_command()
+    if cmd:
+        print(f"CP sent command: {cmd}")
 ```
 
 see [samples/pd_app.py][3] for more details.

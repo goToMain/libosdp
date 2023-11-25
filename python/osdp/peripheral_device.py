@@ -37,8 +37,9 @@ class PeripheralDevice():
         return { "return_code": 0 }
 
     def get_command(self, timeout: int=5):
+        block = timeout >= 0
         try:
-            cmd = self.command_queue.get(timeout=timeout)
+            cmd = self.command_queue.get(block, timeout=timeout)
         except queue.Empty:
             return None
         return cmd

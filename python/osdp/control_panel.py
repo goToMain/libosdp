@@ -47,8 +47,9 @@ class ControlPanel():
 
     def get_event(self, address, timeout: int=5):
         pd = self.pd_addr.index(address)
+        block = timeout >= 0
         try:
-            event = self.event_queue[pd].get(timeout=timeout)
+            event = self.event_queue[pd].get(block, timeout=timeout)
         except queue.Empty:
             return None
         return event

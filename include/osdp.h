@@ -584,7 +584,7 @@ enum osdp_event_cardread_format_e {
  * @param direction Card read direction of PD 0 - Forward; 1 - Backward
  * @param length Length of card data in bytes or bits depending on `format`
  *        (see note).
- * @param data Card data of `length` bytes or bits bits depending on `format`
+ * @param data Card data of `length` bytes or bits depending on `format`
  *        (see note).
  *
  * @note When `format` is set to OSDP_CARD_FMT_RAW_UNSPECIFIED or

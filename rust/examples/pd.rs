@@ -5,11 +5,9 @@ use std::{
 };
 use libosdp::{
     pd::PeripheralDevice,
-    pdinfo::{PdInfo, OsdpFlag},
+    PdInfo, OsdpFlag, OsdpError, PdId,
     channel::{OsdpChannel, unix_channel::UnixChannel},
-    error::OsdpError,
-    pdid::PdId,
-    pdcap::{PdCapability, PdCapEntry},
+    pdcap::{PdCapability, PdCapEntity},
 };
 
 fn main() -> Result<(), OsdpError> {
@@ -19,20 +17,14 @@ fn main() -> Result<(), OsdpError> {
         .format_timestamp(None)
         .init();
     let stream = UnixChannel::new("conn-1")?;
-    let pd_info =  PdInfo::new(
+    let pd_info =  PdInfo::for_pd(
         "PD 101",
         101,
         115200,
         OsdpFlag::EnforceSecure,
-        PdId {
-            version: 0x01,
-            model: 0x02,
-            vendor_code: 0x03,
-            serial_number: 0x04,
-            firmware_version: 0x05,
-        },
+        PdId::from_number(101),
         vec![
-            PdCapability::CommunicationSecurity(PdCapEntry::new(1, 1)),
+            PdCapability::CommunicationSecurity(PdCapEntity::new(1, 1)),
         ],
         OsdpChannel::new::<UnixChannel>(Box::new(stream)),
         [

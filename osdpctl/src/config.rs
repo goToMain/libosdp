@@ -1,8 +1,7 @@
 use configparser::ini::Ini;
 use libosdp::{
     channel::{unix_channel::UnixChannel, OsdpChannel},
-    pdinfo::{OsdpFlag, PdInfo},
-    pdid::PdId,
+    OsdpFlag, PdInfo, PdId,
     pdcap::PdCapability,
 };
 use std::{
@@ -141,13 +140,11 @@ impl CpConfig {
             .iter()
             .map(|d| {
                 let stream = UnixChannel::new(&d.channel)?;
-                Ok(PdInfo::new(
+                Ok(PdInfo::for_cp(
                     &self.name,
                     d.address,
                     9600,
                     d.flags,
-                    PdId::default(),
-                    vec![],
                     OsdpChannel::new::<UnixChannel>(Box::new(stream)),
                     d.key_store.load()?,
                 ))
@@ -171,13 +168,15 @@ pub struct PdConfig {
 
 impl PdConfig {
     pub fn from(config: &Ini) -> Result<Self> {
-        let pd_id = PdId {
-            version: config.getuint("PdId", "Version").unwrap().unwrap() as i32,
-            model: config.getuint("PdId", "Model").unwrap().unwrap() as i32,
-            vendor_code: config.getuint("PdId", "VendorCode").unwrap().unwrap() as u32,
-            serial_number: config.getuint("PdId", "SerialNumber").unwrap().unwrap() as u32,
-            firmware_version: config.getuint("PdId", "FirmwareVersion").unwrap().unwrap() as u32,
-        };
+        // TODO: Fix this
+        let pd_id = PdId::from_number(1);
+        // let pd_id = PdId {
+        //     version: config.getuint("PdId", "Version").unwrap().unwrap() as i32,
+        //     model: config.getuint("PdId", "Model").unwrap().unwrap() as i32,
+        //     vendor_code: config.getuint("PdId", "VendorCode").unwrap().unwrap() as u32,
+        //     serial_number: config.getuint("PdId", "SerialNumber").unwrap().unwrap() as u32,
+        //     firmware_version: config.getuint("PdId", "FirmwareVersion").unwrap().unwrap() as u32,
+        // };
         let mut flags = OsdpFlag::empty();
         if let Some(val) = config.get("default", "Flags") {
             let fl: Vec<&str> = val.split('|').collect();
@@ -216,7 +215,7 @@ impl PdConfig {
 
     pub fn pd_info(&self) -> Result<PdInfo> {
         let stream = UnixChannel::new(&self.channel)?;
-        Ok(PdInfo::new(
+        Ok(PdInfo::for_pd(
             &self.name,
             self.address,
             9600,

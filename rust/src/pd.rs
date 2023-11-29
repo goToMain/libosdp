@@ -1,10 +1,20 @@
+//! OSDP specification defines end-point devices as Peripheral Devices (PDs).
+//! These devices are responsible for controlling various hardware peripherals
+//! (such as LEDs, buzzers, Displays, GPIOs, etc.,) and exposing them in a
+//! portable manner to the controlling counter-part, the Control Panel (CP).
+//!
+//! PD receives commands from the CP and also generates events for activity that
+//! happens on the PD itself (such as card read, key press, etc.,) snd sends it
+//! to the CP.
+
 use crate::{
     commands::OsdpCommand,
-    pdinfo::PdInfo,
+    PdInfo,
     events::OsdpEvent,
-    file::OsdpFile,
+    file::{OsdpFile, OsdpFileOps, impl_osdp_file_ops_for},
     osdp_sys,
-    error::OsdpError, pdcap::PdCapability,
+    OsdpError,
+    pdcap::PdCapability,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
@@ -62,21 +72,51 @@ fn pd_setup(info: PdInfo) -> Result<*mut c_void> {
     }
 }
 
+/// OSDP Peripheral Device (PD) context
 #[derive(Debug)]
 pub struct PeripheralDevice {
     ctx: *mut osdp_sys::osdp_t,
 }
 
 impl PeripheralDevice {
+    /// Create a new Peripheral panel object for the list of PDs described by the
+    /// corresponding PdInfo list.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let pd_info = vec![
+    ///     PdInfo::for_pd(
+    ///         "PD 101", 101,
+    ///         115200,
+    ///         PdId::from_number(101),
+    ///         vec![
+    ///             PdCapability::CommunicationSecurity(PdCapEntity::new(1, 1)),
+    ///         ],
+    ///         OsdpFlag::EnforceSecure,
+    ///         OsdpChannel::new::<UnixChannel>(Box::new(stream)),
+    ///         [
+    ///             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    ///             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    ///         ]
+    ///     ),
+    /// ];
+    /// let mut cp = PeripheralDevice::new(pd_info)?;
+    /// ```
     pub fn new(info: PdInfo) -> Result<Self> {
         unsafe { osdp_sys::osdp_set_log_callback(Some(log_handler)) };
         Ok(Self { ctx: pd_setup(info)? })
     }
 
+    /// This method is used to periodically refresh the underlying LibOSDP state
+    /// and must be called from the application. To meet the OSDP timing
+    /// guarantees, this function must be called at least once every 50ms. This
+    /// method does not block and returns early if there is nothing to be done.
     pub fn refresh(&mut self) {
         unsafe { osdp_sys::osdp_pd_refresh(self.ctx) }
     }
 
+    /// Set a vector of [`PdCapability`] for this PD.
     pub fn set_capabilities(&self, cap: &Vec<PdCapability>) {
         let cap: Vec<osdp_sys::osdp_pd_cap> = cap.iter()
             .map(|c| -> osdp_sys::osdp_pd_cap { c.clone().into() })
@@ -84,10 +124,13 @@ impl PeripheralDevice {
         unsafe { osdp_sys::osdp_pd_set_capabilities(self.ctx, cap.as_ptr()) }
     }
 
+    /// Flush or drop any events queued in this PD (but not delivered to CP yet)
     pub fn flush_events(&mut self) {
         let _ = unsafe { osdp_sys::osdp_pd_flush_events(self.ctx) };
     }
 
+    /// Queue and a [`OsdpEvent`] for this PD. This will be delivered to CP in
+    /// the next POLL.
     pub fn notify_event(&mut self, event: OsdpEvent) -> Result<()> {
         let rc = unsafe { osdp_sys::osdp_pd_notify_event(self.ctx, &event.into()) };
         if rc < 0 {
@@ -97,6 +140,8 @@ impl PeripheralDevice {
         }
     }
 
+    /// Set a closure that gets called when this PD receives a command from the
+    /// CP.
     pub fn set_command_callback(&mut self, mut closure: impl Fn(OsdpCommand) -> i32) {
         let callback = get_trampoline(&closure);
         unsafe {
@@ -108,52 +153,16 @@ impl PeripheralDevice {
         }
     }
 
-    pub fn register_file(&self, fm: &mut OsdpFile) -> Result<()> {
-        let mut ops = fm.get_ops_struct();
-        let rc = unsafe {
-            osdp_sys::osdp_file_register_ops(self.ctx, 0, &mut ops as *mut osdp_sys::osdp_file_ops)
-        };
-        if rc < 0 {
-            Err(OsdpError::FileTransfer("ops register"))
-        } else {
-            Ok(())
-        }
-    }
-
-    pub fn get_file_transfer_status(&self) -> Result<(i32, i32)> {
-        let mut size: i32 = 0;
-        let mut offset: i32 = 0;
-        let rc = unsafe {
-            osdp_sys::osdp_get_file_tx_status(
-                self.ctx,
-                0,
-                &mut size as *mut i32,
-                &mut offset as *mut i32,
-            )
-        };
-        if rc < 0 {
-            Err(OsdpError::FileTransfer("transfer status query"))
-        } else {
-            Ok((size, offset))
-        }
-    }
-
-    pub fn get_version(&self) -> String {
-        let s = unsafe { osdp_sys::osdp_get_version() };
-        crate::cstr_to_string(s)
-    }
-
-    pub fn get_source_info(&self) -> String {
-        let s = unsafe { osdp_sys::osdp_get_source_info() };
-        crate::cstr_to_string(s)
-    }
-
+    /// Check online status of a PD identified by the offset number (in PdInfo
+    /// vector in [`ControlPanel::new`]).
     pub fn is_online(&self) -> bool {
         let mut buf: u8 = 0;
         unsafe { osdp_sys::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
         buf != 0
     }
 
+    /// Check secure channel status of a PD identified by the offset number
+    /// (in PdInfo vector in [`ControlPanel::new`]).
     pub fn is_sc_active(&self) -> bool {
         let mut buf: u8 = 0;
         unsafe { osdp_sys::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };
@@ -166,3 +175,5 @@ impl Drop for PeripheralDevice {
         unsafe { osdp_sys::osdp_pd_teardown(self.ctx) }
     }
 }
+
+impl_osdp_file_ops_for!(PeripheralDevice);

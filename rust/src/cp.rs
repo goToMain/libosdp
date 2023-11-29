@@ -1,12 +1,17 @@
+//! The Control Panel (CP) is responsible to connecting to and managing multiple
+//! Peripheral Devices (PDs). It is able to send commands to and receive events
+//! from PDs.
+
 use crate::{
     commands::OsdpCommand,
     events::OsdpEvent,
-    file::OsdpFile,
+    file::{OsdpFile, OsdpFileOps, impl_osdp_file_ops_for},
     osdp_sys,
-    error::OsdpError,
-    pdinfo::{PdInfo, OsdpFlag},
+    OsdpError,
+    PdInfo,
+    OsdpFlag,
     pdcap::PdCapability,
-    pdid::PdId,
+    PdId,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
@@ -49,7 +54,7 @@ where
     callback(pd, event)
 }
 
-pub fn get_trampoline<F>(_closure: &F) -> EventCallback
+fn get_trampoline<F>(_closure: &F) -> EventCallback
 where
     F: Fn(i32, OsdpEvent) -> i32,
 {
@@ -67,12 +72,33 @@ fn cp_setup(info: Vec<osdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
     }
 }
 
+/// OSDP Control Panel (CP) device context.
 #[derive(Debug)]
 pub struct ControlPanel {
     ctx: *mut std::ffi::c_void,
 }
 
 impl ControlPanel {
+    /// Create a new control panel object for the list of PDs described by the
+    /// corresponding PdInfo list.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let pd_info = vec![
+    ///     PdInfo::for_cp(
+    ///         "PD 101", 101,
+    ///         115200,
+    ///         OsdpFlag::EnforceSecure,
+    ///         OsdpChannel::new::<UnixChannel>(Box::new(stream)),
+    ///         [
+    ///             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    ///             0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    ///         ]
+    ///     ),
+    /// ];
+    /// let mut cp = ControlPanel::new(pd_info)?;
+    /// ```
     pub fn new(pd_info: Vec<PdInfo>) -> Result<Self> {
         if pd_info.len() > 126 {
             return Err(OsdpError::PdInfo("max PD count exceeded"))
@@ -85,10 +111,16 @@ impl ControlPanel {
         Ok(Self { ctx: cp_setup(info)? })
     }
 
+    /// The application must call this method periodically to refresh the
+    /// underlying LibOSDP state. To meet the OSDP timing guarantees, this
+    /// function must be called at least once every 50ms. This method does not
+    /// block and returns early if there is nothing to be done.
     pub fn refresh(&mut self) {
         unsafe { osdp_sys::osdp_cp_refresh(self.ctx) }
     }
 
+    /// Send [`OsdpCommand`] to a PD identified by the offset number (in PdInfo
+    /// vector in [`ControlPanel::new`]).
     pub fn send_command(&mut self, pd: i32, cmd: OsdpCommand) -> Result<()> {
         let rc = unsafe { osdp_sys::osdp_cp_send_command(self.ctx, pd, &cmd.into()) };
         if rc < 0 {
@@ -98,6 +130,7 @@ impl ControlPanel {
         }
     }
 
+    /// Set a closure that gets called when a PD sends an event to this CP.
     pub fn set_event_callback(&mut self, mut closure: impl Fn(i32, OsdpEvent) -> i32) {
         let callback = get_trampoline(&closure);
         unsafe {
@@ -109,6 +142,8 @@ impl ControlPanel {
         }
     }
 
+    /// Get the [`PdId`] from a PD identified by the offset number (in PdInfo
+    /// vector in [`ControlPanel::new`]).
     pub fn get_pd_id(&self, pd: i32) -> Result<PdId> {
         let mut pd_id: osdp_sys::osdp_pd_id =
             unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
@@ -120,6 +155,8 @@ impl ControlPanel {
         }
     }
 
+    /// Get the [`PdCapability`] from a PD identified by the offset number (in
+    /// PdInfo vector in [`ControlPanel::new`]).
     pub fn get_capability(&self, pd: i32, cap: PdCapability) -> Result<PdCapability> {
         let mut cap = cap.into();
         let rc = unsafe { osdp_sys::osdp_cp_get_capability(self.ctx, pd, &mut cap) };
@@ -130,6 +167,8 @@ impl ControlPanel {
         }
     }
 
+    /// Set [`OsdpFlag`] for a PD identified by the offset number (in PdInfo
+    /// vector in [`ControlPanel::new`]).
     pub fn set_flag(&mut self, pd: i32, flags: OsdpFlag, value: bool) {
         let rc = unsafe { osdp_sys::osdp_cp_modify_flag(self.ctx, pd, flags.bits(), value) };
         if rc < 0 {
@@ -139,46 +178,8 @@ impl ControlPanel {
         }
     }
 
-    pub fn register_file(&mut self, pd: i32, fm: &mut OsdpFile) -> Result<()> {
-        let mut ops = fm.get_ops_struct();
-        let rc = unsafe {
-            osdp_sys::osdp_file_register_ops(self.ctx, pd, &mut ops as *mut osdp_sys::osdp_file_ops)
-        };
-        if rc < 0 {
-            Err(OsdpError::FileTransfer("ops register"))
-        } else {
-            Ok(())
-        }
-    }
-
-    pub fn get_file_transfer_status(&self, pd: i32) -> Result<(i32, i32)> {
-        let mut size: i32 = 0;
-        let mut offset: i32 = 0;
-        let rc = unsafe {
-            osdp_sys::osdp_get_file_tx_status(
-                self.ctx,
-                pd,
-                &mut size as *mut i32,
-                &mut offset as *mut i32,
-            )
-        };
-        if rc < 0 {
-            Err(OsdpError::FileTransfer("transfer status query"))
-        } else {
-            Ok((size, offset))
-        }
-    }
-
-    pub fn get_version(&self) -> String {
-        let s = unsafe { osdp_sys::osdp_get_version() };
-        crate::cstr_to_string(s)
-    }
-
-    pub fn get_source_info(&self) -> String {
-        let s = unsafe { osdp_sys::osdp_get_source_info() };
-        crate::cstr_to_string(s)
-    }
-
+    /// Check online status of a PD identified by the offset number (in PdInfo
+    /// vector in [`ControlPanel::new`]).
     pub fn is_online(&self, pd: i32) -> bool {
         let mut buf: [u8; 16] = [0; 16];
         unsafe { osdp_sys::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
@@ -187,6 +188,8 @@ impl ControlPanel {
         buf[pos as usize] & (1 << idx) != 0
     }
 
+    /// Check secure channel status of a PD identified by the offset number
+    /// (in PdInfo vector in [`ControlPanel::new`]).
     pub fn is_sc_active(&self, pd: i32) -> bool {
         let mut buf: [u8; 16] = [0; 16];
         unsafe { osdp_sys::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };
@@ -201,3 +204,5 @@ impl Drop for ControlPanel {
         unsafe { osdp_sys::osdp_cp_teardown(self.ctx) }
     }
 }
+
+impl_osdp_file_ops_for!(ControlPanel);

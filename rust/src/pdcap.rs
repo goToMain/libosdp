@@ -1,20 +1,35 @@
-use std::str::FromStr;
-use crate::{error::OsdpError, osdp_sys};
+//! Peripheral Devices (PDs) expose/advertise features they support to the
+//! Control Panel (CP) by means of "capabilities" (as specified by OSDP). This
+//! module is responsible to handling such capabilities though [`PdCapability`].
 
+use std::str::FromStr;
+use crate::{OsdpError, osdp_sys};
+
+/// PD capability entity to be used inside [`PdCapability`]
 #[derive(Clone, Debug, Default)]
-pub struct PdCapEntry {
+pub struct PdCapEntity {
     compliance: u8,
     num_items: u8,
 }
 
-impl PdCapEntry {
+impl PdCapEntity {
+    /// Create a new capability entity to be used inside [`PdCapability`].
+    ///
+    /// # Arguments
+    ///
+    /// * `compliance` - A number that indicates what the PD can do with this
+    ///   capability. This number means different things for different
+    ///   [`PdCapability`].
+    /// * `num_items` - number of units of such capability in the PD. For
+    ///    LED capability ([`PdCapability::LedControl`]), this would indicate
+    ///    the number of controllable LEDs available on this PD.
     pub fn new(compliance: u8, num_items: u8) -> Self {
         Self { compliance, num_items }
     }
 }
 
 // From "Compliance:10,NumItems:20" to PdCapEntry { compliance: 10, num_items: 20 }
-impl FromStr for PdCapEntry {
+impl FromStr for PdCapEntity {
     type Err = OsdpError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -43,22 +58,60 @@ impl FromStr for PdCapEntry {
     }
 }
 
+/// OSDP defined PD capabilities
 #[derive(Clone, Debug)]
 pub enum PdCapability {
-    ContactStatusMonitoring(PdCapEntry),
-    OutputControl(PdCapEntry),
-    CardDataFormat(PdCapEntry),
-    LedControl(PdCapEntry),
-    AudibleOutput(PdCapEntry),
-    TextOutput(PdCapEntry),
-    TimeKeeping(PdCapEntry),
-    CheckCharacterSupport(PdCapEntry),
-    CommunicationSecurity(PdCapEntry),
-    ReceiveBufferSize(PdCapEntry),
-    LargestCombinedMessage(PdCapEntry),
-    SmartCardSupport(PdCapEntry),
-    Readers(PdCapEntry),
-    Biometrics(PdCapEntry),
+	/// This function indicates the ability to monitor the status of a switch
+    /// using a two-wire electrical connection between the PD and the switch.
+    /// The on/off position of the switch indicates the state of an external
+    /// device.
+    ///
+	/// The PD may simply resolve all circuit states to an open/closed
+	/// status, or it may implement supervision of the monitoring circuit.
+	/// A supervised circuit is able to indicate circuit fault status in
+	/// addition to open/closed status.
+    ContactStatusMonitoring(PdCapEntity),
+    /// This function provides a switched output, typically in the form of a
+    /// relay. The Output has two states: active or inactive. The Control Panel
+    /// (CP) can directly set the Output's state, or, if the PD supports timed
+    /// operations, the CP can specify a time period for the activation of the
+    /// Output.
+    OutputControl(PdCapEntity),
+    /// This capability indicates the form of the card data is presented to the
+    /// Control Panel.
+    CardDataFormat(PdCapEntity),
+    /// This capability indicates the presence of and type of LEDs.
+    LedControl(PdCapEntity),
+    /// This capability indicates the presence of and type of an audible
+    /// annunciator (buzzer or similar tone generator).
+    AudibleOutput(PdCapEntity),
+    /// This capability indicates that the PD supports a text display emulating
+    /// character-based display terminals.
+    TextOutput(PdCapEntity),
+    /// This capability indicates that the type of date and time awareness or
+    /// time keeping ability of the PD.
+    TimeKeeping(PdCapEntity),
+    /// All PDs must be able to support the checksum mode. This capability
+    /// indicates if the PD is capable of supporting CRC mode.
+    CheckCharacterSupport(PdCapEntity),
+    /// This capability indicates the extent to which the PD supports
+    /// communication security (Secure Channel Communication)
+    CommunicationSecurity(PdCapEntity),
+    /// This capability indicates the maximum size single message the PD can
+    /// receive.
+    ReceiveBufferSize(PdCapEntity),
+    /// This capability indicates the maximum size multi-part message which the
+    /// PD can handle.
+    LargestCombinedMessage(PdCapEntity),
+    /// This capability indicates whether the PD supports the transparent mode
+    /// used for communicating directly with a smart card.
+    SmartCardSupport(PdCapEntity),
+    /// This capability indicates the number of credential reader devices
+    /// present. Compliance levels are bit fields to be assigned as needed.
+    Readers(PdCapEntity),
+    /// This capability indicates the ability of the reader to handle biometric
+    /// input.
+    Biometrics(PdCapEntity),
 }
 
 impl FromStr for PdCapability {
@@ -67,20 +120,20 @@ impl FromStr for PdCapability {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if let Some((cap, ent)) = s.split_once(':') {
             match cap {
-                "ContactStatusMonitoring" => Ok(PdCapability::ContactStatusMonitoring(PdCapEntry::from_str(ent)?)),
-                "OutputControl" => Ok(PdCapability::OutputControl(PdCapEntry::from_str(ent)?)),
-                "CardDataFormat" => Ok(PdCapability::CardDataFormat(PdCapEntry::from_str(ent)?)),
-                "LedControl" => Ok(PdCapability::LedControl(PdCapEntry::from_str(ent)?)),
-                "AudibleOutput" => Ok(PdCapability::AudibleOutput(PdCapEntry::from_str(ent)?)),
-                "TextOutput" => Ok(PdCapability::TextOutput(PdCapEntry::from_str(ent)?)),
-                "TimeKeeping" => Ok(PdCapability::TimeKeeping(PdCapEntry::from_str(ent)?)),
-                "CheckCharacterSupport" => Ok(PdCapability::CheckCharacterSupport(PdCapEntry::from_str(ent)?)),
-                "CommunicationSecurity" => Ok(PdCapability::CommunicationSecurity(PdCapEntry::from_str(ent)?)),
-                "ReceiveBufferSize" => Ok(PdCapability::ReceiveBufferSize(PdCapEntry::from_str(ent)?)),
-                "LargestCombinedMessage" => Ok(PdCapability::LargestCombinedMessage(PdCapEntry::from_str(ent)?)),
-                "SmartCardSupport" => Ok(PdCapability::SmartCardSupport(PdCapEntry::from_str(ent)?)),
-                "Readers" => Ok(PdCapability::Readers(PdCapEntry::from_str(ent)?)),
-                "Biometrics" => Ok(PdCapability::Biometrics(PdCapEntry::from_str(ent)?)),
+                "ContactStatusMonitoring" => Ok(PdCapability::ContactStatusMonitoring(PdCapEntity::from_str(ent)?)),
+                "OutputControl" => Ok(PdCapability::OutputControl(PdCapEntity::from_str(ent)?)),
+                "CardDataFormat" => Ok(PdCapability::CardDataFormat(PdCapEntity::from_str(ent)?)),
+                "LedControl" => Ok(PdCapability::LedControl(PdCapEntity::from_str(ent)?)),
+                "AudibleOutput" => Ok(PdCapability::AudibleOutput(PdCapEntity::from_str(ent)?)),
+                "TextOutput" => Ok(PdCapability::TextOutput(PdCapEntity::from_str(ent)?)),
+                "TimeKeeping" => Ok(PdCapability::TimeKeeping(PdCapEntity::from_str(ent)?)),
+                "CheckCharacterSupport" => Ok(PdCapability::CheckCharacterSupport(PdCapEntity::from_str(ent)?)),
+                "CommunicationSecurity" => Ok(PdCapability::CommunicationSecurity(PdCapEntity::from_str(ent)?)),
+                "ReceiveBufferSize" => Ok(PdCapability::ReceiveBufferSize(PdCapEntity::from_str(ent)?)),
+                "LargestCombinedMessage" => Ok(PdCapability::LargestCombinedMessage(PdCapEntity::from_str(ent)?)),
+                "SmartCardSupport" => Ok(PdCapability::SmartCardSupport(PdCapEntity::from_str(ent)?)),
+                "Readers" => Ok(PdCapability::Readers(PdCapEntity::from_str(ent)?)),
+                "Biometrics" => Ok(PdCapability::Biometrics(PdCapEntity::from_str(ent)?)),
                 _ => Err(OsdpError::Parse(format!("PdCapability: {s}"))),
             }
         } else {
@@ -92,7 +145,7 @@ impl FromStr for PdCapability {
 impl From<osdp_sys::osdp_pd_cap> for PdCapability {
     fn from(value: osdp_sys::osdp_pd_cap) -> Self {
         let function_code = value.function_code as u32;
-        let e = PdCapEntry {
+        let e = PdCapEntity {
             compliance: value.compliance_level,
             num_items: value.num_items
         };

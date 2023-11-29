@@ -1,11 +1,21 @@
-use crate::osdp_sys;
-use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, Bytes};
+//! OSDP Peripheral Devices (PDs) have to send messages to it's controlling unit
+//! - Control Panel (CP) to intimate it about various events that originate
+//! there (such as key press, card reads, etc.,). They do this by creating an
+//! "event" and sending it to the CP. This module is responsible to handling
+//! such events though [`OsdpEvent`].
 
+use crate::{osdp_sys, ConvertEndian};
+use serde::{Serialize, Deserialize};
+
+/// Various card formats that a PD can support. This is sent to CP when a PD
+/// must report a card read
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub enum OsdpCardFormats {
+    /// Card format is not specified
     Unspecified,
+    /// Weigand format
     Weigand,
+    /// Ascii format
     #[default]
     Ascii,
 }
@@ -41,131 +51,161 @@ impl Into<u32> for OsdpCardFormats {
     }
 }
 
-#[serde_as]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Event that describes card read activity on the PD
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpEventCardRead {
-    reader_no: i32,
-    format: OsdpCardFormats,
-    direction: bool,
-    #[serde_as(as = "Bytes")]
-    data: [u8; 64],
-}
-
-impl Default for OsdpEventCardRead {
-    fn default() -> Self {
-        Self {
-            reader_no: Default::default(),
-            format: Default::default(),
-            direction: Default::default(),
-            data: [0; 64]
-        }
-    }
+    /// Reader (another device connected to this PD) which caused this event
+    ///
+    /// 0 - self
+    /// 1 - fist connected reader
+    /// 2 - second connected reader
+    /// ....
+    pub reader_no: i32,
+    /// Format of the card that was read
+    pub format: OsdpCardFormats,
+    /// The direction of the PD where the card read happened (some PDs have two
+    /// physical card readers to put on either side of a door).
+    ///
+    /// false - Forward
+    /// true - Backward
+    pub direction: bool,
+    /// Card data; bytes or bits depending on [`OsdpCardFormats`]
+    pub data: Vec<u8>,
 }
 
 impl From<osdp_sys::osdp_event_cardread> for OsdpEventCardRead {
     fn from(value: osdp_sys::osdp_event_cardread) -> Self {
         let direction = if value.direction == 1 { true } else { false };
+        let n = value.length as usize;
+        let data = value.data[0..n].to_vec();
         OsdpEventCardRead {
             reader_no: value.reader_no,
             format: value.format.into(),
             direction,
-            data: value.data,
+            data,
         }
     }
 }
 
 impl From<OsdpEventCardRead> for osdp_sys::osdp_event_cardread {
     fn from(value: OsdpEventCardRead) -> Self {
+        let mut data: [u8; 64] = [0; 64];
+        for i in 0..value.data.len() {
+            data[i] = value.data[i];
+        }
         osdp_sys::osdp_event_cardread {
             reader_no: value.reader_no,
             format: value.format.clone().into(),
             direction: value.direction as i32,
             length: value.data.len() as i32,
-            data: value.data,
+            data,
         }
     }
 }
 
-#[serde_as]
+/// Event to describe a key press activity on the PD
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OsdpEventKeyPress {
-    reader_no: i32,
-    #[serde_as(as = "Bytes")]
-    data: [u8; 64],
-}
-
-impl Default for OsdpEventKeyPress {
-    fn default() -> Self {
-        Self {
-            reader_no: Default::default(),
-            data: [0; 64]
-        }
-    }
+    /// Reader (another device connected to this PD) which caused this event
+    ///
+    /// 0 - self
+    /// 1 - fist connected reader
+    /// 2 - second connected reader
+    /// ....
+    pub reader_no: i32,
+    /// Key data
+    pub data: Vec<u8>,
 }
 
 impl From<osdp_sys::osdp_event_keypress> for OsdpEventKeyPress {
     fn from(value: osdp_sys::osdp_event_keypress) -> Self {
+        let n = value.length as usize;
+        let data = value.data[0..n].to_vec();
         OsdpEventKeyPress {
             reader_no: value.reader_no,
-            data: value.data,
+            data,
         }
     }
 }
 
 impl From<OsdpEventKeyPress> for osdp_sys::osdp_event_keypress {
     fn from(value: OsdpEventKeyPress) -> Self {
+        let mut data: [u8; 64] = [0; 64];
+        for i in 0..value.data.len() {
+            data[i] = value.data[i];
+        }
         osdp_sys::osdp_event_keypress {
             reader_no: value.reader_no,
             length: value.data.len() as i32,
-            data: value.data,
+            data,
         }
     }
 }
 
-#[serde_as]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Event to transport a Manufacturer specific command's response.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpEventMfgReply {
-    vendor_code: u32,
-    command: u8,
-    #[serde_as(as = "Bytes")]
-    data: [u8; 64],
-}
-
-impl Default for OsdpEventMfgReply {
-    fn default() -> Self {
-        Self {
-            vendor_code: Default::default(),
-            command: Default::default(),
-            data: [0; 64]
-        }
-    }
+    /// 3-byte IEEE assigned OUI used as vendor code
+    pub vendor_code: (u8, u8, u8),
+    /// 1-byte reply code
+    pub reply: u8,
+    /// Reply data (if any)
+    pub data: Vec<u8>,
 }
 
 impl From<osdp_sys::osdp_event_mfgrep> for OsdpEventMfgReply {
     fn from(value: osdp_sys::osdp_event_mfgrep) -> Self {
+        let n = value.length as usize;
+        let data = value.data[0..n].to_vec();
+        let bytes = value.vendor_code.to_le_bytes();
+        let vendor_code: (u8, u8, u8) = (bytes[0], bytes[1], bytes[2]);
         OsdpEventMfgReply {
-            vendor_code: value.vendor_code,
-            command: value.command,
-            data: value.data,
+            vendor_code,
+            reply: value.command,
+            data,
         }
     }
 }
 
 impl From<OsdpEventMfgReply> for osdp_sys::osdp_event_mfgrep {
     fn from(value: OsdpEventMfgReply) -> Self {
+        let mut data: [u8; 64] = [0; 64];
+        for i in 0..value.data.len() {
+            data[i] = value.data[i];
+        }
         osdp_sys::osdp_event_mfgrep {
-            vendor_code: value.vendor_code,
-            command: value.command,
+            vendor_code: value.vendor_code.as_le(),
+            command: value.reply,
             length: value.data.len() as u8,
-            data: value.data,
+            data,
         }
     }
 }
 
+/// Event to describe change in input/output status on PD
+///
+/// This event is used by the PD to indicate input/output status changes. up to
+/// a maximum of 32 input/output status can be reported. The values of the least
+/// significant N bit of status are considered, where N is the number of items as
+/// described in the corresponding capability codes,
+/// - PdCapability::OutputControl
+/// - PdCapability::ContactStatusMonitoring
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpEventIO {
     type_: i32,
     status: u32,
+}
+
+impl OsdpEventIO {
+    /// Create an input event with given bit mask
+    pub fn input(mask: u32) -> Self {
+        Self { type_: 0, status: mask }
+    }
+
+    /// Create an output event with given bit mask
+    pub fn output(mask: u32) -> Self {
+        Self { type_: 0, status: mask }
+    }
 }
 
 impl From<osdp_sys::osdp_event_io> for OsdpEventIO {
@@ -186,10 +226,19 @@ impl From<OsdpEventIO> for osdp_sys::osdp_event_io {
     }
 }
 
+/// Event to describe a tamper/power status change
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct OsdpEventStatus {
-    tamper: u8,
-    power: u8,
+    /// tamper status
+    ///
+    /// 0 - norma
+    /// 1 - tamper
+    pub tamper: u8,
+    /// power status
+    ///
+    /// 0 - normal
+    /// 1 - power failure
+    pub power: u8,
 }
 
 impl From<OsdpEventStatus> for osdp_sys::osdp_event_status {
@@ -210,12 +259,18 @@ impl From<osdp_sys::osdp_event_status> for OsdpEventStatus {
     }
 }
 
+/// OSDP Events
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum OsdpEvent {
+    /// Card read event
     CardRead(OsdpEventCardRead),
+    /// Key press event
     KeyPress(OsdpEventKeyPress),
+    /// Manufacturer specific
     MfgReply(OsdpEventMfgReply),
+    /// IO event
     IO(OsdpEventIO),
+    /// Status event
     Status(OsdpEventStatus),
 }
 

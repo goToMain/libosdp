@@ -1,6 +1,13 @@
-use crate::osdp_sys;
+//! OSDP provides a means to send files from Control Panel (CP) to a Peripheral
+//! Device (PD). This module adds the required components to achieve this
+//! effect.
+
+use crate::{osdp_sys, OsdpError};
 use std::{ffi::c_void, fs::File, os::unix::prelude::FileExt, path::PathBuf};
 
+type Result<T> = std::result::Result<T, OsdpError>;
+
+/// OSDP file transfer context
 #[derive(Debug)]
 pub struct OsdpFile {
     id: i32,
@@ -75,10 +82,18 @@ unsafe extern "C" fn raw_file_close(data: *mut c_void) -> i32 {
 }
 
 impl OsdpFile {
+    /// Create a new file transfer context for a given ID and path.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - An ID to associate to file. This ID must be pre-shared between
+    ///   CP and PD.
+    /// * `path` - Path to file to read from (CP) or write to (PD).
     pub fn new(id: i32, path: PathBuf) -> Self {
         Self { id, path, file: None, size: 0, }
     }
 
+    /// For internal use by {cp,pd}.register_file() methods.
     pub fn get_ops_struct(&mut self) -> osdp_sys::osdp_file_ops {
         osdp_sys::osdp_file_ops {
             arg: self as *mut _ as *mut c_void,
@@ -89,3 +104,55 @@ impl OsdpFile {
         }
     }
 }
+
+/// A OSDP File transfer Ops trait.
+pub trait OsdpFileOps {
+    /// Method used to register a file transfer operation. The `pd` must be
+    /// set to zero for PeripheralDevice
+    ///
+    /// TODO: Remove the `pd` arg for PD mode.
+    fn register_file(&mut self, pd: i32, fm: &mut OsdpFile) -> Result<()>;
+
+    /// Method used check the status of an ongoing transfer. The `pd` must be
+    /// set to zero for PeripheralDevice
+    ///
+    /// TODO: Remove the `pd` arg for PD mode.
+    fn get_file_transfer_status(&self, pd: i32) -> Result<(i32, i32)>;
+}
+
+macro_rules! impl_osdp_file_ops_for {
+    ($($t:ty),+ $(,)?) => ($(
+        impl OsdpFileOps for $t {
+            fn register_file(&mut self, pd: i32, fm: &mut OsdpFile) -> Result<()> {
+                let mut ops = fm.get_ops_struct();
+                let rc = unsafe {
+                    osdp_sys::osdp_file_register_ops(self.ctx, pd, &mut ops as *mut osdp_sys::osdp_file_ops)
+                };
+                if rc < 0 {
+                    Err(OsdpError::FileTransfer("ops register"))
+                } else {
+                    Ok(())
+                }
+            }
+
+            fn get_file_transfer_status(&self, pd: i32) -> Result<(i32, i32)> {
+                let mut size: i32 = 0;
+                let mut offset: i32 = 0;
+                let rc = unsafe {
+                    osdp_sys::osdp_get_file_tx_status(
+                        self.ctx,
+                        pd,
+                        &mut size as *mut i32,
+                        &mut offset as *mut i32,
+                    )
+                };
+                if rc < 0 {
+                    Err(OsdpError::FileTransfer("transfer status query"))
+                } else {
+                    Ok((size, offset))
+                }
+            }
+        }
+    )+)
+}
+pub(crate) use impl_osdp_file_ops_for;

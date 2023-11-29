@@ -1,3 +1,5 @@
+//! OSDP unix channel
+
 use super::Channel;
 use std::{
     io::{Read, Write},
@@ -6,8 +8,9 @@ use std::{
     str::FromStr,
 };
 
-type Result<T> = std::result::Result<T, crate::error::OsdpError>;
+type Result<T> = std::result::Result<T, crate::OsdpError>;
 
+/// A reference OSDP channel implementation for unix domain socket.
 #[derive(Debug)]
 pub struct UnixChannel {
     id: i32,
@@ -15,6 +18,7 @@ pub struct UnixChannel {
 }
 
 impl UnixChannel {
+    /// Connect to a channel identified by `name`.
     pub fn connect(name: &str) -> Result<Self> {
         let path = format!("/tmp/osdp-{name}");
         let id = super::str_to_channel_id(&path);
@@ -22,6 +26,7 @@ impl UnixChannel {
         Ok(Self { id, stream })
     }
 
+    /// Listen on a channel identified by `name`.
     pub fn new(name: &str) -> Result<Self> {
         let path = format!("/tmp/osdp-{name}");
         let id = super::str_to_channel_id(&path);

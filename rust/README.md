@@ -24,7 +24,7 @@ cargo add libosdp
 A simplified CP implementation:
 
 ```rust
-let pd_info = PdInfo::new(...);
+let pd_info = vec! [ PdInfo::new(...), ... ];
 let mut cp = ControlPanel::new(&mut pd_info)?;
 cp.set_event_callback(|pd, event| {
     println!("Received event from {pd}: {:?}", event);

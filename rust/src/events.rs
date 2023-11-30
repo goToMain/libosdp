@@ -1,8 +1,7 @@
-//! OSDP Peripheral Devices (PDs) have to send messages to it's controlling unit
-//! - Control Panel (CP) to intimate it about various events that originate
-//! there (such as key press, card reads, etc.,). They do this by creating an
-//! "event" and sending it to the CP. This module is responsible to handling
-//! such events though [`OsdpEvent`].
+//! OSDP PDs have to send messages to it's controlling unit - CP to intimate it
+//! about various events that originate there (such as key press, card reads,
+//! etc.,). They do this by creating an "event" and sending it to the CP. This
+//! module is responsible to handling such events though [`OsdpEvent`].
 
 use crate::{osdp_sys, ConvertEndian};
 use serde::{Serialize, Deserialize};
@@ -13,8 +12,10 @@ use serde::{Serialize, Deserialize};
 pub enum OsdpCardFormats {
     /// Card format is not specified
     Unspecified,
+
     /// Weigand format
     Weigand,
+
     /// Ascii format
     #[default]
     Ascii,
@@ -61,16 +62,27 @@ pub struct OsdpEventCardRead {
     /// 2 - second connected reader
     /// ....
     pub reader_no: i32,
+
     /// Format of the card that was read
     pub format: OsdpCardFormats,
+
     /// The direction of the PD where the card read happened (some PDs have two
     /// physical card readers to put on either side of a door).
     ///
     /// false - Forward
     /// true - Backward
     pub direction: bool,
+
     /// Card data; bytes or bits depending on [`OsdpCardFormats`]
     pub data: Vec<u8>,
+}
+
+impl OsdpEventCardRead {
+    /// Create a card read event for self and direction set to forward (the most
+    /// usual cases).
+    pub fn new(format: OsdpCardFormats, data: Vec<u8>) -> Self {
+        Self { reader_no: 0, format, direction: false, data }
+    }
 }
 
 impl From<osdp_sys::osdp_event_cardread> for OsdpEventCardRead {
@@ -113,8 +125,16 @@ pub struct OsdpEventKeyPress {
     /// 2 - second connected reader
     /// ....
     pub reader_no: i32,
+
     /// Key data
     pub data: Vec<u8>,
+}
+
+impl OsdpEventKeyPress {
+    /// Create key press event for the keys specified in `data`.
+    pub fn new(data: Vec<u8>) -> Self {
+        Self { reader_no: 0, data }
+    }
 }
 
 impl From<osdp_sys::osdp_event_keypress> for OsdpEventKeyPress {
@@ -147,8 +167,10 @@ impl From<OsdpEventKeyPress> for osdp_sys::osdp_event_keypress {
 pub struct OsdpEventMfgReply {
     /// 3-byte IEEE assigned OUI used as vendor code
     pub vendor_code: (u8, u8, u8),
+
     /// 1-byte reply code
     pub reply: u8,
+
     /// Reply data (if any)
     pub data: Vec<u8>,
 }
@@ -198,12 +220,12 @@ pub struct OsdpEventIO {
 
 impl OsdpEventIO {
     /// Create an input event with given bit mask
-    pub fn input(mask: u32) -> Self {
+    pub fn new_input(mask: u32) -> Self {
         Self { type_: 0, status: mask }
     }
 
     /// Create an output event with given bit mask
-    pub fn output(mask: u32) -> Self {
+    pub fn new_output(mask: u32) -> Self {
         Self { type_: 0, status: mask }
     }
 }
@@ -234,6 +256,7 @@ pub struct OsdpEventStatus {
     /// 0 - norma
     /// 1 - tamper
     pub tamper: u8,
+
     /// power status
     ///
     /// 0 - normal
@@ -259,18 +282,25 @@ impl From<osdp_sys::osdp_event_status> for OsdpEventStatus {
     }
 }
 
-/// OSDP Events
+/// CP to intimate it about various events that originate there (such as key
+/// press, card reads, etc.,). They do this by creating an “event” and sending
+/// it to the CP. This module is responsible to handling such events though
+/// OsdpEvent.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum OsdpEvent {
-    /// Card read event
+    /// Event that describes card read activity on the PD
     CardRead(OsdpEventCardRead),
-    /// Key press event
+
+    /// Event to describe a key press activity on the PD
     KeyPress(OsdpEventKeyPress),
-    /// Manufacturer specific
+
+    /// Event to transport a Manufacturer specific command’s response
     MfgReply(OsdpEventMfgReply),
-    /// IO event
+
+    /// Event to describe change in input/output status on PD
     IO(OsdpEventIO),
-    /// Status event
+
+    /// Event to describe a tamper/power status change
     Status(OsdpEventStatus),
 }
 

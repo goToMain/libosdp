@@ -5,8 +5,8 @@ use std::{
 };
 use libosdp::{
     cp::ControlPanel,
-    PdInfo, OsdpFlag, PdId, OsdpError,
-    channel::{OsdpChannel, unix_channel::UnixChannel},
+    PdInfo, OsdpFlag, OsdpError,
+    channel::{OsdpChannel, UnixChannel},
 };
 
 fn main() -> Result<(), OsdpError> {

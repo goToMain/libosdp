@@ -1,6 +1,5 @@
-//! The Control Panel (CP) is responsible to connecting to and managing multiple
-//! Peripheral Devices (PDs). It is able to send commands to and receive events
-//! from PDs.
+//! The CP is responsible to connecting to and managing multiple PDs. It is able
+//! to send commands to and receive events from PDs.
 
 use crate::{
     commands::OsdpCommand,
@@ -10,7 +9,7 @@ use crate::{
     OsdpError,
     PdInfo,
     OsdpFlag,
-    pdcap::PdCapability,
+    PdCapability,
     PdId,
 };
 use log::{debug, error, info, warn};
@@ -72,7 +71,7 @@ fn cp_setup(info: Vec<osdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
     }
 }
 
-/// OSDP Control Panel (CP) device context.
+/// OSDP CP device context.
 #[derive(Debug)]
 pub struct ControlPanel {
     ctx: *mut std::ffi::c_void,

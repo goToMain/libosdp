@@ -1,7 +1,7 @@
-//! OSDP specification defines end-point devices as Peripheral Devices (PDs).
-//! These devices are responsible for controlling various hardware peripherals
-//! (such as LEDs, buzzers, Displays, GPIOs, etc.,) and exposing them in a
-//! portable manner to the controlling counter-part, the Control Panel (CP).
+//! OSDP specification defines end-point devices as PDs. These devices are
+//! responsible for controlling various hardware peripherals (such as LEDs,
+//! buzzers, Displays, GPIOs, etc.,) and exposing them in a portable manner to
+//! the controlling counter-part, the CP.
 //!
 //! PD receives commands from the CP and also generates events for activity that
 //! happens on the PD itself (such as card read, key press, etc.,) snd sends it
@@ -14,7 +14,7 @@ use crate::{
     file::{OsdpFile, OsdpFileOps, impl_osdp_file_ops_for},
     osdp_sys,
     OsdpError,
-    pdcap::PdCapability,
+    PdCapability,
 };
 use log::{debug, error, info, warn};
 use std::ffi::c_void;
@@ -154,7 +154,7 @@ impl PeripheralDevice {
     }
 
     /// Check online status of a PD identified by the offset number (in PdInfo
-    /// vector in [`ControlPanel::new`]).
+    /// vector in [`PeripheralDevice::new`]).
     pub fn is_online(&self) -> bool {
         let mut buf: u8 = 0;
         unsafe { osdp_sys::osdp_get_status_mask(self.ctx, &mut buf as *mut u8) };
@@ -162,7 +162,7 @@ impl PeripheralDevice {
     }
 
     /// Check secure channel status of a PD identified by the offset number
-    /// (in PdInfo vector in [`ControlPanel::new`]).
+    /// (in PdInfo vector in [`PeripheralDevice::new`]).
     pub fn is_sc_active(&self) -> bool {
         let mut buf: u8 = 0;
         unsafe { osdp_sys::osdp_get_sc_status_mask(self.ctx, &mut buf as *mut u8) };

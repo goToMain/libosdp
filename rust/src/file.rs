@@ -1,6 +1,5 @@
-//! OSDP provides a means to send files from Control Panel (CP) to a Peripheral
-//! Device (PD). This module adds the required components to achieve this
-//! effect.
+//! OSDP provides a means to send files from CP to a Peripheral Device (PD).
+//! This module adds the required components to achieve this effect.
 
 use crate::{osdp_sys, OsdpError};
 use std::{ffi::c_void, fs::File, os::unix::prelude::FileExt, path::PathBuf};

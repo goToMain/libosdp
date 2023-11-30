@@ -12,6 +12,7 @@
 //! LibOSDP.
 
 pub mod unix_channel;
+pub use unix_channel::UnixChannel;
 
 use crate::osdp_sys;
 use lazy_static::lazy_static;

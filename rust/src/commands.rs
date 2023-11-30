@@ -1,6 +1,6 @@
-//! Control Panel (CP) interacts with and controls Peripheral Devices (PDs) by
-//! sending commands to it. These commands are specified by OSDP specification.
-//! This module is responsible to handling such commands though [`OsdpCommand`].
+//! CP interacts with and controls PDs by sending commands to it. These commands
+//! are specified by OSDP specification. This module is responsible to handling
+//! such commands though [`OsdpCommand`].
 
 use crate::{osdp_sys, ConvertEndian};
 use serde::{Serialize, Deserialize};
@@ -10,16 +10,22 @@ use serde::{Serialize, Deserialize};
 pub enum OsdpLedColor {
     /// No Color
     #[default] None,
+
     /// Red Color
     Red,
+
     /// Green Color
     Green,
+
     /// Amber Color
     Amber,
+
     /// Blue Color
     Blue,
+
     /// Magenta Color
     Magenta,
+
     /// Cyan Color
     Cyan,
 }
@@ -70,14 +76,19 @@ pub struct OsdpLedParams {
     /// 0 - NOP - do not alter this LED's permanent settings
     /// 1 - Set the permanent state as given
     pub control_code: u8,
+
     /// The ON duration of the flash, in units of 100 ms
     pub on_count: u8,
+
     /// The OFF duration of the flash, in units of 100 ms
     pub off_count: u8,
+
     /// Color to set during the ON timer
     pub on_color: OsdpLedColor,
+
     /// Color to set during the Off timer
     pub off_color: OsdpLedColor,
+
     /// Time in units of 100 ms (only for temporary mode)
     pub timer_count: u16,
 }
@@ -119,11 +130,14 @@ pub struct OsdpCommandLed {
     /// 2 - second connected reader
     /// ....
     pub reader: u8,
+
     /// LED number to operate on; 0 = first LED, 1 = second LED, etc.
     pub led_number: u8,
+
     /// Temporary LED activity descriptor. This operation is ephemeral and
     /// interrupts any on going permanent activity.
     pub temporary: OsdpLedParams,
+
     /// Permanent LED activity descriptor. This operation continues till another
     /// permanent activity overwrites this state.
     pub permanent: OsdpLedParams,
@@ -162,6 +176,7 @@ pub struct OsdpCommandBuzzer {
     /// 2 - second connected reader
     /// ....
     pub reader: u8,
+
     /// Control code instructs the operation to perform:
     ///
     /// 0 - no tone
@@ -169,10 +184,13 @@ pub struct OsdpCommandBuzzer {
     /// 2 - default tone
     /// 3+ - TBD
     pub control_code: u8,
+
     /// The ON duration of the flash, in units of 100 ms
     pub on_count: u8,
+
     /// The OFF duration of the flash, in units of 100 ms
     pub off_count: u8,
+
     /// The number of times to repeat the ON/OFF cycle; Setting this value to 0
     /// indicates the action is to be repeated forever.
     pub rep_count: u8,
@@ -214,6 +232,7 @@ pub struct OsdpCommandText {
     /// 2 - second connected reader
     /// ....
     pub reader: u8,
+
     /// Control code instructs the operation to perform:
     ///
     /// 1 - permanent text, no wrap
@@ -221,12 +240,16 @@ pub struct OsdpCommandText {
     /// 3 - temporary text, no wrap
     /// 4 - temporary text, with wrap
     pub control_code: u8,
+
     /// duration to display temporary text, in seconds
     pub temp_time: u8,
+
     /// row to display the first character (1 indexed)
     pub offset_row: u8,
+
     /// column to display the first character (1 indexed)
     pub offset_col: u8,
+
     /// The string to display (ASCII codes)
     pub data: Vec<u8>,
 }
@@ -273,6 +296,7 @@ pub struct OsdpCommandOutput {
     /// 1 - Second Output
     /// ....
     pub output_no: u8,
+
     /// Control code instructs the operation to perform:
     ///
     /// 0 - NOP – do not alter this output
@@ -283,6 +307,7 @@ pub struct OsdpCommandOutput {
     /// 5 - set the temporary state to ON, resume perm state on timeout
     /// 6 - set the temporary state to OFF, resume permanent state on timeout
     pub control_code: u8,
+
     ///  Time in units of 100 ms
     pub timer_count: u16,
 }
@@ -397,8 +422,10 @@ impl From<OsdpCommandKeyset> for osdp_sys::osdp_cmd_keyset {
 pub struct OsdpCommandMfg {
     /// 3-byte IEEE assigned OUI used as vendor code
     pub vendor_code: (u8, u8, u8),
+
     /// 1-byte manufacturer defined command ID
     pub command: u8,
+
     /// Command data (if any)
     pub data: Vec<u8>,
 }
@@ -470,24 +497,35 @@ impl From<OsdpCommandFileTx> for osdp_sys::osdp_cmd_file_tx {
     }
 }
 
-/// OSDP specified commands
+/// CP interacts with and controls PDs by sending commands to it. The commands
+/// in this enum are specified by OSDP specification.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum OsdpCommand {
-    /// LED command
+    /// Command to control the behavior of it’s on-board LEDs
     Led(OsdpCommandLed),
-    /// Buzzer command
+
+    /// Command to control the behavior of a buzzer in the PD
     Buzzer(OsdpCommandBuzzer),
-    /// Text command
+
+    /// Command to manipulate the on-board display unit (Can be LED, LCD,
+    /// 7-Segment, etc.,) on the PD
     Text(OsdpCommandText),
-    /// Output command
+
+    /// Command to control digital output exposed by the PD
     Output(OsdpCommandOutput),
-    /// communication parameter set command
+
+    /// Command to set the communication parameters for the PD. The effects
+    /// of this command is expected to be be stored in PD’s non-volatile memory
+    /// as the CP will expect the PD to be in this state moving forward
     ComSet(OsdpComSet),
-    /// Key set command
+
+    /// Command to set secure channel keys to the PD
     KeySet(OsdpCommandKeyset),
-    /// Manufacture specific command
+
+    /// Command to to act as a wrapper for manufacturer specific commands
     Mfg(OsdpCommandMfg),
-    /// File transfer command
+
+    /// Command to kick-off a file transfer to the PD
     FileTx(OsdpCommandFileTx),
 }
 

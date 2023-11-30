@@ -1,8 +1,7 @@
 use configparser::ini::Ini;
 use libosdp::{
     channel::{unix_channel::UnixChannel, OsdpChannel},
-    OsdpFlag, PdInfo, PdId,
-    pdcap::PdCapability,
+    OsdpFlag, PdInfo, PdId, PdCapability,
 };
 use std::{
     fmt::Write,

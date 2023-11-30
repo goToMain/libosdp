@@ -80,7 +80,7 @@ int main()
 
 	pd.setup(&info_pd);
 
-	pd.set_command_callback(pd_command_handler);
+	pd.set_command_callback(pd_command_handler, nullptr);
 
 	while (1) {
 		pd.refresh();

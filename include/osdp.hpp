@@ -61,9 +61,7 @@ protected:
 
 class ControlPanel : public Common {
 public:
-	ControlPanel()
-	{
-	}
+	ControlPanel() {}
 
 	~ControlPanel()
 	{
@@ -107,9 +105,7 @@ public:
 
 class PeripheralDevice : public Common {
 public:
-	PeripheralDevice()
-	{
-	}
+	PeripheralDevice() {}
 
 	~PeripheralDevice()
 	{

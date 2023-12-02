@@ -75,3 +75,6 @@ __pycache__/
 ## Rust
 /Cargo.lock
 /target/
+
+## clangd
+compile_commands.json

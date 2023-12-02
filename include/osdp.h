@@ -517,6 +517,28 @@ struct osdp_cmd_file_tx {
 	uint32_t flags;
 };
 
+enum osdp_command_status_query_e {
+	/**
+	 * @brief Query for local status of the PD such as tamper and power
+	 */
+	OSDP_CMD_STATUS_QUERY_LOCAL,
+	/**
+	 * @brief Query status of the inputs attached the PD
+	 */
+	OSDP_CMD_STATUS_QUERY_INPUT,
+	/**
+	 * @brief Query status of the ouputs attached the PD
+	 */
+	OSDP_CMD_STATUS_QUERY_OUTPUT,
+};
+
+/**
+ * @brief Status query command.
+ */
+struct osdp_cmd_status {
+	enum osdp_command_status_query_e type;
+};
+
 /**
  * @brief OSDP application exposed commands
  */
@@ -556,6 +578,7 @@ struct osdp_cmd {
 		struct osdp_cmd_keyset keyset;
 		struct osdp_cmd_mfg mfg;
 		struct osdp_cmd_file_tx file_tx;
+		struct osdp_cmd_status status;
 	};
 };
 

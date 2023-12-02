@@ -819,8 +819,18 @@ int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_STATUS:
-		cmd_id = CMD_LSTAT;
-		break;
+		switch (cmd->status.type) {
+		case OSDP_CMD_STATUS_QUERY_LOCAL:
+			cmd_id = CMD_LSTAT;
+			break;
+		case OSDP_CMD_STATUS_QUERY_INPUT:
+			cmd_id = CMD_ISTAT;
+			break;
+		case OSDP_CMD_STATUS_QUERY_OUTPUT:
+			cmd_id = CMD_OSTAT;
+			break;
+		}
+		return cmd_id;
 	case OSDP_CMD_KEYSET:
 		if (cmd->keyset.type != 1 || !sc_is_active(pd)) {
 			return -1;

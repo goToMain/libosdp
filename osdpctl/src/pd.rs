@@ -42,6 +42,9 @@ impl PdDaemon {
                 OsdpCommand::FileTx(c) => {
                     log::info!("Command: {:?}", c);
                 }
+                OsdpCommand::Status(c) => {
+                    log::info!("Command: {:?}", c);
+                },
             }
             0
         });

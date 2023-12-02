@@ -497,6 +497,44 @@ impl From<OsdpCommandFileTx> for osdp_sys::osdp_cmd_file_tx {
     }
 }
 
+/// Command to query status from PD
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub enum OsdpCommandStatus {
+    /// Query local status (tamper and power) from PD
+    #[default] Local,
+    /// Query input status from PD
+    Input,
+    /// Query output status from PD
+    Output,
+}
+
+impl From<osdp_sys::osdp_cmd_status> for OsdpCommandStatus {
+    fn from(value: osdp_sys::osdp_cmd_status) -> Self {
+        match value.type_ {
+            osdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT => OsdpCommandStatus::Input,
+            osdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT => OsdpCommandStatus::Output,
+            osdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL => OsdpCommandStatus::Local,
+            _ => panic!("Unknown status command type"),
+        }
+    }
+}
+
+impl From<OsdpCommandStatus> for osdp_sys::osdp_cmd_status {
+    fn from(value: OsdpCommandStatus) -> Self {
+        match value {
+            OsdpCommandStatus::Input => osdp_sys::osdp_cmd_status {
+                type_: osdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT
+            },
+            OsdpCommandStatus::Output => osdp_sys::osdp_cmd_status {
+                type_: osdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT
+            },
+            OsdpCommandStatus::Local => osdp_sys::osdp_cmd_status {
+                type_: osdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL
+            },
+        }
+    }
+}
+
 /// CP interacts with and controls PDs by sending commands to it. The commands
 /// in this enum are specified by OSDP specification.
 #[derive(Debug, Serialize, Deserialize)]
@@ -527,6 +565,9 @@ pub enum OsdpCommand {
 
     /// Command to kick-off a file transfer to the PD
     FileTx(OsdpCommandFileTx),
+
+    /// Command to query status from the PD
+    Status(OsdpCommandStatus),
 }
 
 impl From<OsdpCommand> for osdp_sys::osdp_cmd {
@@ -580,6 +621,12 @@ impl From<OsdpCommand> for osdp_sys::osdp_cmd {
                     file_tx: c.clone().into(),
                 },
             },
+            OsdpCommand::Status(c) => osdp_sys::osdp_cmd {
+                id: osdp_sys::osdp_cmd_e_OSDP_CMD_STATUS,
+                __bindgen_anon_1: osdp_sys::osdp_cmd__bindgen_ty_1 {
+                    status: c.clone().into()
+                },
+            },
         }
     }
 }
@@ -610,6 +657,9 @@ impl From<osdp_sys::osdp_cmd> for OsdpCommand {
             }
             osdp_sys::osdp_cmd_e_OSDP_CMD_FILE_TX => {
                 OsdpCommand::FileTx(unsafe { value.__bindgen_anon_1.file_tx.into() })
+            }
+            osdp_sys::osdp_cmd_e_OSDP_CMD_STATUS => {
+                OsdpCommand::Status(unsafe { value.__bindgen_anon_1.status.into() })
             }
             _ => panic!("Unknown event"),
         }

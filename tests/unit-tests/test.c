@@ -296,6 +296,8 @@ int main(int argc, char *argv[])
 
 	run_file_tx_tests(&t, false);
 
+	run_cp_seq_tests(&t);
+
 	rc = test_end(&t);
 
 	workqueue_destroy(&test_wq);

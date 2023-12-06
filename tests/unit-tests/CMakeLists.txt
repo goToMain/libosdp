@@ -22,6 +22,7 @@ list(APPEND OSDP_UNIT_TEST_SRC
 	test-cp-phy-fsm.c
 	test-cp-fsm.c
 	test-file.c
+	test-seq-mismatch.c
 )
 
 add_executable(${OSDP_UNIT_TEST} EXCLUDE_FROM_ALL ${OSDP_UNIT_TEST_SRC})

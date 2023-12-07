@@ -305,6 +305,11 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 {
 	int ret;
 
+	/* if it has been more than TOUT_MS, then CP will not process. Do not send */
+	if(is_pd_mode(pd) && (osdp_millis_since(pd->tstamp) > OSDP_RESP_TOUT_MS)) {
+		return OSDP_ERR_PKT_BUSY;
+	}
+
 	/* finalize packet */
 	len = osdp_phy_packet_finalize(pd, buf, len, max_len);
 	if (len < 0) {
@@ -656,6 +661,7 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 	if (is_error) {
 		pd->phy_state = 0;
 		pd->seq_number = -1;
+		memset(pd->ephemeral_data, 0, sizeof(pd->ephemeral_data));
 		if (pd->channel.flush) {
 			pd->channel.flush(pd->channel.data);
 		}

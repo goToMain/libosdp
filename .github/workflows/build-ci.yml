@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+# Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -57,8 +57,7 @@ jobs:
       run: cmake .
     - name: pytest
       run: |
-        python3 -m pip install -r tests/pytest/requirements.txt
-        make check
+        ./tests/pytest/run.sh
     - name: unit-tests
       run: |
         make check-ut
@@ -72,3 +71,43 @@ jobs:
     - name: ClangFormatCheck
       run: |
         ./scripts/clang-format-check.sh
+
+  Rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Cargo check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  Python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install pypa/build
+        run: |
+          python3 -m pip install build --user
+      - name: Build a binary wheel and a source tarball
+        run: |
+          pushd python
+          python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: python/dist/

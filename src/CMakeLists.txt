@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -45,6 +45,7 @@ else()
 endif()
 
 # Generate osdp_config.h in build dir.
+set(REPO_ROOT ${CMAKE_SOURCE_DIR})
 configure_file(osdp_config.h.in osdp_config.h @ONLY)
 
 list(APPEND LIB_OSDP_SOURCES
@@ -68,6 +69,7 @@ list(APPEND LIB_OSDP_PRIVATE_INCLUDE_DIRS
 
 if (OpenSSL_FOUND)
 	list(APPEND LIB_OSDP_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY}) # Needed for python library building
+	list(APPEND LIB_OSDP_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
 	list(APPEND LIB_OSDP_DEFINITIONS "-DCONFIG_OSDP_USE_OPENSSL")
 	list(APPEND LIB_OSDP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/crypto/openssl.c)
 elseif (MbedTLS_FOUND)
@@ -99,6 +101,7 @@ target_include_directories(${LIB_OSDP_STATIC}
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 		$<INSTALL_INTERFACE:include/libosdp>
 	PRIVATE
+		${LIB_OSDP_INCLUDE_DIRS}
 		${LIB_OSDP_PRIVATE_INCLUDE_DIRS}
 		${PROJECT_SOURCE_DIR}/utils/include
 )

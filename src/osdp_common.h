@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,12 +16,17 @@
 #include <utils/utils.h>
 #include <utils/queue.h>
 #include <utils/slab.h>
-#include <utils/logger.h>
 #include <utils/assert.h>
 
+#define USE_CUSTOM_LOGGER
+#include <utils/logger.h>
+
 #include <osdp.h>
+
+#ifndef CONFIG_NO_GENERATED_HEADERS
 #include "osdp_config.h" /* generated */
 #include "osdp_export.h" /* generated */
+#endif
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -30,6 +35,15 @@
 #define OSDP_CTX_MAGIC 0xDEADBEAF
 
 #define ARG_UNUSED(x) (void)(x)
+
+#define LOG_EM(...)    __logger_log(&pd->logger, LOG_EMERG,  __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_ALERT(...) __logger_log(&pd->logger, LOG_ALERT,  __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_CRIT(...)  __logger_log(&pd->logger, LOG_CRIT,   __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_ERR(...)   __logger_log(&pd->logger, LOG_ERR,    __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_INF(...)   __logger_log(&pd->logger, LOG_INFO,   __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_WRN(...)   __logger_log(&pd->logger, LOG_WARNING,__FILE__, __LINE__, __VA_ARGS__)
+#define LOG_NOT(...)   __logger_log(&pd->logger, LOG_NOTICE, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_DBG(...)   __logger_log(&pd->logger, LOG_DEBUG,  __FILE__, __LINE__, __VA_ARGS__)
 
 #define ISSET_FLAG(p, f) (((p)->flags & (f)) == (f))
 #define SET_FLAG(p, f)	 ((p)->flags |= (f))
@@ -84,7 +98,7 @@ union osdp_ephemeral_data {
 	assert(TO_OSDP(ctx)->_magic == OSDP_CTX_MAGIC);
 #define input_check_pd_offset(ctx, pd)                                         \
 	if (pd < 0 || pd >= NUM_PD(ctx)) {                                     \
-		LOG_ERR("Invalid PD number %d", pd);                           \
+		LOG_PRINT("Invalid PD number %d", pd);                         \
 		return -1;                                                     \
 	}
 #define input_check2(_1, _2)                                                   \
@@ -172,6 +186,8 @@ union osdp_ephemeral_data {
 
 /* PD State Flags */
 #define PD_FLAG_SC_CAPABLE     BIT(0)  /* PD secure channel capable */
+#define PD_FLAG_TAMPER         BIT(1)  /* local tamper status */
+#define PD_FLAG_POWER          BIT(2)  /* local power status */
 #define PD_FLAG_R_TAMPER       BIT(3)  /* remote tamper status */
 #define PD_FLAG_AWAIT_RESP     BIT(4)  /* set after command is sent */
 #define PD_FLAG_SKIP_SEQ_CHECK BIT(5)  /* disable seq checks (debug) */
@@ -326,6 +342,8 @@ struct osdp_pd {
 	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;
 	pd_command_callback_t command_callback;
+
+	logger_t logger;       /* logger context (from utils/logger.h) */
 };
 
 struct osdp {
@@ -371,9 +389,6 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 __weak int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
-void osdp_log(int log_level, const char *fmt, ...);
-void osdp_log_ctx_reset();
-void osdp_log_ctx_restore();
 
 const char *osdp_cmd_name(int cmd_id);
 const char *osdp_reply_name(int reply_id);
@@ -419,17 +434,17 @@ static inline struct osdp *pd_to_osdp(struct osdp_pd *pd)
 	return pd->osdp_ctx;
 }
 
-static inline struct osdp_pd *osdp_to_pd(struct osdp *ctx, int pd_idx)
+static inline struct osdp_pd *osdp_to_pd(const struct osdp *ctx, int pd_idx)
 {
 	return ctx->pd + pd_idx;
 }
 
-static inline bool is_pd_mode(struct  osdp_pd *pd)
+static inline bool is_pd_mode(struct osdp_pd *pd)
 {
 	return ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 }
 
-static inline bool is_cp_mode(struct  osdp_pd *pd)
+static inline bool is_cp_mode(struct osdp_pd *pd)
 {
 	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 }

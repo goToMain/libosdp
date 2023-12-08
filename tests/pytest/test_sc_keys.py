@@ -1,10 +1,10 @@
 #
-#  Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-from testlib import *
+from osdp import *
 
 def test_set_new_scbk(utils):
     # Create single CP-PD pair

@@ -7,9 +7,6 @@ OSDP - Open Supervised Device Protocol
 .. image:: https://img.shields.io/github/license/goToMain/libosdp
    :target: https://github.com/goToMain/libosdp/
    :alt: License
-.. image:: https://api.codacy.com/project/badge/Grade/7b6f389d4fbf46a692b64d3e82452af9
-   :target: https://app.codacy.com/manual/siddharth_6/libosdp?utm_source=github.com&utm_medium=referral&utm_content=cbsiddharth/libosdp&utm_campaign=Badge_Grade_Dashboard
-   :alt: Code Coverage
 .. image:: https://github.com/goToMain/libosdp/workflows/Build%20CI/badge.svg
    :target: https://github.com/goToMain/libosdp/actions?query=workflow%3A%22Build+CI%22
    :alt: Build status

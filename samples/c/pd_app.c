@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,7 +85,7 @@ int main()
 {
 	osdp_t *ctx;
 
-	osdp_logger_init(OSDP_LOG_DEBUG, NULL);
+	osdp_logger_init("osdp::pd", OSDP_LOG_DEBUG, NULL);
 
 	ctx = osdp_pd_setup(&info_pd);
 	if (ctx == NULL) {

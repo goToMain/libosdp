@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2020-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: Publish Crates
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'Rust-v*' # Push events to matching Rust-v*, i.e. Rust-v1.0
+    - 'Osdpctl-v*' # Push events to matching Osdpctl-v*, i.e. Osdpctl-v1.0
+
+jobs:
+  publish:
+    name: Publish Crate - libosdp
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - uses: katyo/publish-crates@v2
+      with:
+        registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        ignore-unpublished-changes: true

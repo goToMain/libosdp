@@ -32,7 +32,7 @@ as,
 
 .. code:: c
 
-    osdp_logger_init(LOG_DEBUG, uart_puts);
+    osdp_logger_init("osdp::cp", LOG_DEBUG, uart_puts);
 
 Packet Trace Builds
 -------------------

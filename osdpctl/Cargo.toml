@@ -1,0 +1,17 @@
+[package]
+name = "osdpctl"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+clap = "4.4.7"
+configparser = "3.0.2"
+daemonize = "0.5.0"
+dirs = "5.0.1"
+libosdp = { version = "0.1.2", path = "../rust" }
+log = "0.4.20"
+log4rs = "1.2.0"
+toml = "0.8.8"

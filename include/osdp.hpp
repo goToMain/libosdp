@@ -1,8 +1,11 @@
 /*
- * Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#ifndef LIBOSDP_OSDP_HPP_
+#define LIBOSDP_OSDP_HPP_
 
 #include <osdp.h>
 
@@ -14,11 +17,12 @@ namespace OSDP {
 
 class Common {
 public:
-	Common() {}
+	Common() : _ctx(nullptr) {}
 
-	void logger_init(int log_level, osdp_log_puts_fn_t puts_fn)
+	void logger_init(const char *name, int log_level,
+			 osdp_log_puts_fn_t puts_fn)
 	{
-		osdp_logger_init(log_level, puts_fn);
+		osdp_logger_init(name, log_level, puts_fn);
 	}
 
 	const char *get_version()
@@ -41,11 +45,6 @@ public:
 		osdp_get_sc_status_mask(_ctx, bitmask);
 	}
 
-	void set_command_complete_callback(osdp_command_complete_callback_t cb, void *arg)
-	{
-		osdp_set_command_complete_callback(_ctx, cb, arg);
-	}
-
 	int file_register_ops(int pd, struct osdp_file_ops *ops)
 	{
 		return osdp_file_register_ops(_ctx, pd, ops);
@@ -62,18 +61,18 @@ protected:
 
 class ControlPanel : public Common {
 public:
-	ControlPanel()
-	{
-	}
+	ControlPanel() {}
 
 	~ControlPanel()
 	{
-		osdp_cp_teardown(_ctx);
+		if (_ctx) {
+			osdp_cp_teardown(_ctx);
+		}
 	}
 
 	bool setup(int num_pd, osdp_pd_info_t *info)
 	{
-		_ctx = osdp_cp_setup2(num_pd, info);
+		_ctx = osdp_cp_setup(num_pd, info);
 		return _ctx != nullptr;
 	}
 
@@ -106,13 +105,13 @@ public:
 
 class PeripheralDevice : public Common {
 public:
-	PeripheralDevice()
-	{
-	}
+	PeripheralDevice() {}
 
 	~PeripheralDevice()
 	{
-		osdp_pd_teardown(_ctx);
+		if (_ctx) {
+			osdp_pd_teardown(_ctx);
+		}
 	}
 
 	bool setup(osdp_pd_info_t *info)
@@ -126,9 +125,9 @@ public:
 		osdp_pd_refresh(_ctx);
 	}
 
-	void set_command_callback(pd_command_callback_t cb)
+	void set_command_callback(pd_command_callback_t cb, void* args)
 	{
-		osdp_pd_set_command_callback(_ctx, cb, _ctx);
+		osdp_pd_set_command_callback(_ctx, cb, args);
 	}
 
 	int notify_event(struct osdp_event *event)
@@ -143,3 +142,5 @@ public:
 };
 
 }; /* namespace OSDP */
+
+#endif // LIBOSDP_OSDP_HPP_

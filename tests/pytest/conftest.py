@@ -1,12 +1,11 @@
 #
-#  Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
 
 import pytest
-
-from testlib import *
+from osdp import *
 
 class TestUtils:
     def __init__(self):

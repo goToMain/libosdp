@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,9 +53,9 @@ int main()
 {
 	osdp_t *ctx;
 
-	osdp_logger_init(OSDP_LOG_DEBUG, NULL);
+	osdp_logger_init("osdp::cp", OSDP_LOG_DEBUG, NULL);
 
-	ctx = osdp_cp_setup2(1, pd_info);
+	ctx = osdp_cp_setup(1, pd_info);
 	if (ctx == NULL) {
 		printf("cp init failed!\n");
 		return -1;

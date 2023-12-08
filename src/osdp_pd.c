@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,6 @@
 #ifndef CONFIG_OSDP_STATIC_PD
 #include <stdlib.h>
 #endif
-
-LOGGER_DECLARE(osdp, "PD");
 
 #define CMD_POLL_DATA_LEN              0
 #define CMD_LSTAT_DATA_LEN             0
@@ -163,6 +161,16 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		reply_code = REPLY_MFGREP;
 		break;
 	case OSDP_EVENT_STATUS:
+		if (event->status.tamper == 1) {
+			SET_FLAG(pd, PD_FLAG_TAMPER);
+		} else {
+			CLEAR_FLAG(pd, PD_FLAG_TAMPER);
+		}
+		if (event->status.power == 1) {
+			SET_FLAG(pd, PD_FLAG_POWER);
+		} else {
+			CLEAR_FLAG(pd, PD_FLAG_POWER);
+		}
 		reply_code = REPLY_LSTATR;
 		break;
 	default:
@@ -613,7 +621,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (sc_is_active(pd)) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-			LOG_WRN("Out of order CMD_SCRYPT; has CP gone rogue?");
+			LOG_EM("Out of order CMD_SCRYPT; has CP gone rogue?");
 			break;
 		}
 		memcpy(pd->sc.cp_cryptogram, buf + pos, CMD_SCRYPT_DATA_LEN);
@@ -738,10 +746,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 	case REPLY_LSTATR:
 		assert_buf_len(REPLY_LSTATR_LEN, max_len);
-		event = (struct osdp_event *)pd->ephemeral_data;
 		buf[len++] = pd->reply_id;
-		buf[len++] = event->status.tamper;
-		buf[len++] = event->status.power;
+		buf[len++] = ISSET_FLAG(pd, PD_FLAG_TAMPER);
+		buf[len++] = ISSET_FLAG(pd, PD_FLAG_POWER);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
@@ -1033,8 +1040,9 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	}
 }
 
-static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
-				   struct osdp_pd_id *id)
+static void osdp_pd_set_attributes(struct osdp_pd *pd,
+				   const struct osdp_pd_cap *cap,
+				   const struct osdp_pd_id *id)
 {
 	int fc;
 
@@ -1055,14 +1063,13 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd, struct osdp_pd_cap *cap,
 /* --- Exported Methods --- */
 
 OSDP_EXPORT
-osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
+osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 {
 	struct osdp_pd *pd;
 	struct osdp *ctx;
+	char name[16] = {0};
 
 	assert(info);
-
-	LOG_SET_PREFIX(info->name);
 
 #ifndef CONFIG_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
@@ -1098,6 +1105,10 @@ osdp_t *osdp_pd_setup(osdp_pd_info_t *info)
 	pd->flags = info->flags;
 	pd->seq_number = -1;
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
+
+	logger_get_default(&pd->logger);
+	snprintf(name, sizeof(name), "OSDP: PD-%d", pd->address);
+	logger_set_name(&pd->logger, name);
 
 	if (pd_event_queue_init(pd)) {
 		goto error;
@@ -1148,12 +1159,11 @@ void osdp_pd_refresh(osdp_t *ctx)
 	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	LOG_SET_PREFIX(pd->name);
 	osdp_pd_update(pd);
 }
 
 OSDP_EXPORT
-void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap)
+void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap)
 {
 	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
@@ -1173,7 +1183,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 }
 
 OSDP_EXPORT
-int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event)
+int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
 {
 	input_check(ctx);
 	struct osdp_event *ev;

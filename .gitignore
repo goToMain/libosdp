@@ -70,3 +70,11 @@ config.make
 __pycache__/
 .cache/
 *.pyc
+.venv/
+
+## Rust
+/Cargo.lock
+/target/
+
+## clangd
+compile_commands.json

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,6 @@
 
 #include "osdp_common.h"
 #include "osdp_file.h"
-
-LOGGER_DECLARE(osdp, "CP");
 
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
@@ -641,6 +639,10 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = osdp_file_cmd_stat_decode(pd, buf + pos, len);
 		break;
 	case REPLY_CCRYPT:
+		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {
+			LOG_EM("Out of order REPLY_CCRYPT; has PD gone rogue?");
+			break;
+		}
 		if (len != REPLY_CCRYPT_DATA_LEN) {
 			break;
 		}
@@ -656,6 +658,10 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RMAC_I:
+		if (sc_is_active(pd) || pd->cmd_id != CMD_SCRYPT) {
+			LOG_EM("Out of order REPLY_RMAC_I; has PD gone rogue?");
+			break;
+		}
 		if (len != REPLY_RMAC_I_DATA_LEN) {
 			break;
 		}
@@ -784,6 +790,68 @@ static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 		osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
 }
 
+int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	int cmd_id;
+
+
+	if (cmd->id >= CMD_POLL) {
+		return cmd->id;
+	}
+
+	switch (cmd->id) {
+	case OSDP_CMD_OUTPUT:
+		cmd_id = CMD_OUT;
+		break;
+	case OSDP_CMD_LED:
+		cmd_id = CMD_LED;
+		break;
+	case OSDP_CMD_BUZZER:
+		cmd_id = CMD_BUZ;
+		break;
+	case OSDP_CMD_TEXT:
+		cmd_id = CMD_TEXT;
+		break;
+	case OSDP_CMD_COMSET:
+		cmd_id = CMD_COMSET;
+		break;
+	case OSDP_CMD_MFG:
+		cmd_id = CMD_MFG;
+		break;
+	case OSDP_CMD_STATUS:
+		switch (cmd->status.type) {
+		case OSDP_CMD_STATUS_QUERY_LOCAL:
+			cmd_id = CMD_LSTAT;
+			break;
+		case OSDP_CMD_STATUS_QUERY_INPUT:
+			cmd_id = CMD_ISTAT;
+			break;
+		case OSDP_CMD_STATUS_QUERY_OUTPUT:
+			cmd_id = CMD_OSTAT;
+			break;
+		}
+		return cmd_id;
+	case OSDP_CMD_KEYSET:
+		if (cmd->keyset.type != 1 || !sc_is_active(pd)) {
+			return -1;
+		}
+		cmd_id = CMD_KEYSET;
+		break;
+	case OSDP_CMD_FILE_TX:
+		return -1;
+	default:
+		/*
+		 * Internally, LibOSDP uses the same command structure to send
+		 * raw OSDP commands (not the LibOSDP API commands). If the id
+		 * does not match wat we are looking for, we just pass it on to
+		 * be interpreted as a osdp define command.
+		 */
+		return cmd->id;
+	}
+	memcpy(pd->ephemeral_data, cmd, sizeof(struct osdp_cmd));
+	return cmd_id;
+}
+
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int64_t elapsed;
@@ -803,13 +871,19 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		ret = OSDP_CP_ERR_GENERIC;
 		break;
 	case OSDP_CP_PHY_STATE_IDLE:
+		/* Check if we have any commands in the queue */
 		if (cp_cmd_dequeue(pd, &cmd)) {
 			ret = OSDP_CP_ERR_NONE; /* command queue is empty */
 			break;
 		}
-		pd->cmd_id = cmd->id;
-		memcpy(pd->ephemeral_data, cmd, sizeof(struct osdp_cmd));
+		ret = cp_translate_cmd(pd, cmd);
 		cp_cmd_free(pd, cmd);
+		if (ret < 0) {
+			LOG_ERR("Failed to translate CP command discarding!");
+			ret = OSDP_CP_ERR_NONE;
+			break;
+		}
+		pd->cmd_id = ret;
 		__fallthrough;
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		if (cp_build_and_send_packet(pd)) {
@@ -1106,47 +1180,6 @@ static int state_update(struct osdp_pd *pd)
 	return OSDP_CP_ERR_CAN_YIELD;
 }
 
-static int osdp_cp_send_command_keyset(osdp_t *ctx, struct osdp_cmd_keyset *p)
-{
-	int i, res = 0;
-	struct osdp_cmd *cmd[OSDP_PD_MAX] = { 0 };
-	struct osdp_pd *pd;
-
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = osdp_to_pd(ctx, i);
-		if (!ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
-			LOG_WRN("master_key based key set can be performed only"
-				" when all PDs are ONLINE, SC_ACTIVE");
-			return -1;
-		}
-	}
-
-	LOG_INF("master_key based key set is a global command; "
-		"all connected PDs will be affected.");
-
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = osdp_to_pd(ctx, i);
-		cmd[i] = cp_cmd_alloc(pd);
-		if (cmd[i] == NULL) {
-			res = -1;
-			break;
-		}
-		cmd[i]->id = CMD_KEYSET;
-		memcpy(&cmd[i]->keyset, p, sizeof(struct osdp_cmd_keyset));
-	}
-
-	for (i = 0; i < NUM_PD(ctx); i++) {
-		pd = osdp_to_pd(ctx, i);
-		if (res == 0) {
-			cp_cmd_enqueue(pd, cmd[i]);
-		} else if (cmd[i]) {
-			cp_cmd_free(pd, cmd[i]);
-		}
-	}
-
-	return res;
-}
-
 void cp_keyset_complete(struct osdp_pd *pd)
 {
 	struct osdp_cmd *c = (struct osdp_cmd *)pd->ephemeral_data;
@@ -1220,13 +1253,13 @@ static int cp_detect_connection_topology(struct osdp *ctx)
 	return 0;
 }
 
-static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
-			       uint8_t *master_key)
+static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 {
-	int i, scbk_count = 0;
+	int i;
 	struct osdp_pd *pd = NULL;
 	struct osdp *ctx;
-	osdp_pd_info_t *info;
+	const osdp_pd_info_t *info;
+	char name[24] = {0};
 
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
@@ -1256,7 +1289,6 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
 		memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
-			scbk_count += 1;
 			memcpy(pd->sc.scbk, info->scbk, 16);
 			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
 			CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
@@ -1271,17 +1303,10 @@ static struct osdp *__cp_setup(int num_pd, osdp_pd_info_t *info_list,
 		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
-	}
 
-	if (scbk_count != num_pd) {
-		if (master_key != NULL) {
-			LOG_PRINT("MK based key derivation is discouraged!"
-				  " Consider passing individual SCBKs");
-			memcpy(ctx->sc_master_key, master_key, 16);
-			for (i = 0; i < num_pd; i++) {
-				CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
-			}
-		}
+		logger_get_default(&pd->logger);
+		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
+		logger_set_name(&pd->logger, name);
 	}
 
 	if (cp_detect_connection_topology(ctx)) {
@@ -1303,24 +1328,14 @@ error:
 
 /* --- Exported Methods --- */
 
-OSDP_DEPRECATED_EXPORT
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info_list, uint8_t *master_key)
-{
-	assert(info_list);
-	assert(num_pd > 0);
-	assert(num_pd <= OSDP_PD_MAX);
-
-	return (osdp_t *)__cp_setup(num_pd, info_list, master_key);
-}
-
 OSDP_EXPORT
-osdp_t *osdp_cp_setup2(int num_pd, osdp_pd_info_t *info_list)
+osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 {
 	assert(info_list);
 	assert(num_pd > 0);
 	assert(num_pd <= OSDP_PD_MAX);
 
-	return (osdp_t *)__cp_setup(num_pd, info_list, NULL);
+	return (osdp_t *)__cp_setup(num_pd, info_list);
 }
 
 OSDP_EXPORT
@@ -1342,7 +1357,6 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 	do {
 		pd = GET_CURRENT_PD(ctx);
-		LOG_SET_PREFIX(pd->name);
 
 		if (cp_refresh(pd) < 0)
 			break;
@@ -1365,59 +1379,23 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 }
 
 OSDP_EXPORT
-int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
+int osdp_cp_send_command(osdp_t *ctx, int pd_idx, const struct osdp_cmd *cmd)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 	struct osdp_cmd *p;
-	int cmd_id;
 
 	if (pd->state != OSDP_CP_STATE_ONLINE) {
-		LOG_PRINT("PD not online");
 		return -1;
 	}
 
-	switch (cmd->id) {
-	case OSDP_CMD_OUTPUT:
-		cmd_id = CMD_OUT;
-		break;
-	case OSDP_CMD_LED:
-		cmd_id = CMD_LED;
-		break;
-	case OSDP_CMD_BUZZER:
-		cmd_id = CMD_BUZ;
-		break;
-	case OSDP_CMD_TEXT:
-		cmd_id = CMD_TEXT;
-		break;
-	case OSDP_CMD_COMSET:
-		cmd_id = CMD_COMSET;
-		break;
-	case OSDP_CMD_MFG:
-		cmd_id = CMD_MFG;
-		break;
-	case OSDP_CMD_STATUS:
-		cmd_id = CMD_LSTAT;
-		break;
-	case OSDP_CMD_FILE_TX:
+	if (cmd->id == OSDP_CMD_FILE_TX) {
 		return osdp_file_tx_command(pd, cmd->file_tx.id,
 					    cmd->file_tx.flags);
-	case OSDP_CMD_KEYSET:
-		if (cmd->keyset.type == 1) {
-			if (!sc_is_active(pd))
-				return -1;
-			cmd_id = CMD_KEYSET;
-			break;
-		}
-		if (ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE)) {
-			LOG_PRINT("master_key based key set blocked "
-				  "due to ENFORCE_SECURE;");
+	} else if (cmd->id == OSDP_CMD_KEYSET) {
+		if (cmd->keyset.type != 1 || !sc_is_active(pd)) {
 			return -1;
 		}
-		return osdp_cp_send_command_keyset(ctx, &cmd->keyset);
-	default:
-		LOG_PRINT("Invalid CMD_ID:%d", cmd->id);
-		return -1;
 	}
 
 	p = cp_cmd_alloc(pd);
@@ -1425,13 +1403,12 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, struct osdp_cmd *cmd)
 		return -1;
 	}
 	memcpy(p, cmd, sizeof(struct osdp_cmd));
-	p->id = cmd_id; /* translate to internal */
 	cp_cmd_enqueue(pd, p);
 	return 0;
 }
 
 OSDP_EXPORT
-int osdp_cp_get_pd_id(osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
+int osdp_cp_get_pd_id(const osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
@@ -1441,7 +1418,7 @@ int osdp_cp_get_pd_id(osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
 }
 
 OSDP_EXPORT
-int osdp_cp_get_capability(osdp_t *ctx, int pd_idx, struct osdp_pd_cap *cap)
+int osdp_cp_get_capability(const osdp_t *ctx, int pd_idx, struct osdp_pd_cap *cap)
 {
 	input_check(ctx, pd_idx);
 	int fc;

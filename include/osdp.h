@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -322,9 +322,9 @@ typedef struct {
 	int address;
 	int flags;
 	struct osdp_pd_id id;
-	struct osdp_pd_cap *cap;
+	const struct osdp_pd_cap *cap;
 	struct osdp_channel channel;
-	uint8_t *scbk;
+	const uint8_t *scbk;
 } osdp_pd_info_t;
 
 /**
@@ -369,6 +369,8 @@ enum osdp_led_color_e {
 	OSDP_LED_COLOR_GREEN,
 	OSDP_LED_COLOR_AMBER,
 	OSDP_LED_COLOR_BLUE,
+	OSDP_LED_COLOR_MAGENTA,
+	OSDP_LED_COLOR_CYAN,
 	OSDP_LED_COLOR_SENTINEL
 };
 
@@ -515,6 +517,28 @@ struct osdp_cmd_file_tx {
 	uint32_t flags;
 };
 
+enum osdp_command_status_query_e {
+	/**
+	 * @brief Query for local status of the PD such as tamper and power
+	 */
+	OSDP_CMD_STATUS_QUERY_LOCAL,
+	/**
+	 * @brief Query status of the inputs attached the PD
+	 */
+	OSDP_CMD_STATUS_QUERY_INPUT,
+	/**
+	 * @brief Query status of the ouputs attached the PD
+	 */
+	OSDP_CMD_STATUS_QUERY_OUTPUT,
+};
+
+/**
+ * @brief Status query command.
+ */
+struct osdp_cmd_status {
+	enum osdp_command_status_query_e type;
+};
+
 /**
  * @brief OSDP application exposed commands
  */
@@ -554,6 +578,7 @@ struct osdp_cmd {
 		struct osdp_cmd_keyset keyset;
 		struct osdp_cmd_mfg mfg;
 		struct osdp_cmd_file_tx file_tx;
+		struct osdp_cmd_status status;
 	};
 };
 
@@ -582,7 +607,7 @@ enum osdp_event_cardread_format_e {
  * @param direction Card read direction of PD 0 - Forward; 1 - Backward
  * @param length Length of card data in bytes or bits depending on `format`
  *        (see note).
- * @param data Card data of `length` bytes or bits bits depending on `format`
+ * @param data Card data of `length` bytes or bits depending on `format`
  *        (see note).
  *
  * @note When `format` is set to OSDP_CARD_FMT_RAW_UNSPECIFIED or
@@ -751,7 +776,7 @@ typedef void (*osdp_command_complete_callback_t)(void *arg, int id);
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_pd_setup(osdp_pd_info_t *info);
+osdp_t *osdp_pd_setup(const osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -776,7 +801,7 @@ void osdp_pd_teardown(osdp_t *ctx);
  * @param cap pointer to array of cap (`struct osdp_pd_cap`) terminated by a
  *        capability with cap->function_code set to 0.
  */
-void osdp_pd_set_capabilities(osdp_t *ctx, struct osdp_pd_cap *cap);
+void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap);
 
 /**
  * @brief Set callback method for PD command notification. This callback is
@@ -799,7 +824,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
  * @retval 0 on success
  * @retval -1 on failure
  */
-int osdp_pd_notify_event(osdp_t *ctx, struct osdp_event *event);
+int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event);
 
 /**
  * @brief Deletes all events from the PD's event queue.
@@ -814,27 +839,6 @@ int osdp_pd_flush_events(osdp_t *ctx);
 /* ------------------------------- */
 
 /**
- * @brief This method is used to setup a device in CP mode. Application must
- * store the returned context pointer and pass it back to all OSDP functions
- * intact.
- *
- * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
- *        treated as an array of length num_pd.
- * @param info Pointer to info struct populated by application.
- * @param master_key 16 byte Master Key from which the SCBK (Secure Channel Base
- *        Key) is generated. If this field is NULL, then secure channel is
- *        disabled.
- *
- *        Note: Master key based SCBK derivation is discouraged. Pass SCBK for
- *        each connected PD in osdp_pd_info_t::scbk.
- *
- * @retval OSDP Context on success
- * @retval NULL on errors
- */
-osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
-	__attribute__((deprecated("Use osdp_cp_setup2 instead!")));
-
-/**
  * @brief Same as osdp_cp_setup; master_key is NULL here to favour the  more
  * secure individual SCBK approach (passed via osdp_pd_info_t).
  *
@@ -845,7 +849,7 @@ osdp_t *osdp_cp_setup(int num_pd, osdp_pd_info_t *info, uint8_t *master_key)
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
-osdp_t *osdp_cp_setup2(int num_pd, osdp_pd_info_t *info);
+osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -876,7 +880,7 @@ void osdp_cp_teardown(osdp_t *ctx);
  * @note This method only adds the command on to a particular PD's command
  * queue. The command itself can fail due to various reasons.
  */
-int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
+int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd);
 
 /**
  * @brief Get PD ID information as reported by the PD. Calling this method
@@ -891,7 +895,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, struct osdp_cmd *cmd);
  * @retval 0 on success
  * @retval -1 on failure
  */
-int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id);
+int osdp_cp_get_pd_id(const osdp_t *ctx, int pd, struct osdp_pd_id *id);
 
 /**
  * @brief Get capability associated to a function_code that the PD reports in
@@ -906,7 +910,7 @@ int osdp_cp_get_pd_id(osdp_t *ctx, int pd, struct osdp_pd_id *id);
  * @retval 0 on success
  * @retval -1 on failure
  */
-int osdp_cp_get_capability(osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
+int osdp_cp_get_capability(const osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
 
 /**
  * @brief Set callback method for CP event notification. This callback is
@@ -965,8 +969,20 @@ enum osdp_log_level_e {
 typedef int (*osdp_log_puts_fn_t)(const char *msg);
 
 /**
+ * @brief A callback function to be used with external loggers
+ *
+ * @param log_level A syslog style log level. See `enum osdp_log_level_e`
+ * @param file Relative path to file which produced the log message
+ * @param line Line number in `file` which produced the log message
+ * @param msg The log message
+ */
+typedef void (*osdp_log_callback_fn_t)(int log_level, const char *file,
+				       unsigned long line, const char *msg);
+
+/**
  * @brief Configure OSDP Logging.
  *
+ * @param name A soft name for this module; will appear in all the log lines.
  * @param log_level OSDP log levels of type `enum osdp_log_level_e`. Default is
  *                  LOG_INFO.
  * @param puts_fn A puts() like function that will be invoked to write the log
@@ -974,8 +990,26 @@ typedef int (*osdp_log_puts_fn_t)(const char *msg);
  *                device without putchar redirection. See `osdp_log_puts_fn_t`
  *                definition to see the behavioral expectations. When this is
  *                set to NULL, LibOSDP will log to stderr.
+ *
+ * Note: This function has to be called before osdp_{cp,pd}_setup(). Otherwise
+ *       it will be ignored.
  */
-void osdp_logger_init(int log_level, osdp_log_puts_fn_t puts_fn);
+void osdp_logger_init(const char *name, int log_level,
+		      osdp_log_puts_fn_t puts_fn);
+
+/**
+ * @brief A callback function that gets called when LibOSDP wants to emit a log
+ *        line. All messages (of all log levels) are passed on to this callback
+ *        without any log formatting. This API is for users who may already have
+ *        a logger configured in their application.
+ *
+ * @param cb The callback function. See `osdp_log_callback_fn_t` for more
+ *           details.
+ *
+ * Note: This function has to be called before osdp_{cp,pd}_setup(). Otherwise
+ *       it will be ignored.
+ */
+void osdp_set_log_callback(osdp_log_callback_fn_t cb);
 
 /**
  * @brief Get LibOSDP version as a `const char *`. Used in diagnostics.
@@ -1000,7 +1034,7 @@ const char *osdp_get_source_info();
  * @param bitmask pointer to an array of bytes. must be as large as
  *                (num_pds + 7 / 8).
  */
-void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
+void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief Get a bit mask of number of PD that are online and have an active
@@ -1010,23 +1044,7 @@ void osdp_get_status_mask(osdp_t *ctx, uint8_t *bitmask);
  * @param bitmask pointer to an array of bytes. must be as large as
  *                (num_pds + 7 / 8).
  */
-void osdp_get_sc_status_mask(osdp_t *ctx, uint8_t *bitmask);
-
-/**
- * @brief Set osdp_command_complete_callback_t to subscribe to osdp command or
- * event completion events. This can be used to perform post command actions
- * such as changing the baud rate of the underlying channel after a COMSET
- * command was acknowledged/issued by a peer.
- *
- * @param ctx OSDP context
- * @param cb Callback to be invoked when a command is completed.
- * @param arg A pointer that will be passed as the first argument of `cb`
- */
-void osdp_set_command_complete_callback(osdp_t *ctx,
-					osdp_command_complete_callback_t cb,
-					void *arg)
-	__attribute__((deprecated("Use of this API is discouraged. A future "
-				  "version will remove it.")));
+void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 
 /**
  * @brief OSDP File operations struct that needs to be filled by the CP/PD
@@ -1092,7 +1110,7 @@ struct osdp_file_ops {
 	 *
 	 * @retval 0 on success. -1 on errors.
 	 */
-	void (*close)(void *arg);
+	int (*close)(void *arg);
 };
 
 /**
@@ -1105,7 +1123,8 @@ struct osdp_file_ops {
  *
  * @retval 0 on success. -1 on errors.
  */
-int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops);
+int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
+			   const struct osdp_file_ops *ops);
 
 /**
  * @brief Query file transfer status if one is in progress. Calling this method
@@ -1117,7 +1136,8 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx, struct osdp_file_ops *ops);
  * @param offset Offset into the file that has been sent/received (CP/PD)
  * @retval 0 on success. -1 on errors.
  */
-int osdp_get_file_tx_status(osdp_t *ctx, int pd_idx, int *size, int *offset);
+int osdp_get_file_tx_status(const osdp_t *ctx, int pd_idx,
+			    int *size, int *offset);
 
 #ifdef __cplusplus
 }

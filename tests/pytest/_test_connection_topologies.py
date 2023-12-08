@@ -1,11 +1,11 @@
 #
-#  Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
 
 import time
-from testlib import *
+from osdp import *
 
 def test_daisy_chained_pds(utils):
     # Created single CP-PD pair

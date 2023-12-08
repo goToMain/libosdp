@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ int main()
 {
 	OSDP::ControlPanel cp;
 
-	cp.logger_init(OSDP_LOG_DEBUG, NULL);
+	cp.logger_init("osdp::cp", OSDP_LOG_DEBUG, NULL);
 
 	cp.setup(1, pd_info);
 

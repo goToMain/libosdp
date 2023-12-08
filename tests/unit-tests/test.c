@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,12 +99,54 @@ int async_runner_stop(int work_id)
 	return 0;
 }
 
+volatile bool g_introduce_line_noise;
+unsigned long g_total_packets;
+unsigned long g_corrupted_packets;
+
+void enable_line_noise()
+{
+	g_introduce_line_noise = true;
+}
+
+void disable_line_noise()
+{
+	g_introduce_line_noise = false;
+}
+
+void print_line_noise_stats()
+{
+	printf(SUB_1 "LN-Stats: Total:%lu Corrupted:%lu",
+	       g_total_packets, g_corrupted_packets);
+}
+
+void corrupt_buffer(uint8_t *buf, int len)
+{
+	int p, n = 3;
+
+	while (n--) {
+		p = randint(len);
+		buf[p] = randint(255);
+	}
+}
+
+void maybe_corrupt_buffer(uint8_t *buf, int len)
+{
+	if (!g_introduce_line_noise)
+		return;
+	g_total_packets++;
+	if (randint(10*1000) < (5*1000))
+		return;
+	corrupt_buffer(buf, len);
+	g_corrupted_packets++;
+}
+
 int test_mock_cp_send(void *data, uint8_t *buf, int len)
 {
 	int i;
 	ARG_UNUSED(data);
 	assert(len < MOCK_BUF_LEN);
 
+	maybe_corrupt_buffer(buf, len);
 	for (i = 0; i < len; i++) {
 		if (CIRCBUF_PUSH(cp_to_pd_buf, buf + i))
 			break;
@@ -130,6 +172,7 @@ int test_mock_pd_send(void *data, uint8_t *buf, int len)
 	int i;
 	ARG_UNUSED(data);
 
+	maybe_corrupt_buffer(buf, len);
 	for (i = 0; i < len; i++) {
 		if (CIRCBUF_PUSH(pd_to_cp_buf, buf + i))
 			break;
@@ -152,7 +195,7 @@ int test_mock_pd_receive(void *data, uint8_t *buf, int len)
 
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 {
-	osdp_logger_init(t->loglevel, NULL);
+	osdp_logger_init("osdp", t->loglevel, NULL);
 
 	uint8_t scbk[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -170,7 +213,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		.scbk = scbk,
 	};
 
-	*cp = osdp_cp_setup2(1, &info_cp);
+	*cp = osdp_cp_setup(1, &info_cp);
 	if (*cp == NULL) {
 		printf("   cp init failed!\n");
 		return -1;
@@ -251,7 +294,7 @@ int main(int argc, char *argv[])
 
 	run_cp_fsm_tests(&t);
 
-	run_file_tx_tests(&t);
+	run_file_tx_tests(&t, false);
 
 	rc = test_end(&t);
 

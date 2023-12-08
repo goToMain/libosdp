@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2021-2022 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2023 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -12,7 +12,6 @@ include config.make
 
 O ?= $(BUILD_DIR)
 OBJ_LIBOSDP := $(SRC_LIBOSDP:%.c=$(O)/%.o)
-OBJ_OSDPCTL := $(SRC_OSDPCTL:%.c=$(O)/%.o)
 OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
 CCFLAGS += -Wall -Wextra -O3
 
@@ -39,9 +38,6 @@ cp_app: $(O)/cp_app.elf
 .PHONY: libutils
 libutils: $(O)/utils/libutils.a
 
-.PHONY: osdpctl
-osdpctl: libutils libosdp $(O)/osdpctl.elf
-
 $(O)/%.o: %.c
 	@echo "  CC $<"
 	@mkdir -p $(@D)
@@ -54,13 +50,6 @@ $(O)/libosdp.a: $(OBJ_LIBOSDP)
 
 $(O)/utils/libutils.a:
 	$(Q)make -C utils Q=$(Q) O=$(O)/utils CC=$(CC)
-
-## osdpctl
-
-$(O)/osdpctl.elf: CCFLAGS_EXTRA=-Iosdpctl/include -Iutils/include -Iinclude
-$(O)/osdpctl.elf: $(OBJ_OSDPCTL)
-	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) -o $@ $^ -lpthread -L$(O) -losdp -L$(O)/utils -lutils
 
 ## Samples
 
@@ -76,17 +65,16 @@ $(O)/pd_app.elf: $(O)/libosdp.a
 
 .PHONY: check
 check: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I$(O)
-check: clean $(OBJ_TEST)
+check: $(OBJ_TEST)
 	@echo "LINK $@"
-	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o /tmp/check
-	$(Q)/tmp/check
-	$(Q)rm -rf /tmp/check && make clean
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $(O)/unit-test
+	$(Q)$(O)/unit-test
 
 ## Clean
 
 .PHONY: clean
 clean:
-	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_OSDPCTL) $(OBJ_TEST)
+	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_TEST)
 	$(Q)rm -f $(O)/*.a $(O)/*.elf
 	$(Q)make -C utils Q=$(Q) O=$(O)/utils clean
 

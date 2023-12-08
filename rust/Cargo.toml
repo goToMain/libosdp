@@ -11,6 +11,7 @@ repository = "https://github.com/goToMain/libosdp"
 license = "Apache-2.0"
 keywords = ["osdp", "libosdp", "acs", "sia", "weigand" ]
 categories = ["development-tools", "embedded"]
+include = ["src", "examples", "build.rs", "config.toml", "vendor" ]
 
 [build-dependencies]
 anyhow = "1.0.75"

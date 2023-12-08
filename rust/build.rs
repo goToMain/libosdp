@@ -8,6 +8,37 @@ use std::{
 use anyhow::Context;
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
+/// For some reason build.rs cannot read non-source files located outside of
+/// CARGO_MANIFEST_DIR when packaging. As a temporary work around, let's include
+/// the contents of src/osdp_config.h.in here.
+const OSDP_CONFIG_H: &str = r#"
+#ifndef _OSDP_CONFIG_H_
+#define _OSDP_CONFIG_H_
+
+#define PROJECT_VERSION                "@PROJECT_VERSION@"
+#define PROJECT_NAME                   "@PROJECT_NAME@"
+#define GIT_BRANCH                     "@GIT_BRANCH@"
+#define GIT_REV                        "@GIT_REV@"
+#define GIT_TAG                        "@GIT_TAG@"
+#define GIT_DIFF                       "@GIT_DIFF@"
+#define REPO_ROOT                      "@REPO_ROOT@"
+
+#define OSDP_PD_SC_RETRY_MS                     (600 * 1000)
+#define OSDP_PD_POLL_TIMEOUT_MS                 (50)
+#define OSDP_PD_SC_TIMEOUT_MS                   (800)
+#define OSDP_RESP_TOUT_MS                       (200)
+#define OSDP_ONLINE_RETRY_WAIT_MAX_MS           (300 * 1000)
+#define OSDP_CMD_RETRY_WAIT_MS                  (300)
+#define OSDP_PACKET_BUF_SIZE                    (256)
+#define OSDP_RX_RB_SIZE                         (512)
+#define OSDP_CP_CMD_POOL_SIZE                   (32)
+#define OSDP_FILE_ERROR_RETRY_MAX               (10)
+#define OSDP_PD_MAX                             (126)
+#define OSDP_CMD_ID_OFFSET                      (5)
+
+#endif /* _OSDP_CONFIG_H_ */
+"#;
+
 fn get_repo_root() -> std::io::Result<String> {
     let path = std::env::current_dir()?;
     let mut path_ancestors = path.as_path().ancestors();
@@ -46,16 +77,15 @@ fn path_join(root: &str, path: &str) -> String {
     Path::new(root).join(path).into_os_string().into_string().unwrap()
 }
 
-fn configure_file(path: &str, transforms: Vec<(&str, &str)>) -> Result<()>{
-    let mut contents = std::fs::read_to_string(path)?;
-
+fn configure_file(mut contents: String, dest_path: &str,
+                  transforms: Vec<(&str, &str)>) -> Result<()> {
     for (from, to) in transforms {
         if let Some(start) = contents.find(format!("@{from}@").as_str()) {
             let range = start..start + from.len() + 2;
             contents.replace_range(range, to);
         }
     }
-    std::fs::write(path, contents)?;
+    std::fs::write(dest_path, contents)?;
     Ok(())
 }
 
@@ -93,7 +123,7 @@ impl GitInfo {
     }
 }
 
-fn generate_osdp_build_headers(repo_root: &str, out_dir: &str) -> Result<()> {
+fn generate_osdp_build_headers(out_dir: &str) -> Result<()> {
     // Add an empty file as we don't
     let data = "#define OSDP_EXPORT";
     std::fs::write(
@@ -102,11 +132,8 @@ fn generate_osdp_build_headers(repo_root: &str, out_dir: &str) -> Result<()> {
     ).context("Failed to create osdp_export.h")?;
 
     let git = GitInfo::new()?;
-    let src = path_join(&repo_root, "src/osdp_config.h.in");
     let dest = path_join(&out_dir, "osdp_config.h");
-    std::fs::copy(&src, &dest)
-        .context(format!("Failed: copy {src} -> {dest}"))?;
-    configure_file(&dest, vec![
+    configure_file(OSDP_CONFIG_H.to_owned(), &dest, vec![
         ("PROJECT_VERSION", env!("CARGO_PKG_VERSION")),
         ("PROJECT_NAME", format!("{}-rust", env!("CARGO_PKG_NAME")).as_str()),
         ("GIT_BRANCH", git.branch.as_str()),
@@ -121,7 +148,7 @@ fn main() -> Result<()> {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let repo_root = get_repo_root()?;
 
-    generate_osdp_build_headers(&repo_root, &out_dir)?;
+    generate_osdp_build_headers(&out_dir)?;
 
     let mut build = cc::Build::new();
     let mut build = build

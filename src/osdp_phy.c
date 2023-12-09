@@ -181,6 +181,10 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	pkt->pd_address = pd->address & 0x7F;	/* Use only the lower 7 bits */
 	if (is_pd_mode(pd)) {
 		/* PD must reply with MSB of it's address set */
+		if (ISSET_FLAG(pd, PD_FLAG_PKT_BROADCAST)) {
+			pkt->pd_address = 0x7F; /* made 0xFF below */
+			CLEAR_FLAG(pd, PD_FLAG_PKT_BROADCAST);
+		}
 		pkt->pd_address |= 0x80;
 		id = pd->reply_id;
 	} else {
@@ -445,6 +449,15 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			 */
 			pd->seq_number -= 1;
 			LOG_INF("received a sequence repeat packet!");
+		}
+		/**
+		 * For packets addressed to the broadcast address, the reply
+		 * must have address set to 0x7F and not the current PD's
+		 * address. To handle this case, let's capture this state in PD
+		 * flags.
+		 */
+		if (pd_addr == 0x7F) {
+			SET_FLAG(pd, PD_FLAG_PKT_BROADCAST);
 		}
 	} else {
 		if (comp == 0) {

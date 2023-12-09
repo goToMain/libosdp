@@ -84,6 +84,10 @@ impl ControlPanel {
     /// # Example
     ///
     /// ```
+    /// use libosdp::{PdInfo, OsdpFlag, channel::{OsdpChannel, UnixChannel},
+    ///               cp::ControlPanel, commands::OsdpCommand};
+    ///
+    /// let stream = UnixChannel::connect("conn-1");
     /// let pd_info = vec![
     ///     PdInfo::for_cp(
     ///         "PD 101", 101,

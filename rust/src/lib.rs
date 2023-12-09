@@ -32,14 +32,18 @@
 //! A simplified (non-working) CP implementation:
 //!
 //! ```rust
+//! use libosdp::{PdInfo, cp::ControlPanel, commands::OsdpCommand};
+//!
 //! let pd_info = vec! [ PdInfo::new(...), ... ];
-//! let mut cp = ControlPanel::new(&mut pd_info)?;
+//! let mut cp = ControlPanel::new(pd_info)?;
 //! cp.set_event_callback(|pd, event| {
 //!     println!("Received event from {pd}: {:?}", event);
+//!     0
 //! });
 //! loop {
 //!     cp.refresh();
-//!     cp.send_command(0, OsdpCommand::new(...));
+//!     let c = OsdpCommandCardRead::new_ascii(vec![0x55, 0xAA]);
+//!     cp.send_command(0, OsdpCommand::new(c));
 //! }
 //! ```
 //!
@@ -48,10 +52,13 @@
 //! A simplified (non-working) PD implementation:
 //!
 //! ```rust
+//! use libosdp::{PdInfo, pd::PeripheralDevice, events::OsdpEvent};
+//!
 //! let pd_info = PdInfo::new(...);
 //! let mut pd = PeripheralDevice::new(&mut pd_info)?;
 //! pd.set_command_callback(|cmd| {
 //!     println!("Received command {:?}", cmd);
+//!     0
 //! });
 //! loop {
 //!     pd.refresh();

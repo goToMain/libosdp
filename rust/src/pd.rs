@@ -85,6 +85,13 @@ impl PeripheralDevice {
     /// # Example
     ///
     /// ```
+    /// use libosdp::{
+    ///     PdInfo, PdId, PdCapability, PdCapEntity, OsdpFlag,
+    ///     channel::{OsdpChannel, UnixChannel},
+    ///     pd::PeripheralDevice,
+    /// };
+    ///
+    /// let stream = UnixChannel::new("conn-1");
     /// let pd_info = vec![
     ///     PdInfo::for_pd(
     ///         "PD 101", 101,

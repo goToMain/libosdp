@@ -3,8 +3,10 @@
 //! etc.,). They do this by creating an "event" and sending it to the CP. This
 //! module is responsible to handling such events though [`OsdpEvent`].
 
-use crate::{osdp_sys, ConvertEndian};
+use crate::{osdp_sys, ConvertEndian, OsdpError};
 use serde::{Serialize, Deserialize};
+
+type Result<T> = std::result::Result<T, OsdpError>;
 
 /// Various card formats that a PD can support. This is sent to CP when a PD
 /// must report a card read
@@ -73,27 +75,57 @@ pub struct OsdpEventCardRead {
     /// true - Backward
     pub direction: bool,
 
+    /// Number of valid data bits in [`OsdpEventCardRead::data`] when the card
+    /// format is [`OsdpCardFormats::Weigand`]. For all other formats, this
+    /// field is set to zero.
+    pub nr_bits: usize,
+
     /// Card data; bytes or bits depending on [`OsdpCardFormats`]
     pub data: Vec<u8>,
 }
 
 impl OsdpEventCardRead {
-    /// Create a card read event for self and direction set to forward (the most
-    /// usual cases).
-    pub fn new(format: OsdpCardFormats, data: Vec<u8>) -> Self {
-        Self { reader_no: 0, format, direction: false, data }
+    /// Create an ASCII card read event for self and direction set to forward
+    pub fn new_ascii(data: Vec<u8>) -> Self {
+        Self {
+            reader_no: 0,
+            format: OsdpCardFormats::Ascii,
+            direction: false,
+            nr_bits: 0,
+            data
+        }
+    }
+
+    /// Create a Weigand card read event for self and direction set to forward
+    pub fn new_weigand(nr_bits: usize, data: Vec<u8>) -> Result<Self> {
+        if nr_bits > data.len() * 8 {
+            return Err(OsdpError::Command)
+        }
+        Ok(Self {
+            reader_no: 0,
+            format: OsdpCardFormats::Weigand,
+            direction: false,
+            nr_bits,
+            data
+        })
     }
 }
 
 impl From<osdp_sys::osdp_event_cardread> for OsdpEventCardRead {
     fn from(value: osdp_sys::osdp_event_cardread) -> Self {
         let direction = if value.direction == 1 { true } else { false };
-        let n = value.length as usize;
-        let data = value.data[0..n].to_vec();
+        let format = value.format.into();
+        let len = value.length as usize;
+        let (nr_bits, nr_bytes) = match format {
+            OsdpCardFormats::Weigand => (len, (len + 7) / 8),
+            _ => (0, len),
+        };
+        let data = value.data[0..nr_bytes].to_vec();
         OsdpEventCardRead {
             reader_no: value.reader_no,
-            format: value.format.into(),
+            format,
             direction,
+            nr_bits,
             data,
         }
     }
@@ -102,6 +134,10 @@ impl From<osdp_sys::osdp_event_cardread> for OsdpEventCardRead {
 impl From<OsdpEventCardRead> for osdp_sys::osdp_event_cardread {
     fn from(value: OsdpEventCardRead) -> Self {
         let mut data: [u8; 64] = [0; 64];
+        let length = match value.format {
+            OsdpCardFormats::Weigand => value.nr_bits as i32,
+            _ => value.data.len() as i32,
+        };
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }
@@ -109,7 +145,7 @@ impl From<OsdpEventCardRead> for osdp_sys::osdp_event_cardread {
             reader_no: value.reader_no,
             format: value.format.clone().into(),
             direction: value.direction as i32,
-            length: value.data.len() as i32,
+            length,
             data,
         }
     }

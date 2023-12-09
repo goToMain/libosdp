@@ -196,6 +196,7 @@ union osdp_ephemeral_data {
 #define PD_FLAG_PKT_HAS_MARK   BIT(11) /* Packet has mark byte */
 #define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
 #define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
+#define PD_FLAG_PKT_BROADCAST  BIT(14) /* this packet was addressed to 0x7F */
 
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,

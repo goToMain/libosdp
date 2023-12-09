@@ -10,7 +10,7 @@ type Result<T> = std::result::Result<T, OsdpError>;
 
 /// Various card formats that a PD can support. This is sent to CP when a PD
 /// must report a card read
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OsdpCardFormats {
     /// Card format is not specified
     Unspecified,
@@ -55,7 +55,7 @@ impl Into<u32> for OsdpCardFormats {
 }
 
 /// Event that describes card read activity on the PD
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OsdpEventCardRead {
     /// Reader (another device connected to this PD) which caused this event
     ///
@@ -152,7 +152,7 @@ impl From<OsdpEventCardRead> for osdp_sys::osdp_event_cardread {
 }
 
 /// Event to describe a key press activity on the PD
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OsdpEventKeyPress {
     /// Reader (another device connected to this PD) which caused this event
     ///
@@ -199,7 +199,7 @@ impl From<OsdpEventKeyPress> for osdp_sys::osdp_event_keypress {
 }
 
 /// Event to transport a Manufacturer specific command's response.
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OsdpEventMfgReply {
     /// 3-byte IEEE assigned OUI used as vendor code
     pub vendor_code: (u8, u8, u8),
@@ -248,7 +248,7 @@ impl From<OsdpEventMfgReply> for osdp_sys::osdp_event_mfgrep {
 /// described in the corresponding capability codes,
 /// - PdCapability::OutputControl
 /// - PdCapability::ContactStatusMonitoring
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OsdpEventIO {
     type_: i32,
     status: u32,
@@ -285,7 +285,7 @@ impl From<OsdpEventIO> for osdp_sys::osdp_event_io {
 }
 
 /// Event to describe a tamper/power status change
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OsdpEventStatus {
     /// tamper status
     ///
@@ -322,7 +322,7 @@ impl From<osdp_sys::osdp_event_status> for OsdpEventStatus {
 /// press, card reads, etc.,). They do this by creating an “event” and sending
 /// it to the CP. This module is responsible to handling such events though
 /// OsdpEvent.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OsdpEvent {
     /// Event that describes card read activity on the PD
     CardRead(OsdpEventCardRead),
@@ -397,5 +397,40 @@ impl From<osdp_sys::osdp_event> for OsdpEvent {
             }
             _ => panic!("Unknown event"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::osdp_sys::{
+        osdp_event_cardread,
+        osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII,
+        osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND,
+    };
+    use super::OsdpEventCardRead;
+
+    #[test]
+    fn test_event_cardread() {
+        let event = OsdpEventCardRead::new_ascii(vec![0x55, 0xAA]);
+        let event_struct: osdp_event_cardread = event.clone().into();
+
+        assert_eq!(event_struct.length, 2);
+        assert_eq!(event_struct.direction, 0);
+        assert_eq!(event_struct.format, osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII);
+        assert_eq!(event_struct.data[0], 0x55);
+        assert_eq!(event_struct.data[1], 0xAA);
+
+        assert_eq!(event, event_struct.into());
+
+        let event = OsdpEventCardRead::new_weigand(15, vec![0x55, 0xAA]).unwrap();
+        let event_struct: osdp_event_cardread = event.clone().into();
+
+        assert_eq!(event_struct.length, 15);
+        assert_eq!(event_struct.direction, 0);
+        assert_eq!(event_struct.format, osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND);
+        assert_eq!(event_struct.data[0], 0x55);
+        assert_eq!(event_struct.data[1], 0xAA);
+
+        assert_eq!(event, event_struct.into());
     }
 }

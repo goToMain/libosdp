@@ -3,7 +3,8 @@
 //! such commands though [`OsdpCommand`].
 
 use crate::{osdp_sys, ConvertEndian};
-use serde::{Serialize, Deserialize};
+use alloc::vec::Vec;
+use serde::{Deserialize, Serialize};
 
 /// LED Colors as specified in OSDP for the on_color/off_color parameters.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]

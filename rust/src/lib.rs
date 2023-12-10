@@ -81,7 +81,8 @@ pub mod channel;
 pub mod file;
 mod osdp_sys;
 
-use std::{str::FromStr, ffi::CString, sync::Mutex};
+use alloc::{borrow::ToOwned, ffi::CString, format, str::FromStr, string::String, vec, vec::Vec};
+use std::sync::Mutex;
 use channel::OsdpChannel;
 use once_cell::sync::Lazy;
 use thiserror::Error;
@@ -127,16 +128,14 @@ pub enum OsdpError {
     Unknown,
 }
 
-impl From<std::convert::Infallible> for OsdpError {
-    fn from(_: std::convert::Infallible) -> Self {
+impl From<core::convert::Infallible> for OsdpError {
+    fn from(_: core::convert::Infallible) -> Self {
         unreachable!()
     }
 }
 
-fn cstr_to_string(s: *const ::std::os::raw::c_char) -> String {
-    let s = unsafe {
-        std::ffi::CStr::from_ptr(s)
-    };
+fn cstr_to_string(s: *const ::core::ffi::c_char) -> String {
+    let s = unsafe { core::ffi::CStr::from_ptr(s) };
     s.to_str().unwrap().to_owned()
 }
 

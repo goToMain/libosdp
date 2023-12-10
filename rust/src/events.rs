@@ -4,9 +4,10 @@
 //! module is responsible to handling such events though [`OsdpEvent`].
 
 use crate::{osdp_sys, ConvertEndian, OsdpError};
-use serde::{Serialize, Deserialize};
+use alloc::vec::Vec;
+use serde::{Deserialize, Serialize};
 
-type Result<T> = std::result::Result<T, OsdpError>;
+type Result<T> = core::result::Result<T, OsdpError>;
 
 /// Various card formats that a PD can support. This is sent to CP when a PD
 /// must report a card read

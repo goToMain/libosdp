@@ -16,10 +16,12 @@ pub use unix_channel::UnixChannel;
 
 use crate::osdp_sys;
 use lazy_static::lazy_static;
-use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+use core::{
     ffi::c_void,
     hash::{Hash, Hasher},
+};
+use std::{
+    collections::{hash_map::DefaultHasher, HashMap},
     io::{Read, Write},
     sync::{Mutex, Arc},
 };
@@ -28,12 +30,10 @@ lazy_static! {
     static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> = Mutex::new(HashMap::new());
 }
 
-impl std::fmt::Debug for OsdpChannel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl alloc::fmt::Debug for OsdpChannel {
+    fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {
         f.debug_struct("OsdpChannel")
-            .field(
-                "stream",
-                &format!("{}", self.stream.lock().unwrap().get_id()))
+            .field("stream", &format!("{}", self.stream.lock().get_id()))
             .finish()
     }
 }
@@ -46,7 +46,7 @@ unsafe extern "C" fn raw_read(data: *mut c_void, buf: *mut u8, len: i32) -> i32 
     match stream.read(&mut read_buf) {
         Ok(n) => {
             let src_ptr = read_buf.as_mut_ptr();
-            std::ptr::copy_nonoverlapping(src_ptr, buf, len as usize);
+            core::ptr::copy_nonoverlapping(src_ptr, buf, len as usize);
             n as i32
         }
         Err(_) => -1,
@@ -58,7 +58,7 @@ unsafe extern "C" fn raw_write(data: *mut c_void, buf: *mut u8, len: i32) -> i32
     let mut channels = CHANNELS.lock().unwrap();
     let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
     let mut write_buf = vec![0u8; len as usize];
-    std::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
+    core::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
     match stream.write(&write_buf) {
         Ok(n) => n as i32,
         Err(_) => -1,

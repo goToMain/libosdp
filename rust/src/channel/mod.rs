@@ -16,7 +16,7 @@ pub mod unix_channel;
 #[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
 
-use crate::osdp_sys;
+use crate::{osdp_sys, Mutex};
 use lazy_static::lazy_static;
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;
@@ -29,7 +29,8 @@ use core::{
 use std::collections::{hash_map::DefaultHasher, HashMap};
 
 lazy_static! {
-    static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> = Mutex::new(HashMap::new());
+    static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> =
+        Mutex::new(HashMap::new());
 }
 
 impl alloc::fmt::Debug for OsdpChannel {
@@ -42,8 +43,8 @@ impl alloc::fmt::Debug for OsdpChannel {
 
 unsafe extern "C" fn raw_read(data: *mut c_void, buf: *mut u8, len: i32) -> i32 {
     let key = data as i32;
-    let mut channels = CHANNELS.lock().unwrap();
-    let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
+    let mut channels = CHANNELS.lock();
+    let mut stream = channels.get_mut(&key).unwrap().lock();
     let mut read_buf = vec![0u8; len as usize];
     match stream.read(&mut read_buf) {
         Ok(n) => {
@@ -57,8 +58,8 @@ unsafe extern "C" fn raw_read(data: *mut c_void, buf: *mut u8, len: i32) -> i32 
 
 unsafe extern "C" fn raw_write(data: *mut c_void, buf: *mut u8, len: i32) -> i32 {
     let key = data as i32;
-    let mut channels = CHANNELS.lock().unwrap();
-    let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
+    let mut channels = CHANNELS.lock();
+    let mut stream = channels.get_mut(&key).unwrap().lock();
     let mut write_buf = vec![0u8; len as usize];
     core::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
     match stream.write(&write_buf) {
@@ -69,8 +70,8 @@ unsafe extern "C" fn raw_write(data: *mut c_void, buf: *mut u8, len: i32) -> i32
 
 unsafe extern "C" fn raw_flush(data: *mut c_void) {
     let key = data as i32;
-    let mut channels = CHANNELS.lock().unwrap();
-    let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
+    let mut channels = CHANNELS.lock();
+    let mut stream = channels.get_mut(&key).unwrap().lock();
     let _ = stream.flush();
 }
 
@@ -102,8 +103,8 @@ impl OsdpChannel {
     /// exports the channel to LibOSDP as a C struct.
     pub fn as_struct(&self) -> osdp_sys::osdp_channel {
         let stream = self.stream.clone();
-        let id = stream.lock().unwrap().get_id();
-        CHANNELS.lock().unwrap().insert(id, stream);
+        let id = stream.lock().get_id();
+        CHANNELS.lock().insert(id, stream);
         osdp_sys::osdp_channel {
             id,
             data: id as *mut c_void,

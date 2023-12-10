@@ -83,11 +83,15 @@ pub mod file;
 mod osdp_sys;
 
 use alloc::{borrow::ToOwned, ffi::CString, format, str::FromStr, string::String, vec, vec::Vec};
-use std::sync::Mutex;
 use channel::OsdpChannel;
 use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
 use thiserror::Error;
+
+#[cfg(feature = "std")]
+use parking_lot::Mutex;
+#[cfg(not(feature = "std"))]
+use spin::Mutex;
 
 /// OSDP public errors
 #[derive(Debug, Default)]
@@ -154,12 +158,12 @@ static SOURCE_INFO: Lazy<Mutex<String>> = Lazy::new(|| {
 
 /// Get LibOSDP version
 pub fn get_version() -> String {
-    VERSION.lock().unwrap().clone()
+    VERSION.lock().clone()
 }
 
 /// Get LibOSDP source info string
 pub fn get_source_info() -> String {
-    SOURCE_INFO.lock().unwrap().clone()
+    SOURCE_INFO.lock().clone()
 }
 
 /// PD ID information advertised by the PD.

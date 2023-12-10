@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 //! # LibOSDP - Open Supervised Device Protocol Library
 //!
 //! This is an open source implementation of IEC 60839-11-5 Open Supervised
@@ -73,6 +74,8 @@
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
 
+extern crate alloc;
+
 pub mod cp;
 pub mod pd;
 pub mod commands;
@@ -82,7 +85,10 @@ pub mod channel;
 pub mod file;
 mod osdp_sys;
 
-use alloc::{borrow::ToOwned, ffi::CString, format, str::FromStr, string::String, vec, vec::Vec};
+#[allow(unused_imports)]
+use alloc::{
+    borrow::ToOwned, boxed::Box, ffi::CString, format, str::FromStr, string::String, vec, vec::Vec,
+};
 use channel::OsdpChannel;
 use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
@@ -129,6 +135,9 @@ pub enum OsdpError {
     #[cfg(feature = "std")]
     #[error("IO Error")]
     IO(#[from] std::io::Error),
+    /// IO Error
+    #[cfg(not(feature = "std"))]
+    IO(Box<dyn embedded_io::Error>),
 
     /// Unknown error
     #[default]
@@ -358,15 +367,15 @@ impl FromStr for PdCapEntity {
 /// the CP by means of "capabilities".
 #[derive(Clone, Debug)]
 pub enum PdCapability {
-	/// This function indicates the ability to monitor the status of a switch
+    /// This function indicates the ability to monitor the status of a switch
     /// using a two-wire electrical connection between the PD and the switch.
     /// The on/off position of the switch indicates the state of an external
     /// device.
     ///
-	/// The PD may simply resolve all circuit states to an open/closed
-	/// status, or it may implement supervision of the monitoring circuit.
-	/// A supervised circuit is able to indicate circuit fault status in
-	/// addition to open/closed status.
+    /// The PD may simply resolve all circuit states to an open/closed
+    /// status, or it may implement supervision of the monitoring circuit.
+    /// A supervised circuit is able to indicate circuit fault status in
+    /// addition to open/closed status.
     ContactStatusMonitoring(PdCapEntity),
 
     /// This function provides a switched output, typically in the form of a

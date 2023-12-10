@@ -20,6 +20,7 @@ bindgen = "0.68.1"
 
 [dependencies]
 bitflags = "2.4.0"
+embedded-io = "0.6.1"
 env_logger = "0.10.0"
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 log = "0.4.20"

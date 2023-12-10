@@ -21,12 +21,9 @@ use lazy_static::lazy_static;
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;
 use alloc::{boxed::Box, format, sync::Arc, vec};
-use core::{
-    ffi::c_void,
-    hash::{Hash, Hasher},
-};
+use core::ffi::c_void;
 #[cfg(feature = "std")]
-use std::collections::{hash_map::DefaultHasher, HashMap};
+use std::{collections::{hash_map::DefaultHasher, HashMap}, hash::{Hash, Hasher}};
 
 lazy_static! {
     static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> =
@@ -73,6 +70,85 @@ unsafe extern "C" fn raw_flush(data: *mut c_void) {
     let mut channels = CHANNELS.lock();
     let mut stream = channels.get_mut(&key).unwrap().lock();
     let _ = stream.flush();
+}
+
+#[cfg(not(feature = "std"))]
+/// The error type for I/O operations of the [`Read`] and [`Write`] associated traits.
+pub type RWError = Box<dyn embedded_io::Error>;
+#[cfg(feature = "std")]
+/// The error type for I/O operations of the [`Read`] and [`Write`] associated traits.
+pub type RWError = std::io::Error;
+
+/// The `Read` trait allows for reading bytes from a source.
+///
+/// Wrapper around either [`std::io::Read`] or [`embedded_io::Read`] depending on the availability of `std`.
+pub trait Read {
+    /// Pull some bytes from this source into the specified buffer, returning
+    /// how many bytes were read.
+    ///
+    /// Wrapper around either [`std::io::Read::read`] or [`embedded_io::Read::read`] depending on the availability of `std`.
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError>;
+}
+/// A trait for objects which are byte-oriented sinks.
+///
+/// Wrapper around either [`std::io::Write`] or [`embedded_io::Write`] depending on the availability of `std`.
+pub trait Write {
+    /// Write a buffer into this writer, returning how many bytes were written.
+    ///
+    /// Wrapper around either [`std::io::Write::write`] or [`embedded_io::Write::write`] depending on the availability of `std`.
+    fn write(&mut self, buf: &[u8]) -> Result<usize, RWError>;
+    /// Flush this output stream, ensuring that all intermediately buffered
+    /// contents reach their destination.
+    ///
+    /// Wrapper around either [`std::io::Write::flush`] or [`embedded_io::Write::flush`] depending on the availability of `std`.
+    fn flush(&mut self) -> Result<(), RWError>;
+}
+
+#[cfg(feature = "std")]
+impl<T: std::io::Read> Read for T {
+    #[inline(always)]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError> {
+        self.read(buf)
+    }
+}
+#[cfg(feature = "std")]
+impl<T: std::io::Write> Write for T {
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, RWError> {
+        self.write(buf)
+    }
+    #[inline(always)]
+    fn flush(&mut self) -> Result<(), RWError> {
+        self.flush()
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl<T: embedded_io::Read> Read for T
+where
+    T::Error: 'static,
+{
+    #[inline(always)]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError> {
+        self.read(buf)
+            .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
+    }
+}
+#[cfg(not(feature = "std"))]
+impl<T: embedded_io::Write> Write for T
+where
+    T::Error: 'static,
+{
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, RWError> {
+        self.write(buf)
+            .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
+    }
+    #[inline(always)]
+    fn flush(&mut self) -> Result<(), RWError> {
+        self.flush()
+            .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
+    }
 }
 
 /// The Channel trait acts as an interface for all channel implementors. See

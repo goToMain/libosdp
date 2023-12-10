@@ -1,12 +1,10 @@
 //! The CP is responsible to connecting to and managing multiple PDs. It is able
 //! to send commands to and receive events from PDs.
 
+#[cfg(feature = "std")]
+use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
 use crate::{
-    commands::OsdpCommand,
-    events::OsdpEvent,
-    file::{OsdpFile, OsdpFileOps, impl_osdp_file_ops_for},
-    osdp_sys,
-    OsdpError,
+    commands::OsdpCommand, events::OsdpEvent, osdp_sys, OsdpError, OsdpFlag, PdCapability, PdId,
     PdInfo,
 };
 use alloc::vec::Vec;
@@ -206,4 +204,5 @@ impl Drop for ControlPanel {
     }
 }
 
+#[cfg(feature = "std")]
 impl_osdp_file_ops_for!(ControlPanel);

@@ -7,6 +7,9 @@
 //! happens on the PD itself (such as card read, key press, etc.,) snd sends it
 //! to the CP.
 
+#[cfg(feature = "std")]
+use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
+use crate::{commands::OsdpCommand, events::OsdpEvent, osdp_sys, OsdpError, PdCapability, PdInfo};
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use log::{debug, error, info, warn};
@@ -175,4 +178,5 @@ impl Drop for PeripheralDevice {
     }
 }
 
+#[cfg(feature = "std")]
 impl_osdp_file_ops_for!(PeripheralDevice);

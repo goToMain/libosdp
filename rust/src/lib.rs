@@ -78,6 +78,7 @@ pub mod pd;
 pub mod commands;
 pub mod events;
 pub mod channel;
+#[cfg(feature = "std")]
 pub mod file;
 mod osdp_sys;
 
@@ -85,46 +86,49 @@ use alloc::{borrow::ToOwned, ffi::CString, format, str::FromStr, string::String,
 use std::sync::Mutex;
 use channel::OsdpChannel;
 use once_cell::sync::Lazy;
+#[cfg(feature = "std")]
 use thiserror::Error;
 
 /// OSDP public errors
-#[derive(Debug, Default, Error)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "std", derive(Error))]
 pub enum OsdpError {
     /// PD info error
-    #[error("Invalid PdInfo {0}")]
+    #[cfg_attr(feature = "std", error("Invalid PdInfo {0}"))]
     PdInfo(&'static str),
 
     /// Command build/send error
-    #[error("Invalid OsdpCommand")]
+    #[cfg_attr(feature = "std", error("Invalid OsdpCommand"))]
     Command,
 
     /// Event build/send error
-    #[error("Invalid OsdpEvent")]
+    #[cfg_attr(feature = "std", error("Invalid OsdpEvent"))]
     Event,
 
     /// PD/CP status query error
-    #[error("Failed to query {0} from device")]
+    #[cfg_attr(feature = "std", error("Failed to query {0} from device"))]
     Query(&'static str),
-    #[error("File transfer failed: {0}")]
 
     /// File transfer errors
+    #[cfg_attr(feature = "std", error("File transfer failed: {0}"))]
     FileTransfer(&'static str),
 
     /// CP/PD device setup failed.
-    #[error("Failed to setup device")]
+    #[cfg_attr(feature = "std", error("Failed to setup device"))]
     Setup,
 
     /// String parse error
-    #[error("Type {0} parse error")]
+    #[cfg_attr(feature = "std", error("Type {0} parse error"))]
     Parse(String),
 
     /// IO Error
+    #[cfg(feature = "std")]
     #[error("IO Error")]
     IO(#[from] std::io::Error),
 
     /// Unknown error
     #[default]
-    #[error("Unknown/Unspecified error")]
+    #[cfg_attr(feature = "std", error("Unknown/Unspecified error"))]
     Unknown,
 }
 

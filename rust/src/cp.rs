@@ -1,29 +1,25 @@
 //! The CP is responsible to connecting to and managing multiple PDs. It is able
 //! to send commands to and receive events from PDs.
 
+#[cfg(feature = "std")]
+use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
 use crate::{
-    commands::OsdpCommand,
-    events::OsdpEvent,
-    file::{OsdpFile, OsdpFileOps, impl_osdp_file_ops_for},
-    osdp_sys,
-    OsdpError,
+    commands::OsdpCommand, events::OsdpEvent, osdp_sys, OsdpError, OsdpFlag, PdCapability, PdId,
     PdInfo,
-    OsdpFlag,
-    PdCapability,
-    PdId,
 };
+use alloc::vec::Vec;
+use core::ffi::c_void;
 use log::{debug, error, info, warn};
-use std::ffi::c_void;
 
-type Result<T> = std::result::Result<T, OsdpError>;
+type Result<T> = core::result::Result<T, OsdpError>;
 type EventCallback =
     unsafe extern "C" fn(data: *mut c_void, pd: i32, event: *mut osdp_sys::osdp_event) -> i32;
 
 unsafe extern "C" fn log_handler(
-    log_level: ::std::os::raw::c_int,
-    _file: *const ::std::os::raw::c_char,
-    _line: ::std::os::raw::c_ulong,
-    msg: *const ::std::os::raw::c_char,
+    log_level: ::core::ffi::c_int,
+    _file: *const ::core::ffi::c_char,
+    _line: ::core::ffi::c_ulong,
+    msg: *const ::core::ffi::c_char,
 ) {
     let msg = crate::cstr_to_string(msg);
     let msg = msg.trim();
@@ -74,7 +70,7 @@ fn cp_setup(info: Vec<osdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
 /// OSDP CP device context.
 #[derive(Debug)]
 pub struct ControlPanel {
-    ctx: *mut std::ffi::c_void,
+    ctx: *mut core::ffi::c_void,
 }
 
 impl ControlPanel {
@@ -149,7 +145,7 @@ impl ControlPanel {
     /// vector in [`ControlPanel::new`]).
     pub fn get_pd_id(&self, pd: i32) -> Result<PdId> {
         let mut pd_id: osdp_sys::osdp_pd_id =
-            unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
+            unsafe { core::mem::MaybeUninit::zeroed().assume_init() };
         let rc = unsafe { osdp_sys::osdp_cp_get_pd_id(self.ctx, pd, &mut pd_id) };
         if rc < 0 {
             Err(OsdpError::Query("PdId"))
@@ -208,4 +204,5 @@ impl Drop for ControlPanel {
     }
 }
 
+#[cfg(feature = "std")]
 impl_osdp_file_ops_for!(ControlPanel);

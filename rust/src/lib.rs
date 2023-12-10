@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 //! # LibOSDP - Open Supervised Device Protocol Library
 //!
 //! This is an open source implementation of IEC 60839-11-5 Open Supervised
@@ -73,90 +74,100 @@
 #![warn(rust_2018_idioms)]
 #![warn(missing_docs)]
 
+extern crate alloc;
+
 pub mod cp;
 pub mod pd;
 pub mod commands;
 pub mod events;
 pub mod channel;
+#[cfg(feature = "std")]
 pub mod file;
 mod osdp_sys;
 
-use std::{str::FromStr, ffi::CString, sync::Mutex};
+#[allow(unused_imports)]
+use alloc::{
+    borrow::ToOwned, boxed::Box, ffi::CString, format, str::FromStr, string::String, sync::Arc, vec, vec::Vec,
+};
 use channel::OsdpChannel;
 use once_cell::sync::Lazy;
+#[cfg(feature = "std")]
 use thiserror::Error;
 
 /// OSDP public errors
-#[derive(Debug, Default, Error)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "std", derive(Error))]
 pub enum OsdpError {
     /// PD info error
-    #[error("Invalid PdInfo {0}")]
+    #[cfg_attr(feature = "std", error("Invalid PdInfo {0}"))]
     PdInfo(&'static str),
 
     /// Command build/send error
-    #[error("Invalid OsdpCommand")]
+    #[cfg_attr(feature = "std", error("Invalid OsdpCommand"))]
     Command,
 
     /// Event build/send error
-    #[error("Invalid OsdpEvent")]
+    #[cfg_attr(feature = "std", error("Invalid OsdpEvent"))]
     Event,
 
     /// PD/CP status query error
-    #[error("Failed to query {0} from device")]
+    #[cfg_attr(feature = "std", error("Failed to query {0} from device"))]
     Query(&'static str),
-    #[error("File transfer failed: {0}")]
 
     /// File transfer errors
+    #[cfg_attr(feature = "std", error("File transfer failed: {0}"))]
     FileTransfer(&'static str),
 
     /// CP/PD device setup failed.
-    #[error("Failed to setup device")]
+    #[cfg_attr(feature = "std", error("Failed to setup device"))]
     Setup,
 
     /// String parse error
-    #[error("Type {0} parse error")]
+    #[cfg_attr(feature = "std", error("Type {0} parse error"))]
     Parse(String),
 
     /// IO Error
+    #[cfg(feature = "std")]
     #[error("IO Error")]
     IO(#[from] std::io::Error),
+    /// IO Error
+    #[cfg(not(feature = "std"))]
+    IO(Box<dyn embedded_io::Error>),
 
     /// Unknown error
     #[default]
-    #[error("Unknown/Unspecified error")]
+    #[cfg_attr(feature = "std", error("Unknown/Unspecified error"))]
     Unknown,
 }
 
-impl From<std::convert::Infallible> for OsdpError {
-    fn from(_: std::convert::Infallible) -> Self {
+impl From<core::convert::Infallible> for OsdpError {
+    fn from(_: core::convert::Infallible) -> Self {
         unreachable!()
     }
 }
 
-fn cstr_to_string(s: *const ::std::os::raw::c_char) -> String {
-    let s = unsafe {
-        std::ffi::CStr::from_ptr(s)
-    };
+fn cstr_to_string(s: *const ::core::ffi::c_char) -> String {
+    let s = unsafe { core::ffi::CStr::from_ptr(s) };
     s.to_str().unwrap().to_owned()
 }
 
-static VERSION: Lazy<Mutex<String>> = Lazy::new(|| {
+static VERSION: Lazy<Arc<String>> = Lazy::new(|| {
     let s = unsafe { osdp_sys::osdp_get_version() };
-    Mutex::new(cstr_to_string(s))
+    Arc::new(cstr_to_string(s))
 });
-static SOURCE_INFO: Lazy<Mutex<String>> = Lazy::new(|| {
+static SOURCE_INFO: Lazy<Arc<String>> = Lazy::new(|| {
     let s = unsafe { osdp_sys::osdp_get_source_info() };
-    Mutex::new(cstr_to_string(s))
+    Arc::new(cstr_to_string(s))
 });
 
 /// Get LibOSDP version
 pub fn get_version() -> String {
-    VERSION.lock().unwrap().clone()
+    VERSION.as_ref().clone()
 }
 
 /// Get LibOSDP source info string
 pub fn get_source_info() -> String {
-    SOURCE_INFO.lock().unwrap().clone()
+    SOURCE_INFO.as_ref().clone()
 }
 
 /// PD ID information advertised by the PD.
@@ -351,15 +362,15 @@ impl FromStr for PdCapEntity {
 /// the CP by means of "capabilities".
 #[derive(Clone, Debug)]
 pub enum PdCapability {
-	/// This function indicates the ability to monitor the status of a switch
+    /// This function indicates the ability to monitor the status of a switch
     /// using a two-wire electrical connection between the PD and the switch.
     /// The on/off position of the switch indicates the state of an external
     /// device.
     ///
-	/// The PD may simply resolve all circuit states to an open/closed
-	/// status, or it may implement supervision of the monitoring circuit.
-	/// A supervised circuit is able to indicate circuit fault status in
-	/// addition to open/closed status.
+    /// The PD may simply resolve all circuit states to an open/closed
+    /// status, or it may implement supervision of the monitoring circuit.
+    /// A supervised circuit is able to indicate circuit fault status in
+    /// addition to open/closed status.
     ContactStatusMonitoring(PdCapEntity),
 
     /// This function provides a switched output, typically in the form of a

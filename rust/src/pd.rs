@@ -7,27 +7,22 @@
 //! happens on the PD itself (such as card read, key press, etc.,) snd sends it
 //! to the CP.
 
-use crate::{
-    commands::OsdpCommand,
-    PdInfo,
-    events::OsdpEvent,
-    file::{OsdpFile, OsdpFileOps, impl_osdp_file_ops_for},
-    osdp_sys,
-    OsdpError,
-    PdCapability,
-};
+#[cfg(feature = "std")]
+use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
+use crate::{commands::OsdpCommand, events::OsdpEvent, osdp_sys, OsdpError, PdCapability, PdInfo};
+use alloc::vec::Vec;
+use core::ffi::c_void;
 use log::{debug, error, info, warn};
-use std::ffi::c_void;
 
-type Result<T> = std::result::Result<T, OsdpError>;
+type Result<T> = core::result::Result<T, OsdpError>;
 type CommandCallback =
     unsafe extern "C" fn(data: *mut c_void, event: *mut osdp_sys::osdp_cmd) -> i32;
 
 unsafe extern "C" fn log_handler(
-    log_level: ::std::os::raw::c_int,
-    _file: *const ::std::os::raw::c_char,
-    _line: ::std::os::raw::c_ulong,
-    msg: *const ::std::os::raw::c_char,
+    log_level: ::core::ffi::c_int,
+    _file: *const ::core::ffi::c_char,
+    _line: ::core::ffi::c_ulong,
+    msg: *const ::core::ffi::c_char,
 ) {
     let msg = crate::cstr_to_string(msg);
     let msg = msg.trim();
@@ -183,4 +178,5 @@ impl Drop for PeripheralDevice {
     }
 }
 
+#[cfg(feature = "std")]
 impl_osdp_file_ops_for!(PeripheralDevice);

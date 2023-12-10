@@ -16,13 +16,13 @@ fn get_repo_root() -> std::io::Result<String> {
         let has_git = std::fs::read_dir(p)?
             .into_iter()
             .any(|p| {
-                let ent = p.unwrap();
-                if ent.file_type().unwrap().is_dir() {
-                    ent.file_name() == OsString::from(".git")
-                } else {
-                    false
-                }
-            });
+            let ent = p.unwrap();
+            if ent.file_type().unwrap().is_dir() {
+                ent.file_name() == OsString::from(".git")
+            } else {
+                false
+            }
+        });
         if has_git {
             return Ok(PathBuf::from(p).into_os_string().into_string().unwrap())
         }
@@ -32,8 +32,8 @@ fn get_repo_root() -> std::io::Result<String> {
     while let Some(p) = path_ancestors.next() {
         let has_cargo =
             std::fs::read_dir(p)?
-                .into_iter()
-                .any(|p| p.unwrap().file_name() == OsString::from("Cargo.lock"));
+            .into_iter()
+            .any(|p| p.unwrap().file_name() == OsString::from("Cargo.lock"));
         if has_cargo {
             return Ok(PathBuf::from(p).into_os_string().into_string().unwrap())
         }
@@ -107,13 +107,13 @@ fn generate_osdp_build_headers(out_dir: &str) -> Result<()> {
     std::fs::copy(&src, &dest)
         .context(format!("Failed: copy {src} -> {dest}"))?;
     configure_file(&dest, vec![
-        ("PROJECT_VERSION", env!("CARGO_PKG_VERSION")),
+            ("PROJECT_VERSION", env!("CARGO_PKG_VERSION")),
         ("PROJECT_NAME", format!("{}-rust", env!("CARGO_PKG_NAME")).as_str()),
-        ("GIT_BRANCH", git.branch.as_str()),
-        ("GIT_REV", git.rev.as_ref()),
-        ("GIT_TAG", git.tag.as_ref()),
-        ("GIT_DIFF", git.diff.as_ref()),
-        ("REPO_ROOT", git.root.as_ref()),
+            ("GIT_BRANCH", git.branch.as_str()),
+            ("GIT_REV", git.rev.as_ref()),
+            ("GIT_TAG", git.tag.as_ref()),
+            ("GIT_DIFF", git.diff.as_ref()),
+            ("REPO_ROOT", git.root.as_ref()),
     ])
 }
 
@@ -219,7 +219,8 @@ fn main() -> Result<()> {
     build.compile("libosdp.a");
 
     let bindings = bindgen::Builder::default()
-        .header( "vendor/include/osdp.h")
+        .use_core()
+        .header("vendor/include/osdp.h")
         .generate()
         .context("Unable to generate bindings")?;
 

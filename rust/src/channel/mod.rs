@@ -16,7 +16,6 @@ pub mod unix_channel;
 #[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
 
-use crate::osdp_sys;
 use lazy_static::lazy_static;
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;
@@ -182,11 +181,11 @@ impl OsdpChannel {
 
     /// For internal use; in as_struct() of [`crate::PdInfo`]. This methods
     /// exports the channel to LibOSDP as a C struct.
-    pub fn as_struct(&self) -> osdp_sys::osdp_channel {
+    pub fn as_struct(&self) -> libosdp_sys::osdp_channel {
         let stream = self.stream.clone();
         let id = stream.lock().get_id();
         CHANNELS.lock().insert(id, stream);
-        osdp_sys::osdp_channel {
+        libosdp_sys::osdp_channel {
             id,
             data: id as *mut c_void,
             recv: Some(raw_read),

@@ -83,7 +83,6 @@ pub mod events;
 pub mod channel;
 #[cfg(feature = "std")]
 pub mod file;
-mod osdp_sys;
 
 #[allow(unused_imports)]
 use alloc::{
@@ -152,11 +151,11 @@ fn cstr_to_string(s: *const ::core::ffi::c_char) -> String {
 }
 
 static VERSION: Lazy<Arc<String>> = Lazy::new(|| {
-    let s = unsafe { osdp_sys::osdp_get_version() };
+    let s = unsafe { libosdp_sys::osdp_get_version() };
     Arc::new(cstr_to_string(s))
 });
 static SOURCE_INFO: Lazy<Arc<String>> = Lazy::new(|| {
-    let s = unsafe { osdp_sys::osdp_get_source_info() };
+    let s = unsafe { libosdp_sys::osdp_get_source_info() };
     Arc::new(cstr_to_string(s))
 });
 
@@ -201,8 +200,8 @@ impl PdId {
     }
 }
 
-impl From <osdp_sys::osdp_pd_id> for PdId {
-    fn from(value: osdp_sys::osdp_pd_id) -> Self {
+impl From <libosdp_sys::osdp_pd_id> for PdId {
+    fn from(value: libosdp_sys::osdp_pd_id) -> Self {
         let bytes = value.vendor_code.to_le_bytes();
         let vendor_code: (u8, u8, u8) = (bytes[0], bytes[1], bytes[2]);
         let bytes = value.firmware_version.to_le_bytes();
@@ -252,9 +251,9 @@ impl ConvertEndian for (u8, u8, u8) {
     }
 }
 
-impl From<PdId> for osdp_sys::osdp_pd_id {
+impl From<PdId> for libosdp_sys::osdp_pd_id {
     fn from(value: PdId) -> Self {
-        osdp_sys::osdp_pd_id {
+        libosdp_sys::osdp_pd_id {
             version: value.version,
             model: value.model,
             vendor_code: value.vendor_code.as_le(),
@@ -276,7 +275,7 @@ bitflags::bitflags! {
         /// - Don't allow use of SCBK-D (implies no INSTALL_MODE)
         /// - Assume that a KEYSET was successful at an earlier time
         /// - Disallow master key based SCBK derivation
-        const EnforceSecure = osdp_sys::OSDP_FLAG_ENFORCE_SECURE;
+        const EnforceSecure = libosdp_sys::OSDP_FLAG_ENFORCE_SECURE;
 
         /// When set, the PD would allow one session of secure channel to be
         /// setup with SCBK-D.
@@ -284,11 +283,11 @@ bitflags::bitflags! {
         /// In this mode, the PD is in a vulnerable state, the application is
         /// responsible for making sure that the device enters this mode only
         /// during controlled/provisioning-time environments.
-        const InstallMode = osdp_sys::OSDP_FLAG_INSTALL_MODE;
+        const InstallMode = libosdp_sys::OSDP_FLAG_INSTALL_MODE;
 
         /// When set, CP will not error and fail when the PD sends an unknown,
         /// unsolicited response. In PD mode this flag has no use.
-        const IgnoreUnsolicited = osdp_sys::OSDP_FLAG_IGN_UNSOLICITED;
+        const IgnoreUnsolicited = libosdp_sys::OSDP_FLAG_IGN_UNSOLICITED;
     }
 }
 
@@ -456,28 +455,28 @@ impl FromStr for PdCapability {
     }
 }
 
-impl From<osdp_sys::osdp_pd_cap> for PdCapability {
-    fn from(value: osdp_sys::osdp_pd_cap) -> Self {
+impl From<libosdp_sys::osdp_pd_cap> for PdCapability {
+    fn from(value: libosdp_sys::osdp_pd_cap) -> Self {
         let function_code = value.function_code as u32;
         let e = PdCapEntity {
             compliance: value.compliance_level,
             num_items: value.num_items
         };
         match function_code {
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CONTACT_STATUS_MONITORING => PdCapability::ContactStatusMonitoring(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OUTPUT_CONTROL => PdCapability::OutputControl(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CARD_DATA_FORMAT => PdCapability::CardDataFormat(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_LED_CONTROL => PdCapability::LedControl(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_AUDIBLE_OUTPUT => PdCapability::AudibleOutput(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_TEXT_OUTPUT => PdCapability::TextOutput(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_TIME_KEEPING => PdCapability::TimeKeeping(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT => PdCapability::CheckCharacterSupport(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_COMMUNICATION_SECURITY => PdCapability::CommunicationSecurity(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_RECEIVE_BUFFERSIZE => PdCapability::ReceiveBufferSize(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE => PdCapability::LargestCombinedMessage(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_SMART_CARD_SUPPORT => PdCapability::SmartCardSupport(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READERS => PdCapability::Readers(e),
-            osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_BIOMETRICS => PdCapability::Biometrics(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CONTACT_STATUS_MONITORING => PdCapability::ContactStatusMonitoring(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OUTPUT_CONTROL => PdCapability::OutputControl(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CARD_DATA_FORMAT => PdCapability::CardDataFormat(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_LED_CONTROL => PdCapability::LedControl(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_AUDIBLE_OUTPUT => PdCapability::AudibleOutput(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_TEXT_OUTPUT => PdCapability::TextOutput(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_TIME_KEEPING => PdCapability::TimeKeeping(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT => PdCapability::CheckCharacterSupport(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_COMMUNICATION_SECURITY => PdCapability::CommunicationSecurity(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_RECEIVE_BUFFERSIZE => PdCapability::ReceiveBufferSize(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE => PdCapability::LargestCombinedMessage(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_SMART_CARD_SUPPORT => PdCapability::SmartCardSupport(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READERS => PdCapability::Readers(e),
+            libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_BIOMETRICS => PdCapability::Biometrics(e),
             _ => panic!("Unknown function code"),
         }
     }
@@ -486,95 +485,95 @@ impl From<osdp_sys::osdp_pd_cap> for PdCapability {
 impl Into<u8> for PdCapability {
     fn into(self) -> u8 {
         match self {
-            PdCapability::ContactStatusMonitoring(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CONTACT_STATUS_MONITORING as u8,
-            PdCapability::OutputControl(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OUTPUT_CONTROL as u8,
-            PdCapability::CardDataFormat(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CARD_DATA_FORMAT as u8,
-            PdCapability::LedControl(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_LED_CONTROL as u8,
-            PdCapability::AudibleOutput(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_AUDIBLE_OUTPUT as u8,
-            PdCapability::TextOutput(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_TEXT_OUTPUT as u8,
-            PdCapability::TimeKeeping(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_TIME_KEEPING as u8,
-            PdCapability::CheckCharacterSupport(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT as u8,
-            PdCapability::CommunicationSecurity(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_COMMUNICATION_SECURITY as u8,
-            PdCapability::ReceiveBufferSize(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_RECEIVE_BUFFERSIZE as u8,
-            PdCapability::LargestCombinedMessage(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE as u8,
-            PdCapability::SmartCardSupport(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_SMART_CARD_SUPPORT as u8,
-            PdCapability::Readers(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READERS as u8,
-            PdCapability::Biometrics(_) => osdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_BIOMETRICS as u8,
+            PdCapability::ContactStatusMonitoring(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CONTACT_STATUS_MONITORING as u8,
+            PdCapability::OutputControl(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_OUTPUT_CONTROL as u8,
+            PdCapability::CardDataFormat(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CARD_DATA_FORMAT as u8,
+            PdCapability::LedControl(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_LED_CONTROL as u8,
+            PdCapability::AudibleOutput(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_AUDIBLE_OUTPUT as u8,
+            PdCapability::TextOutput(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READER_TEXT_OUTPUT as u8,
+            PdCapability::TimeKeeping(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_TIME_KEEPING as u8,
+            PdCapability::CheckCharacterSupport(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT as u8,
+            PdCapability::CommunicationSecurity(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_COMMUNICATION_SECURITY as u8,
+            PdCapability::ReceiveBufferSize(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_RECEIVE_BUFFERSIZE as u8,
+            PdCapability::LargestCombinedMessage(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_LARGEST_COMBINED_MESSAGE_SIZE as u8,
+            PdCapability::SmartCardSupport(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_SMART_CARD_SUPPORT as u8,
+            PdCapability::Readers(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_READERS as u8,
+            PdCapability::Biometrics(_) => libosdp_sys::osdp_pd_cap_function_code_e_OSDP_PD_CAP_BIOMETRICS as u8,
         }
     }
 }
 
-impl From<PdCapability> for osdp_sys::osdp_pd_cap {
+impl From<PdCapability> for libosdp_sys::osdp_pd_cap {
     fn from(value: PdCapability) -> Self {
         let function_code: u8 = value.clone().into();
         match value {
-            PdCapability::ContactStatusMonitoring(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::ContactStatusMonitoring(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::OutputControl(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::OutputControl(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::CardDataFormat(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::CardDataFormat(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::LedControl(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::LedControl(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
 
             },
-            PdCapability::AudibleOutput(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::AudibleOutput(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::TextOutput(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::TextOutput(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::TimeKeeping(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::TimeKeeping(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::CheckCharacterSupport(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::CheckCharacterSupport(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::CommunicationSecurity(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::CommunicationSecurity(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::ReceiveBufferSize(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::ReceiveBufferSize(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::LargestCombinedMessage(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::LargestCombinedMessage(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::SmartCardSupport(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::SmartCardSupport(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::Readers(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::Readers(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
             },
-            PdCapability::Biometrics(e) => osdp_sys::osdp_pd_cap {
+            PdCapability::Biometrics(e) => libosdp_sys::osdp_pd_cap {
                 function_code,
                 compliance_level: e.compliance,
                 num_items: e.num_items,
@@ -591,7 +590,7 @@ pub struct PdInfo {
     baud_rate: i32,
     flags: OsdpFlag,
     id: PdId,
-    cap: Vec<osdp_sys::osdp_pd_cap>,
+    cap: Vec<libosdp_sys::osdp_pd_cap>,
     channel: OsdpChannel,
     scbk: [u8; 16],
 }
@@ -654,8 +653,8 @@ impl PdInfo {
         Self { name, address, baud_rate, flags, id: PdId::default(), cap: vec![], channel, scbk }
     }
 
-    fn as_struct(&self) -> osdp_sys::osdp_pd_info_t {
-        osdp_sys::osdp_pd_info_t {
+    fn as_struct(&self) -> libosdp_sys::osdp_pd_info_t {
+        libosdp_sys::osdp_pd_info_t {
             name: self.name.as_ptr(),
             baud_rate: self.baud_rate,
             address: self.address,

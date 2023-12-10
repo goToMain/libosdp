@@ -11,18 +11,13 @@ repository = "https://github.com/goToMain/libosdp"
 license = "Apache-2.0"
 keywords = ["osdp", "libosdp", "acs", "sia", "weigand" ]
 categories = ["development-tools", "embedded"]
-include = ["src", "examples", "build.rs", "config.toml", "vendor" ]
-
-[build-dependencies]
-anyhow = "1.0.75"
-cc = "1.0.83"
-bindgen = "0.68.1"
 
 [dependencies]
 bitflags = "2.4.0"
 embedded-io = "0.6.1"
 env_logger = "0.10.0"
 lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+libosdp-sys = "0.1.1"
 log = "0.4.20"
 multiqueue = "0.3.2"
 once_cell = "1.18.0"

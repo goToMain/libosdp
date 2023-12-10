@@ -16,7 +16,7 @@ pub mod unix_channel;
 #[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
 
-use crate::{osdp_sys, Mutex};
+use crate::osdp_sys;
 use lazy_static::lazy_static;
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;
@@ -24,6 +24,11 @@ use alloc::{boxed::Box, format, sync::Arc, vec};
 use core::ffi::c_void;
 #[cfg(feature = "std")]
 use std::{collections::{hash_map::DefaultHasher, HashMap}, hash::{Hash, Hasher}};
+
+#[cfg(feature = "std")]
+use parking_lot::Mutex;
+#[cfg(not(feature = "std"))]
+use spin::Mutex;
 
 lazy_static! {
     static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> =

@@ -87,17 +87,12 @@ mod osdp_sys;
 
 #[allow(unused_imports)]
 use alloc::{
-    borrow::ToOwned, boxed::Box, ffi::CString, format, str::FromStr, string::String, vec, vec::Vec,
+    borrow::ToOwned, boxed::Box, ffi::CString, format, str::FromStr, string::String, sync::Arc, vec, vec::Vec,
 };
 use channel::OsdpChannel;
 use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
 use thiserror::Error;
-
-#[cfg(feature = "std")]
-use parking_lot::Mutex;
-#[cfg(not(feature = "std"))]
-use spin::Mutex;
 
 /// OSDP public errors
 #[derive(Debug, Default)]
@@ -156,23 +151,23 @@ fn cstr_to_string(s: *const ::core::ffi::c_char) -> String {
     s.to_str().unwrap().to_owned()
 }
 
-static VERSION: Lazy<Mutex<String>> = Lazy::new(|| {
+static VERSION: Lazy<Arc<String>> = Lazy::new(|| {
     let s = unsafe { osdp_sys::osdp_get_version() };
-    Mutex::new(cstr_to_string(s))
+    Arc::new(cstr_to_string(s))
 });
-static SOURCE_INFO: Lazy<Mutex<String>> = Lazy::new(|| {
+static SOURCE_INFO: Lazy<Arc<String>> = Lazy::new(|| {
     let s = unsafe { osdp_sys::osdp_get_source_info() };
-    Mutex::new(cstr_to_string(s))
+    Arc::new(cstr_to_string(s))
 });
 
 /// Get LibOSDP version
 pub fn get_version() -> String {
-    VERSION.lock().clone()
+    VERSION.as_ref().clone()
 }
 
 /// Get LibOSDP source info string
 pub fn get_source_info() -> String {
-    SOURCE_INFO.lock().clone()
+    SOURCE_INFO.as_ref().clone()
 }
 
 /// PD ID information advertised by the PD.

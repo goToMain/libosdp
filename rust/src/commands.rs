@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OsdpLedColor {
     /// No Color
-    #[default] None,
+    #[default]
+    None,
 
     /// Red Color
     Red,
@@ -107,7 +108,7 @@ impl From<libosdp_sys::osdp_cmd_led_params> for OsdpLedParams {
     }
 }
 
-impl From<OsdpLedParams> for libosdp_sys::osdp_cmd_led_params{
+impl From<OsdpLedParams> for libosdp_sys::osdp_cmd_led_params {
     fn from(value: OsdpLedParams) -> Self {
         libosdp_sys::osdp_cmd_led_params {
             control_code: value.control_code,
@@ -502,7 +503,8 @@ impl From<OsdpCommandFileTx> for libosdp_sys::osdp_cmd_file_tx {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OsdpCommandStatus {
     /// Query local status (tamper and power) from PD
-    #[default] Local,
+    #[default]
+    Local,
     /// Query input status from PD
     Input,
     /// Query output status from PD
@@ -512,9 +514,15 @@ pub enum OsdpCommandStatus {
 impl From<libosdp_sys::osdp_cmd_status> for OsdpCommandStatus {
     fn from(value: libosdp_sys::osdp_cmd_status) -> Self {
         match value.type_ {
-            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT => OsdpCommandStatus::Input,
-            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT => OsdpCommandStatus::Output,
-            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL => OsdpCommandStatus::Local,
+            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT => {
+                OsdpCommandStatus::Input
+            }
+            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT => {
+                OsdpCommandStatus::Output
+            }
+            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL => {
+                OsdpCommandStatus::Local
+            }
             _ => panic!("Unknown status command type"),
         }
     }
@@ -524,13 +532,13 @@ impl From<OsdpCommandStatus> for libosdp_sys::osdp_cmd_status {
     fn from(value: OsdpCommandStatus) -> Self {
         match value {
             OsdpCommandStatus::Input => libosdp_sys::osdp_cmd_status {
-                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT
+                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT,
             },
             OsdpCommandStatus::Output => libosdp_sys::osdp_cmd_status {
-                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT
+                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT,
             },
             OsdpCommandStatus::Local => libosdp_sys::osdp_cmd_status {
-                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL
+                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL,
             },
         }
     }
@@ -577,7 +585,7 @@ impl From<OsdpCommand> for libosdp_sys::osdp_cmd {
             OsdpCommand::Led(c) => libosdp_sys::osdp_cmd {
                 id: libosdp_sys::osdp_cmd_e_OSDP_CMD_LED,
                 __bindgen_anon_1: libosdp_sys::osdp_cmd__bindgen_ty_1 {
-                    led: c.clone().into()
+                    led: c.clone().into(),
                 },
             },
             OsdpCommand::Buzzer(c) => libosdp_sys::osdp_cmd {
@@ -613,7 +621,7 @@ impl From<OsdpCommand> for libosdp_sys::osdp_cmd {
             OsdpCommand::Mfg(c) => libosdp_sys::osdp_cmd {
                 id: libosdp_sys::osdp_cmd_e_OSDP_CMD_MFG,
                 __bindgen_anon_1: libosdp_sys::osdp_cmd__bindgen_ty_1 {
-                    mfg: c.clone().into()
+                    mfg: c.clone().into(),
                 },
             },
             OsdpCommand::FileTx(c) => libosdp_sys::osdp_cmd {
@@ -625,7 +633,7 @@ impl From<OsdpCommand> for libosdp_sys::osdp_cmd {
             OsdpCommand::Status(c) => libosdp_sys::osdp_cmd {
                 id: libosdp_sys::osdp_cmd_e_OSDP_CMD_STATUS,
                 __bindgen_anon_1: libosdp_sys::osdp_cmd__bindgen_ty_1 {
-                    status: c.clone().into()
+                    status: c.clone().into(),
                 },
             },
         }
@@ -677,7 +685,7 @@ mod tests {
         let cmd = OsdpCommandMfg {
             vendor_code: (0x05, 0x07, 0x09),
             command: 0x47,
-            data: vec![0x55, 0xAA]
+            data: vec![0x55, 0xAA],
         };
         let cmd_struct: osdp_cmd_mfg = cmd.clone().into();
 

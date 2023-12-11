@@ -47,10 +47,8 @@ impl Into<u32> for OsdpCardFormats {
             }
             OsdpCardFormats::Weigand => {
                 libosdp_sys::osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND
-            },
-            OsdpCardFormats::Ascii => {
-                libosdp_sys::osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII
-            },
+            }
+            OsdpCardFormats::Ascii => libosdp_sys::osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII,
         }
     }
 }
@@ -93,21 +91,21 @@ impl OsdpEventCardRead {
             format: OsdpCardFormats::Ascii,
             direction: false,
             nr_bits: 0,
-            data
+            data,
         }
     }
 
     /// Create a Weigand card read event for self and direction set to forward
     pub fn new_weigand(nr_bits: usize, data: Vec<u8>) -> Result<Self> {
         if nr_bits > data.len() * 8 {
-            return Err(OsdpError::Command)
+            return Err(OsdpError::Command);
         }
         Ok(Self {
             reader_no: 0,
             format: OsdpCardFormats::Weigand,
             direction: false,
             nr_bits,
-            data
+            data,
         })
     }
 }
@@ -258,12 +256,18 @@ pub struct OsdpEventIO {
 impl OsdpEventIO {
     /// Create an input event with given bit mask
     pub fn new_input(mask: u32) -> Self {
-        Self { type_: 0, status: mask }
+        Self {
+            type_: 0,
+            status: mask,
+        }
     }
 
     /// Create an output event with given bit mask
     pub fn new_output(mask: u32) -> Self {
-        Self { type_: 0, status: mask }
+        Self {
+            type_: 0,
+            status: mask,
+        }
     }
 }
 
@@ -365,7 +369,7 @@ impl From<OsdpEvent> for libosdp_sys::osdp_event {
             OsdpEvent::IO(e) => libosdp_sys::osdp_event {
                 type_: libosdp_sys::osdp_event_type_OSDP_EVENT_IO,
                 __bindgen_anon_1: libosdp_sys::osdp_event__bindgen_ty_1 {
-                    io: e.clone().into()
+                    io: e.clone().into(),
                 },
             },
             OsdpEvent::Status(e) => libosdp_sys::osdp_event {
@@ -403,12 +407,11 @@ impl From<libosdp_sys::osdp_event> for OsdpEvent {
 
 #[cfg(test)]
 mod tests {
+    use super::OsdpEventCardRead;
     use libosdp_sys::{
-        osdp_event_cardread,
-        osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII,
+        osdp_event_cardread, osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII,
         osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND,
     };
-    use super::OsdpEventCardRead;
 
     #[test]
     fn test_event_cardread() {
@@ -417,7 +420,10 @@ mod tests {
 
         assert_eq!(event_struct.length, 2);
         assert_eq!(event_struct.direction, 0);
-        assert_eq!(event_struct.format, osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII);
+        assert_eq!(
+            event_struct.format,
+            osdp_event_cardread_format_e_OSDP_CARD_FMT_ASCII
+        );
         assert_eq!(event_struct.data[0], 0x55);
         assert_eq!(event_struct.data[1], 0xAA);
 
@@ -428,7 +434,10 @@ mod tests {
 
         assert_eq!(event_struct.length, 15);
         assert_eq!(event_struct.direction, 0);
-        assert_eq!(event_struct.format, osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND);
+        assert_eq!(
+            event_struct.format,
+            osdp_event_cardread_format_e_OSDP_CARD_FMT_RAW_WIEGAND
+        );
         assert_eq!(event_struct.data[0], 0x55);
         assert_eq!(event_struct.data[1], 0xAA);
 

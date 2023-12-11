@@ -57,9 +57,7 @@ where
 
 fn pd_setup(info: PdInfo) -> Result<*mut c_void> {
     let info = info.as_struct();
-    let ctx = unsafe {
-        libosdp_sys::osdp_pd_setup(&info)
-    };
+    let ctx = unsafe { libosdp_sys::osdp_pd_setup(&info) };
     if ctx.is_null() {
         Err(OsdpError::Setup)
     } else {
@@ -107,7 +105,9 @@ impl PeripheralDevice {
     /// ```
     pub fn new(info: PdInfo) -> Result<Self> {
         unsafe { libosdp_sys::osdp_set_log_callback(Some(log_handler)) };
-        Ok(Self { ctx: pd_setup(info)? })
+        Ok(Self {
+            ctx: pd_setup(info)?,
+        })
     }
 
     /// This method is used to periodically refresh the underlying LibOSDP state
@@ -120,7 +120,8 @@ impl PeripheralDevice {
 
     /// Set a vector of [`PdCapability`] for this PD.
     pub fn set_capabilities(&self, cap: &Vec<PdCapability>) {
-        let cap: Vec<libosdp_sys::osdp_pd_cap> = cap.iter()
+        let cap: Vec<libosdp_sys::osdp_pd_cap> = cap
+            .iter()
             .map(|c| -> libosdp_sys::osdp_pd_cap { c.clone().into() })
             .collect();
         unsafe { libosdp_sys::osdp_pd_set_capabilities(self.ctx, cap.as_ptr()) }

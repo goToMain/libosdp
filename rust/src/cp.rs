@@ -4,8 +4,7 @@
 #[cfg(feature = "std")]
 use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
 use crate::{
-    commands::OsdpCommand, events::OsdpEvent, OsdpError, OsdpFlag, PdCapability, PdId,
-    PdInfo,
+    commands::OsdpCommand, events::OsdpEvent, OsdpError, OsdpFlag, PdCapability, PdId, PdInfo,
 };
 use alloc::vec::Vec;
 use core::ffi::c_void;
@@ -57,9 +56,7 @@ where
 }
 
 fn cp_setup(info: Vec<libosdp_sys::osdp_pd_info_t>) -> Result<*mut c_void> {
-    let ctx = unsafe {
-        libosdp_sys::osdp_cp_setup(info.len() as i32, info.as_ptr())
-    };
+    let ctx = unsafe { libosdp_sys::osdp_cp_setup(info.len() as i32, info.as_ptr()) };
     if ctx.is_null() {
         Err(OsdpError::Setup)
     } else {
@@ -100,14 +97,14 @@ impl ControlPanel {
     /// ```
     pub fn new(pd_info: Vec<PdInfo>) -> Result<Self> {
         if pd_info.len() > 126 {
-            return Err(OsdpError::PdInfo("max PD count exceeded"))
+            return Err(OsdpError::PdInfo("max PD count exceeded"));
         }
-        let info: Vec<libosdp_sys::osdp_pd_info_t> = pd_info
-            .iter()
-            .map(|i| { i.as_struct() })
-            .collect();
+        let info: Vec<libosdp_sys::osdp_pd_info_t> =
+            pd_info.iter().map(|i| i.as_struct()).collect();
         unsafe { libosdp_sys::osdp_set_log_callback(Some(log_handler)) };
-        Ok(Self { ctx: cp_setup(info)? })
+        Ok(Self {
+            ctx: cp_setup(info)?,
+        })
     }
 
     /// The application must call this method periodically to refresh the

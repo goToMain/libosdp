@@ -89,7 +89,12 @@ impl OsdpFile {
     ///   CP and PD.
     /// * `path` - Path to file to read from (CP) or write to (PD).
     pub fn new(id: i32, path: PathBuf) -> Self {
-        Self { id, path, file: None, size: 0, }
+        Self {
+            id,
+            path,
+            file: None,
+            size: 0,
+        }
     }
 
     /// For internal use by {cp,pd}.register_file() methods.

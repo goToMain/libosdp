@@ -11,42 +11,46 @@
 //! This module provides a way to define an OSDP channel and export it to
 //! LibOSDP.
 
+#[cfg(feature = "std")]
 pub mod unix_channel;
+#[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
 
-use crate::osdp_sys;
 use lazy_static::lazy_static;
-use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
-    ffi::c_void,
-    hash::{Hash, Hasher},
-    io::{Read, Write},
-    sync::{Mutex, Arc},
-};
+#[cfg(not(feature = "std"))]
+use alloc::collections::BTreeMap as HashMap;
+use alloc::{boxed::Box, format, sync::Arc, vec};
+use core::ffi::c_void;
+#[cfg(feature = "std")]
+use std::{collections::{hash_map::DefaultHasher, HashMap}, hash::{Hash, Hasher}};
+
+#[cfg(feature = "std")]
+use parking_lot::Mutex;
+#[cfg(not(feature = "std"))]
+use spin::Mutex;
 
 lazy_static! {
-    static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> = Mutex::new(HashMap::new());
+    static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> =
+        Mutex::new(HashMap::new());
 }
 
-impl std::fmt::Debug for OsdpChannel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl alloc::fmt::Debug for OsdpChannel {
+    fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {
         f.debug_struct("OsdpChannel")
-            .field(
-                "stream",
-                &format!("{}", self.stream.lock().unwrap().get_id()))
+            .field("stream", &format!("{}", self.stream.lock().get_id()))
             .finish()
     }
 }
 
 unsafe extern "C" fn raw_read(data: *mut c_void, buf: *mut u8, len: i32) -> i32 {
     let key = data as i32;
-    let mut channels = CHANNELS.lock().unwrap();
-    let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
+    let mut channels = CHANNELS.lock();
+    let mut stream = channels.get_mut(&key).unwrap().lock();
     let mut read_buf = vec![0u8; len as usize];
     match stream.read(&mut read_buf) {
         Ok(n) => {
             let src_ptr = read_buf.as_mut_ptr();
-            std::ptr::copy_nonoverlapping(src_ptr, buf, len as usize);
+            core::ptr::copy_nonoverlapping(src_ptr, buf, len as usize);
             n as i32
         }
         Err(_) => -1,
@@ -55,10 +59,10 @@ unsafe extern "C" fn raw_read(data: *mut c_void, buf: *mut u8, len: i32) -> i32 
 
 unsafe extern "C" fn raw_write(data: *mut c_void, buf: *mut u8, len: i32) -> i32 {
     let key = data as i32;
-    let mut channels = CHANNELS.lock().unwrap();
-    let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
+    let mut channels = CHANNELS.lock();
+    let mut stream = channels.get_mut(&key).unwrap().lock();
     let mut write_buf = vec![0u8; len as usize];
-    std::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
+    core::ptr::copy_nonoverlapping(buf, write_buf.as_mut_ptr(), len as usize);
     match stream.write(&write_buf) {
         Ok(n) => n as i32,
         Err(_) => -1,
@@ -67,9 +71,88 @@ unsafe extern "C" fn raw_write(data: *mut c_void, buf: *mut u8, len: i32) -> i32
 
 unsafe extern "C" fn raw_flush(data: *mut c_void) {
     let key = data as i32;
-    let mut channels = CHANNELS.lock().unwrap();
-    let mut stream = channels.get_mut(&key).unwrap().lock().unwrap();
+    let mut channels = CHANNELS.lock();
+    let mut stream = channels.get_mut(&key).unwrap().lock();
     let _ = stream.flush();
+}
+
+#[cfg(not(feature = "std"))]
+/// The error type for I/O operations of the [`Read`] and [`Write`] associated traits.
+pub type RWError = Box<dyn embedded_io::Error>;
+#[cfg(feature = "std")]
+/// The error type for I/O operations of the [`Read`] and [`Write`] associated traits.
+pub type RWError = std::io::Error;
+
+/// The `Read` trait allows for reading bytes from a source.
+///
+/// Wrapper around either [`std::io::Read`] or [`embedded_io::Read`] depending on the availability of `std`.
+pub trait Read {
+    /// Pull some bytes from this source into the specified buffer, returning
+    /// how many bytes were read.
+    ///
+    /// Wrapper around either [`std::io::Read::read`] or [`embedded_io::Read::read`] depending on the availability of `std`.
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError>;
+}
+/// A trait for objects which are byte-oriented sinks.
+///
+/// Wrapper around either [`std::io::Write`] or [`embedded_io::Write`] depending on the availability of `std`.
+pub trait Write {
+    /// Write a buffer into this writer, returning how many bytes were written.
+    ///
+    /// Wrapper around either [`std::io::Write::write`] or [`embedded_io::Write::write`] depending on the availability of `std`.
+    fn write(&mut self, buf: &[u8]) -> Result<usize, RWError>;
+    /// Flush this output stream, ensuring that all intermediately buffered
+    /// contents reach their destination.
+    ///
+    /// Wrapper around either [`std::io::Write::flush`] or [`embedded_io::Write::flush`] depending on the availability of `std`.
+    fn flush(&mut self) -> Result<(), RWError>;
+}
+
+#[cfg(feature = "std")]
+impl<T: std::io::Read> Read for T {
+    #[inline(always)]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError> {
+        self.read(buf)
+    }
+}
+#[cfg(feature = "std")]
+impl<T: std::io::Write> Write for T {
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, RWError> {
+        self.write(buf)
+    }
+    #[inline(always)]
+    fn flush(&mut self) -> Result<(), RWError> {
+        self.flush()
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl<T: embedded_io::Read> Read for T
+where
+    T::Error: 'static,
+{
+    #[inline(always)]
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError> {
+        self.read(buf)
+            .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
+    }
+}
+#[cfg(not(feature = "std"))]
+impl<T: embedded_io::Write> Write for T
+where
+    T::Error: 'static,
+{
+    #[inline(always)]
+    fn write(&mut self, buf: &[u8]) -> Result<usize, RWError> {
+        self.write(buf)
+            .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
+    }
+    #[inline(always)]
+    fn flush(&mut self) -> Result<(), RWError> {
+        self.flush()
+            .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
+    }
 }
 
 /// The Channel trait acts as an interface for all channel implementors. See
@@ -98,11 +181,11 @@ impl OsdpChannel {
 
     /// For internal use; in as_struct() of [`crate::PdInfo`]. This methods
     /// exports the channel to LibOSDP as a C struct.
-    pub fn as_struct(&self) -> osdp_sys::osdp_channel {
+    pub fn as_struct(&self) -> libosdp_sys::osdp_channel {
         let stream = self.stream.clone();
-        let id = stream.lock().unwrap().get_id();
-        CHANNELS.lock().unwrap().insert(id, stream);
-        osdp_sys::osdp_channel {
+        let id = stream.lock().get_id();
+        CHANNELS.lock().insert(id, stream);
+        libosdp_sys::osdp_channel {
             id,
             data: id as *mut c_void,
             recv: Some(raw_read),
@@ -112,6 +195,7 @@ impl OsdpChannel {
     }
 }
 
+#[cfg(feature = "std")]
 fn str_to_channel_id(key: &str) -> i32 {
     let mut hasher = DefaultHasher::new();
     key.hash(&mut hasher);

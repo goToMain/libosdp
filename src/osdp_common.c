@@ -265,7 +265,7 @@ void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
 	if (ISSET_FLAG(pd, PD_FLAG_PD_MODE)) {
-		*mask = osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS;
+		*mask = osdp_millis_since(pd->tstamp) < OSDP_PD_ONLINE_TOUT_MS;
 		return;
 	}
 

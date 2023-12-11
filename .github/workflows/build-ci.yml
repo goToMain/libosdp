@@ -86,10 +86,16 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - name: Cargo check
+      - name: Cargo check - libosdp
         uses: actions-rs/cargo@v1
         with:
           command: check
+          args: --manifest-path rust/Cargo.toml
+      - name: Cargo check - osdpctl
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --manifest-path osdpctl/Cargo.toml
 
   Python:
     name: Python

@@ -1,7 +1,7 @@
 //! OSDP provides a means to send files from CP to a Peripheral Device (PD).
 //! This module adds the required components to achieve this effect.
 
-use crate::{osdp_sys, OsdpError};
+use crate::OsdpError;
 use std::{ffi::c_void, fs::File, os::unix::prelude::FileExt, path::PathBuf};
 
 type Result<T> = std::result::Result<T, OsdpError>;
@@ -93,8 +93,8 @@ impl OsdpFile {
     }
 
     /// For internal use by {cp,pd}.register_file() methods.
-    pub fn get_ops_struct(&mut self) -> osdp_sys::osdp_file_ops {
-        osdp_sys::osdp_file_ops {
+    pub fn get_ops_struct(&mut self) -> libosdp_sys::osdp_file_ops {
+        libosdp_sys::osdp_file_ops {
             arg: self as *mut _ as *mut c_void,
             open: Some(raw_file_open),
             read: Some(raw_file_read),
@@ -125,7 +125,7 @@ macro_rules! impl_osdp_file_ops_for {
             fn register_file(&mut self, pd: i32, fm: &mut OsdpFile) -> Result<()> {
                 let mut ops = fm.get_ops_struct();
                 let rc = unsafe {
-                    osdp_sys::osdp_file_register_ops(self.ctx, pd, &mut ops as *mut osdp_sys::osdp_file_ops)
+                    libosdp_sys::osdp_file_register_ops(self.ctx, pd, &mut ops as *mut libosdp_sys::osdp_file_ops)
                 };
                 if rc < 0 {
                     Err(OsdpError::FileTransfer("ops register"))
@@ -138,7 +138,7 @@ macro_rules! impl_osdp_file_ops_for {
                 let mut size: i32 = 0;
                 let mut offset: i32 = 0;
                 let rc = unsafe {
-                    osdp_sys::osdp_get_file_tx_status(
+                    libosdp_sys::osdp_get_file_tx_status(
                         self.ctx,
                         pd,
                         &mut size as *mut i32,

@@ -13,26 +13,27 @@
 
 #[cfg(feature = "std")]
 pub mod unix_channel;
+use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
 
-use lazy_static::lazy_static;
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;
 use alloc::{boxed::Box, format, sync::Arc, vec};
 use core::ffi::c_void;
 #[cfg(feature = "std")]
-use std::{collections::{hash_map::DefaultHasher, HashMap}, hash::{Hash, Hasher}};
+use std::{
+    collections::{hash_map::DefaultHasher, HashMap},
+    hash::{Hash, Hasher},
+};
 
 #[cfg(feature = "std")]
 use parking_lot::Mutex;
 #[cfg(not(feature = "std"))]
 use spin::Mutex;
 
-lazy_static! {
-    static ref CHANNELS: Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>> =
-        Mutex::new(HashMap::new());
-}
+static CHANNELS: Lazy<Mutex<HashMap<i32, Arc<Mutex<Box<dyn Channel>>>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
 
 impl alloc::fmt::Debug for OsdpChannel {
     fn fmt(&self, f: &mut alloc::fmt::Formatter<'_>) -> alloc::fmt::Result {
@@ -176,7 +177,9 @@ impl OsdpChannel {
     /// Create an instance of OsdpChannel for a given object that implements
     /// the Channel Trait.
     pub fn new<T: Channel>(stream: Box<dyn Channel>) -> OsdpChannel {
-        Self { stream: Arc::new(Mutex::new(stream)) }
+        Self {
+            stream: Arc::new(Mutex::new(stream)),
+        }
     }
 
     /// For internal use; in as_struct() of [`crate::PdInfo`]. This methods

@@ -21,7 +21,6 @@ pub use unix_channel::UnixChannel;
 use alloc::collections::BTreeMap as HashMap;
 use alloc::{boxed::Box, format, sync::Arc, vec};
 use core::ffi::c_void;
-use lazy_static::lazy_static;
 #[cfg(feature = "std")]
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},

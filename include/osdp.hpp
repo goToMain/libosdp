@@ -55,6 +55,14 @@ public:
 		return osdp_get_file_tx_status(_ctx, pd, size, offset);
 	}
 
+
+	void set_command_complete_callback(osdp_command_complete_callback_t cb,
+					   void *arg)
+	{
+		osdp_set_command_complete_callback(_ctx, cb, arg);
+	}
+
+
 protected:
 	osdp_t *_ctx;
 };

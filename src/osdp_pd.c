@@ -988,7 +988,6 @@ static inline void pd_error_reset(struct osdp_pd *pd)
 static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
-	struct osdp *ctx = pd_to_osdp(pd);
 
 	/**
 	 * If secure channel is established, we need to make sure that
@@ -1034,10 +1033,6 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	}
 
 	osdp_phy_state_reset(pd, false);
-	if (ctx->command_complete_callback) {
-		ctx->command_complete_callback(ctx->command_complete_callback_arg,
-					       pd->cmd_id);
-	}
 }
 
 static void osdp_pd_set_attributes(struct osdp_pd *pd,

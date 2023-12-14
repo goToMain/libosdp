@@ -751,17 +751,6 @@ typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
  */
 typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
 
-/**
- * @brief Callback for command completion event callbacks. After it has
- * been registered with `osdp_set_command_complete_callback()` this method is
- * invoked after a command has been processed successfully in CP and PD sides.
- *
- * @param arg pointer that was passed to the arg param of
- * `osdp_set_command_complete_callback`.
- * @param id OSDP command ID (Note: this is not `enum osdp_cmd_e`)
- */
-typedef void (*osdp_command_complete_callback_t)(void *arg, int id);
-
 /* ------------------------------- */
 /*            PD Methods           */
 /* ------------------------------- */

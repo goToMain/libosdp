@@ -6,13 +6,37 @@ This repository produces a ``libosdpstatic.a`` and ``libosdp.so``. You can link
 these with your application as needed (-losdp or -losdpstatic). Have a look at
 ``sample/*`` for details on how to consume this library.
 
+This project supports two kinds of build systems: cmake and make.
+
+Cmake Build
+-----------
+
+Cmake is the recommented way for building libosdp.
+
 .. code:: sh
 
     mkdir build && cd build
     cmake ..
     make
+
+    # (optional)
     make check
     make DESTDIR=/your/install/path install
+
+Make Build
+----------
+
+The make build is provided as a reference for people who wish to write their
+own Makefile to be chained in some other build system. Please see `configure.sh
+--help` for different configuration options.
+
+.. code:: sh
+
+    ./configure.sh
+    make
+
+    # (optional)
+    make check
 
 Build html docs
 ---------------

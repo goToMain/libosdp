@@ -65,7 +65,7 @@ $(O)/pd_app.elf: $(O)/libosdp.a
 
 .PHONY: check
 check: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I$(O)
-check: $(OBJ_TEST)
+check: clean $(OBJ_TEST)
 	@echo "LINK $@"
 	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $(O)/unit-test
 	$(Q)$(O)/unit-test

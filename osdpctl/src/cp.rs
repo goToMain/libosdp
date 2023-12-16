@@ -1,6 +1,6 @@
 use crate::config::CpConfig;
 use daemonize::Daemonize;
-use libosdp::{cp::ControlPanel, events::OsdpEvent};
+use libosdp::{events::OsdpEvent, ControlPanel};
 use std::{fs::File, thread, time::Duration};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;

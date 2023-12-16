@@ -1,6 +1,6 @@
 use crate::config::PdConfig;
 use daemonize::Daemonize;
-use libosdp::{commands::OsdpCommand, pd::PeripheralDevice};
+use libosdp::{commands::OsdpCommand, PeripheralDevice};
 use std::{fs::File, thread, time::Duration};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
@@ -44,7 +44,7 @@ impl PdDaemon {
                 }
                 OsdpCommand::Status(c) => {
                     log::info!("Command: {:?}", c);
-                },
+                }
             }
             0
         });

@@ -1,7 +1,6 @@
 use libosdp::{
     channel::{OsdpChannel, UnixChannel},
-    cp::ControlPanel,
-    OsdpError, OsdpFlag, PdInfo,
+    ControlPanel, OsdpError, OsdpFlag, PdInfo,
 };
 use std::{result::Result, thread, time::Duration};
 

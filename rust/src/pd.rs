@@ -71,6 +71,8 @@ pub struct PeripheralDevice {
     ctx: *mut libosdp_sys::osdp_t,
 }
 
+unsafe impl Send for PeripheralDevice {}
+
 impl PeripheralDevice {
     /// Create a new Peripheral panel object for the list of PDs described by the
     /// corresponding PdInfo list.

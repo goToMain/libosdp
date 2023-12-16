@@ -1,7 +1,6 @@
 use libosdp::{
     channel::{OsdpChannel, UnixChannel},
-    pd::PeripheralDevice,
-    OsdpError, OsdpFlag, PdCapEntity, PdCapability, PdId, PdInfo,
+    OsdpError, OsdpFlag, PdCapEntity, PdCapability, PdId, PdInfo, PeripheralDevice,
 };
 use std::{result::Result, thread, time::Duration};
 

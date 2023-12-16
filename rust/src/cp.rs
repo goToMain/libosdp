@@ -70,6 +70,8 @@ pub struct ControlPanel {
     ctx: *mut core::ffi::c_void,
 }
 
+unsafe impl Send for ControlPanel {}
+
 impl ControlPanel {
     /// Create a new control panel object for the list of PDs described by the
     /// corresponding PdInfo list.

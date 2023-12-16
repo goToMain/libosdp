@@ -94,6 +94,9 @@ use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
 use thiserror::Error;
 
+pub use cp::ControlPanel;
+pub use pd::PeripheralDevice;
+
 /// OSDP public errors
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "std", derive(Error))]
@@ -125,6 +128,10 @@ pub enum OsdpError {
     /// String parse error
     #[cfg_attr(feature = "std", error("Type {0} parse error"))]
     Parse(String),
+
+    /// OSDP channel error
+    #[cfg_attr(feature = "std", error("Channel error: {0}"))]
+    Channel(&'static str),
 
     /// IO Error
     #[cfg(feature = "std")]

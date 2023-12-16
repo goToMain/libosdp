@@ -546,7 +546,7 @@ impl From<OsdpCommandStatus> for libosdp_sys::osdp_cmd_status {
 
 /// CP interacts with and controls PDs by sending commands to it. The commands
 /// in this enum are specified by OSDP specification.
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OsdpCommand {
     /// Command to control the behavior of it’s on-board LEDs
     Led(OsdpCommandLed),

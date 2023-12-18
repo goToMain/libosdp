@@ -371,8 +371,8 @@ static int phy_check_header(struct osdp_pd *pd)
 	}
 
 	if (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) {
-		LOG_ERR("Reply without address MSB set!");
-		return OSDP_ERR_PKT_FMT;
+		LOG_WRN("Ignoring reply with pd_address.MSB == 0");
+		return OSDP_ERR_PKT_SKIP;
 	}
 
 	/* validate packet length */

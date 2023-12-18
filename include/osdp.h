@@ -17,7 +17,7 @@ extern "C" {
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
 #define OSDP_CMD_MFG_MAX_DATALEN       64
-#define OSDP_EVENT_MAX_DATALEN         64
+#define OSDP_EVENT_MAX_DATALEN         128
 
 /**
  * @brief OSDP setup flags. See osdp_pd_info_t::flags

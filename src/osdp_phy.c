@@ -26,15 +26,6 @@ static inline bool packet_has_mark(struct osdp_pd *pd)
 	return ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 }
 
-static inline void packet_set_mark(struct osdp_pd *pd, bool mark)
-{
-	if (mark) {
-		SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
-	} else {
-		CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
-	}
-}
-
 static int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int sent, total_sent = 0;
@@ -133,10 +124,7 @@ uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *pd, const uint8_t *buf)
 	struct osdp_packet_header *pkt;
 
 	ARG_UNUSED(pd);
-	if (packet_has_mark(pd)) {
-		buf += 1;
-	}
-	pkt = (struct osdp_packet_header *)buf;
+	pkt = (struct osdp_packet_header *)(buf + packet_has_mark(pd));
 	if (pkt->control & PKT_CONTROL_SCB) {
 		return pkt->data;
 	}
@@ -154,7 +142,7 @@ int osdp_phy_in_sc_handshake(int is_reply, int id)
 
 int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int exp_len, id, scb_len = 0, mark_byte_len = 0;
+	int exp_len, id, scb_len = 0;
 	struct osdp_packet_header *pkt;
 
 	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
@@ -171,8 +159,7 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	    (is_cp_mode(pd) && !ISSET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK))) {
 		buf[0] = OSDP_PKT_MARK;
 		buf++;
-		mark_byte_len = 1;
-		packet_set_mark(pd, true);
+		SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 	}
 
 	/* Fill packet header */
@@ -203,7 +190,8 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		pkt->data[1] = SCS_11;
 	}
 
-	return mark_byte_len + sizeof(struct osdp_packet_header) + scb_len;
+	return (packet_has_mark(pd) +
+	        sizeof(struct osdp_packet_header) + scb_len);
 }
 
 static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
@@ -293,11 +281,7 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	buf[len + 1] = BYTE_1(crc16);
 	len += 2;
 
-	if (packet_has_mark(pd)) {
-		len += 1; /* put back mark byte */
-	}
-
-	return len;
+	return len + packet_has_mark(pd);
 
 out_of_space_error:
 	LOG_ERR("PKT_F: Out of buffer space! CMD(%02x)", pd->cmd_id);
@@ -340,29 +324,37 @@ static int phy_check_header(struct osdp_pd *pd)
 	int pkt_len, len, target_len;
 	struct osdp_packet_header *pkt;
 	uint8_t cur_byte = 0, prev_byte = 0;
+	uint8_t *buf = pd->packet_buf;
 
 	while (pd->packet_buf_len == 0) {
 		if (osdp_rb_pop(&pd->rx_rb, &cur_byte)) {
 			return OSDP_ERR_PKT_NO_DATA;
 		}
 		if (cur_byte == OSDP_PKT_SOM) {
-			pd->packet_buf[0] = OSDP_PKT_SOM;
-			pd->packet_buf_len = 1;
-			packet_set_mark(pd, prev_byte == OSDP_PKT_MARK);
+			if (prev_byte == OSDP_PKT_MARK) {
+				buf[0] = OSDP_PKT_MARK;
+				buf[1] = OSDP_PKT_SOM;
+				pd->packet_buf_len = 2;
+				SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+			} else {
+				buf[0] = OSDP_PKT_SOM;
+				pd->packet_buf_len = 1;
+				CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+			}
 			break;
 		}
 		prev_byte = cur_byte;
 	}
 
 	target_len = sizeof(struct osdp_packet_header);
-	len = osdp_rb_pop_buf(&pd->rx_rb, pd->packet_buf + pd->packet_buf_len,
+	len = osdp_rb_pop_buf(&pd->rx_rb, buf + pd->packet_buf_len,
 			      target_len - pd->packet_buf_len);
 	pd->packet_buf_len += len;
 	if (pd->packet_buf_len < target_len) {
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-	pkt = (struct osdp_packet_header *)pd->packet_buf;
+	pkt = (struct osdp_packet_header *)(buf + packet_has_mark(pd));
 
 	/* validate packet header */
 	if (pkt->som != OSDP_PKT_SOM) {
@@ -383,7 +375,7 @@ static int phy_check_header(struct osdp_pd *pd)
 		return OSDP_ERR_PKT_FMT;
 	}
 
-	return pkt_len;
+	return pkt_len + packet_has_mark(pd);
 }
 
 static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
@@ -392,6 +384,10 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 	uint16_t comp, cur;
 	struct osdp_packet_header *pkt;
 
+	if (packet_has_mark(pd)) {
+		buf += 1;
+		pkt_len -= 1;
+	}
 	pkt = (struct osdp_packet_header *)buf;
 
 	/* validate CRC/checksum */
@@ -546,6 +542,10 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 	int mac_offset, is_cmd, len = pd->packet_buf_len;
 	struct osdp_packet_header *pkt;
 
+	if (packet_has_mark(pd)) {
+		buf += 1;
+		len -= 1;
+	}
 	pkt = (struct osdp_packet_header *)buf;
 	len -= pkt->control & PKT_CONTROL_CRC ? 2 : 1;
 	mac_offset = len - 4;

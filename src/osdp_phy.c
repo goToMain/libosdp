@@ -519,7 +519,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd)
 		 * pushed back by 2 bytes if secure channel block is present in
 		 * header.
 		 */
-		ret = OSDP_CMD_ID_OFFSET;
+		ret = OSDP_CMD_ID_OFFSET + packet_has_mark(pd);
 		if (sc_is_active(pd)) {
 			ret += 2;
 		}

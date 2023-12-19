@@ -574,11 +574,10 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		}
 		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
 			/**
-			 * CP signals PD to use SCBKD by setting SB data byte
-			 * to 0. In CP, PD_FLAG_SC_USE_SCBKD comes from FSM; on
-			 * PD we extract it from the command itself. But this
-			 * usage of SCBKD is allowed only when the PD is in
-			 * install mode (indicated by OSDP_FLAG_INSTALL_MODE).
+			 * CP signals PD to use SCBKD by setting SCB data byte
+			 * to 0. But since SCBK-D is insecure access, it's
+			 * usage is limited to install mode (a provisioning time
+			 * mode) only.
 			 */
 			if (ISSET_FLAG(pd, OSDP_FLAG_INSTALL_MODE) &&
 			    pkt->data[2] == 0) {

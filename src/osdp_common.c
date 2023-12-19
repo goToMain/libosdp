@@ -250,7 +250,8 @@ void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 			*mask = 0;
 		}
 		pd = osdp_to_pd(ctx, i);
-		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE)) {
+		if (ISSET_FLAG(pd, PD_FLAG_SC_ACTIVE) &&
+		    !ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			*mask |= 1 << pos;
 		}
 	}

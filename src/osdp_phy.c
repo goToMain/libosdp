@@ -362,8 +362,9 @@ static int phy_check_header(struct osdp_pd *pd)
 		return OSDP_ERR_PKT_FMT;
 	}
 
-	if (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) {
-		LOG_WRN("Ignoring reply with pd_address.MSB == 0");
+	if ((is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
+	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+		LOG_WRN("Ignoring packet with invalid PD_ADDR.MSB");
 		return OSDP_ERR_PKT_SKIP;
 	}
 

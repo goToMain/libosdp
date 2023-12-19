@@ -27,14 +27,14 @@ unsafe extern "C" fn log_handler(
     let msg = crate::cstr_to_string(msg);
     let msg = msg.trim();
     match log_level as u32 {
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_EMERG => error!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_ALERT => error!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_CRIT => error!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_ERROR => error!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_WARNING => warn!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_NOTICE => warn!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_INFO => info!("{msg}"),
-        libosdp_sys::osdp_log_level_e_OSDP_LOG_DEBUG => debug!("{msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_EMERG => error!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_ALERT => error!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_CRIT => error!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_ERROR => error!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_WARNING => warn!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_NOTICE => warn!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_INFO => info!("PD: {msg}"),
+        libosdp_sys::osdp_log_level_e_OSDP_LOG_DEBUG => debug!("PD: {msg}"),
         _ => panic!("Unknown log level"),
     };
 }

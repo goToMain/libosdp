@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <utils/utils.h>
 #include <utils/queue.h>
@@ -71,6 +72,18 @@
 		free(p)
 
 #define osdp_dump hexdump // for zephyr compatibility.
+
+static inline __attribute__((noreturn)) void die()
+{
+	exit(EXIT_FAILURE);
+	__builtin_unreachable();
+}
+
+#define BUG() \
+	do { \
+		printf("BUG at %s:%d %s()", __FILE__, __LINE__, __func__); \
+		die(); \
+	} while (0);
 
 /* Unused type only to estimate ephemeral_data size */
 union osdp_ephemeral_data {

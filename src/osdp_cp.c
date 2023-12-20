@@ -851,8 +851,14 @@ int cp_translate_cmd(struct osdp_pd *pd, struct cp_cmd *cmd)
 		}
 		break;
 	case OSDP_CMD_FILE_TX:
-		return -1;
+		/**
+		 * This external command is handled as multiple command from
+		 * osdp_file.c and it maintains it's own state. This means we
+		 * should never reach here unless something is wrong.
+		 */
+		BUG();
 	default:
+		LOG_ERR("Invalid external command type");
 		return -1;
 	}
 	memcpy(pd->ephemeral_data, cmd->u.cmd, sizeof(struct osdp_cmd));

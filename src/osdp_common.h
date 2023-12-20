@@ -66,10 +66,6 @@
 #define NUM_PD(ctx)    (TO_OSDP(ctx)->_num_pd)
 #define PD_MASK(ctx)   (uint32_t)(BIT(NUM_PD(ctx)) - 1)
 
-#define OSDP_QUEUE_SLAB_SIZE                                                   \
-	(OSDP_CP_CMD_POOL_SIZE *                                               \
-	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
-
 #define safe_free(p)                                                           \
 	if (p)                                                                 \
 		free(p)
@@ -290,10 +286,23 @@ struct osdp_rb {
     uint8_t buffer[OSDP_RX_RB_SIZE];
 };
 
+#define OSDP_QUEUE_SLAB_SIZE \
+	(OSDP_CP_CMD_POOL_SIZE * \
+	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
+
 struct osdp_queue {
 	queue_t queue;
 	slab_t slab;
 	uint8_t slab_blob[OSDP_QUEUE_SLAB_SIZE];
+};
+
+#define OSDP_APP_DATA_QUEUE_SIZE \
+	(OSDP_CP_CMD_POOL_SIZE * \
+	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
+
+struct osdp_app_data_pool {
+	slab_t slab;
+	uint8_t slab_blob[OSDP_APP_DATA_QUEUE_SIZE];
 };
 
 struct osdp_pd {
@@ -335,6 +344,7 @@ struct osdp_pd {
 		struct osdp_queue cmd;   /* Command queue (CP Mode only) */
 		struct osdp_queue event; /* Command queue (PD Mode only) */
 	};
+	struct osdp_app_data_pool app_data; /* alloc osdp_event / osdp_cmd */
 
 	struct osdp_channel channel;     /* PD's serial channel */
 	struct osdp_secure_channel sc;   /* Secure Channel session context */

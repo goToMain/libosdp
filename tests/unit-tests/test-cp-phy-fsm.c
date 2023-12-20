@@ -8,10 +8,25 @@
 
 #include "test.h"
 
+/* duplicated from osdp_cp.c */
+enum cp_cmd_type {
+	CP_INT_CMD,
+	CP_EXT_CMD,
+};
+
+/* duplicated from osdp_cp.c */
+struct cp_cmd {
+	enum cp_cmd_type type;
+	union {
+		int cmd_id;
+		struct osdp_cmd *cmd;
+	} u;
+};
+
 extern int (*test_state_update)(struct osdp_pd *);
 extern int (*test_cp_phy_state_update)(struct osdp_pd *);
-extern void (*test_cp_cmd_enqueue)(struct osdp_pd *, struct osdp_cmd *);
-extern struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *);
+extern void (*test_cp_cmd_enqueue)(struct osdp_pd *, struct cp_cmd *);
+extern struct cp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *);
 extern const int CP_ERR_CAN_YIELD;
 extern const int CP_ERR_INPROG;
 
@@ -116,8 +131,8 @@ void test_cp_phy_fsm_teardown(struct test *t)
 void run_cp_phy_fsm_tests(struct test *t)
 {
 	int ret = -128, result = true;
-	struct osdp_cmd *cmd_poll;
-	struct osdp_cmd *cmd_id;
+	struct cp_cmd *cmd_poll;
+	struct cp_cmd *cmd_id;
 	struct osdp *ctx;
 	struct osdp_pd *p;
 
@@ -139,8 +154,10 @@ void run_cp_phy_fsm_tests(struct test *t)
 		return;
 	}
 
-	cmd_poll->id = CMD_POLL;
-	cmd_id->id = CMD_ID;
+	cmd_poll->type = CP_INT_CMD;
+	cmd_poll->u.cmd_id = CMD_POLL;
+	cmd_id->type = CP_INT_CMD;
+	cmd_id->u.cmd_id = CMD_ID;
 
 	test_cp_cmd_enqueue(p, cmd_poll);
 	test_cp_cmd_enqueue(p, cmd_id);

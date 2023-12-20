@@ -54,9 +54,22 @@ enum osdp_cp_error_e {
 	OSDP_CP_ERR_UNKNOWN = -6,
 };
 
+enum cp_cmd_type {
+	CP_INT_CMD,
+	CP_EXT_CMD,
+};
+
+struct cp_cmd {
+	enum cp_cmd_type type;
+	union {
+		int cmd_id;
+		struct osdp_cmd *cmd;
+	} u;
+};
+
 struct cp_cmd_node {
 	queue_node_t node;
-	struct osdp_cmd object;
+	struct cp_cmd object;
 };
 
 static int cp_cmd_queue_init(struct osdp_pd *pd)
@@ -70,7 +83,7 @@ static int cp_cmd_queue_init(struct osdp_pd *pd)
 	return 0;
 }
 
-static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
+static struct cp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
 {
 	struct cp_cmd_node *cmd = NULL;
 
@@ -82,7 +95,7 @@ static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
 	return &cmd->object;
 }
 
-static void cp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
+static void cp_cmd_free(struct osdp_pd *pd, struct cp_cmd *cmd)
 {
 	struct cp_cmd_node *n;
 
@@ -90,7 +103,7 @@ static void cp_cmd_free(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	slab_free(&pd->cmd.slab, n);
 }
 
-static void cp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
+static void cp_cmd_enqueue(struct osdp_pd *pd, struct cp_cmd *cmd)
 {
 	struct cp_cmd_node *n;
 
@@ -98,7 +111,7 @@ static void cp_cmd_enqueue(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	queue_enqueue(&pd->cmd.queue, &n->node);
 }
 
-static int cp_cmd_dequeue(struct osdp_pd *pd, struct osdp_cmd **cmd)
+static int cp_cmd_dequeue(struct osdp_pd *pd, struct cp_cmd **cmd)
 {
 	struct cp_cmd_node *n;
 	queue_node_t *node;
@@ -749,7 +762,7 @@ static int cp_process_reply(struct osdp_pd *pd)
 
 static void cp_flush_command_queue(struct osdp_pd *pd)
 {
-	struct osdp_cmd *cmd;
+	struct cp_cmd *cmd;
 
 	while (cp_cmd_dequeue(pd, &cmd) == 0) {
 		cp_cmd_free(pd, cmd);
@@ -790,16 +803,16 @@ static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 		osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
 }
 
-int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
+int cp_translate_cmd(struct osdp_pd *pd, struct cp_cmd *cmd)
 {
 	int cmd_id = -1;
 
 
-	if (cmd->id >= CMD_POLL) {
-		return cmd->id;
+	if (cmd->type == CP_INT_CMD) {
+		return cmd->u.cmd_id;
 	}
 
-	switch (cmd->id) {
+	switch (cmd->u.cmd->id) {
 	case OSDP_CMD_OUTPUT:
 		cmd_id = CMD_OUT;
 		break;
@@ -819,7 +832,7 @@ int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		cmd_id = CMD_MFG;
 		break;
 	case OSDP_CMD_STATUS:
-		switch (cmd->status.type) {
+		switch (cmd->u.cmd->status.type) {
 		case OSDP_CMD_STATUS_QUERY_LOCAL:
 			cmd_id = CMD_LSTAT;
 			break;
@@ -832,23 +845,18 @@ int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		}
 		return cmd_id;
 	case OSDP_CMD_KEYSET:
-		if (cmd->keyset.type != 1 || !sc_is_active(pd)) {
-			return -1;
-		}
 		cmd_id = CMD_KEYSET;
+		if (cmd->u.cmd->keyset.type != 1 || !sc_is_active(pd)) {
+			cmd_id = -1;
+		}
 		break;
 	case OSDP_CMD_FILE_TX:
 		return -1;
 	default:
-		/*
-		 * Internally, LibOSDP uses the same command structure to send
-		 * raw OSDP commands (not the LibOSDP API commands). If the id
-		 * does not match wat we are looking for, we just pass it on to
-		 * be interpreted as a osdp define command.
-		 */
-		return cmd->id;
+		return -1;
 	}
-	memcpy(pd->ephemeral_data, cmd, sizeof(struct osdp_cmd));
+	memcpy(pd->ephemeral_data, cmd->u.cmd, sizeof(struct osdp_cmd));
+	slab_free(&pd->app_data.slab, cmd->u.cmd);
 	return cmd_id;
 }
 
@@ -856,7 +864,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int64_t elapsed;
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
-	struct osdp_cmd *cmd = NULL;
+	struct cp_cmd *cmd = NULL;
 
 	switch (pd->phy_state) {
 	case OSDP_CP_PHY_STATE_WAIT:
@@ -939,29 +947,44 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	return ret;
 }
 
-static int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd)
+static inline int cp_enqueue_cmd(struct osdp_pd *pd, int cmd_id,
+				 struct osdp_cmd *cmd)
 {
-	struct osdp_cmd *c;
+	struct cp_cmd *p;
 
+	p = cp_cmd_alloc(pd);
+	if (p == NULL) {
+		return -1;
+	}
+	if (cmd == NULL) {
+		p->type = CP_INT_CMD;
+		p->u.cmd_id = cmd_id;
+	} else {
+		p->type = CP_EXT_CMD;
+		p->u.cmd = cmd;
+	}
+	cp_cmd_enqueue(pd, p);
+	return 0;
+}
+
+static int cp_dispatcher(struct osdp_pd *pd, int cmd_id, struct osdp_cmd *cmd)
+{
 	if (ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
 		CLEAR_FLAG(pd, PD_FLAG_AWAIT_RESP);
 		return OSDP_CP_ERR_NONE; /* nothing to be done here */
 	}
 
-	c = cp_cmd_alloc(pd);
-	if (c == NULL) {
+	if (cp_enqueue_cmd(pd, cmd_id, cmd)) {
 		return OSDP_CP_ERR_GENERIC;
 	}
 
-	c->id = cmd;
-
-	if (c->id == CMD_KEYSET) {
-		memcpy(&c->keyset, pd->ephemeral_data, sizeof(c->keyset));
-	}
-
-	cp_cmd_enqueue(pd, c);
 	SET_FLAG(pd, PD_FLAG_AWAIT_RESP);
 	return OSDP_CP_ERR_INPROG;
+}
+
+static inline int cp_cmd_dispatcher(struct osdp_pd *pd, int cmd_id)
+{
+	return cp_dispatcher(pd, cmd_id, NULL);
 }
 
 static inline int cp_enqueue_pending_commands(struct osdp_pd *pd)
@@ -988,6 +1011,7 @@ static int state_update(struct osdp_pd *pd)
 	int phy_state;
 	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_cmd_keyset *keyset;
+	struct osdp_cmd *cmd;
 
 	phy_state = cp_phy_state_update(pd);
 	if (phy_state == OSDP_CP_ERR_INPROG ||
@@ -1141,7 +1165,13 @@ static int state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_STATE_SET_SCBK:
 		if (!ISSET_FLAG(pd, PD_FLAG_AWAIT_RESP)) {
-			keyset = (struct osdp_cmd_keyset *)pd->ephemeral_data;
+			if (slab_alloc(&pd->app_data.slab, (void **)&cmd)) {
+				LOG_ERR("Failed to alloc keyset command");
+				cp_set_offline(pd);
+				break;
+			}
+			keyset = &cmd->keyset;
+			cmd->id = OSDP_CMD_KEYSET;
 			if (ISSET_FLAG(pd, PD_FLAG_HAS_SCBK)) {
 				memcpy(keyset->data, pd->sc.scbk, 16);
 				keyset->type = 1;
@@ -1150,9 +1180,9 @@ static int state_update(struct osdp_pd *pd)
 				memcpy(keyset->data, ctx->sc_master_key, 16);
 			}
 			keyset->length = 16;
-		}
-		if (cp_cmd_dispatcher(pd, CMD_KEYSET) != 0) {
-			break;
+			if (cp_dispatcher(pd, -1, cmd) != 0) {
+				break;
+			}
 		}
 		if (pd->reply_id == REPLY_NAK) {
 			if (is_enforce_secure(pd)) {
@@ -1295,6 +1325,10 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 		if (cp_cmd_queue_init(pd)) {
 			goto error;
 		}
+		slab_init(&pd->app_data.slab,
+			  sizeof(union osdp_ephemeral_data),
+			  pd->app_data.slab_blob,
+			  sizeof(pd->app_data.slab_blob));
 		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
@@ -1392,13 +1426,14 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, const struct osdp_cmd *cmd)
 			return -1;
 		}
 	}
-
-	p = cp_cmd_alloc(pd);
-	if (p == NULL) {
+	if (slab_alloc(&pd->app_data.slab, (void **)&p)) {
 		return -1;
 	}
 	memcpy(p, cmd, sizeof(struct osdp_cmd));
-	cp_cmd_enqueue(pd, p);
+	if (cp_enqueue_cmd(pd, -1, p) < 0) {
+		slab_free(&pd->app_data.slab, p);
+		return -1;
+	}
 	return 0;
 }
 
@@ -1454,8 +1489,8 @@ int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set)
  * Force export some private methods for testing.
  */
 void (*test_cp_cmd_enqueue)(struct osdp_pd *,
-                            struct osdp_cmd *) = cp_cmd_enqueue;
-struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
+                            struct cp_cmd *) = cp_cmd_enqueue;
+struct cp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
 int (*test_cp_build_and_send_packet)(struct osdp_pd *pd) = cp_build_and_send_packet;

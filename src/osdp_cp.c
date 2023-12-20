@@ -809,7 +809,8 @@ int cp_translate_cmd(struct osdp_pd *pd, struct cp_cmd *cmd)
 
 
 	if (cmd->type == CP_INT_CMD) {
-		return cmd->u.cmd_id;
+		cmd_id = cmd->u.cmd_id;
+		goto free_cmd;
 	}
 
 	switch (cmd->u.cmd->id) {
@@ -863,6 +864,9 @@ int cp_translate_cmd(struct osdp_pd *pd, struct cp_cmd *cmd)
 	}
 	memcpy(pd->ephemeral_data, cmd->u.cmd, sizeof(struct osdp_cmd));
 	slab_free(&pd->app_data.slab, cmd->u.cmd);
+
+free_cmd:
+	cp_cmd_free(pd, cmd);
 	return cmd_id;
 }
 
@@ -890,7 +894,6 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			break;
 		}
 		ret = cp_translate_cmd(pd, cmd);
-		cp_cmd_free(pd, cmd);
 		if (ret < 0) {
 			LOG_ERR("Failed to translate CP command discarding!");
 			ret = OSDP_CP_ERR_NONE;

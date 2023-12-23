@@ -1018,7 +1018,6 @@ static int state_update(struct osdp_pd *pd)
 {
 	bool soft_fail;
 	int phy_state;
-	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_cmd_keyset *keyset;
 	struct osdp_cmd *cmd;
 
@@ -1184,9 +1183,6 @@ static int state_update(struct osdp_pd *pd)
 			if (ISSET_FLAG(pd, PD_FLAG_HAS_SCBK)) {
 				memcpy(keyset->data, pd->sc.scbk, 16);
 				keyset->type = 1;
-			} else {
-				keyset->type = 0;
-				memcpy(keyset->data, ctx->sc_master_key, 16);
 			}
 			keyset->length = 16;
 			if (cp_dispatcher(pd, -1, cmd) != 0) {

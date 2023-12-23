@@ -28,7 +28,6 @@ extern "C" {
  * possible. Fail where these assumptions don't hold.
  *   - Don't allow use of SCBK-D.
  *   - Assume that a KEYSET was successful at an earlier time.
- *   - Disallow master key based SCBK derivation.
  *
  * @note This flag is recommended in production use.
  */
@@ -313,8 +312,7 @@ struct osdp_channel {
  * @param channel Communication channel ops structure, containing send/recv
  *        function pointers.
  * @param scbk Pointer to 16 bytes of Secure Channel Base Key for the PD. If
- *        non-null, this is used to set-up the secure channel instead of using
- *        the Master Key (in case of CP).
+ *        non-null, this is used to set-up the secure channel.
  */
 typedef struct {
 	const char *name;
@@ -475,7 +473,6 @@ struct osdp_cmd_comset {
  * @brief This command transfers an encryption key from the CP to a PD.
  *
  * @param type Type of keys:
- *   - 0x00 - Master Key (This is not part of OSDP Spec, see gh-issue:#42)
  *   - 0x01 – Secure Channel Base Key
  * @param length Number of bytes of key data - (Key Length in bits + 7) / 8
  * @param data Key data
@@ -828,8 +825,9 @@ int osdp_pd_flush_events(osdp_t *ctx);
 /* ------------------------------- */
 
 /**
- * @brief Same as osdp_cp_setup; master_key is NULL here to favour the  more
- * secure individual SCBK approach (passed via osdp_pd_info_t).
+ * @brief This method is used to setup a device in CP mode. Application must
+ * store the returned context pointer and pass it back to all OSDP functions
+ * intact.
  *
  * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
  *        treated as an array of length num_pd.

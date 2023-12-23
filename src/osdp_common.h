@@ -377,7 +377,6 @@ struct osdp {
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
 	int num_channels;      /* Number of distinct channels */
 	int *channel_lock;     /* array of length NUM_PD() to lock a channel */
-	uint8_t sc_master_key[16]; /* Secure Channel master key (deprecated) */
 
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;

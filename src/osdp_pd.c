@@ -82,12 +82,13 @@ struct pd_event_node {
 
 static int pd_event_queue_init(struct osdp_pd *pd)
 {
-	if (slab_init(&pd->event.slab, sizeof(struct pd_event_node),
-		      pd->event.slab_blob, sizeof(pd->event.slab_blob)) < 0) {
+	if (slab_init(&pd->app_data.slab, sizeof(struct pd_event_node),
+		      pd->app_data.slab_blob,
+		      sizeof(pd->app_data.slab_blob)) < 0) {
 		LOG_ERR("Failed to initialize command slab");
 		return -1;
 	}
-	queue_init(&pd->event.queue);
+	queue_init(&pd->event_queue);
 	return 0;
 }
 
@@ -95,7 +96,7 @@ static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 {
 	struct pd_event_node *event = NULL;
 
-	if (slab_alloc(&pd->event.slab, (void **)&event)) {
+	if (slab_alloc(&pd->app_data.slab, (void **)&event)) {
 		LOG_ERR("Event slab allocation failed");
 		return NULL;
 	}
@@ -107,7 +108,7 @@ static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
 	struct pd_event_node *n;
 
 	n = CONTAINER_OF(event, struct pd_event_node, object);
-	slab_free(&pd->event.slab, n);
+	slab_free(&pd->app_data.slab, n);
 }
 
 static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
@@ -115,7 +116,7 @@ static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
 	struct pd_event_node *n;
 
 	n = CONTAINER_OF(event, struct pd_event_node, object);
-	queue_enqueue(&pd->event.queue, &n->node);
+	queue_enqueue(&pd->event_queue, &n->node);
 }
 
 static int pd_event_dequeue(struct osdp_pd *pd, struct osdp_event **event)
@@ -123,7 +124,7 @@ static int pd_event_dequeue(struct osdp_pd *pd, struct osdp_event **event)
 	struct pd_event_node *n;
 	queue_node_t *node;
 
-	if (queue_dequeue(&pd->event.queue, &node)) {
+	if (queue_dequeue(&pd->event_queue, &node)) {
 		return -1;
 	}
 	n = CONTAINER_OF(node, struct pd_event_node, node);
@@ -256,8 +257,7 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 
 	pd->reply_id = REPLY_NAK;
 	pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
-	LOG_ERR("PD is not capable of handling CMD(%02x); "
-		"Reply with NAK_CMD_UNKNOWN", pd->cmd_id);
+	LOG_ERR("PD is not capable of handling CMD(%02x); ", pd->cmd_id);
 	return 0;
 }
 
@@ -1128,7 +1128,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
-	LOG_PRINT("Setup complete - %s %s",
+	LOG_PRINT("Setup complete; LibOSDP-%s %s",
 		  osdp_get_version(), osdp_get_source_info());
 
 	return (osdp_t *)ctx;

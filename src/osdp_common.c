@@ -219,7 +219,7 @@ void osdp_set_log_callback(osdp_log_callback_fn_t cb)
 OSDP_EXPORT
 const char *osdp_get_version()
 {
-	return PROJECT_NAME "-" PROJECT_VERSION;
+	return PROJECT_VERSION;
 }
 
 OSDP_EXPORT

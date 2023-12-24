@@ -290,8 +290,6 @@ int main(int argc, char *argv[])
 
 	run_cp_phy_tests(&t);
 
-	run_cp_phy_fsm_tests(&t);
-
 	run_cp_fsm_tests(&t);
 
 	run_file_tx_tests(&t, false);

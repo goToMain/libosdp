@@ -567,7 +567,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 			return OSDP_ERR_PKT_NACK;
 		}
 		if (!sc_is_active(pd) && pkt->data[1] > SCS_14) {
-			LOG_ERR("Received invalid secure message!");
+			LOG_ERR("Invalid SCS type (%x)", pkt->data[1]);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_NACK;
@@ -666,8 +666,8 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 {
 	pd->packet_buf_len = 0;
 	pd->packet_len = 0;
+	pd->phy_state = 0;
 	if (is_error) {
-		pd->phy_state = 0;
 		pd->seq_number = -1;
 		if (pd->channel.flush) {
 			pd->channel.flush(pd->channel.data);

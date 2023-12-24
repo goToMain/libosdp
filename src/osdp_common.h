@@ -215,19 +215,19 @@ enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_SEND_CMD,
 	OSDP_CP_PHY_STATE_REPLY_WAIT,
 	OSDP_CP_PHY_STATE_WAIT,
+	OSDP_CP_PHY_STATE_DONE,
 	OSDP_CP_PHY_STATE_ERR,
 };
 
 enum osdp_cp_state_e {
 	OSDP_CP_STATE_INIT,
-	OSDP_CP_STATE_IDREQ,
 	OSDP_CP_STATE_CAPDET,
-	OSDP_CP_STATE_SC_INIT,
 	OSDP_CP_STATE_SC_CHLNG,
 	OSDP_CP_STATE_SC_SCRYPT,
 	OSDP_CP_STATE_SET_SCBK,
 	OSDP_CP_STATE_ONLINE,
-	OSDP_CP_STATE_OFFLINE
+	OSDP_CP_STATE_OFFLINE,
+	OSDP_CP_STATE_SENTINEL
 };
 
 enum osdp_pkt_errors_e {
@@ -338,6 +338,7 @@ struct osdp_pd {
 	int64_t tstamp;        /* Last POLL command issued time in ticks */
 	int64_t sc_tstamp;     /* Last received secure reply time in ticks */
 	int64_t phy_tstamp;    /* Time in ticks since command was sent */
+	uint32_t request;      /* Event loop requests */
 
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
 
@@ -354,8 +355,8 @@ struct osdp_pd {
 	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];
 
 	union {
-		struct osdp_queue cmd;   /* Command queue (CP Mode only) */
-		struct osdp_queue event; /* Command queue (PD Mode only) */
+		queue_t cmd_queue;
+		queue_t event_queue;
 	};
 	struct osdp_app_data_pool app_data; /* alloc osdp_event / osdp_cmd */
 
@@ -492,6 +493,22 @@ static inline void sc_deactivate(struct osdp_pd *pd)
 		osdp_sc_teardown(pd);
 	}
 	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+}
+
+static inline void make_request(struct osdp_pd *pd, uint32_t req) {
+	pd->request |= req;
+}
+
+static inline bool check_request(struct osdp_pd *pd, uint32_t req) {
+	if (pd->request & req) {
+		pd->request &= ~req;
+		return true;
+	}
+	return false;
+}
+
+static inline bool test_request(struct osdp_pd *pd, uint32_t req) {
+	return pd->request & req;
 }
 
 #endif	/* _OSDP_COMMON_H_ */

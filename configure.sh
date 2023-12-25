@@ -150,6 +150,7 @@ else
 fi
 
 TEST_SOURCES="tests/unit-tests/test.c tests/unit-tests/test-cp-phy.c"
+TEST_SOURCES+=" tests/unit-tests/test-commands.c"
 TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c tests/unit-tests/test-file.c"
 TEST_SOURCES+=" ${LIBOSDP_SOURCES} utils/src/workqueue.c utils/src/circbuf.c"
 TEST_SOURCES+=" utils/src/event.c utils/src/fdutils.c"

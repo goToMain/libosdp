@@ -141,5 +141,5 @@ def test_file_tx_abort(utils):
     # Allow some time for CP to send the abort to PD
     time.sleep(0.2)
 
-    status = cp.get_file_tx_status(101)
-    assert status == None
+    assert cp.get_file_tx_status(101) == None
+    assert pd.get_file_tx_status() == None

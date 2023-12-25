@@ -219,6 +219,12 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		return -1;
 	}
 
+	struct osdp_pd_cap cap[] = {
+		{ OSDP_PD_CAP_READER_AUDIBLE_OUTPUT, 1, 1 },
+		{ OSDP_PD_CAP_READER_LED_CONTROL, 1, 1 },
+		{ -1, -1, -1 }
+	};
+
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
@@ -230,7 +236,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 			.serial_number = 0x01020304,
 			.firmware_version = 0x0A0B0C0D,
 		},
-		.cap = NULL,
+		.cap = cap,
 		.channel.data = NULL,
 		.channel.send = test_mock_pd_send,
 		.channel.recv = test_mock_pd_receive,
@@ -293,6 +299,8 @@ int main(int argc, char *argv[])
 	run_cp_fsm_tests(&t);
 
 	run_file_tx_tests(&t, false);
+
+	run_command_tests(&t);
 
 	rc = test_end(&t);
 

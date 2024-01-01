@@ -90,6 +90,37 @@ void pyosdp_add_module_constants(PyObject *module)
 #undef ADD_CONST
 }
 
+#define pyosdp_set_loglevel_doc                                                \
+	"Set OSDP logging level\n"                                             \
+	"\n"                                                                   \
+	"@param log_level OSDP log level (0 to 7)\n"                           \
+	"\n"                                                                   \
+	"@return None"
+static PyObject *pyosdp_set_loglevel(void *self, PyObject *args)
+{
+	int log_level = OSDP_LOG_DEBUG;
+
+	if (!PyArg_ParseTuple(args, "I", &log_level)) {
+		return NULL;
+	}
+
+	if (log_level < OSDP_LOG_EMERG ||
+	    log_level > OSDP_LOG_MAX_LEVEL) {
+		PyErr_SetString(PyExc_KeyError, "invalid log level");
+		return NULL;
+	}
+
+	osdp_logger_init("pyosdp", log_level, NULL);
+
+	Py_RETURN_NONE;
+}
+
+static PyMethodDef pyosdp_nodule_methods[] = {
+	{ "set_loglevel", (PyCFunction)pyosdp_set_loglevel, METH_VARARGS,
+	  pyosdp_set_loglevel_doc },
+	{ NULL, NULL, 0, NULL } /* Sentinel */
+};
+
 PyMODINIT_FUNC PyInit_osdp_sys(void)
 {
 	PyObject *module;
@@ -99,6 +130,8 @@ PyMODINIT_FUNC PyInit_osdp_sys(void)
 		return NULL;
 
 	pyosdp_add_module_constants(module);
+
+	PyModule_AddFunctions(module, pyosdp_nodule_methods);
 
 	do {
 

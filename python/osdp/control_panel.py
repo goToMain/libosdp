@@ -24,12 +24,12 @@ class ControlPanel():
             self.pd_addr.append(pd_info.address)
             info_list.append(pd_info.get())
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
+        osdp_sys.set_loglevel(log_level)
         if master_key:
             self.ctx = osdp_sys.ControlPanel(info_list, master_key=master_key)
         else:
             self.ctx = osdp_sys.ControlPanel(info_list)
         self.ctx.set_event_callback(self.event_handler)
-        self.ctx.set_loglevel(log_level)
         self.event = None
         self.lock = None
         self.thread = None

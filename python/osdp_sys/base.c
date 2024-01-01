@@ -196,30 +196,6 @@ static PyObject *pyosdp_file_register_ops(pyosdp_base_t *self, PyObject *args)
 	Py_RETURN_TRUE;
 }
 
-#define pyosdp_set_loglevel_doc                                                \
-	"Set OSDP logging level\n"                                             \
-	"\n"                                                                   \
-	"@param log_level OSDP log level (0 to 7)\n"                           \
-	"\n"                                                                   \
-	"@return None"
-static PyObject *pyosdp_set_loglevel(pyosdp_base_t *self, PyObject *args)
-{
-	int log_level;
-
-	if (!PyArg_ParseTuple(args, "I", &log_level))
-		return NULL;
-
-	if (log_level < OSDP_LOG_EMERG ||
-	    log_level > OSDP_LOG_MAX_LEVEL) {
-		PyErr_SetString(PyExc_KeyError, "invalid log level");
-		return NULL;
-	}
-
-	osdp_logger_init("pyosdp", log_level, NULL);
-
-	Py_RETURN_NONE;
-}
-
 PyObject *pyosdp_get_version(pyosdp_base_t *self, PyObject *args)
 {
 	const char *version;
@@ -274,8 +250,6 @@ static PyMethodDef pyosdp_base_methods[] = {
 	  "Get OSDP version as string" },
 	{ "get_source_info", (PyCFunction)pyosdp_get_source_info, METH_NOARGS,
 	  "Get LibOSDP source info string" },
-	{ "set_loglevel", (PyCFunction)pyosdp_set_loglevel, METH_VARARGS,
-	  pyosdp_set_loglevel_doc },
 	{ "register_file_ops", (PyCFunction)pyosdp_file_register_ops, METH_VARARGS,
 	  pyosdp_file_register_ops_doc },
 	{ "get_file_tx_status", (PyCFunction)pyosdp_get_file_tx_status, METH_VARARGS,

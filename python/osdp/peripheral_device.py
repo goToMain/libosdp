@@ -17,8 +17,8 @@ class PeripheralDevice():
                  log_level: LogLevel=LogLevel.Info):
         self.command_queue = queue.Queue()
         self.address = pd_info.address
+        osdp_sys.set_loglevel(log_level)
         self.ctx = osdp_sys.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
-        self.ctx.set_loglevel(log_level)
         self.ctx.set_command_callback(self.command_handler)
         self.event = None
         self.lock = None

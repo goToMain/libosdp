@@ -409,7 +409,7 @@ static int pyosdp_make_struct_event_cardread(struct osdp_event *p,
 		len_bytes = data_length;
 	}
 
-	if (len_bytes > OSDP_EVENT_MAX_DATALEN) {
+	if (len_bytes > OSDP_EVENT_CARDREAD_MAX_DATALEN) {
 		PyErr_Format(PyExc_ValueError, "Data bytes too long");
 		return -1;
 	}

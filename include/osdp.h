@@ -14,11 +14,6 @@
 extern "C" {
 #endif
 
-#define OSDP_CMD_TEXT_MAX_LEN          32
-#define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
-#define OSDP_CMD_MFG_MAX_DATALEN       64
-#define OSDP_EVENT_MAX_DATALEN         128
-
 /**
  * @brief OSDP setup flags. See osdp_pd_info_t::flags
  */
@@ -338,6 +333,12 @@ typedef void osdp_t;
 /*         OSDP Commands           */
 /* ------------------------------- */
 
+#define OSDP_CMD_TEXT_MAX_LEN          32
+#define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
+#define OSDP_CMD_MFG_MAX_DATALEN       64
+
+#define OSDP_CMD_FILE_TX_FLAG_CANCEL (1UL << 31)
+
 /**
  * @brief Command sent from CP to Control digital output of PD.
  *
@@ -499,15 +500,14 @@ struct osdp_cmd_mfg {
 	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
 };
 
-#define OSDP_CMD_FILE_TX_FLAG_CANCEL (1UL << 31)
-
 /**
  * @brief File transfer start command
  *
  * @param id Pre-agreed file ID between CP and PD.
- * @param flags Reserved and set to zero by OSDP spec; bit-31 used by libOSDP
- *              to cancel ongoing transfers (it is not sent on OSDP channel
- *              to peer).
+ * @param flags Reserved and set to zero by OSDP spec;
+ *
+ * Note: flags upper bits are used by libosdp as:
+ *   bit-31 - OSDP_CMD_FILE_TX_FLAG_CANCEL: cancel an ongoing transfer
  */
 struct osdp_cmd_file_tx {
 	int id;
@@ -583,6 +583,10 @@ struct osdp_cmd {
 /*          OSDP Events            */
 /* ------------------------------- */
 
+#define OSDP_EVENT_CARDREAD_MAX_DATALEN   64
+#define OSDP_EVENT_KEYPRESS_MAX_DATALEN   64
+#define OSDP_EVENT_MFGREP_MAX_DATALEN     128
+
 /**
  * @brief Various card formats that a PD can support. This is sent to CP
  * when a PD must report a card read.
@@ -617,7 +621,7 @@ struct osdp_event_cardread {
 	enum osdp_event_cardread_format_e format;
 	int direction;
 	int length;
-	uint8_t data[OSDP_EVENT_MAX_DATALEN];
+	uint8_t data[OSDP_EVENT_CARDREAD_MAX_DATALEN];
 };
 
 /**
@@ -631,7 +635,7 @@ struct osdp_event_cardread {
 struct osdp_event_keypress {
 	int reader_no;
 	int length;
-	uint8_t data[OSDP_EVENT_MAX_DATALEN];
+	uint8_t data[OSDP_EVENT_KEYPRESS_MAX_DATALEN];
 };
 
 /**
@@ -651,7 +655,7 @@ struct osdp_event_mfgrep {
 	uint32_t vendor_code;
 	uint8_t command;
 	uint8_t length;
-	uint8_t data[OSDP_EVENT_MAX_DATALEN];
+	uint8_t data[OSDP_EVENT_MFGREP_MAX_DATALEN];
 };
 
 /**

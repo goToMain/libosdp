@@ -609,7 +609,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.cardread.length = buf[pos++];
 		event.cardread.format = OSDP_CARD_FMT_ASCII;
 		if (event.cardread.length != (len - REPLY_FMT_DATA_LEN) ||
-		    event.cardread.length > OSDP_EVENT_MAX_DATALEN) {
+		    event.cardread.length > OSDP_EVENT_CARDREAD_MAX_DATALEN) {
 			break;
 		}
 		memcpy(event.cardread.data, buf + pos, event.cardread.length);
@@ -633,7 +633,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.mfgrep.vendor_code |= buf[pos++] << 16;
 		event.mfgrep.command = buf[pos++];
 		event.mfgrep.length = len - REPLY_MFGREP_LEN;
-		if (event.mfgrep.length > OSDP_EVENT_MAX_DATALEN) {
+		if (event.mfgrep.length > OSDP_EVENT_MFGREP_MAX_DATALEN) {
 			break;
 		}
 		memcpy(event.mfgrep.data, buf + pos, event.mfgrep.length);

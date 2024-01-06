@@ -19,7 +19,6 @@ add_library(${LIB_OSDP_TEST} STATIC EXCLUDE_FROM_ALL
 list(APPEND OSDP_UNIT_TEST_SRC
 	test.c
 	test-cp-phy.c
-	test-cp-phy-fsm.c
 	test-cp-fsm.c
 	test-file.c
 	test-commands.c

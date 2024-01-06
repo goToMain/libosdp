@@ -94,6 +94,7 @@ pub trait Read {
     /// Wrapper around either [`std::io::Read::read`] or [`embedded_io::Read::read`] depending on the availability of `std`.
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, RWError>;
 }
+
 /// A trait for objects which are byte-oriented sinks.
 ///
 /// Wrapper around either [`std::io::Write`] or [`embedded_io::Write`] depending on the availability of `std`.
@@ -116,6 +117,7 @@ impl<T: std::io::Read> Read for T {
         self.read(buf)
     }
 }
+
 #[cfg(feature = "std")]
 impl<T: std::io::Write> Write for T {
     #[inline(always)]
@@ -139,6 +141,7 @@ where
             .map_err(|e| Box::new(e) as Box<dyn embedded_io::Error>)
     }
 }
+
 #[cfg(not(feature = "std"))]
 impl<T: embedded_io::Write> Write for T
 where

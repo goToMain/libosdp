@@ -1,11 +1,13 @@
 //! OSDP unix channel
 
 use super::Channel;
+use core::time::Duration;
 use std::{
     io::{Read, Write},
     os::unix::net::{UnixListener, UnixStream},
     path::PathBuf,
     str::FromStr,
+    thread,
 };
 
 type Result<T> = std::result::Result<T, crate::OsdpError>;
@@ -38,6 +40,19 @@ impl UnixChannel {
         println!("Waiting for connection to unix::{}", path.display());
         let (stream, _) = listener.accept()?;
         Ok(Self { id, stream })
+    }
+
+    /// Create a bi-directional channel pair. Returns Result<(server, client)>
+    pub fn pair(name: &str) -> Result<(Self, Self)> {
+        let name_clone = String::from_str(name)?;
+        let h = thread::spawn(|| {
+            let name = name_clone;
+            UnixChannel::new(&name)
+        });
+        thread::sleep(Duration::from_secs(1));
+        let client = UnixChannel::connect(name)?;
+        let server = h.join().unwrap()?;
+        Ok((server, client))
     }
 }
 

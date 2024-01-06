@@ -82,6 +82,12 @@ class PeripheralDevice():
         self.thread = threading.Thread(name='pd', target=self.refresh, args=args)
         self.thread.start()
 
+    def get_file_tx_status(self):
+        self.lock.acquire()
+        ret = self.ctx.get_file_tx_status(0)
+        self.lock.release()
+        return ret
+
     def stop(self):
         if not self.thread:
             raise RuntimeError("Thread not running!")

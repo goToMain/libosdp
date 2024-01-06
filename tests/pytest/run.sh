@@ -3,8 +3,8 @@
 PYTEST_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 pushd ${PYTEST_DIR}
 
-rm -rf .venv
-rm -rf ../../python/{build,dist,libosdp.egg-info}
+rm -rf __pycache__/
+rm -rf .venv ../../python/{build,dist,libosdp.egg-info}
 python3 -m venv .venv
 source ./.venv/bin/activate
 

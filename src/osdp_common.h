@@ -299,16 +299,6 @@ struct osdp_rb {
     uint8_t buffer[OSDP_RX_RB_SIZE];
 };
 
-#define OSDP_QUEUE_SLAB_SIZE \
-	(OSDP_CP_CMD_POOL_SIZE * \
-	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
-
-struct osdp_queue {
-	queue_t queue;
-	slab_t slab;
-	uint8_t slab_blob[OSDP_QUEUE_SLAB_SIZE];
-};
-
 #define OSDP_APP_DATA_QUEUE_SIZE \
 	(OSDP_CP_CMD_POOL_SIZE * \
 	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))

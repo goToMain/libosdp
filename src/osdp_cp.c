@@ -46,6 +46,7 @@
 
 /* CP event requests */
 #define CP_REQ_RESTART_SC              0x00000001
+#define CP_REQ_EVENT_SEND              0x00000002
 
 enum osdp_cp_error_e {
 	OSDP_CP_ERR_NONE = 0,
@@ -405,7 +406,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	uint32_t temp32;
-	struct osdp *ctx = pd_to_osdp(pd);
 	int i, ret = OSDP_CP_ERR_GENERIC, pos = 0, t1, t2;
 	struct osdp_event event;
 
@@ -501,12 +501,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < len; i++) {
 			status_mask |= !!buf[pos++] << i;
 		}
-		if (ctx->event_callback) {
-			event.type = OSDP_EVENT_IO;
-			event.io.type = 1; // output
-			event.io.status = status_mask;
-			ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
-		}
+		event.type = OSDP_EVENT_IO;
+		event.io.type = 1; // output
+		event.io.status = status_mask;
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	}
@@ -521,12 +520,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < len; i++) {
 			status_mask |= !!buf[pos++] << i;
 		}
-		if (ctx->event_callback) {
-			event.type = OSDP_EVENT_IO;
-			event.io.type = 0; // input
-			event.io.status = status_mask;
-			ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
-		}
+		event.type = OSDP_EVENT_IO;
+		event.io.type = 0; // input
+		event.io.status = status_mask;
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	}
@@ -534,12 +532,11 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_LSTATR_DATA_LEN) {
 			break;
 		}
-		if (ctx->event_callback) {
-			event.type = OSDP_EVENT_STATUS;
-			event.status.tamper = buf[pos++];
-			event.status.power = buf[pos++];
-			ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
-		}
+		event.type = OSDP_EVENT_STATUS;
+		event.status.tamper = buf[pos++];
+		event.status.power = buf[pos++];
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
@@ -568,7 +565,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_KEYPPAD:
-		if (len < REPLY_KEYPPAD_DATA_LEN || !ctx->event_callback) {
+		if (len < REPLY_KEYPPAD_DATA_LEN) {
 			break;
 		}
 		event.type = OSDP_EVENT_KEYPRESS;
@@ -578,11 +575,12 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.keypress.data, buf + pos, event.keypress.length);
-		ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RAW:
-		if (len < REPLY_RAW_DATA_LEN || !ctx->event_callback) {
+		if (len < REPLY_RAW_DATA_LEN) {
 			break;
 		}
 		event.type = OSDP_EVENT_CARDREAD;
@@ -596,11 +594,12 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.cardread.data, buf + pos, t1);
-		ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FMT:
-		if (len < REPLY_FMT_DATA_LEN || !ctx->event_callback) {
+		if (len < REPLY_FMT_DATA_LEN) {
 			break;
 		}
 		event.type = OSDP_EVENT_CARDREAD;
@@ -613,7 +612,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.cardread.data, buf + pos, event.cardread.length);
-		ctx->event_callback(ctx->event_callback_arg, pd->idx, &event);
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_BUSY:
@@ -624,7 +624,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_RETRY_CMD;
 		break;
 	case REPLY_MFGREP:
-		if (len < REPLY_MFGREP_LEN || !ctx->event_callback) {
+		if (len < REPLY_MFGREP_LEN) {
 			break;
 		}
 		event.type = OSDP_EVENT_MFGREP;
@@ -637,8 +637,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.mfgrep.data, buf + pos, event.mfgrep.length);
-		ctx->event_callback(ctx->event_callback_arg,
-				    pd->idx, &event);
+		memcpy(pd->ephemeral_data, &event, sizeof(event));
+		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:
@@ -694,6 +694,16 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	return ret;
+}
+
+static void do_event_callback(struct osdp_pd *pd)
+{
+	struct osdp *ctx = pd_to_osdp(pd);
+
+	if (ctx->event_callback) {
+		ctx->event_callback(ctx->event_callback_arg, pd->idx,
+				    (struct osdp_event *)pd->ephemeral_data);
+	}
 }
 
 static int cp_build_and_send_packet(struct osdp_pd *pd)
@@ -937,10 +947,30 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 		return false;
 	}
 
+	/* Check for known poll responses */
+	if (pd->cmd_id == CMD_POLL) {
+		if (pd->reply_id == REPLY_LSTATR ||
+		    pd->reply_id == REPLY_ISTATR ||
+		    pd->reply_id == REPLY_OSTATR ||
+		    pd->reply_id == REPLY_RSTATR ||
+		    pd->reply_id == REPLY_MFGREP ||
+		    pd->reply_id == REPLY_RAW ||
+		    pd->reply_id == REPLY_FMT ||
+		    pd->reply_id == REPLY_KEYPPAD) {
+			return true;
+		}
+		return ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED);
+	}
+
 	/* Otherwise, we permit only expected responses */
 	switch (pd->cmd_id) {
 	case CMD_FILETRANSFER: return pd->reply_id == REPLY_FTSTAT;
 	case CMD_COMSET:       return pd->reply_id == REPLY_COM;
+	case CMD_MFG:          return pd->reply_id == REPLY_MFGREP;
+	case CMD_LSTAT:        return pd->reply_id == REPLY_LSTATR;
+	case CMD_ISTAT:        return pd->reply_id == REPLY_ISTATR;
+	case CMD_OSTAT:        return pd->reply_id == REPLY_OSTATR;
+	case CMD_RSTAT:        return pd->reply_id == REPLY_RSTATR;
 	default:
 		LOG_ERR("Unexpected respose: CMD: %s(%02x) REPLY: %s(%02x)",
 			osdp_cmd_name(pd->cmd_id), pd->cmd_id,
@@ -1068,8 +1098,8 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 
 static inline enum osdp_cp_state_e get_next_state(struct osdp_pd *pd, int err)
 {
-	if (check_request(pd, CP_REQ_RESTART_SC) &&
-	    pd->state == OSDP_CP_STATE_ONLINE) {
+	if (pd->state == OSDP_CP_STATE_ONLINE &&
+	    check_request(pd, CP_REQ_RESTART_SC)) {
 		osdp_phy_state_reset(pd, true);
 		return OSDP_CP_STATE_SC_CHLNG;
 	}
@@ -1181,6 +1211,12 @@ static int state_update(struct osdp_pd *pd)
 	}
 
 	next = get_next_state(pd, err);
+
+	if (next == OSDP_CP_STATE_ONLINE &&
+	    check_request(pd, CP_REQ_EVENT_SEND)) {
+		do_event_callback(pd);
+	}
+
 	if (cur != next) {
 		cp_state_change(pd, next);
 	}

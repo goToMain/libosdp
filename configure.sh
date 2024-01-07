@@ -163,13 +163,13 @@ fi
 echo "Generating osdp_config.h"
 CONFIG_OUT=${BUILD_DIR}/osdp_config.h
 cp src/osdp_config.h.in ${CONFIG_OUT}
-sed -i "" -e "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" ${CONFIG_OUT}
-sed -i "" -e "s/@PROJECT_NAME@/${PROJECT_NAME}/" ${CONFIG_OUT}
-sed -i "" -e "s/@GIT_BRANCH@/${GIT_BRANCH}/" ${CONFIG_OUT}
-sed -i "" -e "s/@GIT_REV@/${GIT_REV}/" ${CONFIG_OUT}
-sed -i "" -e "s/@GIT_TAG@/${GIT_TAG}/" ${CONFIG_OUT}
-sed -i "" -e "s/@GIT_DIFF@/${GIT_DIFF}/" ${CONFIG_OUT}
-sed -i "" -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" ${CONFIG_OUT}
+sed -ie "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" ${CONFIG_OUT}
+sed -ie "s/@PROJECT_NAME@/${PROJECT_NAME}/" ${CONFIG_OUT}
+sed -ie "s/@GIT_BRANCH@/${GIT_BRANCH}/" ${CONFIG_OUT}
+sed -ie "s/@GIT_REV@/${GIT_REV}/" ${CONFIG_OUT}
+sed -ie "s/@GIT_TAG@/${GIT_TAG}/" ${CONFIG_OUT}
+sed -ie "s/@GIT_DIFF@/${GIT_DIFF}/" ${CONFIG_OUT}
+sed -ie "s|@REPO_ROOT@|${SCRIPT_DIR}|" ${CONFIG_OUT}
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"

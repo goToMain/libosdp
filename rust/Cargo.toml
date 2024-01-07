@@ -15,7 +15,7 @@ categories = ["development-tools", "embedded"]
 [dependencies]
 bitflags = "2.4.0"
 embedded-io = "0.6.1"
-libosdp-sys = "0.1.1"
+libosdp-sys = "0.1.3"
 log = "0.4.20"
 once_cell = "1.18.0"
 parking_lot = { version = "0.12.1", optional = true }

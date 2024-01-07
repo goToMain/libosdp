@@ -677,7 +677,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(pd->sc.r_mac, buf + pos, 16);
-		sc_activate(pd);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	default:
@@ -1008,8 +1007,8 @@ static inline bool state_check_reply(struct osdp_pd *pd)
 	switch (state) {
 	case OSDP_CP_STATE_INIT:      return pd->reply_id == REPLY_PDID;
 	case OSDP_CP_STATE_CAPDET:    return pd->reply_id == REPLY_PDCAP;
-	case OSDP_CP_STATE_SC_SCRYPT: return pd->reply_id == REPLY_RMAC_I;
 	case OSDP_CP_STATE_SC_CHLNG:  return pd->reply_id == REPLY_CCRYPT;
+	case OSDP_CP_STATE_SC_SCRYPT: return pd->reply_id == REPLY_RMAC_I;
 	case OSDP_CP_STATE_SET_SCBK:  return pd->reply_id == REPLY_ACK;
 	case OSDP_CP_STATE_ONLINE:    return cp_check_online_response(pd);
 	default: return false;
@@ -1152,6 +1151,9 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		}
 		break;
 	case OSDP_CP_STATE_ONLINE:
+		if (cur == OSDP_CP_STATE_SC_SCRYPT) {
+			sc_activate(pd);
+		}
 		pd->wait_ms = 0;
 		LOG_INF("Online; %s SC", sc_is_active(pd) ? "With" : "Without");
 		break;

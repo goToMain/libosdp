@@ -38,11 +38,11 @@ def teardown_test():
     pd.teardown()
 
 def test_cp_status():
-    assert cp.online_wait(pd.address, timeout=15)
+    assert cp.online_wait(pd.address)
     pd.stop()
-    assert cp.online_wait(pd.address, timeout=15) == False
+    assert cp.online_wait(pd.address) == False
     pd.start()
-    assert cp.online_wait(pd.address, timeout=15)
+    assert cp.online_wait(pd.address)
 
 def test_cp_sc_status():
     assert cp.sc_wait(pd.address)

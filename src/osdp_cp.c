@@ -910,7 +910,8 @@ static const char *state_get_name(enum osdp_cp_state_e state)
 	case OSDP_CP_STATE_SET_SCBK:  return "SC-SetSCBK";
 	case OSDP_CP_STATE_ONLINE:    return "Online";
 	case OSDP_CP_STATE_OFFLINE:   return "Offline";
-	case OSDP_CP_STATE_SENTINEL:  BUG();
+	default:
+		BUG();
 	}
 }
 

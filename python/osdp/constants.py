@@ -21,6 +21,12 @@ class LogLevel:
     Info = osdp_sys.LOG_INFO
     Debug = osdp_sys.LOG_DEBUG
 
+class CommandStatusType:
+    Local = osdp_sys.CMD_STATUS_QUERY_LOCAL
+    Input = osdp_sys.CMD_STATUS_QUERY_INPUT
+    Output = osdp_sys.CMD_STATUS_QUERY_OUTPUT
+    Remote = osdp_sys.CMD_STATUS_QUERY_REMOTE
+
 class Command:
     Output = osdp_sys.CMD_OUTPUT
     Buzzer = osdp_sys.CMD_BUZZER
@@ -30,6 +36,7 @@ class Command:
     Manufacturer = osdp_sys.CMD_MFG
     Keyset = osdp_sys.CMD_KEYSET
     FileTransfer = osdp_sys.CMD_FILE_TX
+    Status = osdp_sys.CMD_STATUS
 
 class CommandLEDColor:
     Black = osdp_sys.LED_COLOR_NONE
@@ -41,11 +48,16 @@ class CommandLEDColor:
 class CommandFileTxFlags:
     Cancel = osdp_sys.CMD_FILE_TX_FLAG_CANCEL
 
+class EventStatusType:
+    Input = osdp_sys.EVENT_STATUS_TYPE_INPUT
+    Output = osdp_sys.EVENT_STATUS_TYPE_OUTPUT
+    Remote = osdp_sys.EVENT_STATUS_TYPE_REMOTE
+    Local = osdp_sys.EVENT_STATUS_TYPE_LOCAL
+
 class Event:
     CardRead = osdp_sys.EVENT_CARDREAD
     KeyPress = osdp_sys.EVENT_KEYPRESS
     ManufacturerReply = osdp_sys.EVENT_MFGREP
-    InputOutput = osdp_sys.EVENT_IO
     Status = osdp_sys.EVENT_STATUS
 
 class CardFormat:

@@ -148,3 +148,34 @@ def test_command_keyset():
     # When not in SC, KEYSET command should not be accepted.
     assert cp.is_sc_active(insecure_pd_addr) == False
     assert cp.send_command(insecure_pd_addr, test_cmd) == False
+
+def test_command_status():
+    def evt_handler(pd, event):
+        assert event['event'] == Event.Status
+        assert event['type'] == EventStatusType.Input
+        assert event['mask'] == 0x55
+        assert event['nr_entries'] == 8
+        return 0
+
+    def cmd_handler(command):
+        assert command['command'] == Command.Status
+        assert command['type'] == CommandStatusType.Input
+        cmd = {
+            'command': Command.Status,
+            'type': CommandStatusType.Input,
+            'mask': 0x55,
+            'nr_entries': 8,
+        }
+        return 0, cmd
+
+    assert cp.is_online(secure_pd_addr)
+    cp.set_event_handler(evt_handler)
+    secure_pd.set_command_handler(cmd_handler)
+
+    test_cmd = {
+        'command': Command.Status,
+        'type': CommandStatusType.Input,
+        'mask': 0,
+        'nr_entries': 0,
+    }
+    cp.send_command(secure_pd_addr, test_cmd)

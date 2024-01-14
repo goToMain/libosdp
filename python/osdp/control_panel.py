@@ -10,13 +10,14 @@ import osdp_sys
 import time
 import queue
 import threading
+from typing import Callable
 
 from .helpers import PDInfo
 from .constants import LibFlag, LogLevel
 
 class ControlPanel():
     def __init__(self, pd_info_list, log_level: LogLevel=LogLevel.Info,
-                 master_key: bytes=None):
+                 master_key: bytes=None, event_handler: Callable[[int, dict], int]=None):
         self.pd_addr = []
         info_list = []
         self.num_pds = len(pd_info_list)
@@ -29,7 +30,7 @@ class ControlPanel():
             self.ctx = osdp_sys.ControlPanel(info_list, master_key=master_key)
         else:
             self.ctx = osdp_sys.ControlPanel(info_list)
-        self.ctx.set_event_callback(self.event_handler)
+        self.set_event_handler(event_handler)
         self.event = None
         self.lock = None
         self.thread = None
@@ -42,8 +43,15 @@ class ControlPanel():
             lock.release()
             time.sleep(0.020) #sleep for 20ms
 
-    def event_handler(self, pd, event):
+    def set_event_handler(self, handler: Callable[[int, dict], int]):
+        if handler:
+            self.ctx.set_event_callback(handler)
+        else:
+            self.ctx.set_event_callback(self.event_handler)
+
+    def event_handler(self, pd, event) -> int:
         self.event_queue[pd].put(event)
+        return 0
 
     def get_event(self, address, timeout: int=5):
         pd = self.pd_addr.index(address)

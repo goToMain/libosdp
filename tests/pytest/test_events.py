@@ -86,27 +86,20 @@ def test_event_cardread_wiegand():
 
 def test_event_input():
     event = {
-        'event': Event.InputOutput,
-        'type': 0, # 0 - input; 1 - output
-        'status': 0xAA, # bit mask of input/output status (upto 32)
+        'event': Event.Status,
+        'type': EventStatusType.Input,
+        'nr_entries': 8,
+        'mask': 0xAA, # bit mask of input/output status (upto 32)
     }
     secure_pd.notify_event(event)
     assert cp.get_event(secure_pd.address) == event
 
 def test_event_output():
     event = {
-        'event': Event.InputOutput,
-        'type': 1, # 0 - input; 1 - output
-        'status': 0x55, # bit mask of input/output status (upto 32)
-    }
-    secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
-
-def test_event_status():
-    event = {
         'event': Event.Status,
-        'power': 0, # 0 - normal; 1 - power failure
-        'tamper': 1, # 0 - normal; 1 - tamper
+        'type': EventStatusType.Output,
+        'nr_entries': 8,
+        'mask': 0x55, # bit mask of input/output status (upto 32)
     }
     secure_pd.notify_event(event)
     assert cp.get_event(secure_pd.address) == event

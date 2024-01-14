@@ -273,7 +273,7 @@ impl From<libosdp_sys::osdp_cmd_text> for OsdpCommandText {
 
 impl From<OsdpCommandText> for libosdp_sys::osdp_cmd_text {
     fn from(value: OsdpCommandText) -> Self {
-        let mut data: [u8; 32] = [0; 32];
+        let mut data = [0; libosdp_sys::OSDP_CMD_TEXT_MAX_LEN as usize];
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }
@@ -407,7 +407,7 @@ impl From<libosdp_sys::osdp_cmd_keyset> for OsdpCommandKeyset {
 
 impl From<OsdpCommandKeyset> for libosdp_sys::osdp_cmd_keyset {
     fn from(value: OsdpCommandKeyset) -> Self {
-        let mut data: [u8; 32] = [0; 32];
+        let mut data = [0; libosdp_sys::OSDP_CMD_KEYSET_KEY_MAX_LEN as usize];
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }
@@ -448,7 +448,7 @@ impl From<libosdp_sys::osdp_cmd_mfg> for OsdpCommandMfg {
 
 impl From<OsdpCommandMfg> for libosdp_sys::osdp_cmd_mfg {
     fn from(value: OsdpCommandMfg) -> Self {
-        let mut data: [u8; 64] = [0; 64];
+        let mut data = [0; libosdp_sys::OSDP_CMD_MFG_MAX_DATALEN as usize];
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }

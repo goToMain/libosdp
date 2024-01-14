@@ -132,7 +132,7 @@ impl From<libosdp_sys::osdp_event_cardread> for OsdpEventCardRead {
 
 impl From<OsdpEventCardRead> for libosdp_sys::osdp_event_cardread {
     fn from(value: OsdpEventCardRead) -> Self {
-        let mut data: [u8; 64] = [0; 64];
+        let mut data = [0; libosdp_sys::OSDP_EVENT_CARDREAD_MAX_DATALEN as usize];
         let length = match value.format {
             OsdpCardFormats::Weigand => value.nr_bits as i32,
             _ => value.data.len() as i32,
@@ -185,7 +185,7 @@ impl From<libosdp_sys::osdp_event_keypress> for OsdpEventKeyPress {
 
 impl From<OsdpEventKeyPress> for libosdp_sys::osdp_event_keypress {
     fn from(value: OsdpEventKeyPress) -> Self {
-        let mut data: [u8; 64] = [0; 64];
+        let mut data = [0; libosdp_sys::OSDP_EVENT_KEYPRESS_MAX_DATALEN as usize];
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }
@@ -226,7 +226,7 @@ impl From<libosdp_sys::osdp_event_mfgrep> for OsdpEventMfgReply {
 
 impl From<OsdpEventMfgReply> for libosdp_sys::osdp_event_mfgrep {
     fn from(value: OsdpEventMfgReply) -> Self {
-        let mut data: [u8; 64] = [0; 64];
+        let mut data = [0; libosdp_sys::OSDP_EVENT_MFGREP_MAX_DATALEN as usize];
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }

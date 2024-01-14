@@ -226,7 +226,7 @@ impl From<libosdp_sys::osdp_event_mfgrep> for OsdpEventMfgReply {
 
 impl From<OsdpEventMfgReply> for libosdp_sys::osdp_event_mfgrep {
     fn from(value: OsdpEventMfgReply) -> Self {
-        let mut data: [u8; 64] = [0; 64];
+        let mut data: [u8; 128] = [0; 128];
         for i in 0..value.data.len() {
             data[i] = value.data[i];
         }

@@ -88,22 +88,12 @@ static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 
 	arglist = Py_BuildValue("(O)", dict);
 	result = PyObject_CallObject(self->command_cb, arglist);
+	PyArg_ParseTuple(result, "IO", &ret_val, &result);
 
-	if (result && PyDict_Check(result)) {
-		if (pyosdp_dict_get_int(result, "return_code", &ret_val) == 0) {
-			/**
-			 * If ret_val > 0 and we can make a MFGREP command
-			 * out of the dict from python, we will reply with it.
-			 * If not, reply with NAK.
-			 */
-			if (ret_val > 0) {
-				memset(cmd, 0, sizeof(struct osdp_cmd));
-				if (pyosdp_make_struct_cmd(cmd, result) < 0)
-					ret_val = -1;
-				else if (cmd->id != OSDP_CMD_MFG)
-					ret_val = -1;
-			}
-		}
+	if (ret_val == 0 && result && PyDict_Check(result)) {
+		memset(cmd, 0, sizeof(struct osdp_cmd));
+		if (pyosdp_make_struct_cmd(cmd, result) < 0)
+			ret_val = -1;
 	}
 
 	Py_XDECREF(dict);

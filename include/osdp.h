@@ -197,7 +197,7 @@ enum osdp_pd_nak_code_e {
 	 */
 	OSDP_PD_NAK_RECORD,
 	/**
-	 * @brief Dummy
+	 * @brief NAK codes max value
 	 */
 	OSDP_PD_NAK_SENTINEL
 };
@@ -527,6 +527,14 @@ enum osdp_command_status_query_e {
 	 * @brief Query status of the ouputs attached the PD
 	 */
 	OSDP_CMD_STATUS_QUERY_OUTPUT,
+	/**
+	 * @brief Query status of the remote readers attached to the PD
+	 */
+	OSDP_CMD_STATUS_QUERY_REMOTE,
+	/**
+	 * @brief Status query max value
+	 */
+	OSDP_CMD_STATUS_QUERY_SENTINEL
 };
 
 /**
@@ -534,6 +542,8 @@ enum osdp_command_status_query_e {
  */
 struct osdp_cmd_status {
 	enum osdp_command_status_query_e type;
+	int nr_entries;
+	uint32_t mask;
 };
 
 /**
@@ -659,45 +669,72 @@ struct osdp_event_mfgrep {
 };
 
 /**
- * @brief OSDP Event input/output status
- *
- * This event is used by the PD to indicate input/output status changes. Upto a
- * maximum of 32 input/output status can be reported. The values of the least
- * significant N bit of status are considered, where N is the number of items as
- * described in the corresponding capability codes: OSDP_PD_CAP_OUTPUT_CONTROL
- * and OSDP_PD_CAP_CONTACT_STATUS_MONITORING.
- *
- * @param type 0 - input; 1 - output
- * @param status bit mask of current input status.
+ * @brief Status event types
  */
-struct osdp_event_io {
-	int type;
-	uint32_t status;
+enum osdp_event_status_type_e {
+	/**
+	 * @brief Input status event
+	 */
+	OSDP_EVENT_STATUS_TYPE_INPUT,
+	/**
+	 * @brief Output status event
+	 */
+	OSDP_EVENT_STATUS_TYPE_OUTPUT,
+	/**
+	 * @brief Remote tamper and power status event
+	 *
+	 * Bit-0: tamper
+	 * Bit-1: power
+	 */
+	OSDP_EVENT_STATUS_TYPE_REMOTE,
+	/**
+	 * @brief Local tamper and power status event
+	 *
+	 * Bit-0: tamper
+	 * Bit-1: power
+	 */
+	OSDP_EVENT_STATUS_TYPE_LOCAL,
 };
 
 /**
- * @brief OSDP Event tamper and power status
+ * @brief OSDP Event input/output status
  *
- * The event indicates the local tamper and power status of the PD. When either
- * of these statuses change, PD notifies the CP as a response to POLL command.
+ * This event is used by the PD to indicate various status change reports. Upto
+ * a maximum of 32 statuses can be reported using this API.
  *
- * @param tamper tamper status: 0 - normal; 1 - tamper
- * @param power power status: 0 - normal; 1 - power failure
+ * @param type The kind of event to report see `enum osdp_event_status_type_e`
+ * @param nr_entries Number of valid bits in `status`
+ * @param status Status bit mask
  */
 struct osdp_event_status {
-	uint8_t tamper;
-	uint8_t power;
+	enum osdp_event_status_type_e type;
+	int nr_entries;
+	uint32_t mask;
 };
 
 /**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
-	OSDP_EVENT_CARDREAD,
+	/**
+	 * @brief Card read event
+	 */
+	OSDP_EVENT_CARDREAD = 1,
+	/**
+	 * @brief Key press event
+	 */
 	OSDP_EVENT_KEYPRESS,
+	/**
+	 * @brief Manufacturer specific reply event
+	 */
 	OSDP_EVENT_MFGREP,
-	OSDP_EVENT_IO,
+	/**
+	 * @brief Status event
+	 */
 	OSDP_EVENT_STATUS,
+	/**
+	 * @brief Event maximum
+	 */
 	OSDP_EVENT_SENTINEL
 };
 
@@ -715,7 +752,6 @@ struct osdp_event {
 		struct osdp_event_keypress keypress;
 		struct osdp_event_cardread cardread;
 		struct osdp_event_mfgrep mfgrep;
-		struct osdp_event_io io;
 		struct osdp_event_status status;
 	};
 };

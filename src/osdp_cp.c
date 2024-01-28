@@ -502,7 +502,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			status_mask |= !!buf[pos++] << i;
 		}
 		event.type = OSDP_EVENT_STATUS;
-		event.status.type = OSDP_EVENT_STATUS_TYPE_OUTPUT;
+		event.status.type = OSDP_STATUS_REPORT_OUTPUT;
 		event.status.nr_entries = len;
 		event.status.mask = status_mask;
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
@@ -522,7 +522,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			status_mask |= !!buf[pos++] << i;
 		}
 		event.type = OSDP_EVENT_STATUS;
-		event.status.type = OSDP_EVENT_STATUS_TYPE_INPUT;
+		event.status.type = OSDP_STATUS_REPORT_INPUT;
 		event.status.nr_entries = len;
 		event.status.mask = status_mask;
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
@@ -535,7 +535,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		event.type = OSDP_EVENT_STATUS;
-		event.status.type = OSDP_EVENT_STATUS_TYPE_LOCAL;
+		event.status.type = OSDP_STATUS_REPORT_LOCAL;
 		event.status.nr_entries = 2;
 		event.status.mask = !!buf[pos++];
 		event.status.mask = !!buf[pos++] << 1;
@@ -548,7 +548,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		event.type = OSDP_EVENT_STATUS;
-		event.status.type = OSDP_EVENT_STATUS_TYPE_REMOTE;
+		event.status.type = OSDP_STATUS_REPORT_REMOTE;
 		event.status.nr_entries = 1;
 		event.status.mask = !!buf[pos++];
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
@@ -789,10 +789,10 @@ int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	case OSDP_CMD_MFG:    return CMD_MFG;
 	case OSDP_CMD_STATUS:
 		switch (cmd->status.type) {
-		case OSDP_CMD_STATUS_QUERY_INPUT:  return CMD_ISTAT;
-		case OSDP_CMD_STATUS_QUERY_OUTPUT: return CMD_OSTAT;
-		case OSDP_CMD_STATUS_QUERY_LOCAL:  return CMD_LSTAT;
-		case OSDP_CMD_STATUS_QUERY_REMOTE: return CMD_RSTAT;
+		case OSDP_STATUS_REPORT_INPUT:  return CMD_ISTAT;
+		case OSDP_STATUS_REPORT_OUTPUT: return CMD_OSTAT;
+		case OSDP_STATUS_REPORT_LOCAL:  return CMD_LSTAT;
+		case OSDP_STATUS_REPORT_REMOTE: return CMD_RSTAT;
 		default: return -1;
 		}
 	case OSDP_CMD_KEYSET:

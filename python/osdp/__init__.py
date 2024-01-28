@@ -9,7 +9,7 @@ from .peripheral_device import PeripheralDevice
 from .key_store import KeyStore
 from .constants import (
     LibFlag, Command, CommandLEDColor, CommandFileTxFlags,
-    Event, CardFormat, Capability, LogLevel, CommandStatusType, EventStatusType
+    Event, CardFormat, Capability, LogLevel, StatusReportType
 )
 from .helpers import PDInfo, PDCapabilities
 

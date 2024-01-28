@@ -153,16 +153,16 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		break;
 	case OSDP_EVENT_STATUS:
 		switch(event->status.type) {
-		case OSDP_EVENT_STATUS_TYPE_INPUT:
+		case OSDP_STATUS_REPORT_INPUT:
 			reply_code = REPLY_ISTATR;
 			break;
-		case OSDP_EVENT_STATUS_TYPE_OUTPUT:
+		case OSDP_STATUS_REPORT_OUTPUT:
 			reply_code = REPLY_OSTATR;
 			break;
-		case OSDP_EVENT_STATUS_TYPE_LOCAL:
+		case OSDP_STATUS_REPORT_LOCAL:
 			reply_code = REPLY_LSTATR;
 			break;
-		case OSDP_EVENT_STATUS_TYPE_REMOTE:
+		case OSDP_STATUS_REPORT_REMOTE:
 			reply_code = REPLY_RSTATR;
 			break;
 		}
@@ -310,14 +310,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd.id = OSDP_CMD_STATUS;
-		cmd.status.type = OSDP_CMD_STATUS_QUERY_LOCAL;
+		cmd.status.type = OSDP_STATUS_REPORT_LOCAL;
 		if (do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
-		event->status.type = OSDP_EVENT_STATUS_TYPE_LOCAL;
-		event->status.nr_entries = cmd.status.nr_entries;
-		event->status.mask = cmd.status.mask;
+		event->type = OSDP_EVENT_STATUS;
+		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_LSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -330,15 +329,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd.id = OSDP_CMD_STATUS;
-		cmd.status.type = OSDP_CMD_STATUS_QUERY_INPUT;
+		cmd.status.type = OSDP_STATUS_REPORT_INPUT;
 		if (do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
 		event->type = OSDP_EVENT_STATUS;
-		event->status.type = OSDP_EVENT_STATUS_TYPE_INPUT;
-		event->status.nr_entries = cmd.status.nr_entries;
-		event->status.mask = cmd.status.mask;
+		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_ISTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -351,14 +348,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd.id = OSDP_CMD_STATUS;
-		cmd.status.type = OSDP_CMD_STATUS_QUERY_OUTPUT;
+		cmd.status.type = OSDP_STATUS_REPORT_OUTPUT;
 		if (do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
-		event->status.type = OSDP_EVENT_STATUS_TYPE_OUTPUT;
-		event->status.nr_entries = cmd.status.nr_entries;
-		event->status.mask = cmd.status.mask;
+		event->type = OSDP_EVENT_STATUS;
+		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_OSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -367,14 +363,13 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd.id = OSDP_CMD_STATUS;
-		cmd.status.type = OSDP_CMD_STATUS_QUERY_REMOTE;
+		cmd.status.type = OSDP_STATUS_REPORT_REMOTE;
 		if (do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
-		event->status.type = OSDP_EVENT_STATUS_TYPE_REMOTE;
-		event->status.nr_entries = cmd.status.nr_entries;
-		event->status.mask = cmd.status.mask;
+		event->type = OSDP_EVENT_STATUS;
+		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_RSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;

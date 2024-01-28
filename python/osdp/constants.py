@@ -21,11 +21,11 @@ class LogLevel:
     Info = osdp_sys.LOG_INFO
     Debug = osdp_sys.LOG_DEBUG
 
-class CommandStatusType:
-    Local = osdp_sys.CMD_STATUS_QUERY_LOCAL
-    Input = osdp_sys.CMD_STATUS_QUERY_INPUT
-    Output = osdp_sys.CMD_STATUS_QUERY_OUTPUT
-    Remote = osdp_sys.CMD_STATUS_QUERY_REMOTE
+class StatusReportType:
+    Local = osdp_sys.STATUS_REPORT_LOCAL
+    Input = osdp_sys.STATUS_REPORT_INPUT
+    Output = osdp_sys.STATUS_REPORT_OUTPUT
+    Remote = osdp_sys.STATUS_REPORT_REMOTE
 
 class Command:
     Output = osdp_sys.CMD_OUTPUT
@@ -47,12 +47,6 @@ class CommandLEDColor:
 
 class CommandFileTxFlags:
     Cancel = osdp_sys.CMD_FILE_TX_FLAG_CANCEL
-
-class EventStatusType:
-    Input = osdp_sys.EVENT_STATUS_TYPE_INPUT
-    Output = osdp_sys.EVENT_STATUS_TYPE_OUTPUT
-    Remote = osdp_sys.EVENT_STATUS_TYPE_REMOTE
-    Local = osdp_sys.EVENT_STATUS_TYPE_LOCAL
 
 class Event:
     CardRead = osdp_sys.EVENT_CARDREAD

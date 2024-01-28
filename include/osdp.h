@@ -329,6 +329,49 @@ typedef struct {
  */
 typedef void osdp_t;
 
+enum osdp_status_report_type {
+	/**
+	 * @brief Status report of the inputs attached the PD
+	 */
+	OSDP_STATUS_REPORT_INPUT,
+	/**
+	 * @brief Status report of the output attached the PD
+	 */
+	OSDP_STATUS_REPORT_OUTPUT,
+	/**
+	 * @brief Local tamper and power status report
+	 *
+	 * Bit-0: tamper
+	 * Bit-1: power
+	 */
+	OSDP_STATUS_REPORT_LOCAL,
+	/**
+	 * @brief Remote tamper and power status report
+	 *
+	 * Bit-0: tamper
+	 * Bit-1: power
+	 */
+	OSDP_STATUS_REPORT_REMOTE,
+};
+
+/**
+ * @brief Status report structure. Used by OSDP_CMD_STATUS and OSDP_EVENT_STATUS.
+ * In case of command, it is used to send a query to the PD while in the case of
+ * events, the PR responds back with this structure.
+ *
+ * This can is used by the PD to indicate various status change reports. Upto
+ * a maximum of 32 statuses can be reported using this API.
+ *
+ * @param type The kind of event to report see `enum osdp_event_status_type_e`
+ * @param nr_entries Number of valid bits in `status`
+ * @param status Status bit mask
+ */
+struct osdp_status_report {
+	enum osdp_status_report_type type;
+	int nr_entries;
+	uint32_t mask;
+};
+
 /* ------------------------------- */
 /*         OSDP Commands           */
 /* ------------------------------- */
@@ -514,38 +557,6 @@ struct osdp_cmd_file_tx {
 	uint32_t flags;
 };
 
-enum osdp_command_status_query_e {
-	/**
-	 * @brief Query for local status of the PD such as tamper and power
-	 */
-	OSDP_CMD_STATUS_QUERY_LOCAL,
-	/**
-	 * @brief Query status of the inputs attached the PD
-	 */
-	OSDP_CMD_STATUS_QUERY_INPUT,
-	/**
-	 * @brief Query status of the ouputs attached the PD
-	 */
-	OSDP_CMD_STATUS_QUERY_OUTPUT,
-	/**
-	 * @brief Query status of the remote readers attached to the PD
-	 */
-	OSDP_CMD_STATUS_QUERY_REMOTE,
-	/**
-	 * @brief Status query max value
-	 */
-	OSDP_CMD_STATUS_QUERY_SENTINEL
-};
-
-/**
- * @brief Status query command.
- */
-struct osdp_cmd_status {
-	enum osdp_command_status_query_e type;
-	int nr_entries;
-	uint32_t mask;
-};
-
 /**
  * @brief OSDP application exposed commands
  */
@@ -585,7 +596,7 @@ struct osdp_cmd {
 		struct osdp_cmd_keyset keyset;
 		struct osdp_cmd_mfg mfg;
 		struct osdp_cmd_file_tx file_tx;
-		struct osdp_cmd_status status;
+		struct osdp_status_report status;
 	};
 };
 
@@ -669,50 +680,6 @@ struct osdp_event_mfgrep {
 };
 
 /**
- * @brief Status event types
- */
-enum osdp_event_status_type_e {
-	/**
-	 * @brief Input status event
-	 */
-	OSDP_EVENT_STATUS_TYPE_INPUT,
-	/**
-	 * @brief Output status event
-	 */
-	OSDP_EVENT_STATUS_TYPE_OUTPUT,
-	/**
-	 * @brief Remote tamper and power status event
-	 *
-	 * Bit-0: tamper
-	 * Bit-1: power
-	 */
-	OSDP_EVENT_STATUS_TYPE_REMOTE,
-	/**
-	 * @brief Local tamper and power status event
-	 *
-	 * Bit-0: tamper
-	 * Bit-1: power
-	 */
-	OSDP_EVENT_STATUS_TYPE_LOCAL,
-};
-
-/**
- * @brief OSDP Event input/output status
- *
- * This event is used by the PD to indicate various status change reports. Upto
- * a maximum of 32 statuses can be reported using this API.
- *
- * @param type The kind of event to report see `enum osdp_event_status_type_e`
- * @param nr_entries Number of valid bits in `status`
- * @param status Status bit mask
- */
-struct osdp_event_status {
-	enum osdp_event_status_type_e type;
-	int nr_entries;
-	uint32_t mask;
-};
-
-/**
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
@@ -752,7 +719,7 @@ struct osdp_event {
 		struct osdp_event_keypress keypress;
 		struct osdp_event_cardread cardread;
 		struct osdp_event_mfgrep mfgrep;
-		struct osdp_event_status status;
+		struct osdp_status_report status;
 	};
 };
 

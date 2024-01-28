@@ -152,17 +152,17 @@ def test_command_keyset():
 def test_command_status():
     def evt_handler(pd, event):
         assert event['event'] == Event.Status
-        assert event['type'] == EventStatusType.Input
+        assert event['type'] == StatusReportType.Input
         assert event['mask'] == 0x55
         assert event['nr_entries'] == 8
         return 0
 
     def cmd_handler(command):
         assert command['command'] == Command.Status
-        assert command['type'] == CommandStatusType.Input
+        assert command['type'] == StatusReportType.Input
         cmd = {
             'command': Command.Status,
-            'type': CommandStatusType.Input,
+            'type': StatusReportType.Input,
             'mask': 0x55,
             'nr_entries': 8,
         }
@@ -174,7 +174,7 @@ def test_command_status():
 
     test_cmd = {
         'command': Command.Status,
-        'type': CommandStatusType.Input,
+        'type': StatusReportType.Input,
         'mask': 0,
         'nr_entries': 0,
     }

@@ -87,7 +87,7 @@ def test_event_cardread_wiegand():
 def test_event_input():
     event = {
         'event': Event.Status,
-        'type': EventStatusType.Input,
+        'type': StatusReportType.Input,
         'nr_entries': 8,
         'mask': 0xAA, # bit mask of input/output status (upto 32)
     }
@@ -97,7 +97,7 @@ def test_event_input():
 def test_event_output():
     event = {
         'event': Event.Status,
-        'type': EventStatusType.Output,
+        'type': StatusReportType.Output,
         'nr_entries': 8,
         'mask': 0x55, # bit mask of input/output status (upto 32)
     }

@@ -360,7 +360,7 @@ static int pyosdp_make_dict_cmd_status(PyObject *obj, struct osdp_cmd *cmd)
 static int pyosdp_make_struct_cmd_status(struct osdp_cmd *p, PyObject *dict)
 {
 	int type, nr_entries, mask;
-	struct osdp_cmd_status *cmd = &p->status;
+	struct osdp_status_report *cmd = &p->status;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;
@@ -526,7 +526,7 @@ static int pyosdp_make_dict_event_status(PyObject *obj, struct osdp_event *event
 static int pyosdp_make_struct_event_status(struct osdp_event *p, PyObject *dict)
 {
 	int type, nr_entries, mask;
-	struct osdp_event_status *ev = &p->status;
+	struct osdp_status_report *ev = &p->status;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;

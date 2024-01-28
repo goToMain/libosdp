@@ -2,7 +2,7 @@
 //! are specified by OSDP specification. This module is responsible to handling
 //! such commands though [`OsdpCommand`].
 
-use crate::ConvertEndian;
+use crate::{ConvertEndian, events::OsdpStatusReport};
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
 
@@ -499,51 +499,6 @@ impl From<OsdpCommandFileTx> for libosdp_sys::osdp_cmd_file_tx {
     }
 }
 
-/// Command to query status from PD
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
-pub enum OsdpCommandStatus {
-    /// Query local status (tamper and power) from PD
-    #[default]
-    Local,
-    /// Query input status from PD
-    Input,
-    /// Query output status from PD
-    Output,
-}
-
-impl From<libosdp_sys::osdp_cmd_status> for OsdpCommandStatus {
-    fn from(value: libosdp_sys::osdp_cmd_status) -> Self {
-        match value.type_ {
-            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT => {
-                OsdpCommandStatus::Input
-            }
-            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT => {
-                OsdpCommandStatus::Output
-            }
-            libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL => {
-                OsdpCommandStatus::Local
-            }
-            _ => panic!("Unknown status command type"),
-        }
-    }
-}
-
-impl From<OsdpCommandStatus> for libosdp_sys::osdp_cmd_status {
-    fn from(value: OsdpCommandStatus) -> Self {
-        match value {
-            OsdpCommandStatus::Input => libosdp_sys::osdp_cmd_status {
-                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_INPUT,
-            },
-            OsdpCommandStatus::Output => libosdp_sys::osdp_cmd_status {
-                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_OUTPUT,
-            },
-            OsdpCommandStatus::Local => libosdp_sys::osdp_cmd_status {
-                type_: libosdp_sys::osdp_command_status_query_e_OSDP_CMD_STATUS_QUERY_LOCAL,
-            },
-        }
-    }
-}
-
 /// CP interacts with and controls PDs by sending commands to it. The commands
 /// in this enum are specified by OSDP specification.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -576,7 +531,7 @@ pub enum OsdpCommand {
     FileTx(OsdpCommandFileTx),
 
     /// Command to query status from the PD
-    Status(OsdpCommandStatus),
+    Status(OsdpStatusReport),
 }
 
 impl From<OsdpCommand> for libosdp_sys::osdp_cmd {

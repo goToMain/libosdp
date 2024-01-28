@@ -239,86 +239,109 @@ impl From<OsdpEventMfgReply> for libosdp_sys::osdp_event_mfgrep {
     }
 }
 
-/// Event to describe change in input/output status on PD
-///
-/// This event is used by the PD to indicate input/output status changes. up to
-/// a maximum of 32 input/output status can be reported. The values of the least
-/// significant N bit of status are considered, where N is the number of items as
-/// described in the corresponding capability codes,
-/// - PdCapability::OutputControl
-/// - PdCapability::ContactStatusMonitoring
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
-pub struct OsdpEventIO {
-    type_: i32,
-    status: u32,
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+/// Status report type
+pub enum OsdpStatusReportType {
+    /// Input status report
+    Input,
+    /// Output status report
+    Output,
+    /// Remote status report
+    Remote,
+    /// Local status report
+    Local,
 }
 
-impl OsdpEventIO {
+impl From<u32> for OsdpStatusReportType {
+    fn from(value: u32) -> Self {
+        match value {
+            libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_INPUT => {
+                OsdpStatusReportType::Input
+            }
+            libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_OUTPUT => {
+                OsdpStatusReportType::Output
+            }
+            libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_REMOTE => {
+                OsdpStatusReportType::Remote
+            }
+            libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_LOCAL => {
+                OsdpStatusReportType::Local
+            }
+            _ => panic!("Invalid enum entry")
+        }
+    }
+}
+
+impl From<OsdpStatusReportType> for u32 {
+    fn from(value: OsdpStatusReportType) -> Self {
+        match value {
+            OsdpStatusReportType::Input => {
+                libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_INPUT as u32
+            },
+            OsdpStatusReportType::Output => {
+                libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_OUTPUT as u32
+            },
+            OsdpStatusReportType::Remote => {
+                libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_REMOTE as u32
+            },
+            OsdpStatusReportType::Local => {
+                libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_LOCAL as u32
+            },
+        }
+    }
+}
+
+/// Event to describe various status changes on PD
+///
+/// This event is used by the PD to indicate status such as input, output,
+/// tamper, etc.,. up to a maximum of 32 status bits can be reported. The values
+/// of the least significant N bit of status are considered, where N is the
+/// number of items as described in the corresponding capability codes,
+/// - PdCapability::OutputControl
+/// - PdCapability::ContactStatusMonitoring
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OsdpStatusReport {
+    type_: OsdpStatusReportType,
+    nr_entries: usize,
+    mask: u32,
+}
+
+impl OsdpStatusReport {
     /// Create an input event with given bit mask
-    pub fn new_input(mask: u32) -> Self {
+    pub fn new_input(nr_entries: usize, mask: u32) -> Self {
         Self {
-            type_: 0,
-            status: mask,
+            type_: OsdpStatusReportType::Input,
+            nr_entries,
+            mask
         }
     }
 
     /// Create an output event with given bit mask
-    pub fn new_output(mask: u32) -> Self {
+    pub fn new_output(nr_entries: usize, mask: u32) -> Self {
         Self {
-            type_: 0,
-            status: mask,
+            type_: OsdpStatusReportType::Output,
+            nr_entries,
+            mask
         }
     }
 }
 
-impl From<libosdp_sys::osdp_event_io> for OsdpEventIO {
-    fn from(value: libosdp_sys::osdp_event_io) -> Self {
-        OsdpEventIO {
-            type_: value.type_,
-            status: value.status,
+impl From<libosdp_sys::osdp_status_report> for OsdpStatusReport {
+    fn from(value: libosdp_sys::osdp_status_report) -> Self {
+        OsdpStatusReport {
+            type_: value.type_.into(),
+            nr_entries: value.nr_entries as usize,
+            mask: value.mask,
         }
     }
 }
 
-impl From<OsdpEventIO> for libosdp_sys::osdp_event_io {
-    fn from(value: OsdpEventIO) -> Self {
-        libosdp_sys::osdp_event_io {
-            type_: value.type_,
-            status: value.status,
-        }
-    }
-}
-
-/// Event to describe a tamper/power status change
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
-pub struct OsdpEventStatus {
-    /// tamper status
-    ///
-    /// 0 - norma
-    /// 1 - tamper
-    pub tamper: u8,
-
-    /// power status
-    ///
-    /// 0 - normal
-    /// 1 - power failure
-    pub power: u8,
-}
-
-impl From<OsdpEventStatus> for libosdp_sys::osdp_event_status {
-    fn from(value: OsdpEventStatus) -> Self {
-        libosdp_sys::osdp_event_status {
-            tamper: value.tamper,
-            power: value.power,
-        }
-    }
-}
-
-impl From<libosdp_sys::osdp_event_status> for OsdpEventStatus {
-    fn from(value: libosdp_sys::osdp_event_status) -> Self {
-        OsdpEventStatus {
-            tamper: value.tamper,
-            power: value.power,
+impl From<OsdpStatusReport> for libosdp_sys::osdp_status_report {
+    fn from(value: OsdpStatusReport) -> Self {
+        libosdp_sys::osdp_status_report {
+            type_: value.type_.into(),
+            nr_entries: value.nr_entries as i32,
+            mask: value.mask,
         }
     }
 }
@@ -338,11 +361,8 @@ pub enum OsdpEvent {
     /// Event to transport a Manufacturer specific command’s response
     MfgReply(OsdpEventMfgReply),
 
-    /// Event to describe change in input/output status on PD
-    IO(OsdpEventIO),
-
-    /// Event to describe a tamper/power status change
-    Status(OsdpEventStatus),
+    /// Event to describe a input/output/tamper/power status change
+    Status(OsdpStatusReport),
 }
 
 impl From<OsdpEvent> for libosdp_sys::osdp_event {
@@ -366,12 +386,6 @@ impl From<OsdpEvent> for libosdp_sys::osdp_event {
                     mfgrep: e.clone().into(),
                 },
             },
-            OsdpEvent::IO(e) => libosdp_sys::osdp_event {
-                type_: libosdp_sys::osdp_event_type_OSDP_EVENT_IO,
-                __bindgen_anon_1: libosdp_sys::osdp_event__bindgen_ty_1 {
-                    io: e.clone().into(),
-                },
-            },
             OsdpEvent::Status(e) => libosdp_sys::osdp_event {
                 type_: libosdp_sys::osdp_event_type_OSDP_EVENT_STATUS,
                 __bindgen_anon_1: libosdp_sys::osdp_event__bindgen_ty_1 {
@@ -393,9 +407,6 @@ impl From<libosdp_sys::osdp_event> for OsdpEvent {
             }
             libosdp_sys::osdp_event_type_OSDP_EVENT_MFGREP => {
                 OsdpEvent::MfgReply(unsafe { value.__bindgen_anon_1.mfgrep.into() })
-            }
-            libosdp_sys::osdp_event_type_OSDP_EVENT_IO => {
-                OsdpEvent::IO(unsafe { value.__bindgen_anon_1.io.into() })
             }
             libosdp_sys::osdp_event_type_OSDP_EVENT_STATUS => {
                 OsdpEvent::Status(unsafe { value.__bindgen_anon_1.status.into() })

@@ -11,8 +11,6 @@ use core::ffi::c_void;
 use log::{debug, error, info, warn};
 
 type Result<T> = core::result::Result<T, OsdpError>;
-type EventCallback =
-    unsafe extern "C" fn(data: *mut c_void, pd: i32, event: *mut libosdp_sys::osdp_event) -> i32;
 
 unsafe extern "C" fn log_handler(
     log_level: ::core::ffi::c_int,
@@ -47,6 +45,9 @@ where
     let callback = &mut *(data as *mut F);
     callback(pd, event)
 }
+
+type EventCallback =
+    unsafe extern "C" fn(data: *mut c_void, pd: i32, event: *mut libosdp_sys::osdp_event) -> i32;
 
 fn get_trampoline<F>(_closure: &F) -> EventCallback
 where

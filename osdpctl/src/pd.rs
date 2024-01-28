@@ -1,6 +1,6 @@
 use crate::config::PdConfig;
 use daemonize::Daemonize;
-use libosdp::{commands::OsdpCommand, PeripheralDevice};
+use libosdp::{OsdpCommand, PeripheralDevice};
 use std::{fs::File, thread, time::Duration};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;

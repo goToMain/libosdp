@@ -1,6 +1,6 @@
 use configparser::ini::Ini;
 use libosdp::{
-    channel::{unix_channel::UnixChannel, OsdpChannel},
+    channel::{UnixChannel, OsdpChannel},
     OsdpFlag, PdCapability, PdId, PdInfo,
 };
 use std::{

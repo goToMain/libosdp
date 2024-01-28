@@ -1,6 +1,6 @@
 use crate::config::CpConfig;
 use daemonize::Daemonize;
-use libosdp::{events::OsdpEvent, ControlPanel};
+use libosdp::{OsdpEvent, ControlPanel};
 use std::{fs::File, thread, time::Duration};
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
@@ -22,9 +22,6 @@ impl CpDaemon {
                     log::info!("Event: PD-{pd} {:?}", e);
                 }
                 OsdpEvent::MfgReply(e) => {
-                    log::info!("Event: PD-{pd} {:?}", e);
-                }
-                OsdpEvent::IO(e) => {
                     log::info!("Event: PD-{pd} {:?}", e);
                 }
                 OsdpEvent::Status(e) => {

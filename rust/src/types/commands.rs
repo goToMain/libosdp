@@ -2,9 +2,11 @@
 //! are specified by OSDP specification. This module is responsible to handling
 //! such commands though [`OsdpCommand`].
 
-use crate::{ConvertEndian, events::OsdpStatusReport};
+use crate::types::OsdpStatusReport;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
+
+use super::ConvertEndian;
 
 /// LED Colors as specified in OSDP for the on_color/off_color parameters.
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -632,7 +634,7 @@ impl From<libosdp_sys::osdp_cmd> for OsdpCommand {
 
 #[cfg(test)]
 mod tests {
-    use crate::commands::OsdpCommandMfg;
+    use crate::types::OsdpCommandMfg;
     use libosdp_sys::osdp_cmd_mfg;
 
     #[test]

@@ -4,7 +4,7 @@
 #[cfg(feature = "std")]
 use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
 use crate::{
-    commands::OsdpCommand, events::OsdpEvent, OsdpError, OsdpFlag, PdCapability, PdId, PdInfo,
+    OsdpCommand, OsdpEvent, OsdpFlag, PdCapability, PdId, PdInfo, OsdpError,
 };
 use alloc::vec::Vec;
 use core::ffi::c_void;

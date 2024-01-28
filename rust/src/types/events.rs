@@ -269,7 +269,7 @@ impl From<u32> for OsdpStatusReportType {
             libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_LOCAL => {
                 OsdpStatusReportType::Local
             }
-            _ => panic!("Invalid enum entry")
+            _ => panic!("Invalid enum entry"),
         }
     }
 }
@@ -279,16 +279,16 @@ impl From<OsdpStatusReportType> for u32 {
         match value {
             OsdpStatusReportType::Input => {
                 libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_INPUT as u32
-            },
+            }
             OsdpStatusReportType::Output => {
                 libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_OUTPUT as u32
-            },
+            }
             OsdpStatusReportType::Remote => {
                 libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_REMOTE as u32
-            },
+            }
             OsdpStatusReportType::Local => {
                 libosdp_sys::osdp_status_report_type_OSDP_STATUS_REPORT_LOCAL as u32
-            },
+            }
         }
     }
 }
@@ -314,7 +314,7 @@ impl OsdpStatusReport {
         Self {
             type_: OsdpStatusReportType::Input,
             nr_entries,
-            mask
+            mask,
         }
     }
 
@@ -323,7 +323,7 @@ impl OsdpStatusReport {
         Self {
             type_: OsdpStatusReportType::Output,
             nr_entries,
-            mask
+            mask,
         }
     }
 }

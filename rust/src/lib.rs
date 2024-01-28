@@ -77,11 +77,11 @@
 extern crate alloc;
 
 pub mod channel;
-pub mod file;
-mod types;
 mod cp;
+pub mod file;
 #[cfg(feature = "std")]
 mod pd;
+mod types;
 
 #[allow(unused_imports)]
 use alloc::{

@@ -3,9 +3,7 @@
 
 #[cfg(feature = "std")]
 use crate::file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps};
-use crate::{
-    OsdpCommand, OsdpEvent, OsdpFlag, PdCapability, PdId, PdInfo, OsdpError,
-};
+use crate::{OsdpCommand, OsdpError, OsdpEvent, OsdpFlag, PdCapability, PdId, PdInfo};
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use log::{debug, error, info, warn};
@@ -33,11 +31,7 @@ unsafe extern "C" fn log_handler(
     };
 }
 
-extern "C" fn trampoline<F>(
-    data: *mut c_void,
-    pd: i32,
-    event: *mut libosdp_sys::osdp_event,
-) -> i32
+extern "C" fn trampoline<F>(data: *mut c_void, pd: i32, event: *mut libosdp_sys::osdp_event) -> i32
 where
     F: FnMut(i32, OsdpEvent) -> i32,
 {

@@ -11,7 +11,7 @@ use crate::types::{PdCapability, PdInfo};
 #[cfg(feature = "std")]
 use crate::{
     file::{impl_osdp_file_ops_for, OsdpFile, OsdpFileOps},
-    OsdpCommand, OsdpEvent, OsdpError
+    OsdpCommand, OsdpError, OsdpEvent,
 };
 use alloc::vec::Vec;
 use core::ffi::c_void;

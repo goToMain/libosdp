@@ -11,15 +11,15 @@
 //! This module provides a way to define an OSDP channel and export it to
 //! LibOSDP.
 
+mod memory_channel;
 #[cfg(feature = "std")]
 mod unix_channel;
-mod memory_channel;
 
+#[cfg(feature = "std")]
+pub use memory_channel::MemoryChannel;
 use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
-#[cfg(feature = "std")]
-pub use memory_channel::MemoryChannel;
 
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;

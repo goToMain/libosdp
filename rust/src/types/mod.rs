@@ -2,22 +2,21 @@
 ///!
 ///! This module is responsible to creating various types that can move between
 ///! C and Rust code.
-
 mod commands;
 mod events;
-mod pdinfo;
 mod pdcap;
 mod pdid;
+mod pdinfo;
 
-use core::str::FromStr;
 use crate::OsdpError;
+use core::str::FromStr;
 
 // Re-export for convenience
 pub use commands::*;
 pub use events::*;
-pub use pdinfo::*;
 pub use pdcap::*;
 pub use pdid::*;
+pub use pdinfo::*;
 
 /// Trait to convert between BigEndian and LittleEndian types
 pub trait ConvertEndian {

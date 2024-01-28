@@ -73,11 +73,13 @@ impl ControlPanel {
     ///
     /// # Example
     ///
-    /// ```
-    /// use libosdp::{PdInfo, OsdpFlag, channel::{OsdpChannel, UnixChannel},
-    ///               cp::ControlPanel, commands::OsdpCommand};
+    /// ```no_run
+    /// use libosdp::{
+    ///     PdInfo, OsdpFlag, channel::{OsdpChannel, UnixChannel},
+    ///     ControlPanel, OsdpCommand
+    /// };
     ///
-    /// let stream = UnixChannel::connect("conn-1");
+    /// let stream = UnixChannel::connect("conn-1").unwrap();
     /// let pd_info = vec![
     ///     PdInfo::for_cp(
     ///         "PD 101", 101,
@@ -90,7 +92,7 @@ impl ControlPanel {
     ///         ]
     ///     ),
     /// ];
-    /// let mut cp = ControlPanel::new(pd_info)?;
+    /// let mut cp = ControlPanel::new(pd_info).unwrap();
     /// ```
     pub fn new(pd_info: Vec<PdInfo>) -> Result<Self> {
         if pd_info.len() > 126 {

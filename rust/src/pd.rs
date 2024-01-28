@@ -82,23 +82,21 @@ impl PeripheralDevice {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use libosdp::{
     ///     PdInfo, PdId, PdCapability, PdCapEntity, OsdpFlag,
-    ///     channel::{OsdpChannel, UnixChannel},
-    ///     pd::PeripheralDevice,
+    ///     channel::{OsdpChannel, UnixChannel}, ControlPanel,
     /// };
     ///
-    /// let stream = UnixChannel::new("conn-1");
+    /// let stream = UnixChannel::new("conn-1").unwrap();
     /// let pd_info = vec![
     ///     PdInfo::for_pd(
-    ///         "PD 101", 101,
-    ///         115200,
+    ///         "PD 101", 101, 115200,
+    ///         OsdpFlag::EnforceSecure,
     ///         PdId::from_number(101),
     ///         vec![
     ///             PdCapability::CommunicationSecurity(PdCapEntity::new(1, 1)),
     ///         ],
-    ///         OsdpFlag::EnforceSecure,
     ///         OsdpChannel::new::<UnixChannel>(Box::new(stream)),
     ///         [
     ///             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -106,7 +104,7 @@ impl PeripheralDevice {
     ///         ]
     ///     ),
     /// ];
-    /// let mut cp = PeripheralDevice::new(pd_info)?;
+    /// let mut cp = ControlPanel::new(pd_info).unwrap();
     /// ```
     pub fn new(info: PdInfo) -> Result<Self> {
         unsafe { libosdp_sys::osdp_set_log_callback(Some(log_handler)) };

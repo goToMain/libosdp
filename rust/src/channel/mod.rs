@@ -12,10 +12,14 @@
 //! LibOSDP.
 
 #[cfg(feature = "std")]
-pub mod unix_channel;
+mod unix_channel;
+mod memory_channel;
+
 use once_cell::sync::Lazy;
 #[cfg(feature = "std")]
 pub use unix_channel::UnixChannel;
+#[cfg(feature = "std")]
+pub use memory_channel::MemoryChannel;
 
 #[cfg(not(feature = "std"))]
 use alloc::collections::BTreeMap as HashMap;

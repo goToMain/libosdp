@@ -42,18 +42,18 @@ unsafe extern "C" fn log_handler(
     };
 }
 
-unsafe extern "C" fn trampoline<F>(data: *mut c_void, cmd: *mut libosdp_sys::osdp_cmd) -> i32
+extern "C" fn trampoline<F>(data: *mut c_void, cmd: *mut libosdp_sys::osdp_cmd) -> i32
 where
-    F: Fn(OsdpCommand) -> i32,
+    F: FnMut(OsdpCommand) -> i32,
 {
-    let cmd: OsdpCommand = (*cmd).into();
-    let callback = &mut *(data as *mut F);
+    let cmd: OsdpCommand = unsafe { (*cmd).into() };
+    let callback: &mut F = unsafe { &mut *(data as *mut F) };
     callback(cmd)
 }
 
 fn get_trampoline<F>(_closure: &F) -> CommandCallback
 where
-    F: Fn(OsdpCommand) -> i32,
+    F: FnMut(OsdpCommand) -> i32,
 {
     trampoline::<F>
 }
@@ -150,13 +150,16 @@ impl PeripheralDevice {
 
     /// Set a closure that gets called when this PD receives a command from the
     /// CP.
-    pub fn set_command_callback(&mut self, mut closure: impl Fn(OsdpCommand) -> i32) {
-        let callback = get_trampoline(&closure);
+    pub fn set_command_callback<F>(&mut self, closure: F)
+    where
+        F: FnMut(OsdpCommand) -> i32,
+    {
         unsafe {
+            let callback = get_trampoline(&closure);
             libosdp_sys::osdp_pd_set_command_callback(
                 self.ctx,
                 Some(callback),
-                &mut closure as *mut _ as *mut c_void,
+                Box::into_raw(Box::new(closure)).cast(),
             )
         }
     }

@@ -33,16 +33,16 @@ unsafe extern "C" fn log_handler(
     };
 }
 
-unsafe extern "C" fn trampoline<F>(
+extern "C" fn trampoline<F>(
     data: *mut c_void,
     pd: i32,
     event: *mut libosdp_sys::osdp_event,
 ) -> i32
 where
-    F: Fn(i32, OsdpEvent) -> i32,
+    F: FnMut(i32, OsdpEvent) -> i32,
 {
-    let event: OsdpEvent = (*event).into();
-    let callback = &mut *(data as *mut F);
+    let event: OsdpEvent = unsafe { (*event).into() };
+    let callback: &mut F = unsafe { &mut *(data as *mut F) };
     callback(pd, event)
 }
 
@@ -51,7 +51,7 @@ type EventCallback =
 
 fn get_trampoline<F>(_closure: &F) -> EventCallback
 where
-    F: Fn(i32, OsdpEvent) -> i32,
+    F: FnMut(i32, OsdpEvent) -> i32,
 {
     trampoline::<F>
 }
@@ -130,13 +130,16 @@ impl ControlPanel {
     }
 
     /// Set a closure that gets called when a PD sends an event to this CP.
-    pub fn set_event_callback(&mut self, mut closure: impl Fn(i32, OsdpEvent) -> i32) {
-        let callback = get_trampoline(&closure);
+    pub fn set_event_callback<F>(&mut self, closure: F)
+    where
+        F: FnMut(i32, OsdpEvent) -> i32,
+    {
         unsafe {
+            let callback = get_trampoline(&closure);
             libosdp_sys::osdp_cp_set_event_callback(
                 self.ctx,
                 Some(callback),
-                &mut closure as *mut _ as *mut c_void,
+                Box::into_raw(Box::new(closure)).cast(),
             );
         }
     }

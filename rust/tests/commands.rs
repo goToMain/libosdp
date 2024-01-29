@@ -45,15 +45,12 @@ fn test_commands() -> Result<()> {
         if pd.get_device().is_sc_active() {
             break;
         }
-        println!("Waiting for devices to establish a secure channel");
         thread::sleep(time::Duration::from_secs(1));
     }
 
     let command = OsdpCommand::Buzzer(OsdpCommandBuzzer::default());
     send_command(cp.get_device(), command.clone())?;
-    println!("Send, waiting for cmd in PD");
     let cmd_rx = pd.receiver.recv().unwrap();
-    println!("Got command");
     assert_eq!(cmd_rx, command, "Buzzer command check failed");
 
     let event = OsdpEvent::CardRead(OsdpEventCardRead::new_ascii(vec![0x55, 0xAA]));

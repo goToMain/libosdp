@@ -102,9 +102,7 @@ impl PdDevice {
                 let dev = dev_clone;
                 let sender = cmd_tx;
                 dev.lock().unwrap().set_command_callback(|command| {
-                    println!("--> Got here! {:?}", command);
                     sender.send(command).expect("PD command send");
-                    println!("<-- Got out!");
                     0
                 });
                 loop {

@@ -122,7 +122,7 @@ impl PeripheralDevice {
     }
 
     /// Set a vector of [`PdCapability`] for this PD.
-    pub fn set_capabilities(&self, cap: &Vec<PdCapability>) {
+    pub fn set_capabilities(&mut self, cap: &Vec<PdCapability>) {
         let cap: Vec<libosdp_sys::osdp_pd_cap> = cap
             .iter()
             .map(|c| -> libosdp_sys::osdp_pd_cap { c.clone().into() })

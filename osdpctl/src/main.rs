@@ -134,7 +134,7 @@ fn main() -> Result<()> {
                 .context("device name is required")
                 .unwrap();
             let config_path = cfg_dir.join(format!("{name}.cfg"));
-            std::process::Command::new(std::env!("EDITOR"))
+            std::process::Command::new(std::env::var("EDITOR")?)
                 .arg(&config_path)
                 .status()
                 .unwrap();

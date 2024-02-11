@@ -5,7 +5,7 @@ use core::time::Duration;
 use std::{
     io::{Read, Write},
     os::unix::net::{UnixListener, UnixStream},
-    path::PathBuf,
+    path::{Path, PathBuf},
     str::FromStr,
     thread,
 };
@@ -21,18 +21,15 @@ pub struct UnixChannel {
 
 impl UnixChannel {
     /// Connect to a channel identified by `name`.
-    pub fn connect(name: &str) -> Result<Self> {
-        let path = format!("/tmp/osdp-{name}");
-        let id = super::str_to_channel_id(&path);
+    pub fn connect(path: &Path) -> Result<Self> {
+        let id = super::str_to_channel_id(path.as_os_str().try_into().unwrap());
         let stream = UnixStream::connect(&path)?;
         Ok(Self { id, stream })
     }
 
     /// Listen on a channel identified by `name`.
-    pub fn new(name: &str) -> Result<Self> {
-        let path = format!("/tmp/osdp-{name}");
-        let id = super::str_to_channel_id(&path);
-        let path = PathBuf::from_str(&path)?;
+    pub fn new(path: &Path) -> Result<Self> {
+        let id = super::str_to_channel_id(path.as_os_str().try_into().unwrap());
         if path.exists() {
             std::fs::remove_file(&path)?;
         }
@@ -44,13 +41,14 @@ impl UnixChannel {
 
     /// Create a bi-directional channel pair. Returns Result<(server, client)>
     pub fn pair(name: &str) -> Result<(Self, Self)> {
-        let name_clone = String::from_str(name)?;
-        let h = thread::spawn(|| {
-            let name = name_clone;
-            UnixChannel::new(&name)
+        let path = PathBuf::from_str(format!("/tmp/osdp-{name}.sock").as_str())?;
+        let path_clone = path.clone();
+        let h = thread::spawn(move || {
+            let path = path_clone;
+            UnixChannel::new(&path)
         });
         thread::sleep(Duration::from_secs(1));
-        let client = UnixChannel::connect(name)?;
+        let client = UnixChannel::connect(&path)?;
         let server = h.join().unwrap()?;
         Ok((server, client))
     }

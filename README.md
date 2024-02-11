@@ -29,27 +29,21 @@ This protocol is developed and maintained by [Security Industry Association][20]
 
 ## Language Support
 
-### C API
+### C/C++ API
 
-LibOSDP is written in C. It exposes a [minimal set of API][26] to setup and
-manage the lifecycle of OSDP devices. See `include/osdp.h` for more details.
+LibOSDP core is written in C. It exposes a [minimal set of API][26] to setup
+and manage the lifecycle of OSDP devices. See `include/osdp.h` or
+`include/osdp.hpp` for more details.
 
 ### Rust API
 
-LibOSDP is now available via [crates.io/crates/libosdp][32]. See
-[rust/README.md][33] for more info and usage examples.
+LibOSDP is available via [crates.io][10]. See [rust/README.md][11] for more
+info and usage examples.
 
 ### Python API
 
-There are currently two python implementation within this repo:
-
-1. A [basic wrapper][29] around LibOSDP.
-2. A more [idiomatic python module][30] that builds on top of the basic wrapper.
-
-Although both implementations are considered fairly mature, neither have been
-submitted to pypi.org due to lack of time (PRs in this direction are
-appreciated). The plan at this time is to merge both of these implementation
-into `python/`.
+LibOSDP is available as a [python package][12]. See [python/README.md][13] for
+more info and usage examples.
 
 ## Supported Commands and Replies
 
@@ -188,6 +182,10 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [7]: https://github.com/ARMmbed/mbedtls
 [8]: https://www.openssl.org/
 [9]: https://www.doxygen.nl/index.html
+[10]: https://crates.io/crates/libosdp
+[11]: https://github.com/goToMain/libosdp/tree/master/rust
+[12]: https://pypi.org/project/libosdp/
+[13]: https://github.com/goToMain/libosdp/tree/master/python
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://libosdp.sidcha.dev/protocol/
@@ -201,5 +199,3 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [29]: https://github.com/goToMain/libosdp/blob/master/python
 [30]: https://github.com/goToMain/libosdp/tree/master/tests/pytest/testlib
 [31]: https://github.com/goToMain/libosdp/issues
-[32]: https://crates.io/crates/libosdp
-[33]: https://github.com/goToMain/libosdp/tree/master/rust

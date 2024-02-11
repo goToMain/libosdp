@@ -1054,6 +1054,7 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 		}
 		return OSDP_CP_STATE_ONLINE;
 	case OSDP_CP_STATE_SET_SCBK:
+		cp_keyset_complete(pd, false);
 		return OSDP_CP_STATE_SC_CHLNG;
 	case OSDP_CP_STATE_ONLINE:
 		if (cp_sc_should_retry(pd)) {
@@ -1131,7 +1132,7 @@ static inline enum osdp_cp_state_e get_next_state(struct osdp_pd *pd, int err)
  * response (ACK) in plain text since they discarded the SC in favour of the new
  * SCBK we set.
  */
-void cp_keyset_complete(struct osdp_pd *pd)
+void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc)
 {
 	struct osdp_cmd *cmd;
 
@@ -1142,7 +1143,9 @@ void cp_keyset_complete(struct osdp_pd *pd)
 	} else {
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 	}
-	make_request(pd, CP_REQ_RESTART_SC);
+	if (restart_sc) {
+		make_request(pd, CP_REQ_RESTART_SC);
+	}
 	LOG_INF("SCBK set; restarting SC to verify new SCBK");
 }
 
@@ -1158,11 +1161,6 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 	}
 
 	switch (next) {
-	case OSDP_CP_STATE_SC_CHLNG:
-		if (cur == OSDP_CP_STATE_SET_SCBK) {
-			cp_keyset_complete(pd);
-		}
-		break;
 	case OSDP_CP_STATE_ONLINE:
 		if (cur == OSDP_CP_STATE_SC_SCRYPT) {
 			sc_activate(pd);

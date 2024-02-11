@@ -375,9 +375,9 @@ struct osdp {
 };
 
 #ifdef CONFIG_OSDP_STATIC_PD
-static inline void cp_keyset_complete(struct osdp_pd *pd) { }
+static inline void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc) { }
 #else
-void cp_keyset_complete(struct osdp_pd *pd);
+void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc);
 #endif
 
 void osdp_keyset_complete(struct osdp_pd *pd);

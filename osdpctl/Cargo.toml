@@ -2,6 +2,15 @@
 name = "osdpctl"
 version = "0.1.0"
 edition = "2021"
+authors = ["Siddharth Chandrasekaran <sidcha.dev@gmail.com>"]
+description = "Tool to help setup, manage and control OSDP devices"
+documentation = "https://libosdp.sidcha.dev/osdpctl"
+homepage = "https://libosdp.sidcha.dev/"
+readme = "README.md"
+repository = "https://github.com/goToMain/libosdp"
+license = "Apache-2.0"
+keywords = ["osdp", "libosdp", "osdpctl"]
+categories = ["development-tools", "embedded"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,4 +23,5 @@ dirs = "5.0.1"
 libosdp = { version = "0.1.2", path = "../rust" }
 log = "0.4.20"
 log4rs = "1.2.0"
+rand = "0.8.5"
 toml = "0.8.8"

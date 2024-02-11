@@ -1,3 +1,4 @@
+use anyhow::bail;
 use configparser::ini::Ini;
 use libosdp::{
     channel::{UnixChannel, OsdpChannel},
@@ -8,38 +9,9 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
+use rand::Rng;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
-
-pub struct AppConfig {
-    pub device_config_dir: PathBuf,
-}
-
-impl AppConfig {
-    pub fn from(cfg: &Path) -> Result<Self> {
-        if !cfg.exists() {
-            let mut dir = PathBuf::from(cfg);
-            dir.pop();
-            return Ok(Self {
-                device_config_dir: dir,
-            });
-        }
-        let mut config = Ini::new();
-        config.load(cfg).map_err(|e| anyhow::anyhow!(e))?;
-        let s = config.get("default", "DeviceDir").unwrap();
-        let device_config_dir = if s.starts_with("./") {
-            let mut path = PathBuf::from(cfg);
-            path.pop();
-            path.push(&s[2..]);
-            path = std::fs::canonicalize(&s)?;
-            path
-        } else {
-            let path = std::fs::canonicalize(&s)?;
-            path
-        };
-        Ok(Self { device_config_dir })
-    }
-}
 
 fn vec_to_array<T, const N: usize>(v: Vec<T>) -> [T; N] {
     v.try_into()
@@ -51,24 +23,37 @@ pub struct KeyStore {
 }
 
 impl KeyStore {
-    pub fn from_path(path: &str) -> Self {
-        let store = PathBuf::from_str(path).unwrap();
-        Self { store }
+    pub fn create(store: PathBuf, key: &str) -> Result<Self> {
+        _ = KeyStore::str_to_key(key)?;
+        std::fs::write(&store, key)?;
+        Ok(Self { store })
     }
 
-    pub fn decode_hex(&self, s: &str) -> anyhow::Result<Vec<u8>, std::num::ParseIntError> {
+    pub fn _new(store: PathBuf) -> Result<Self> {
+        let key = KeyStore::key_to_str(&KeyStore::_random_key());
+        std::fs::write(&store, key)?;
+        Ok(Self { store })
+    }
+
+    pub fn _random_key() -> [u8; 16] {
+        let mut key = [0u8; 16];
+        rand::thread_rng().fill(&mut key);
+        key
+    }
+
+    pub fn decode_hex(s: &str) -> anyhow::Result<Vec<u8>, std::num::ParseIntError> {
         (0..s.len())
             .step_by(2)
             .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
             .collect()
     }
 
-    fn str_to_key(&self, s: &str) -> Result<[u8; 16]> {
-        let key = self.decode_hex(s)?;
+    fn str_to_key(s: &str) -> Result<[u8; 16]> {
+        let key = KeyStore::decode_hex(s)?;
         Ok(vec_to_array::<u8, 16>(key))
     }
 
-    fn key_to_str(&self, key: &[u8; 16]) -> String {
+    fn key_to_str(key: &[u8; 16]) -> String {
         let mut s = String::with_capacity(key.len() * 2);
         for b in key {
             write!(&mut s, "{:02x}", b).unwrap();
@@ -82,11 +67,11 @@ impl KeyStore {
         }
         let s = std::fs::read_to_string(self.store.as_path())?;
 
-        self.str_to_key(&s)
+        KeyStore::str_to_key(&s)
     }
 
     pub fn store(&self, key: [u8; 16]) -> Result<()> {
-        std::fs::write(&self.store, self.key_to_str(&key))?;
+        std::fs::write(&self.store, KeyStore::key_to_str(&key))?;
         Ok(())
     }
 }
@@ -100,37 +85,44 @@ pub struct PdData {
 }
 
 pub struct CpConfig {
+    runtime_dir: PathBuf,
     pub name: String,
     pd_data: Vec<PdData>,
-    pub pid_file: PathBuf,
-    pub log_dir: PathBuf,
-    pub log_level: String,
+    pub log_level: log::LevelFilter,
 }
 
 impl CpConfig {
-    pub fn from(config: &Ini) -> Result<Self> {
-        let name = config.get("default", "Name").unwrap();
-        let num_pd = config.getuint("default", "NumPd").unwrap().unwrap() as usize;
+    pub fn new(config: &Ini, runtime_dir: &Path) -> Result<Self> {
+        let num_pd = config.getuint("default", "num_pd").unwrap().unwrap() as usize;
+        let name = config.get("default", "name").unwrap();
+        let mut runtime_dir = runtime_dir.to_owned();
+        runtime_dir.push(&name);
+        std::fs::create_dir_all(&runtime_dir)?;
         let mut pd_data = Vec::new();
         for pd in 0..num_pd {
-            let section = format!("PD-{pd}");
+            let section = format!("pd-{pd}");
+            let key = &config.get(&section, "scbk").unwrap();
             pd_data.push(PdData {
-                name: config.get(&section, "Name").unwrap(),
-                channel: config.get(&section, "Channel").unwrap(),
-                address: config.getuint(&section, "Address").unwrap().unwrap() as i32,
-                key_store: KeyStore::from_path(&config.get("default", "KeyStore").unwrap()),
+                name: config.get(&section, "name").unwrap(),
+                channel: config.get(&section, "channel").unwrap(),
+                address: config.getuint(&section, "address").unwrap().unwrap() as i32,
+                key_store: KeyStore::create(runtime_dir.join("key.store"), &key)?,
                 flags: OsdpFlag::empty(),
             });
         }
-        let pid_file = PathBuf::from_str(&config.get("Service", "PidFile").unwrap())?;
-        let log_dir = PathBuf::from_str(&config.get("Service", "LogDir").unwrap())?;
-        let log_level = config.get("Service", "LogLevel").unwrap();
+        let log_level = config.get("default", "log_level").unwrap();
+        let log_level = match log_level.as_str() {
+            "INFO" => log::LevelFilter::Info,
+            "DEBUG" => log::LevelFilter::Debug,
+            "WARN" => log::LevelFilter::Warn,
+            "TRACE" => log::LevelFilter::Trace,
+            _ => log::LevelFilter::Off,
+        };
         Ok(Self {
             name,
-            pd_data,
-            pid_file,
             log_level,
-            log_dir,
+            pd_data,
+            runtime_dir,
         })
     }
 
@@ -138,7 +130,12 @@ impl CpConfig {
         self.pd_data
             .iter()
             .map(|d| {
-                let stream = UnixChannel::new(&d.channel)?;
+                let parts: Vec<&str> = d.channel.split("::").collect();
+                if parts[0] != "unix" {
+                    bail!("Only unix channel is supported for now")
+                }
+                let path = self.runtime_dir.join(format!("{}/{}.sock", d.name, parts[1]).as_str());
+                let stream = UnixChannel::connect(&path)?;
                 Ok(PdInfo::for_cp(
                     &self.name,
                     d.address,
@@ -153,6 +150,7 @@ impl CpConfig {
 }
 
 pub struct PdConfig {
+    runtime_dir: PathBuf,
     pub name: String,
     channel: String,
     address: i32,
@@ -160,60 +158,70 @@ pub struct PdConfig {
     pd_id: PdId,
     pd_cap: Vec<PdCapability>,
     flags: OsdpFlag,
-    pub pid_file: PathBuf,
-    pub log_level: String,
-    pub log_dir: PathBuf,
+    pub log_level: log::LevelFilter,
 }
 
 impl PdConfig {
-    pub fn from(config: &Ini) -> Result<Self> {
-        // TODO: Fix this
-        let pd_id = PdId::from_number(1);
-        // let pd_id = PdId {
-        //     version: config.getuint("PdId", "Version").unwrap().unwrap() as i32,
-        //     model: config.getuint("PdId", "Model").unwrap().unwrap() as i32,
-        //     vendor_code: config.getuint("PdId", "VendorCode").unwrap().unwrap() as u32,
-        //     serial_number: config.getuint("PdId", "SerialNumber").unwrap().unwrap() as u32,
-        //     firmware_version: config.getuint("PdId", "FirmwareVersion").unwrap().unwrap() as u32,
-        // };
+    pub fn new(config: &Ini, runtime_dir: &Path) -> Result<Self> {
+        let vendor_code = config.getuint("pd_id", "vendor_code").unwrap().unwrap() as u32;
+        let serial_number = config.getuint("pd_id", "serial_number").unwrap().unwrap() as u32;
+        let firmware_version = config.getuint("pd_id", "firmware_version").unwrap().unwrap() as u32;
+        let pd_id = PdId {
+            version: config.getuint("pd_id", "version").unwrap().unwrap() as i32,
+            model: config.getuint("pd_id", "model").unwrap().unwrap() as i32,
+            vendor_code: (vendor_code as u8, (vendor_code >> 8) as u8, (vendor_code >> 16) as u8),
+            serial_number: serial_number.to_le_bytes(),
+            firmware_version: (firmware_version as u8, (firmware_version >> 8) as u8, (firmware_version >> 16) as u8),
+        };
         let mut flags = OsdpFlag::empty();
-        if let Some(val) = config.get("default", "Flags") {
+        if let Some(val) = config.get("default", "flags") {
             let fl: Vec<&str> = val.split('|').collect();
             for f in fl {
                 flags.set(OsdpFlag::from_str(f)?, true);
             }
         }
-        let name = config.get("default", "Name").unwrap();
-        let channel = config.get("default", "Channel").unwrap();
-        let address = config.getuint("default", "Address").unwrap().unwrap() as i32;
-        let key_store = KeyStore::from_path(&config.get("default", "KeyStore").unwrap());
         let map = config.get_map().unwrap();
-        let cap_map = map.get("PdCapability").unwrap();
+        let cap_map = map.get("capability").unwrap();
         let mut pd_cap = Vec::new();
         for (key, val) in cap_map {
             pd_cap.push(PdCapability::from_str(
                 format!("{}:{}", key, val.as_deref().unwrap()).as_str(),
             )?);
         }
-        let pid_file = PathBuf::from_str(&config.get("Service", "PidFile").unwrap())?;
-        let log_dir = PathBuf::from_str(&config.get("Service", "LogDir").unwrap())?;
-        let log_level = config.get("Service", "LogLevel").unwrap();
+        let log_level = config.get("default", "log_level").unwrap();
+        let log_level = match log_level.as_str() {
+            "INFO" => log::LevelFilter::Info,
+            "DEBUG" => log::LevelFilter::Debug,
+            "WARN" => log::LevelFilter::Warn,
+            "TRACE" => log::LevelFilter::Trace,
+            _ => log::LevelFilter::Off,
+        };
+        let key = &config.get("default", "scbk").unwrap();
+        let name  = config.get("default", "name").unwrap();
+        let mut runtime_dir = runtime_dir.to_owned();
+        runtime_dir.push(&name);
+        std::fs::create_dir_all(&runtime_dir)?;
+        let key_store = KeyStore::create(runtime_dir.join("key.store"), key)?;
         Ok(Self {
             name,
-            channel,
-            address,
+            channel: config.get("default", "channel").unwrap(),
+            address: config.getuint("default", "address").unwrap().unwrap() as i32,
             key_store,
+            log_level,
             pd_id,
             pd_cap,
             flags,
-            pid_file,
-            log_level,
-            log_dir,
+            runtime_dir,
         })
     }
 
     pub fn pd_info(&self) -> Result<PdInfo> {
-        let stream = UnixChannel::new(&self.channel)?;
+        let parts: Vec<&str> = self.channel.split("::").collect();
+        if parts[0] != "unix" {
+            bail!("Only unix channel is supported for now")
+        }
+        let path = self.runtime_dir.join(format!("{}.sock", parts[1]).as_str());
+        let stream = UnixChannel::new(&path)?;
         Ok(PdInfo::for_pd(
             &self.name,
             self.address,
@@ -233,12 +241,12 @@ pub enum DeviceConfig {
 }
 
 impl DeviceConfig {
-    pub fn from_path(cfg: &Path) -> Result<Self> {
+    pub fn new(cfg: &Path, runtime_dir: &Path) -> Result<Self> {
         let mut config = Ini::new_cs();
         config.load(cfg).unwrap();
-        let config = match config.get("default", "NumPd") {
-            Some(_) => DeviceConfig::CpConfig(CpConfig::from(&config)?),
-            None => DeviceConfig::PdConfig(PdConfig::from(&config)?),
+        let config = match config.get("default", "num_pd") {
+            Some(_) => DeviceConfig::CpConfig(CpConfig::new(&config, runtime_dir)?),
+            None => DeviceConfig::PdConfig(PdConfig::new(&config, runtime_dir)?),
         };
         Ok(config)
     }

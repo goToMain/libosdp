@@ -34,3 +34,16 @@ def test_set_new_scbk(utils):
     # Cleanup
     cp.teardown()
     pd.teardown()
+
+def test_install_mode_set_scbk(utils):
+    pd = utils.create_pd(PDInfo(101, name='install-mode-pd',
+                         flags=[ LibFlag.InstallMode ]))
+    cp = utils.create_cp([
+        PDInfo(101, name='install-mode-pd',
+               scbk=utils.ks.new_key('install-mode-pd'))
+     ])
+    assert cp.sc_wait_all()
+
+    # Cleanup
+    cp.teardown()
+    pd.teardown()

@@ -813,6 +813,16 @@ int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	return cmd_id;
 }
 
+static void fill_local_keyset_cmd(struct osdp_pd *pd)
+{
+	struct osdp_cmd *cmd = (struct osdp_cmd *)pd->ephemeral_data;
+
+	cmd->id = OSDP_CMD_KEYSET;
+	cmd->keyset.type = 1;
+	cmd->keyset.length = sizeof(pd->sc.scbk);
+	memcpy(cmd->keyset.data, pd->sc.scbk, sizeof(pd->sc.scbk));
+}
+
 static inline bool cp_phy_running(struct osdp_pd *pd)
 {
 	return (pd->phy_state == OSDP_CP_PHY_STATE_SEND_CMD ||
@@ -1037,7 +1047,9 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 		return OSDP_CP_STATE_SC_SCRYPT;
 	case OSDP_CP_STATE_SC_SCRYPT:
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-			LOG_WRN("SC ACtive with SCBK-D. Set SCBK");
+			LOG_WRN("SC active with SCBK-D. Set SCBK");
+			fill_local_keyset_cmd(pd);
+			sc_activate(pd);
 			return OSDP_CP_STATE_SET_SCBK;
 		}
 		return OSDP_CP_STATE_ONLINE;
@@ -1087,6 +1099,7 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 		}
 		return OSDP_CP_STATE_ONLINE;
 	case OSDP_CP_STATE_SET_SCBK:
+		sc_deactivate(pd);
 		if (is_enforce_secure(pd) ||
 		    ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_ERR("Failed to set SCBK; "

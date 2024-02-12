@@ -1,15 +1,16 @@
 use anyhow::bail;
+use anyhow::Context;
 use configparser::ini::Ini;
 use libosdp::{
-    channel::{UnixChannel, OsdpChannel},
+    channel::{OsdpChannel, UnixChannel},
     OsdpFlag, PdCapability, PdId, PdInfo,
 };
+use rand::Rng;
 use std::{
     fmt::Write,
     path::{Path, PathBuf},
     str::FromStr,
 };
-use rand::Rng;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
@@ -85,7 +86,7 @@ pub struct PdData {
 }
 
 pub struct CpConfig {
-    runtime_dir: PathBuf,
+    pub runtime_dir: PathBuf,
     pub name: String,
     pd_data: Vec<PdData>,
     pub log_level: log::LevelFilter,
@@ -97,7 +98,6 @@ impl CpConfig {
         let name = config.get("default", "name").unwrap();
         let mut runtime_dir = runtime_dir.to_owned();
         runtime_dir.push(&name);
-        std::fs::create_dir_all(&runtime_dir)?;
         let mut pd_data = Vec::new();
         for pd in 0..num_pd {
             let section = format!("pd-{pd}");
@@ -127,6 +127,8 @@ impl CpConfig {
     }
 
     pub fn pd_info(&self) -> Result<Vec<PdInfo>> {
+        let mut runtime_dir = self.runtime_dir.clone();
+        runtime_dir.pop();
         self.pd_data
             .iter()
             .map(|d| {
@@ -134,8 +136,9 @@ impl CpConfig {
                 if parts[0] != "unix" {
                     bail!("Only unix channel is supported for now")
                 }
-                let path = self.runtime_dir.join(format!("{}/{}.sock", d.name, parts[1]).as_str());
-                let stream = UnixChannel::connect(&path)?;
+                let path = runtime_dir.join(format!("{}/{}.sock", d.name, parts[1]).as_str());
+                let stream = UnixChannel::connect(&path)
+                    .context("Unable to connect to PD channel")?;
                 Ok(PdInfo::for_cp(
                     &self.name,
                     d.address,
@@ -150,7 +153,7 @@ impl CpConfig {
 }
 
 pub struct PdConfig {
-    runtime_dir: PathBuf,
+    pub runtime_dir: PathBuf,
     pub name: String,
     channel: String,
     address: i32,
@@ -165,13 +168,24 @@ impl PdConfig {
     pub fn new(config: &Ini, runtime_dir: &Path) -> Result<Self> {
         let vendor_code = config.getuint("pd_id", "vendor_code").unwrap().unwrap() as u32;
         let serial_number = config.getuint("pd_id", "serial_number").unwrap().unwrap() as u32;
-        let firmware_version = config.getuint("pd_id", "firmware_version").unwrap().unwrap() as u32;
+        let firmware_version = config
+            .getuint("pd_id", "firmware_version")
+            .unwrap()
+            .unwrap() as u32;
         let pd_id = PdId {
             version: config.getuint("pd_id", "version").unwrap().unwrap() as i32,
             model: config.getuint("pd_id", "model").unwrap().unwrap() as i32,
-            vendor_code: (vendor_code as u8, (vendor_code >> 8) as u8, (vendor_code >> 16) as u8),
+            vendor_code: (
+                vendor_code as u8,
+                (vendor_code >> 8) as u8,
+                (vendor_code >> 16) as u8,
+            ),
             serial_number: serial_number.to_le_bytes(),
-            firmware_version: (firmware_version as u8, (firmware_version >> 8) as u8, (firmware_version >> 16) as u8),
+            firmware_version: (
+                firmware_version as u8,
+                (firmware_version >> 8) as u8,
+                (firmware_version >> 16) as u8,
+            ),
         };
         let mut flags = OsdpFlag::empty();
         if let Some(val) = config.get("default", "flags") {
@@ -197,10 +211,9 @@ impl PdConfig {
             _ => log::LevelFilter::Off,
         };
         let key = &config.get("default", "scbk").unwrap();
-        let name  = config.get("default", "name").unwrap();
+        let name = config.get("default", "name").unwrap();
         let mut runtime_dir = runtime_dir.to_owned();
         runtime_dir.push(&name);
-        std::fs::create_dir_all(&runtime_dir)?;
         let key_store = KeyStore::create(runtime_dir.join("key.store"), key)?;
         Ok(Self {
             name,
@@ -240,9 +253,34 @@ pub enum DeviceConfig {
     PdConfig(PdConfig),
 }
 
+fn read_pid_from_file(file: PathBuf) -> Result<i32> {
+    let pid = std::fs::read_to_string(file)?;
+    let pid = pid.trim();
+    let pid = pid.parse::<i32>()?;
+    Ok(pid)
+}
+
+impl DeviceConfig {
+    pub fn get_pid(&self) -> Result<i32> {
+        match self {
+            DeviceConfig::CpConfig(dev) => {
+                let pid_file = dev.runtime_dir.join(format!("dev-{}.pid", dev.name));
+                read_pid_from_file(pid_file)
+            }
+            DeviceConfig::PdConfig(dev) => {
+                let pid_file = dev.runtime_dir.join(format!("dev-{}.pid", dev.name));
+                read_pid_from_file(pid_file)
+            }
+        }
+    }
+}
+
 impl DeviceConfig {
     pub fn new(cfg: &Path, runtime_dir: &Path) -> Result<Self> {
         let mut config = Ini::new_cs();
+        if !cfg.exists() {
+            bail!("Config {} does not exist!", cfg.display())
+        }
         config.load(cfg).unwrap();
         let config = match config.get("default", "num_pd") {
             Some(_) => DeviceConfig::CpConfig(CpConfig::new(&config, runtime_dir)?),

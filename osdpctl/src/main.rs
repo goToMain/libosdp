@@ -1,8 +1,7 @@
 mod config;
 mod cp;
+mod daemonize;
 mod pd;
-
-use std::{path::{Path, PathBuf}, str::FromStr, thread, time::Duration};
 
 use anyhow::{bail, Context};
 use clap::{arg, Command};
@@ -13,7 +12,11 @@ use log4rs::{
     config::{Appender, Root},
     Config,
 };
-
+use nix::{
+    sys::signal::{self, Signal},
+    unistd::Pid,
+};
+use std::{path::PathBuf, str::FromStr};
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
 const HELP_TEMPLATE: &str = "{before-help}
@@ -60,6 +63,7 @@ fn cli() -> Command {
             Command::new("start")
                 .about("Start a OSDP device")
                 .arg(arg!(<DEV> "device to start"))
+                .arg(arg!(-d --daemonize "Fork and run in the background"))
                 .arg_required_else_help(true),
         )
         .subcommand(
@@ -74,7 +78,6 @@ fn cli() -> Command {
                 .arg(arg!(<DEV> "device device to attach to"))
                 .arg_required_else_help(true),
         )
-        .arg(arg!(-d --daemonize "Fork and run in the background as a daemon"))
 }
 
 fn osdpctl_config_dir() -> Result<PathBuf> {
@@ -100,54 +103,29 @@ fn get_logger_config(log_level: LevelFilter) -> Result<Config> {
     Ok(config)
 }
 
-fn daemonize(runtime_dir: &Path, name: &str) {
-    let stdout = std::fs::File::create(
-        runtime_dir
-            .join(format!("dev-{}.out.log", name).as_str()),
-    ).expect("stdout for daemon");
-    let stderr = std::fs::File::create(
-        runtime_dir
-            .join(format!("dev-{}.err.log", name).as_str()),
-    ).expect("stderr for daemon");
-    let daemon = daemonize::Daemonize::new()
-        .pid_file(runtime_dir.join(format!("dev-{}.pid", name)))
-        .chown_pid_file(true)
-        .working_directory(runtime_dir)
-        .stdout(stdout)
-        .stderr(stderr);
-    match daemon.start() {
-        Ok(_) => {},
-        Err(e) => eprintln!("Error, {}", e),
-    }
-}
-
 fn main() -> Result<()> {
     let lh = log4rs::init_config(get_logger_config(LevelFilter::Info)?)?;
     let cfg_dir = osdpctl_config_dir()?;
     let rt_dir = device_runtime_dir()?;
     let matches = cli().get_matches();
-    let run_as_daemon = matches.get_flag("daemonize");
     match matches.subcommand() {
         Some(("edit", sub_matches)) => {
             let name = sub_matches
                 .get_one::<String>("DEV")
-                .context("device name is required")
-                .unwrap();
+                .context("Device name is required")?;
             let config_path = cfg_dir.join(format!("{name}.cfg"));
-            std::process::Command::new(std::env::var("EDITOR")?)
+            let editor = std::env::var("EDITOR")
+                .context("Environment variable EDITOR is not set")?;
+            std::process::Command::new(editor)
                 .arg(&config_path)
                 .status()
-                .unwrap();
-        },
+                .context("External editor returned error code")?;
+        }
         Some(("create", sub_matches)) => {
             let config = sub_matches
                 .get_one::<String>("CONFIG")
-                .context("device config file required")
-                .unwrap();
+                .context("Device config file required")?;
             let config = PathBuf::from_str(&config)?;
-            if !config.exists() {
-                bail!("Config file does not exit");
-            }
             let dev = DeviceConfig::new(&config, &rt_dir)?;
             let dest_path = cfg_dir.join(format!("{}.cfg", dev.name()));
             if dest_path.exists() {
@@ -155,15 +133,14 @@ fn main() -> Result<()> {
             }
             std::fs::copy(&config, &dest_path).unwrap();
             println!("Created new device '{}'.", dev.name())
-        },
+        }
         Some(("destroy", sub_matches)) => {
             let name = sub_matches
                 .get_one::<String>("DEV")
-                .context("device name is required")
-                .unwrap();
+                .context("Device name is required")?;
             let config_path = cfg_dir.join(format!("{name}.cfg"));
             if !config_path.exists() {
-                bail!("No such device");
+                bail!(format!("Device '{}' not found. See `osdpctl list`.", name));
             }
             let sock = &rt_dir.join(format!("{name}/{name}.sock"));
             if sock.exists() {
@@ -171,69 +148,54 @@ fn main() -> Result<()> {
             }
             std::fs::remove_file(config_path).unwrap();
             println!("Destroyed device '{name}'.")
-        },
+        }
         Some(("list", _)) => {
             let paths = std::fs::read_dir(&cfg_dir).unwrap();
-            println!("+---------------+----------+");
-            println!("|  Device Name  |  Status  |");
-            println!("+---------------+----------+");
-            for path in paths {
+            println!("  Nr  Device Name     Status   ");
+            println!("-------------------------------");
+            for (i, path) in paths.enumerate() {
                 let path = path.unwrap().path();
                 if let Some(ext) = path.extension() {
                     if ext == "cfg" {
                         let dev = DeviceConfig::new(&path, &rt_dir)?;
-                        println!("| {:<13} | {:^8} |", dev.name(), "Offline");
+                        println!("  {:02}  {:<13}   {:^8}  ", i, dev.name(), "Offline");
                     }
                 }
             }
-            println!("+---------------+----------+");
         }
         Some(("start", sub_matches)) => {
             let name = sub_matches
                 .get_one::<String>("DEV")
-                .context("device name is required")
-                .unwrap();
+                .context("Device name is required")?;
+            let daemonize = sub_matches.get_flag("daemonize");
             let config_path = cfg_dir.join(format!("{name}.cfg"));
             let dev = DeviceConfig::new(&config_path, &rt_dir)?;
-            if run_as_daemon {
-                daemonize(&rt_dir, dev.name());
-            }
             match dev {
-                DeviceConfig::CpConfig(c) => {
-                    lh.set_config(get_logger_config(c.log_level)?);
-                    let mut cp = cp::create_cp(&c)
-                        .context("Failed to create PD")?;
-                    loop {
-                        cp.refresh();
-                        thread::sleep(Duration::from_millis(50));
-                    }
+                DeviceConfig::CpConfig(dev) => {
+                    lh.set_config(get_logger_config(dev.log_level)?);
+                    cp::main(dev, daemonize)?;
                 }
-                DeviceConfig::PdConfig(c) => {
-                    lh.set_config(get_logger_config(c.log_level)?);
-                    let mut pd = pd::create_pd(&c)
-                        .context("Failed to create PD")?;
-                    loop {
-                        pd.refresh();
-                        thread::sleep(Duration::from_millis(50));
-                    }
+                DeviceConfig::PdConfig(dev) => {
+                    lh.set_config(get_logger_config(dev.log_level)?);
+                    pd::main(dev, daemonize)?;
                 }
             };
         }
         Some(("stop", sub_matches)) => {
             let name = sub_matches
                 .get_one::<String>("DEV")
-                .context("device name is required")
-                .unwrap();
+                .context("Device name is required")?;
             let config_path = cfg_dir.join(format!("{name}.cfg"));
             let dev = DeviceConfig::new(&config_path, &rt_dir)?;
-            println!("stop: {}", dev.name());
-            todo!();
+            let pid = dev.get_pid()?;
+            signal::kill(Pid::from_raw(pid), Signal::SIGHUP)
+                .context("Failed to stop to requested device")?;
+            println!("Device `{}` stopped", dev.name());
         }
         Some(("attach", sub_matches)) => {
             let name = sub_matches
                 .get_one::<String>("DEV")
-                .context("device name is required")
-                .unwrap();
+                .context("device name is required")?;
             let config_path = cfg_dir.join(format!("{name}.cfg"));
             let dev = DeviceConfig::new(&config_path, &rt_dir)?;
             println!("attach: {}", dev.name());

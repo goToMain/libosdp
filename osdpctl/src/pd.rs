@@ -1,10 +1,29 @@
+use std::{thread, time::Duration};
+
 use crate::config::PdConfig;
 use anyhow::Context;
 use libosdp::{OsdpCommand, PeripheralDevice};
+use std::io::Write;
 
 type Result<T> = anyhow::Result<T, anyhow::Error>;
 
-pub fn create_pd(dev: &PdConfig) -> Result<PeripheralDevice> {
+fn setup(dev: &PdConfig, daemonize: bool) -> Result<()> {
+    if dev.runtime_dir.exists() {
+        std::fs::remove_dir_all(&dev.runtime_dir)?;
+    }
+    std::fs::create_dir_all(&dev.runtime_dir)?;
+    if daemonize {
+        crate::daemonize::daemonize(&dev.runtime_dir, &dev.name)?;
+    } else {
+        let pid_file = dev.runtime_dir.join(format!("dev-{}.pid", dev.name));
+        let mut pid_file = std::fs::File::create(pid_file)?;
+        write!(pid_file, "{}", std::process::id())?;
+    }
+    Ok(())
+}
+
+pub fn main(dev: PdConfig, daemonize: bool) -> Result<()> {
+    setup(&dev, daemonize)?;
     let pd_info = dev.pd_info()
         .context("Failed to create PD info")?;
     let mut pd = PeripheralDevice::new(pd_info)?;
@@ -43,5 +62,8 @@ pub fn create_pd(dev: &PdConfig) -> Result<PeripheralDevice> {
         }
         0
     });
-    Ok(pd)
+    loop {
+        pd.refresh();
+        thread::sleep(Duration::from_millis(50));
+    }
 }

@@ -44,6 +44,9 @@ class CommandLEDColor:
     Green = osdp_sys.LED_COLOR_GREEN
     Amber = osdp_sys.LED_COLOR_AMBER
     Blue = osdp_sys.LED_COLOR_BLUE
+    Magenta = osdp_sys.LED_COLOR_MAGENTA
+    Cyan = osdp_sys.LED_COLOR_CYAN
+    White = osdp_sys.LED_COLOR_WHITE
 
 class CommandFileTxFlags:
     Cancel = osdp_sys.CMD_FILE_TX_FLAG_CANCEL

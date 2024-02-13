@@ -120,7 +120,7 @@ function do_libosdp_release() {
 		echo "CHANGELOG needs to be updated manually"
 		exit 1
 	fi
-	git add CHANGELOG CMakeLists.txt &&
+	git add CHANGELOG CMakeLists.txt python/setup.py &&
 	git commit -s -m "Release v$version" &&
 	git tag "v$version" -a -m "Release v$version"
 }

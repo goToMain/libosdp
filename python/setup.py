@@ -13,10 +13,9 @@ import subprocess
 project_name = "libosdp"
 project_version = "2.4.0"
 current_dir = os.path.dirname(os.path.realpath(__file__))
-build_dir = os.path.abspath(os.path.join(current_dir, "build"))
-root_dir = os.path.abspath(os.path.join(current_dir, ".."))
+repo_root = os.path.realpath(os.path.join(current_dir, ".."))
 
-def map_prefix(src_list, path, check_files=False):
+def add_prefix_to_path(src_list, path, check_files=True):
     paths = [ os.path.join(path, src) for src in src_list ]
     for path in paths:
         if check_files:
@@ -44,18 +43,32 @@ def configure_file(file, replacements):
     for match in pat.findall(contents):
         if match in replacements:
             contents = contents.replace(f"@{match}@", replacements[match])
-    with open(file, 'w') as f:
+    with open(file, "w") as f:
         f.write(contents)
 
-def generate_osdp_build_headers():
-    os.makedirs(build_dir, exist_ok=True)
-    with open(os.path.join(build_dir, "osdp_export.h"), 'w') as f:
+def try_vendor_sources(src_dir, src_files, vendor_dir):
+    test_file = os.path.join(src_dir, src_files[0])
+    if not os.path.exists(test_file):
+        return
+    print("Vendoring sources...")
+
+    ## copy source tree into ./vendor
+
+    shutil.rmtree(vendor_dir, ignore_errors=True)
+    for file in src_files:
+        src = os.path.join(src_dir, file)
+        dest = os.path.join(vendor_dir, file)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copyfile(src, dest)
+
+    ## generate build headers into ./vendor
+
+    with open("vendor/src/osdp_export.h", "w") as f:
         f.write("#define OSDP_EXPORT\n")
 
     git = get_git_info()
-    dest = os.path.join(build_dir, "osdp_config.h")
-    shutil.copy(os.path.join(root_dir, "src/osdp_config.h.in"), dest)
-    configure_file(dest, {
+    shutil.move("vendor/src/osdp_config.h.in", "vendor/src/osdp_config.h")
+    configure_file("vendor/src/osdp_config.h", {
         "PROJECT_VERSION": project_version,
         "PROJECT_NAME": project_name,
         "GIT_BRANCH": git["branch"],
@@ -65,9 +78,7 @@ def generate_osdp_build_headers():
         "REPO_ROOT": git["root"],
     })
 
-generate_osdp_build_headers()
-
-utils_sources = map_prefix([
+utils_sources = [
     "utils/src/list.c",
     "utils/src/queue.c",
     "utils/src/slab.c",
@@ -84,43 +95,10 @@ utils_sources = map_prefix([
     "utils/src/workqueue.c",
     "utils/src/sockutils.c",
     "utils/src/bus_server.c",
-], root_dir)
+]
 
-lib_sources = map_prefix([
-    "src/osdp_common.c",
-    "src/osdp_phy.c",
-    "src/osdp_sc.c",
-    "src/osdp_file.c",
-    "src/osdp_pd.c",
-    "src/osdp_cp.c",
-    "src/crypto/tinyaes_src.c",
-    "src/crypto/tinyaes.c",
-], root_dir)
-
-osdp_sys_sources = map_prefix([
-    "osdp_sys/module.c",
-    "osdp_sys/base.c",
-    "osdp_sys/cp.c",
-    "osdp_sys/pd.c",
-    "osdp_sys/data.c",
-    "osdp_sys/utils.c",
-], current_dir)
-
-source_files = utils_sources + lib_sources + osdp_sys_sources
-
-include_dirs = map_prefix([
-    "utils/include",
-    "include",
-    "src",
-    "python/build",
-], root_dir)
-
-other_files = map_prefix([
-    "CMakeLists.txt",
-    "src/osdp_config.h.in"
-], root_dir)
-
-include_files = map_prefix([
+utils_includes = [
+    "utils/include/utils/assert.h",
     "utils/include/utils/list.h",
     "utils/include/utils/queue.h",
     "utils/include/utils/slab.h",
@@ -137,14 +115,60 @@ include_files = map_prefix([
     "utils/include/utils/workqueue.h",
     "utils/include/utils/sockutils.h",
     "utils/include/utils/bus_server.h",
+]
+
+lib_sources = [
+    "src/osdp_common.c",
+    "src/osdp_phy.c",
+    "src/osdp_sc.c",
+    "src/osdp_file.c",
+    "src/osdp_pd.c",
+    "src/osdp_cp.c",
+    "src/crypto/tinyaes_src.c",
+    "src/crypto/tinyaes.c",
+]
+
+lib_includes = [
     "include/osdp.h",
     "src/osdp_common.h",
     "src/osdp_file.h",
-    "python/build/osdp_config.h",
-    "python/build/osdp_export.h",
-], root_dir, check_files=True)
+    "src/crypto/tinyaes_src.h",
+]
 
-libosdp_includes = [ "-I" + path for path in include_dirs ]
+osdp_sys_sources = [
+    "python/osdp_sys/module.c",
+    "python/osdp_sys/base.c",
+    "python/osdp_sys/cp.c",
+    "python/osdp_sys/pd.c",
+    "python/osdp_sys/data.c",
+    "python/osdp_sys/utils.c",
+]
+
+osdp_sys_include = [
+    "python/osdp_sys/module.h",
+]
+
+other_files = [
+    "src/osdp_config.h.in",
+]
+
+source_files = utils_sources + lib_sources + osdp_sys_sources
+
+try_vendor_sources(
+    repo_root,
+    source_files + utils_includes + lib_includes + osdp_sys_include + other_files,
+    "vendor"
+)
+
+source_files = add_prefix_to_path(source_files, "vendor")
+
+include_dirs = [
+    "vendor/utils/include",
+    "vendor/include",
+    "vendor/src",
+    "vendor/python/osdp_sys",
+    "vendor/src/crypto"
+]
 
 definitions = [
     # "CONFIG_OSDP_PACKET_TRACE",
@@ -156,8 +180,6 @@ compile_args = (
     [ "-I" + path for path in include_dirs ] +
     [ "-D" + define for define in definitions ]
 )
-
-link_args = []
 
 if os.path.exists("README.md"):
     with open("README.md", "r") as f:
@@ -177,7 +199,7 @@ setup(
             name               = "osdp_sys",
             sources            = source_files,
             extra_compile_args = compile_args,
-            extra_link_args    = link_args,
+            extra_link_args    = [],
             define_macros      = [],
             language           = "C",
         )

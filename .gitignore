@@ -65,6 +65,9 @@ osdp_export.h
 osdpctl/osdpctl
 config.make
 
+## python
+/python/vendor
+
 ## pytests
 .pytest_cache/
 __pycache__/

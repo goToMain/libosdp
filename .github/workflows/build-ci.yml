@@ -90,12 +90,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --manifest-path rust/Cargo.toml
+          args: --manifest-path rust/Cargo.toml --all-targets
       - name: Cargo check - osdpctl
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --manifest-path osdpctl/Cargo.toml
+          args: --manifest-path osdpctl/Cargo.toml --all-targets
 
   Python:
     name: Python

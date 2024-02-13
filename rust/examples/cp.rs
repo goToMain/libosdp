@@ -2,7 +2,7 @@ use libosdp::{
     channel::{OsdpChannel, UnixChannel},
     ControlPanel, OsdpError, OsdpFlag, PdInfo,
 };
-use std::{result::Result, thread, time::Duration};
+use std::{result::Result, thread, time::Duration, path::PathBuf, str::FromStr};
 
 fn main() -> Result<(), OsdpError> {
     env_logger::builder()
@@ -10,7 +10,8 @@ fn main() -> Result<(), OsdpError> {
         .format_target(false)
         .format_timestamp(None)
         .init();
-    let stream = UnixChannel::connect("conn-1")?;
+    let path = PathBuf::from_str("/tmp/conn-1")?;
+    let stream = UnixChannel::connect(&path)?;
     let pd_info = vec![PdInfo::for_cp(
         "PD 101",
         101,

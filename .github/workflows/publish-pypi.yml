@@ -10,7 +10,7 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-    - 'Python-v*' # Push events to matching Python-v*, i.e. Python-v2.4.0
+    - 'v*' # Push events to matching Python-v*, i.e. v2.4.0
 
 jobs:
   pypi-publish:

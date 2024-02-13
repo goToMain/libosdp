@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! CP interacts with and controls PDs by sending commands to it. These commands
 //! are specified by OSDP specification. This module is responsible to handling
 //! such commands though [`OsdpCommand`].

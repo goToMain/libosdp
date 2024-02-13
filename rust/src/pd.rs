@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! OSDP specification defines end-point devices as PDs. These devices are
 //! responsible for controlling various hardware peripherals (such as LEDs,
 //! buzzers, Displays, GPIOs, etc.,) and exposing them in a portable manner to

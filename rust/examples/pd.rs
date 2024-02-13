@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 use libosdp::{
     channel::{OsdpChannel, UnixChannel},
     OsdpError, OsdpFlag, PdCapEntity, PdCapability, PdId, PdInfo, PeripheralDevice,

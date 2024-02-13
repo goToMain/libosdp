@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! The CP is responsible to connecting to and managing multiple PDs. It is able
 //! to send commands to and receive events from PDs.
 

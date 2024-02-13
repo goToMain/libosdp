@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 use multiqueue::{BroadcastReceiver, BroadcastSender};
 use std::{
     collections::hash_map::DefaultHasher,

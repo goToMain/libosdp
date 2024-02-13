@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! The OSDP specification defines that communication between OSDP devices
 //! happen over an RS-485 connection. For testing and development purpose this
 //! can be limiting so LibOSDP defines a notion called "Channel" which is a

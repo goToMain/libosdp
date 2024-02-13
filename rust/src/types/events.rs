@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! OSDP PDs have to send messages to it's controlling unit - CP to intimate it
 //! about various events that originate there (such as key press, card reads,
 //! etc.,). They do this by creating an "event" and sending it to the CP. This

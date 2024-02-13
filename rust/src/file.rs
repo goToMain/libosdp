@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! OSDP provides a means to send files from CP to a Peripheral Device (PD).
 //! This module adds the required components to achieve this effect.
 

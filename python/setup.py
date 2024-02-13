@@ -10,7 +10,7 @@ from setuptools import setup, Extension
 import shutil
 import subprocess
 
-current_dir = os.environ.get("PWD")
+current_dir = os.path.dirname(os.path.realpath(__file__))
 build_dir = os.path.abspath(os.path.join(current_dir, "build"))
 root_dir = os.path.abspath(os.path.join(current_dir, ".."))
 

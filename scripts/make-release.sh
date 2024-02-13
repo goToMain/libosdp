@@ -13,6 +13,19 @@ usage() {
 	---
 }
 
+function setup_py_inc_version() {
+	dir=$1
+	inc=$2
+	perl -pi -se '
+	if (/^project_version = "(\d+)\.(\d+)\.(\d+)"$/) {
+		$maj=$1; $min=$2; $pat=$3;
+		if ($major) { $maj+=1; $min=0; $pat=0; }
+		if ($minor) { $min+=1; $pat=0; }
+		$pat+=1 if $patch;
+		$_="project_version = \"$maj.$min.$pat\"\n"
+	}' -- -$inc $dir/setup.py
+}
+
 function cmake_inc_version() {
 	dir=$1
 	inc=$2
@@ -22,8 +35,8 @@ function cmake_inc_version() {
 		if ($major) { $maj+=1; $min=0; $pat=0; }
 		if ($minor) { $min+=1; $pat=0; }
 		$pat+=1 if $patch;
-		$_="project($1 VERSION $maj.$min.$pat)\n" 
-	}' -- -$inc $dir/CmakeLists.txt
+		$_="project($1 VERSION $maj.$min.$pat)\n"
+	}' -- -$inc $dir/CMakeLists.txt
 }
 
 function caro_inc_version() {
@@ -35,7 +48,7 @@ function caro_inc_version() {
 		if ($major) { $maj+=1; $min=0; $pat=0; }
 		if ($minor) { $min+=1; $pat=0; }
 		$pat+=1 if $patch;
-		$_="version = \"$maj.$min.$pat\"\n" 
+		$_="version = \"$maj.$min.$pat\"\n"
 	}' -- -$inc $dir/Cargo.toml
 }
 
@@ -80,6 +93,7 @@ function generate_change_log() {
 
 function prepare_libosdp_release() {
 	cmake_inc_version "." $1
+	setup_py_inc_version "python" $1
 	generate_change_log > /tmp/rel.txt
 	printf '%s\n\n\n%s\n' "$(cat /tmp/rel.txt)" "$(cat CHANGELOG)" > CHANGELOG
 }
@@ -90,11 +104,14 @@ function do_libosdp_release() {
 		exit 0
 	fi
 	git diff --cached --name-status | while read status file; do
-		if [[ "$file" != "CHANGELOG" ]] && [[ "$file" != "CMakeLists.txt" ]]; then
+		if [[ "$file" != "CHANGELOG" ]] && \
+		   [[ "$file" != "CMakeLists.txt" ]] && \
+		   [[ "$file" != "python/setup.py" ]]
+		then
 			echo "ERROR:"
-			echo "  Only CHANGELOG and CMakeLists.txt must be modified to make a"
-			echo "  release commit. To prepare a new release, run this script on a"
-			echo "  clean git tree."
+			echo "  Only CHANGELOG CMakeLists.txt python/setup.py must be modified"
+			echo "  to make a release commit. To prepare a new release, run this"
+			echo "  script on a clean git tree."
 			exit 1
 		fi
 	done

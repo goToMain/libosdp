@@ -3,13 +3,12 @@
 This package exposes the C/C++ library for OSDP devices to python to enable rapid
 prototyping of these devices. There are two modules exposed by this package:
 
-- `osdp_sys`: A thin wrapper around the C/C++ API; this has been around for a long
-time now and hence has the most tested surface.
+- `osdp_sys`: A thin wrapper around the C/C++ API; this is a low level API and
+  is no longer recommended to use this directly.
 
-- `osdp`: Another wrapper over `osdp_sys` to provide a python friendly API; this
-is a new implementation which is not powering the integration testing suit used
-for all changes made to this project. Over time, this will be the primary means
-of interacting with this library.
+- `osdp`: A wrapper over the `osdp_sys` to provide python friendly API; this
+  implementation which is now powering the integration testing suit used to test
+  all changes made to this project.
 
 ## Install
 
@@ -17,6 +16,12 @@ You can install LibOSDP from PyPI using,
 
 ```sh
 pip install libosdp
+```
+
+Or, from github,
+
+```sh
+pip install -e "git+https://github.com/goToMain/libosdp#egg=libosdp&subdirectory=python"
 ```
 
 Or, from source using,

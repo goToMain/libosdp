@@ -10,19 +10,11 @@ from setuptools import setup, Extension
 import shutil
 import subprocess
 
+project_name = "libosdp"
+project_version = "2.4.0"
 current_dir = os.path.dirname(os.path.realpath(__file__))
 build_dir = os.path.abspath(os.path.join(current_dir, "build"))
 root_dir = os.path.abspath(os.path.join(current_dir, ".."))
-
-def read_version():
-    with open(os.path.join(root_dir, "CMakeLists.txt")) as f:
-        for line in f.readlines():
-            m = re.match(r"^project\((.+) VERSION (\d+\.\d+\.\d+)\)$", line)
-            if (m):
-                return m.groups()
-    raise RuntimeError("Failed to parse package name and version")
-
-project_name, project_version = read_version()
 
 def map_prefix(src_list, path, check_files=False):
     paths = [ os.path.join(path, src) for src in src_list ]

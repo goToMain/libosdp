@@ -13,31 +13,60 @@ on:
     - 'v*' # Push events to matching Python-v*, i.e. v2.4.0
 
 jobs:
-  pypi-publish:
-    name: Upload release to PyPI
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/<your-pypi-project-name>
-    permissions:
-      id-token: write # Trusted Publishing is setup for this workflow file
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        # windows-2022 -- currently not supported
+        os: [ubuntu-22.04, macos-13, macos-14]
+
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install pypa/build
-        run: |
-          python3 -m pip install build --user
-      - name: Build a binary wheel and a source tarball
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.5
+        with:
+          package-dir: python/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build sdist
         run: |
           pushd python
-          python3 -m build
-      - name: Store the distribution packages
-        uses: actions/upload-artifact@v3
+          pipx run build --sdist
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: python-package-distributions
-          path: python/dist/
+          name: cibw-sdist
+          path: python/dist/*.tar.gz
+
+  upload_pypi:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          # unpacks all CIBW artifacts into dist/
+          pattern: cibw-*
+          path: python/dist
+          merge-multiple: true
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

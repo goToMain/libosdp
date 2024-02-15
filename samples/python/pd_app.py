@@ -36,14 +36,15 @@ count = 0 # loop counter
 
 while True:
     ## Check if we have any commands from the CP
-    cmd = pd.get_command(timeout=-1)
+    cmd = pd.get_command(timeout=2)
     if cmd:
         print(f"PD: Received command: {cmd}")
 
-    if (count % 100 == 99) and pd.is_sc_active():
-        ## Send a card read event to CP
-        pd.notify_event(card_event)
+    ## Send a card read event to CP
+    pd.notify_event(card_event)
 
+    if count >= 5:
+        break
     count += 1
-    time.sleep(0.020) #sleep for 20ms
 
+pd.stop()

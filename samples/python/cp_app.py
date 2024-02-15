@@ -33,16 +33,16 @@ led_cmd = {
 
 count = 0  # loop counter
 while True:
+    ## Send LED command to PD-0
+    cp.send_command(pd_info[0].address, led_cmd)
+
     ## Check if we have an event from PD
-    event = cp.get_event(pd_info[0].address, timeout=-1)
+    event = cp.get_event(pd_info[0].address, timeout=2)
     if event:
         print(f"PD-0 Sent Event {event}")
-        print(f"CP: Received event: {cmd}")
 
-    if (count % 100) == 99 and cp.is_sc_active(pd_info[0].address):
-        ## Send LED command to PD-0
-        cp.send_command(pd_info[0].address, led_cmd)
-
+    if count >= 5:
+        break
     count += 1
-    time.sleep(0.020) #sleep for 20ms
 
+cp.stop()

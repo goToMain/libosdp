@@ -55,11 +55,11 @@ $(O)/utils/libutils.a:
 
 $(O)/cp_app.elf: $(O)/libosdp.a
 	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) samples/c/cp_app.c -o $@ -Iinclude -L$(O) -losdp
+	$(Q)$(CC) $(CCFLAGS) examples/c/cp_app.c -o $@ -Iinclude -L$(O) -losdp
 
 $(O)/pd_app.elf: $(O)/libosdp.a
 	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) samples/c/pd_app.c -o $@ -Iinclude -L$(O) -losdp
+	$(Q)$(CC) $(CCFLAGS) examples/c/pd_app.c -o $@ -Iinclude -L$(O) -losdp
 
 ## Tests
 

@@ -59,7 +59,7 @@ while True:
     cp.send_command(pd_info[0].address, led_cmd)
 ```
 
-see [samples/cp_app.py][2] for more details.
+see [examples/cp_app.py][2] for more details.
 
 ### Peripheral Device mode:
 
@@ -87,8 +87,8 @@ while True:
         print(f"PD: Received command: {cmd}")
 ```
 
-see [samples/pd_app.py][3] for more details.
+see [examples/pd_app.py][3] for more details.
 
 [1]: https://libosdp.sidcha.dev/api/
-[2]: https://github.com/goToMain/libosdp/blob/master/samples/python/cp_app.py
-[3]: https://github.com/goToMain/libosdp/blob/master/samples/python/pd_app.py
+[2]: https://github.com/goToMain/libosdp/blob/master/examples/python/cp_app.py
+[3]: https://github.com/goToMain/libosdp/blob/master/examples/python/pd_app.py

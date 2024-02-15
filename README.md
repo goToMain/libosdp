@@ -87,7 +87,7 @@ a C compiler installed.  This repository produces a `libosdp.so` and
 `libosdpstatic.a`; so depending on on your needs you can link these with -losdp
 or -losdpstatic, respectively.
 
-Have a look at `sample/* for a quick lookup on how to consume this library and
+Have a look at `examples/*` for a quick lookup on how to consume this library and
 structure your application.
 
 You can also read the [API documentation][26] for a comprehensive list of APIs

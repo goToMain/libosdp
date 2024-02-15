@@ -142,6 +142,10 @@ LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_file.
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
 LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c"
 
+if [[ ! -z "${PACKET_TRACE}" ]]; then
+	LIBOSDP_SOURCES+=" src/osdp_pcap.c utils/src/pcap_gen.c"
+fi
+
 if [[ -z "${STATIC_PD}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_cp.c"
 	TARGETS="cp_app pd_app"

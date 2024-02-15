@@ -62,6 +62,12 @@ if (NOT CONFIG_OSDP_STATIC_PD)
 	)
 endif()
 
+if (CONFIG_OSDP_PACKET_TRACE)
+	list(APPEND LIB_OSDP_UTILS_SRC
+		${CMAKE_CURRENT_SOURCE_DIR}/osdp_pcap.c
+	)
+endif()
+
 list(APPEND LIB_OSDP_PRIVATE_INCLUDE_DIRS
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -128,6 +134,13 @@ list(APPEND LIB_OSDP_UTILS_SRC
 	${PROJECT_SOURCE_DIR}/utils/src/disjoint_set.c
 	${PROJECT_SOURCE_DIR}/utils/src/logger.c
 )
+
+if (CONFIG_OSDP_PACKET_TRACE)
+	list(APPEND LIB_OSDP_UTILS_SRC
+		${PROJECT_SOURCE_DIR}/utils/src/pcap_gen.c
+	)
+endif()
+
 set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 
 # add source files of utils instead of linking it. See comment above.

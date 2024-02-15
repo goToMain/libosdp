@@ -300,13 +300,7 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 	}
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(buf, len,
-				  "P_TRACE_SEND: %sPD[%d]%s:",
-				  is_cp_mode(pd) ? "CP->" : "",
-				  pd->address,
-				  is_pd_mode(pd) ? "->CP" : "");
-		}
+		osdp_capture_packet(pd, buf, len);
 	}
 
 	ret = osdp_channel_send(pd, buf, len);
@@ -511,27 +505,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd)
 		return OSDP_ERR_PKT_WAIT;
 
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
-		/**
-		 * A crude way of identifying and NOT printing poll messages
-		 * when CONFIG_OSDP_PACKET_TRACE is enabled.
-		 *
-		 * OSDP_CMD_ID_OFFSET + 2 is also checked as the CMD_ID can be
-		 * pushed back by 2 bytes if secure channel block is present in
-		 * header.
-		 */
-		ret = OSDP_CMD_ID_OFFSET + packet_has_mark(pd);
-		if (sc_is_active(pd)) {
-			ret += 2;
-		}
-		if ((is_cp_mode(pd) && pd->cmd_id != CMD_POLL) ||
-		    (is_pd_mode(pd) && pd->packet_buf_len > ret &&
-		     pd->packet_buf[ret] != CMD_POLL)) {
-			osdp_dump(pd->packet_buf, pd->packet_buf_len,
-				  "P_TRACE_RECV: %sPD[%d]%s:",
-				  is_pd_mode(pd) ? "CP->" : "",
-				  pd->address,
-				  is_cp_mode(pd) ? "->CP" : "");
-		}
+		osdp_capture_packet(pd, pd->packet_buf, pd->packet_buf_len);
 	}
 
 	return phy_check_packet(pd, pd->packet_buf, pd->packet_len);

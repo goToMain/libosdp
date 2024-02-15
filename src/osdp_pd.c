@@ -1162,6 +1162,10 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		osdp_packet_capture_init(pd);
+	}
+
 	LOG_PRINT("Setup complete; LibOSDP-%s %s",
 		  osdp_get_version(), osdp_get_source_info());
 
@@ -1175,9 +1179,14 @@ OSDP_EXPORT
 void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
+
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		osdp_packet_capture_finish(pd);
+	}
 
 #ifndef CONFIG_OSDP_STATIC_PD
-	safe_free(osdp_to_pd(ctx, 0));
+	safe_free(pd);
 	safe_free(ctx);
 #endif
 }

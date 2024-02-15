@@ -35,5 +35,6 @@
 #define OSDP_FILE_ERROR_RETRY_MAX               (10)
 #define OSDP_PD_MAX                             (126)
 #define OSDP_CMD_ID_OFFSET                      (5)
+#define OSDP_PCAP_LINK_TYPE                     (162)
 
 #endif /* _OSDP_CONFIG_H_ */

@@ -358,7 +358,11 @@ struct osdp_pd {
 	void *command_callback_arg;
 	pd_command_callback_t command_callback;
 
-	logger_t logger;       /* logger context (from utils/logger.h) */
+	/* logger context (from utils/logger.h) */
+	logger_t logger;
+
+	/* Opaque packet capture pointer (see osdp_pcap.c) */
+	void *packet_capture_ctx;
 };
 
 struct osdp {
@@ -378,6 +382,17 @@ struct osdp {
 static inline void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc) { }
 #else
 void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc);
+#endif
+
+#ifdef CONFIG_OSDP_PACKET_TRACE
+void osdp_packet_capture_init(struct osdp_pd *pd);
+void osdp_packet_capture_finish(struct osdp_pd *pd);
+void osdp_capture_packet(struct osdp_pd *pd, uint8_t *buf, int len);
+#else
+static inline void osdp_packet_capture_init(struct osdp_pd *pd) { }
+static inline void osdp_packet_capture_finish(struct osdp_pd *pd) { }
+static inline void osdp_capture_packet(struct osdp_pd *pd,
+				       uint8_t *buf, int len) { }
 #endif
 
 void osdp_keyset_complete(struct osdp_pd *pd);

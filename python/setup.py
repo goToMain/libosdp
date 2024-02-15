@@ -150,6 +150,11 @@ osdp_sys_include = [
 
 other_files = [
     "src/osdp_config.h.in",
+
+    # Optional when PACKET_TRACE is enabled
+    "src/osdp_pcap.c",
+    "utils/include/utils/pcap_gen.h",
+    "utils/src/pcap_gen.c",
 ]
 
 source_files = utils_sources + lib_sources + osdp_sys_sources
@@ -160,6 +165,18 @@ try_vendor_sources(
     "vendor"
 )
 
+definitions = [
+    # "CONFIG_OSDP_PACKET_TRACE",
+    # "CONFIG_OSDP_DATA_TRACE",
+    # "CONFIG_OSDP_SKIP_MARK_BYTE",
+]
+
+if "CONFIG_OSDP_PACKET_TRACE" in definitions:
+    source_files += [
+        "src/osdp_pcap.c",
+        "utils/src/pcap_gen.c",
+    ]
+
 source_files = add_prefix_to_path(source_files, "vendor")
 
 include_dirs = [
@@ -168,12 +185,6 @@ include_dirs = [
     "vendor/src",
     "vendor/python/osdp_sys",
     "vendor/src/crypto"
-]
-
-definitions = [
-    # "CONFIG_OSDP_PACKET_TRACE",
-    # "CONFIG_OSDP_DATA_TRACE",
-    # "CONFIG_OSDP_SKIP_MARK_BYTE",
 ]
 
 compile_args = (

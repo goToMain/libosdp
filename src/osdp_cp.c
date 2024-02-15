@@ -1359,6 +1359,10 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 		logger_get_default(&pd->logger);
 		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
 		logger_set_name(&pd->logger, name);
+
+		if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+			osdp_packet_capture_init(pd);
+		}
 	}
 
 	if (cp_detect_connection_topology(ctx)) {
@@ -1394,6 +1398,15 @@ OSDP_EXPORT
 void osdp_cp_teardown(osdp_t *ctx)
 {
 	input_check(ctx);
+	int i;
+	struct osdp_pd *pd;
+
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		for (i = 0; i < NUM_PD(ctx); i++) {
+			pd = osdp_to_pd(ctx, 0);
+			osdp_packet_capture_finish(pd);
+		}
+	}
 
 	safe_free(osdp_to_pd(ctx, 0));
 	safe_free(TO_OSDP(ctx)->channel_lock);

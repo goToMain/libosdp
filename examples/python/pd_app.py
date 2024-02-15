@@ -21,7 +21,7 @@ pd_cap = PDCapabilities([
 ## Create a PD device and kick-off the handler thread
 pd = PeripheralDevice(pd_info, pd_cap, log_level=LogLevel.Debug)
 pd.start()
-pd.sc_wait()
+pd.sc_wait(timeout=-1)
 
 ## create a card read event to be used later
 card_event = {
@@ -36,7 +36,7 @@ count = 0 # loop counter
 
 while True:
     ## Check if we have any commands from the CP
-    cmd = pd.get_command(timeout=2)
+    cmd = pd.get_command(timeout=5)
     if cmd:
         print(f"PD: Received command: {cmd}")
 
@@ -47,4 +47,4 @@ while True:
         break
     count += 1
 
-pd.stop()
+pd.teardown()

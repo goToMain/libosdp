@@ -45,4 +45,4 @@ while True:
         break
     count += 1
 
-cp.stop()
+cp.teardown()

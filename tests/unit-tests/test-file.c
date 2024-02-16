@@ -272,7 +272,7 @@ void run_file_tx_tests(struct test *t, bool line_noise)
 		}
 		if (offset == size)
 			break;
-	};
+	}
 
 	result = test_check_rec_file();
 	printf(SUB_1 "file transfer test %s\n",

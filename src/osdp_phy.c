@@ -11,6 +11,7 @@
 #define PKT_CONTROL_SQN                0x03
 #define PKT_CONTROL_CRC                0x04
 #define PKT_CONTROL_SCB                0x08
+#define PKT_TRACE_MANGLED              0x80
 
 struct osdp_packet_header {
 	uint8_t som;
@@ -229,6 +230,24 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	/* len: with 2 byte CRC */
 	pkt->len_lsb = BYTE_0(len + 2);
 	pkt->len_msb = BYTE_1(len + 2);
+
+	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		uint8_t control;
+
+		/**
+		 * We can potentially avoid having to set PKT_TRACE_MANGLED
+		 * here if we can get the dissector accept fully formed SCB
+		 * but non-encrypted data block. But that might lead to the
+		 * dissector parsing malformed packets as valid ones.
+		 *
+		 * See the counterpart of this in osdp_phy_decode_packet() for
+		 * more details.
+		 */
+		control = pkt->control;
+		pkt->control |= PKT_TRACE_MANGLED;
+		osdp_capture_packet(pd, (uint8_t *)pkt, len + 2);
+		pkt->control = control;
+	}
 
 	if (sc_is_active(pd) &&
 	    pkt->control & PKT_CONTROL_SCB && pkt->data[1] >= SCS_15) {
@@ -630,6 +649,42 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 			}
 			len += 1; /* put back cmd/reply ID */
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		int ret = len;
+
+		/**
+		 * Here, we move the decrypted data block right after the
+		 * header so we can pass the entire packet to the tracing
+		 * infrastructure allowing us to reuse the same protocol
+		 * dissector for regular packet trace as well as data trace
+		 * files.
+		 *
+		 * We also touch up the packet so that it can be parsed/decoded
+		 * correctly. Since none of the later states require the
+		 * header, we are free to mangle it as needed for our
+		 * convenience.
+		 *
+		 * The following changes performed:
+		 *   - Update the length field with the modifications
+		 *   - Remove `PKT_CONTROL_SCB` bit to show no sign of a secure
+		 *     channels' existence.
+		 *   - Set a new bit `PKT_TRACE_MANGLED` so the dissector can
+		 *     skip the PacketCheck bytes (maybe other housekeeping?).
+		 */
+		memmove(pkt->data, data, len);
+		*pkt_start = pkt->data;
+
+		pkt->data[len + 0] = 0; /* CRC16/Checksum */
+		pkt->data[len + 1] = 0; /* CRC16/Checksum */
+		len += sizeof(struct osdp_packet_header) + 2;
+		pkt->control &= ~PKT_CONTROL_SCB;
+		pkt->control |= PKT_TRACE_MANGLED;
+		pkt->len_lsb = BYTE_0(len);
+		pkt->len_msb = BYTE_1(len);
+		osdp_capture_packet(pd, (uint8_t *)pkt, len);
+		return ret;
 	}
 
 	*pkt_start = data;

@@ -393,13 +393,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[1] = (len > 1) ? SCS_17 : SCS_15;
 	}
 
-	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			hexdump(buf + 1, len - 1, "OSDP: CMD: %s(%02x)",
-				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
-		}
-	}
-
 	return len;
 }
 
@@ -411,13 +404,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	pd->reply_id = buf[pos++];
 	len--;		/* consume reply id from the head */
-
-	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			hexdump(buf, len, "OSDP: REPLY: %s(%02x)",
-				osdp_reply_name(pd->reply_id), pd->reply_id);
-		}
-	}
 
 	switch (pd->reply_id) {
 	case REPLY_ACK:
@@ -1360,7 +1346,8 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
 		logger_set_name(&pd->logger, name);
 
-		if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+		if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
+		    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 			osdp_packet_capture_init(pd);
 		}
 	}
@@ -1401,7 +1388,8 @@ void osdp_cp_teardown(osdp_t *ctx)
 	int i;
 	struct osdp_pd *pd;
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
+	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		for (i = 0; i < NUM_PD(ctx); i++) {
 			pd = osdp_to_pd(ctx, 0);
 			osdp_packet_capture_finish(pd);

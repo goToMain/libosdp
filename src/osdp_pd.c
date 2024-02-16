@@ -267,13 +267,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
 
-	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			hexdump(buf, len, "OSDP: CMD: %s(%02x)",
-				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
-		}
-	}
-
 	if (is_enforce_secure(pd) && !sc_is_active(pd)) {
 		/**
 		 * Only CMD_ID, CMD_CAP and SC handshake commands (CMD_CHLNG
@@ -939,13 +932,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		len = 2;
 	}
 
-	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
-		if (pd->cmd_id != CMD_POLL) {
-			osdp_dump(buf + 1, len - 1, "OSDP: REPLY: %s(%02x)",
-				  osdp_reply_name(buf[0]), buf[0]);
-		}
-	}
-
 	return len;
 }
 
@@ -1162,7 +1148,8 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
+	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		osdp_packet_capture_init(pd);
 	}
 
@@ -1181,7 +1168,8 @@ void osdp_pd_teardown(osdp_t *ctx)
 	assert(ctx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
+	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		osdp_packet_capture_finish(pd);
 	}
 

@@ -49,13 +49,17 @@ To enable packet trace builds, follow these steps:
     cmake -DCONFIG_OSDP_PACKET_TRACE=on ..
     make
 
+After, this when you run your application, libosdp will produce a `.pcap` file
+int the current directory which contains all the packets it decoded from the
+communication channel.
+
 Data Trace Builds
 -----------------
 
 When secure channel is working fine and you are encountering a command level
 failure, it can be helpful to see the decrypted messages instead of the junk
-that would get dumped when secure channel is enabled. This option allows you to
-do just that.
+that would get dumped when secure channel is enabled. This option dumps the
+packet just after it was built/decrypted.
 
 To enable data trace builds, follow these steps:
 
@@ -64,6 +68,10 @@ To enable data trace builds, follow these steps:
     mkdir build-dt && cd build-dt
     cmake -DCONFIG_OSDP_DATA_TRACE=on ..
     make
+
+After, this when you run your application, libosdp will produce a `.pcap` file
+in the current directory which contains all the packets it decoded from the
+communication channel.
 
 Note: It is seldom useful to run on both packet trace AND data trace (in fact it
 makes it harder to locate relevant information) so please never do it.
@@ -100,6 +108,6 @@ After that, you can do `File -> Open` and choose the the `.pcap` files that were
 produced by LibOSDP build when PACKET_TRACE enabled. Here is a screenshot of
 what you can expect to see:
 
-.. image:: _static/img/wireshark.png
+.. image:: /_static/img/wireshark.png
    :width: 400
    :alt: Wireshark OSDP protocol screenshot

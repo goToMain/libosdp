@@ -24,8 +24,9 @@ This protocol is developed and maintained by [Security Industry Association][20]
   - No run-time memory allocation. All memory is allocated at init-time
   - No external dependencies (for ease of cross compilation)
   - Fully non-blocking, asynchronous design
-  - Provides Python3 and Rust bindings for the C library for faster
+  - Provides C++, Rust and Python3 bindings for the C library for faster
     testing/integration
+  - Built-in, sophisticated, debugging infrastructure and tools ([see][14]).
 
 ## Language Support
 
@@ -65,7 +66,7 @@ commands and replies and their support status in LibOSDP [here][22].
 ### For ubuntu
 
 ```sh
-sudo apt install cmake python3 python3-pip python3-dev libssl-dev doxygen
+sudo apt install cmake python3 python3-pip python3-dev libssl-dev
 ```
 
 ## Compile LibOSDP
@@ -138,6 +139,7 @@ project locally. The latest version of the doc can always be found at
 Install the dependencies (one time) with,
 
 ```sh
+sudo apt install doxygen
 pip3 install -r doc/requirements.txt
 ```
 
@@ -186,6 +188,7 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [11]: https://github.com/goToMain/libosdp/tree/master/rust
 [12]: https://pypi.org/project/libosdp/
 [13]: https://github.com/goToMain/libosdp/tree/master/python
+[14]: https://libosdp.sidcha.dev/libosdp/debugging
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://libosdp.sidcha.dev/protocol/

@@ -18,8 +18,7 @@ void osdp_packet_capture_init(struct osdp_pd *pd)
 		     is_pd_mode(pd) ? "" : "cp-", pd->address);
 	n += add_iso8601_utc_datetime(path + n, sizeof(path) - n);
 	strcpy(path + n, ".pcap");
-	cap = pcap_create(path, OSDP_PACKET_BUF_SIZE,
-			  OSDP_PCAP_LINK_TYPE);
+	cap = pcap_start(path, OSDP_PACKET_BUF_SIZE, OSDP_PCAP_LINK_TYPE);
 	if (cap) {
 		LOG_WRN("Tracing: capturing packets to '%s'");
 		LOG_WRN("Tracing: a graceful teardown of libosdp ctx is required"
@@ -36,7 +35,7 @@ void osdp_packet_capture_finish(struct osdp_pd *pd)
 	pcap_t *cap = pd->packet_capture_ctx;
 
 	assert(cap);
-	pcap_dump(cap);
+	pcap_stop(cap);
 }
 
 void osdp_capture_packet(struct osdp_pd *pd, uint8_t *buf, int len)
@@ -45,5 +44,5 @@ void osdp_capture_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	assert(cap);
 	assert(len <= OSDP_PACKET_BUF_SIZE);
-	pcap_add_record(cap, buf, len);
+	pcap_add(cap, buf, len);
 }

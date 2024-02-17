@@ -5,7 +5,6 @@ usage() {
 	LibOSDP release helper 
 
 	OPTIONS:
-	  -c, --component	Compoenent to release (can be one of libosdp, rust, osdpctl)
 	  --patch		Release version bump type: patch (default)
 	  --major		Release version bump type: major
 	  --minor		Release version bump type: minor
@@ -37,37 +36,6 @@ function cmake_inc_version() {
 		$pat+=1 if $patch;
 		$_="project($1 VERSION $maj.$min.$pat)\n"
 	}' -- -$inc $dir/CMakeLists.txt
-}
-
-function caro_inc_version() {
-	dir=$1
-	inc=$2
-	perl -pi -se '
-	if (/^version = "(\d+)\.(\d+)\.(\d+)"$/) {
-		$maj=$1; $min=$2; $pat=$3;
-		if ($major) { $maj+=1; $min=0; $pat=0; }
-		if ($minor) { $min+=1; $pat=0; }
-		$pat+=1 if $patch;
-		$_="version = \"$maj.$min.$pat\"\n"
-	}' -- -$inc $dir/Cargo.toml
-}
-
-function do_cargo_libosdp_release() {
-	inc=$1
-	caro_inc_version "rust" $inc
-	version=$(perl -ne 'print $1 if (/^version = "(.+)"$/)' $dir/Cargo.toml)
-	git add $dir/Cargo.toml &&
-	git commit -s -m "rust: Release v$version" &&
-	git tag "Rust-v$version" -a -m "Release v$version"
-}
-
-function do_cargo_osdpctl_release() {
-	inc=$1
-	caro_inc_version "osdpctl" $inc
-	version=$(perl -ne 'print $1 if (/^version = "(.+)"$/)' $dir/Cargo.toml)
-	git add $dir/Cargo.toml &&
-	git commit -s -m "osdpctl: Release v$version" &&
-	git tag "Osdpctl-v$version" -a -m "Release v$version"
 }
 
 function generate_change_log() {
@@ -125,19 +93,10 @@ function do_libosdp_release() {
 	git tag "v$version" -a -m "Release v$version"
 }
 
-function do_release() {
-	case $1 in
-	libosdp) do_libosdp_release $2;;
-	rust) do_cargo_libosdp_release $2 ;;
-	osdpctl) do_cargo_osdpctl_release $2 ;;
-	esac
-}
-
 INC="patch"
 COMPONENT="libosdp"
 while [ $# -gt 0 ]; do
 	case $1 in
-	-c|--componenet)	COMPONENT=$2; shift;;
 	--patch)		INC="patch";;
 	--major)		INC="major";;
 	--minor)		INC="minor";;
@@ -147,5 +106,5 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-do_release $COMPONENT $INC
+do_libosdp_release $INC
 

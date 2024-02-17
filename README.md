@@ -192,7 +192,7 @@ Your support will ensure sustained development of LibOSDP.
 [8]: https://www.openssl.org/
 [9]: https://www.doxygen.nl/index.html
 [10]: https://crates.io/crates/libosdp
-[11]: https://github.com/goToMain/libosdp/tree/master/rust
+[11]: https://github.com/goToMain/libosdp-rs/tree/master/libosdp
 [12]: https://pypi.org/project/libosdp/
 [13]: https://github.com/goToMain/libosdp/tree/master/python
 [14]: https://libosdp.sidcha.dev/libosdp/debugging

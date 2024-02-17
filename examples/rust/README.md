@@ -1,1 +1,1 @@
-See: https://github.com/goToMain/libosdp/tree/master/rust/examples
+See: https://github.com/goToMain/libosdp-rs/tree/master/libosdp/examples

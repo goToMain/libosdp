@@ -175,6 +175,13 @@ to,
 The OSDP specification can be obtained from SIA for a cost. Read more at our
 [FAQ page][27].
 
+## Support the development
+
+Since this is no longer a hobby project, it takes time and effort to develop
+and maintain this project. If you are a user and are happy with it, consider
+supporting the development by donations though my [GitHub sponsors page][15].
+Your support will ensure sustained development of LibOSDP.
+
 [1]: https://img.shields.io/github/v/release/goToMain/libosdp
 [2]: https://github.com/goToMain/libosdp/releases
 [3]: https://github.com/goTomain/libosdp/workflows/Build%20CI/badge.svg
@@ -189,6 +196,7 @@ The OSDP specification can be obtained from SIA for a cost. Read more at our
 [12]: https://pypi.org/project/libosdp/
 [13]: https://github.com/goToMain/libosdp/tree/master/python
 [14]: https://libosdp.sidcha.dev/libosdp/debugging
+[15]: https://github.com/sponsors/sidcha
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://libosdp.sidcha.dev/protocol/

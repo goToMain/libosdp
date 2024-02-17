@@ -676,9 +676,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		memmove(pkt->data, data, len);
 		*pkt_start = pkt->data;
 
-		pkt->data[len + 0] = 0; /* CRC16/Checksum */
-		pkt->data[len + 1] = 0; /* CRC16/Checksum */
-		len += sizeof(struct osdp_packet_header) + 2;
+		len += sizeof(struct osdp_packet_header);
 		pkt->control &= ~PKT_CONTROL_SCB;
 		pkt->control |= PKT_TRACE_MANGLED;
 		pkt->len_lsb = BYTE_0(len);

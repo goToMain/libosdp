@@ -1,6 +1,6 @@
 # LibOSDP - Open Supervised Device Protocol Library
 
-[![Version][1]][2] [![Build CI][3]][4]
+[![Version][1]][2] [![Build CI][3]][4] [![PyPI Version][16]][12]
 
 This is an open source implementation of IEC 60839-11-5 Open Supervised Device
 Protocol (OSDP). The protocol is intended to improve interoperability among
@@ -197,6 +197,7 @@ Your support will ensure sustained development of LibOSDP.
 [13]: https://github.com/goToMain/libosdp/tree/master/python
 [14]: https://libosdp.sidcha.dev/libosdp/debugging
 [15]: https://github.com/sponsors/sidcha
+[16]: https://img.shields.io/pypi/v/libosdp?logo=python&link=https%3A%2F%2Fpypi.org%2Fproject%2Flibosdp%2F
 
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://libosdp.sidcha.dev/protocol/

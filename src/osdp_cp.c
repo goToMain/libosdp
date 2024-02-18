@@ -860,7 +860,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
 		if (rc == OSDP_CP_ERR_NONE) {
-			pd->tstamp = millis_now();
+			pd->tstamp = osdp_millis_now();
 			if (sc_is_active(pd)) {
 				pd->sc_tstamp = osdp_millis_now();
 			}
@@ -1155,7 +1155,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		LOG_INF("Online; %s SC", sc_is_active(pd) ? "With" : "Without");
 		break;
 	case OSDP_CP_STATE_OFFLINE:
-		pd->tstamp = millis_now();
+		pd->tstamp = osdp_millis_now();
 		if (pd->wait_ms == 0) {
 			/* first, retry after ~1 sec */
 			pd->wait_ms = 1 << 10;

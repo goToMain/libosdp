@@ -28,8 +28,8 @@ local sc_data = ProtoField.new("Enctrypted Data Block", "SC_DATA", ftypes.BYTES)
 local sc_mac = ProtoField.new("Message Authentication Code", "SC_MAC", ftypes.BYTES)
 
 -- Plaintext sub entries
-local plaintext_id = ProtoField.uint8("PlainText.ID", "Command/Reply ID", base.HEX)
-local plaintext_data = ProtoField.new("Command/Reply Data", "PlainText.Data", ftypes.BYTES)
+local plaintext_id = ProtoField.uint8("PlainText.ID", "ID", base.HEX)
+local plaintext_data = ProtoField.new("Data", "PlainText.Data", ftypes.BYTES)
 
 -- Checksum/CRC16
 local packet_check = ProtoField.new("CheckSum", "CheckSum", ftypes.BYTES)
@@ -46,6 +46,45 @@ osdp_protocol.fields = {
     plaintext_id, plaintext_data,
     packet_check
 }
+
+local command_id_table = {
+    [0x60] = "POLL",    [0x61] = "ID",      [0x62] = "CAP",     [0x64] = "LSTAT",
+    [0x65] = "ISTAT",   [0x66] = "OSTAT",   [0x67] = "RSTAT",   [0x68] = "OUT",
+    [0x69] = "LED",     [0x6A] = "BUZ",     [0x6B] = "TEXT",    [0x6C] = "RMODE",
+    [0x6D] = "TDSET",   [0x6E] = "COMSET",  [0x73] = "BIOREAD", [0x74] = "BIOMATCH",
+    [0x75] = "KEYSET",  [0x76] = "CHLNG",   [0x77] = "SCRYPT",  [0x7B] = "ACURXSIZE",
+    [0x7C] = "FILETRANSFER",[0x80] = "MFG", [0xA1] = "XWR",    [0xA2] = "ABORT",
+    [0xA3] = "PIVDATA", [0xA4] = "GENAUTH", [0xA5] = "CRAUTH",  [0xA7] = "KEEPACTIVE",
+}
+
+local reply_id_table = {
+    [0x40] = "ACK",     [0x41] = "NAK",      [0x45] = "PDID",     [0x46] = "PDCAP",
+    [0x48] = "LSTATR",  [0x49] = "ISTATR",   [0x4A] = "OSTATR",   [0x4B] = "RSTATR",
+    [0x50] = "RAW",     [0x51] = "FMT",      [0x53] = "KEYPPAD",  [0x54] = "COM",
+    [0x57] = "BIOREADR",[0x58] = "BIOMATCHR",[0x76] = "CCRYPT",   [0x78] = "RMAC_I",
+    [0x79] = "BUSY",    [0x7A] = "FTSTAT",   [0x80] = "PIVDATA",  [0x81] = "CRAUTH",
+    [0x83] = "MFGSTATR",[0x84] = "MFGERR",   [0x90] = "MFGREP",   [0xB1] = "XRD",
+}
+
+function get_id_name(id, is_cmd)
+    local name = nil
+    if is_cmd then
+        name = command_id_table[id]
+        if name then
+            name = "CMD_" .. name
+        else
+            name = "CMD_UNKNOWN"
+        end
+    else
+        name = reply_id_table[id]
+        if name then
+            name = "REPLY_" .. name
+        else
+            name = "REPLY_UNKNOWN"
+        end
+    end
+    return name
+end
 
 -- Protocol disector
 function osdp_protocol.dissector(buffer, pinfo, tree)
@@ -128,7 +167,9 @@ function osdp_protocol.dissector(buffer, pinfo, tree)
         local scs_type_name = "SCS_" .. string.format("%x", scb_type)
 
         local scb_subtree = payload_subtree:add(scb, buffer(offset, scb_len))
+        local id = buffer(offset + scb_len, 1):uint()
         payload_subtree:add(plaintext_id, buffer(offset + scb_len, 1))
+            :append_text(" (" .. get_id_name(id, is_cmd) .. ")")
 
         -- +1 and -1 below are to skip the Command/Response ID
         offset = offset + scb_len + 1
@@ -155,7 +196,9 @@ function osdp_protocol.dissector(buffer, pinfo, tree)
         pinfo.cols.info = info .. " (" .. scs_type_name .. ")"
     else
         -- Plain text block
+        local id = buffer(offset, 1):uint()
         payload_subtree:add(plaintext_id, buffer(offset, 1))
+            :append_text(" (" .. get_id_name(id, is_cmd) .. " )")
         -- +1 and -1 below are to skip the Command/Response ID
         payload_subtree:add(plaintext_data, buffer(offset + 1, payload_len - 1))
         pinfo.cols.info = "Plaintext Message"

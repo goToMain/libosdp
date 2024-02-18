@@ -169,8 +169,8 @@ union osdp_ephemeral_data {
 #define REPLY_BIOREADR	0x57
 #define REPLY_BIOMATCHR 0x58
 #define REPLY_CCRYPT	0x76
-#define REPLY_BUSY	0x79
 #define REPLY_RMAC_I	0x78
+#define REPLY_BUSY	0x79
 #define REPLY_FTSTAT	0x7A
 #define REPLY_PIVDATAR	0x80
 #define REPLY_GENAUTHR	0x81

@@ -337,6 +337,7 @@ struct osdp_pd {
 	uint8_t packet_buf[OSDP_PACKET_BUF_SIZE];
 	int packet_len;
 	int packet_buf_len;
+	uint32_t packet_scan_skip;
 
 	int cmd_id;            /* Currently processing command ID */
 	int reply_id;          /* Currently processing reply ID */

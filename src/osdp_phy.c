@@ -339,6 +339,7 @@ static int phy_check_header(struct osdp_pd *pd)
 	uint8_t cur_byte = 0, prev_byte = 0;
 	uint8_t *buf = pd->packet_buf;
 
+	/* Scan for packet start */
 	while (pd->packet_buf_len == 0) {
 		if (osdp_rb_pop(&pd->rx_rb, &cur_byte)) {
 			return OSDP_ERR_PKT_NO_DATA;
@@ -355,10 +356,13 @@ static int phy_check_header(struct osdp_pd *pd)
 				CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 			}
 			break;
+		} else {
+			pd->packet_scan_skip++;
 		}
 		prev_byte = cur_byte;
 	}
 
+	/* Found start of a new packet; wait until we have atleast the header */
 	target_len = sizeof(struct osdp_packet_header);
 	len = osdp_rb_pop_buf(&pd->rx_rb, buf + pd->packet_buf_len,
 			      target_len - pd->packet_buf_len);
@@ -514,6 +518,11 @@ int osdp_phy_check_packet(struct osdp_pd *pd)
 			return ret;
 		}
 		pd->packet_len = ret;
+		if (pd->packet_scan_skip) {
+			LOG_WRN("Packet scan skipped %u bytes before SoM",
+				pd->packet_scan_skip);
+			pd->packet_scan_skip = 0;
+		}
 	}
 
 	/* We have a valid header, collect one full packet */

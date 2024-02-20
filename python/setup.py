@@ -153,6 +153,7 @@ other_files = [
 
     # Optional when PACKET_TRACE is enabled
     "src/osdp_pcap.c",
+    "src/osdp_pcap.h",
     "utils/include/utils/pcap_gen.h",
     "utils/src/pcap_gen.c",
 ]

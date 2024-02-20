@@ -6,6 +6,7 @@
 
 #include "osdp_common.h"
 #include "osdp_file.h"
+#include "osdp_pcap.h"
 
 #ifndef CONFIG_OSDP_STATIC_PD
 #include <stdlib.h>

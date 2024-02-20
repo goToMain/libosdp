@@ -385,17 +385,6 @@ static inline void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc) { }
 void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc);
 #endif
 
-#if defined(CONFIG_OSDP_PACKET_TRACE) || defined(CONFIG_OSDP_DATA_TRACE)
-void osdp_packet_capture_init(struct osdp_pd *pd);
-void osdp_packet_capture_finish(struct osdp_pd *pd);
-void osdp_capture_packet(struct osdp_pd *pd, uint8_t *buf, int len);
-#else
-static inline void osdp_packet_capture_init(struct osdp_pd *pd) { }
-static inline void osdp_packet_capture_finish(struct osdp_pd *pd) { }
-static inline void osdp_capture_packet(struct osdp_pd *pd,
-				       uint8_t *buf, int len) { }
-#endif
-
 void osdp_keyset_complete(struct osdp_pd *pd);
 
 /* from osdp_phy.c */

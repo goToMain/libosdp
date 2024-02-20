@@ -27,13 +27,13 @@
  * @param length Length of data section in this command.
  * @param data File contents. Variable length
  */
-struct osdp_cmd_file_xfer {
+PACK(struct osdp_cmd_file_xfer {
 	uint8_t type;
 	uint32_t size;
 	uint32_t offset;
 	uint16_t length;
 	uint8_t data[];
-} __packed;
+});
 
 /**
  * @brief OSDP specified command: File Transfer Stat:
@@ -57,12 +57,12 @@ struct osdp_cmd_file_xfer {
  * @param rx_size Alternate maximum message size for CMD_FILETRANSFER. If set to
  *        0 then no change requested, otherwise use this value
  */
-struct osdp_cmd_file_stat {
+PACK(struct osdp_cmd_file_stat {
 	uint8_t control;
 	uint16_t delay;
 	int16_t status;
 	uint16_t rx_size;
-} __packed;
+});
 
 enum file_tx_state_e {
 	OSDP_FILE_IDLE,

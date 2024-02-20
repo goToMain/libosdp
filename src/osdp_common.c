@@ -6,9 +6,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #ifndef CONFIG_DISABLE_PRETTY_LOGGING
-#include <unistd.h>
 #endif
-#include <sys/time.h>
 
 #include "osdp_common.h"
 

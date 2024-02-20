@@ -13,14 +13,14 @@
 #define PKT_CONTROL_SCB                0x08
 #define PKT_TRACE_MANGLED              0x80
 
-struct osdp_packet_header {
+PACK(struct osdp_packet_header {
 	uint8_t som;
 	uint8_t pd_address;
 	uint8_t len_lsb;
 	uint8_t len_msb;
 	uint8_t control;
 	uint8_t data[];
-} __packed;
+});
 
 static inline bool packet_has_mark(struct osdp_pd *pd)
 {

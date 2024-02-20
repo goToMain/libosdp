@@ -73,10 +73,10 @@
 
 #define osdp_dump hexdump // for zephyr compatibility.
 
-static inline __attribute__((noreturn)) void die()
+static inline __noreturn void die()
 {
 	exit(EXIT_FAILURE);
-	__builtin_unreachable();
+	__unreachable();
 }
 
 #define BUG() \
@@ -447,7 +447,8 @@ static inline int get_tx_buf_size(struct osdp_pd *pd)
 	int packet_buf_size = sizeof(pd->packet_buf);
 
 	if (pd->peer_rx_size) {
-		packet_buf_size = MIN(packet_buf_size, (int)pd->peer_rx_size);
+		if (packet_buf_size > (int)pd->peer_rx_size)
+			packet_buf_size = (int)pd->peer_rx_size;
 	}
 	return packet_buf_size;
 }

@@ -349,6 +349,7 @@ static int phy_check_header(struct osdp_pd *pd)
 				buf[0] = OSDP_PKT_MARK;
 				buf[1] = OSDP_PKT_SOM;
 				pd->packet_buf_len = 2;
+				pd->packet_scan_skip--;
 				SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 			} else {
 				buf[0] = OSDP_PKT_SOM;

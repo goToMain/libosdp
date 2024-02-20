@@ -34,6 +34,9 @@ as,
 
     osdp_logger_init("osdp::cp", LOG_DEBUG, uart_puts);
 
+Any log messages emitted by LibOSDP other than `DEBUG` and `INFO` should be
+treated out-of-ordinary (cues for action).
+
 Packet Trace Builds
 -------------------
 
@@ -79,23 +82,26 @@ makes it harder to locate relevant information) so please never do it.
 WireShark Payload Dissector
 ---------------------------
 
-To view the captured packets, we must first setup WireShark with a custom
-protocol dissector. This is a one time configuration so it shouldn't be too much
-of an overhead.
+To view the captured packets (see above), as an one time setup, we must first
+setup WireShark with a custom protocol dissector.
 
 .. code:: sh
 
     mkdir -p $HOME/.local/lib/wireshark/plugins
     cp path/to/libosdp/misc/osdp_dissector.lua $HOME/.local/lib/wireshark/plugins/
 
-For the dissector to be loaded, you should restart Wireshark. Then from the GUI,
-goto,
+Note: For Windows, osdp_disector.lua needs to be copied to
+`%APPDATA%\Wireshark\plugins`
+
+For the dissector to be loaded, you should restart Wireshark it's running. Then
+from the GUI, goto,
 
 .. code:: text
 
     Preference -> Protocols -> DLT_USER -> Encapsulations Table -> Edit
 
-In the new window that popped-up, chose the following:
+In the new window that popped-up, click the "+" button to add a new row and
+then chose the following:
 
 .. code:: text
 
@@ -111,3 +117,4 @@ what you can expect to see:
 .. image:: /_static/img/wireshark.png
    :width: 400
    :alt: Wireshark OSDP protocol screenshot
+

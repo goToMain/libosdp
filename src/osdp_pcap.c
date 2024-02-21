@@ -8,16 +8,27 @@
 
 #include "osdp_common.h"
 
+static void pcap_file_name(struct osdp_pd *pd, char *buf, size_t size)
+{
+	int n;
+	char *p;
+
+	n = snprintf(buf, size, "osdp-trace-%spd-%d-",
+		     is_pd_mode(pd) ? "" : "cp-", pd->address);
+	n += add_iso8601_utc_datetime(buf + n, size - n);
+	strcpy(buf + n, ".pcap");
+
+	while ((p = strchr(buf, ":")) == NULL) {
+		*p = "_";
+	}
+}
+
 void osdp_packet_capture_init(struct osdp_pd *pd)
 {
 	pcap_t *cap;
-	int n;
 	char path[128];
 
-	n = snprintf(path, sizeof(path), "osdp-trace-%spd-%d-",
-		     is_pd_mode(pd) ? "" : "cp-", pd->address);
-	n += add_iso8601_utc_datetime(path + n, sizeof(path) - n);
-	strcpy(path + n, ".pcap");
+	pcap_file_name(pd, path, sizeof(path));
 	cap = pcap_start(path, OSDP_PACKET_BUF_SIZE, OSDP_PCAP_LINK_TYPE);
 	if (cap) {
 		LOG_WRN("Capturing packets to '%s'", path);

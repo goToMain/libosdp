@@ -33,15 +33,11 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	struct osdp_cmd_file_xfer *p = (struct osdp_cmd_file_xfer *)buf;
 	struct osdp_file *f = TO_FILE(pd);
 
-	if (f == NULL) {
-		LOG_ERR("TX_Build: File ops not registered!");
-		return -1;
-	}
-
-	if (f->state != OSDP_FILE_INPROG) {
-		LOG_ERR("TX_Build: File transfer is not in progress!");
-		return -1;
-	}
+	/**
+	 * We should never reach this function if a valid file transfer as in
+	 * progress.
+	 */
+	BUG_ON(f == NULL || f->state != OSDP_FILE_INPROG);
 
 	if ((size_t)max_len <= sizeof(struct osdp_cmd_file_xfer)) {
 		LOG_ERR("TX_Build: insufficient space need:%zu have:%d",

@@ -81,9 +81,17 @@ static inline __noreturn void die()
 
 #define BUG() \
 	do { \
-		printf("BUG at %s:%d %s()", __FILE__, __LINE__, __func__); \
+		printf("BUG at %s:%d %s(). Please report this issue!", \
+		       __FILE__, __LINE__, __func__); \
 		die(); \
-	} while (0);
+	} while (0)
+
+#define BUG_ON(pred) \
+	do { \
+		if (unlikely(pred)) { \
+			BUG(); \
+		} \
+	} while (0)
 
 /* Unused type only to estimate ephemeral_data size */
 union osdp_ephemeral_data {

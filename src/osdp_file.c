@@ -46,7 +46,7 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	if ((size_t)max_len <= sizeof(struct osdp_cmd_file_xfer)) {
 		LOG_ERR("TX_Build: insufficient space need:%zu have:%d",
 			sizeof(struct osdp_cmd_file_xfer), max_len);
-		return -1;
+		goto reply_abort;
 	}
 
 	/**
@@ -68,19 +68,21 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	if (f->length < 0) {
 		LOG_ERR("TX_Build: user read failed! rc:%d len:%d off:%d",
 			f->length, buf_available, p->offset);
-		f->errors++;
-		f->length = 0;
-		return -1;
+		goto reply_abort;
 	}
 	if (f->length == 0) {
-		LOG_WRN("TX_Build: Read 0 length chunk; Aborting transfer!");
-		file_state_reset(f);
-		return -1;
+		LOG_WRN("TX_Build: Read 0 length chunk");
+		goto reply_abort;
 	}
 
 	p->length = f->length;
 
 	return sizeof(struct osdp_cmd_file_xfer) + f->length;
+
+reply_abort:
+	LOG_ERR("TX_Build: Aborting file transfer due to unrecoverable error!");
+	file_state_reset(f);
+	return -1;
 }
 
 int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)

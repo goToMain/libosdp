@@ -320,11 +320,13 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = pd->cmd_id;
 		break;
 	case CMD_FILETRANSFER:
-		buf[len++] = pd->cmd_id;
-		ret = osdp_file_cmd_tx_build(pd, buf + len, max_len);
+		ret = osdp_file_cmd_tx_build(pd, buf + len + 1, max_len);
 		if (ret <= 0) {
-			return OSDP_CP_ERR_GENERIC;
+			/* (Only) Abort file transfer on failures */
+			buf[len++] = CMD_ABORT;
+			break;
 		}
+		buf[len++] = pd->cmd_id;
 		len += ret;
 		break;
 	case CMD_KEYSET:

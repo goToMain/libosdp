@@ -16,8 +16,13 @@ from .helpers import PDInfo
 from .constants import LibFlag, LogLevel
 
 class ControlPanel():
-    def __init__(self, pd_info_list, log_level: LogLevel=LogLevel.Info,
-                 master_key: bytes=None, event_handler: Callable[[int, dict], int]=None):
+    def __init__(
+            self,
+            pd_info_list: list[PDInfo],
+            log_level: LogLevel=LogLevel.Info,
+            master_key: bytes=None,
+            event_handler: Callable[[int, dict], int]=None
+        ) -> None:
         self.pd_addr = []
         info_list = []
         self.num_pds = len(pd_info_list)

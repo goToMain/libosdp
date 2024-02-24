@@ -226,7 +226,7 @@ static int pyosdp_make_struct_cmd_text(struct osdp_cmd *p, PyObject *dict)
 	memcpy(cmd->data, data, length);
 	ret = 0;
 exit:
-	safe_free(data);
+	free(data);
 	return ret;
 }
 

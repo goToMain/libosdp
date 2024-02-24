@@ -16,15 +16,10 @@
 #include <stdbool.h>
 
 #include <utils/utils.h>
-#include <utils/strutils.h>
-#include <utils/hashmap.h>
-#include <utils/channel.h>
-#include <utils/memory.h>
 #include <osdp.h>
 
 typedef struct {
 	PyObject_HEAD
-	struct channel_manager channel_manager;
 	bool is_cp;
 
 	int file_id;
@@ -75,6 +70,7 @@ int pyosdp_dict_add_int(PyObject *dict, const char *key, int val);
 int pyosdp_dict_add_str(PyObject *dict, const char *key, const char *val);
 int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data,
 			  int len);
+void pyosdp_get_channel(PyObject *channel, struct osdp_channel *ops);
 
 /* from pyosdp_base.c */
 

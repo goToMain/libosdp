@@ -7,6 +7,7 @@
 import pytest
 
 from osdp import *
+from conftest import make_fifo_pair, cleanup_fifo_pair
 
 pd_cap = PDCapabilities([
     (Capability.OutputControl, 1, 8),
@@ -16,17 +17,24 @@ pd_cap = PDCapabilities([
     (Capability.TextOutput, 1, 1),
 ])
 
-pd_info_list = [
-    PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
-]
+key = KeyStore.gen_key()
+f1, f2 = make_fifo_pair("events")
 
-secure_pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
+secure_pd = PeripheralDevice(
+    PDInfo(101, f1, scbk=key, flags=[ LibFlag.EnforceSecure ]),
+    pd_cap,
+    log_level=LogLevel.Debug
+)
 
 pd_list = [
     secure_pd,
 ]
 
-cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
+cp = ControlPanel([
+        PDInfo(101, f2, scbk=key, flags=[ LibFlag.EnforceSecure ])
+    ],
+    log_level=LogLevel.Debug
+)
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():
@@ -41,6 +49,7 @@ def teardown_test():
     cp.teardown()
     for pd in pd_list:
         pd.teardown()
+    cleanup_fifo_pair("events")
 
 def test_event_keypad():
     event = {

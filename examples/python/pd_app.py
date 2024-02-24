@@ -4,11 +4,28 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-import time
+import serial
 from osdp import *
 
+class SerialChannel(Channel):
+    def __init__(self, device: str, speed: int):
+        self.dev = serial.Serial(device, speed, timeout=1)
+
+    def read(self, max: int):
+        return self.dev.read(max)
+
+    def write(self, data: bytes):
+        return self.dev.write(data)
+
+    def flush(self):
+        self.dev.flush()
+
+    def __del__(self):
+        self.dev.close()
+
 ## Describe the PD (setting scbk=None puts the PD in install mode)
-pd_info = PDInfo(101, scbk=None, name='chn-0')
+channel = SerialChannel("/dev/ttyUSB0")
+pd_info = PDInfo(101, channel, scbk=None)
 
 ## Indicate the PD's capabilities to LibOSDP.
 pd_cap = PDCapabilities([
@@ -43,8 +60,8 @@ while True:
     ## Send a card read event to CP
     pd.notify_event(card_event)
 
-    if count >= 5:
-        break
+    # if count >= 5:
+    #     break
     count += 1
 
 pd.teardown()

@@ -849,7 +849,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		/* Check if we have any commands in the queue */
 		if (cp_build_and_send_packet(pd)) {
-			LOG_ERR("Failed to build packet for CMD(%d)",
+			LOG_ERR("Failed to build/send packet for CMD(%d)",
 				pd->cmd_id);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
 			ret = OSDP_CP_ERR_GENERIC;

@@ -4,12 +4,29 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-import time
+import serial
 from osdp import *
 
-## populate osdp_pd_info_t from python
+class SerialChannel(Channel):
+    def __init__(self, device: str, speed: int):
+        self.dev = serial.Serial(device, speed, timeout=1)
+
+    def read(self, max: int):
+        return self.dev.read(max)
+
+    def write(self, data: bytes):
+        return self.dev.write(data)
+
+    def flush(self):
+        self.dev.flush()
+
+    def __del__(self):
+        self.dev.close()
+
+## Describe the PD (setting scbk=None puts the PD in install mode)
+channel = SerialChannel("/dev/ttyUSB0")
 pd_info = [
-    PDInfo(101, scbk=KeyStore.gen_key(), name='chn-0'),
+    PDInfo(101, channel, scbk=KeyStore.gen_key()),
 ]
 
 ## Create a CP device and kick-off the handler thread

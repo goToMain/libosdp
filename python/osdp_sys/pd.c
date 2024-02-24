@@ -210,7 +210,7 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 	info->cap = cap;
 	return 0;
 error:
-	safe_free(cap);
+	free(cap);
 	return -1;
 }
 
@@ -224,13 +224,11 @@ error:
 	"@return None"
 static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs)
 {
-	int ret, scbk_length;
+	int scbk_length;
 	osdp_t *ctx;
 	osdp_pd_info_t info = { 0 };
-	enum channel_type channel_type;
-	char *device = NULL, *channel_type_str = NULL;
 	static char *kwlist[] = { "", "capabilities", NULL };
-	PyObject *py_info, *py_pd_cap_list;
+	PyObject *py_info, *py_pd_cap_list, *channel;
 	uint8_t *scbk = NULL;
 
 	/* call base class constructor */
@@ -257,14 +255,12 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 	if (pyosdp_dict_get_int(py_info, "flags", &info.flags))
 		goto error;
 
-	if (pyosdp_dict_get_int(py_info, "channel_speed", &info.baud_rate))
-		goto error;
-
-	if (pyosdp_dict_get_str(py_info, "channel_type", &channel_type_str))
-		goto error;
-
-	if (pyosdp_dict_get_str(py_info, "channel_device", &device))
-		goto error;
+	channel = PyDict_GetItemString(py_info, "channel");
+	if (channel == NULL) {
+		PyErr_Format(PyExc_KeyError, "channel object missing");
+		return -1;
+	}
+	pyosdp_get_channel(channel, &info.channel);
 
 	if (pyosdp_dict_get_int(py_info, "version", &info.id.version))
 		goto error;
@@ -290,25 +286,6 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 	}
 	PyErr_Clear();
 
-	channel_type = channel_guess_type(channel_type_str);
-	if (channel_type == CHANNEL_TYPE_ERR) {
-		PyErr_SetString(PyExc_ValueError,
-				"unable to guess channel type");
-		goto error;
-	}
-
-	ret = channel_open(&self->base.channel_manager, channel_type, device,
-			   info.baud_rate, 1);
-	if (ret != CHANNEL_ERR_NONE && ret != CHANNEL_ERR_ALREADY_OPEN) {
-		PyErr_SetString(PyExc_PermissionError,
-				"Unable to open channel");
-		goto error;
-	}
-
-	channel_get(&self->base.channel_manager, device, &info.channel.id,
-		    &info.channel.data, &info.channel.send, &info.channel.recv,
-		    &info.channel.flush);
-
 	ctx = osdp_pd_setup(&info);
 	if (ctx == NULL) {
 		PyErr_SetString(PyExc_Exception, "failed to setup pd");
@@ -316,14 +293,10 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 	}
 
 	self->ctx = ctx;
-	safe_free(channel_type_str);
-	safe_free(device);
-	safe_free((void *)info.cap);
+	free((void *)info.cap);
 	return 0;
 error:
-	safe_free(channel_type_str);
-	safe_free(device);
-	safe_free((void *)info.cap);
+	free((void *)info.cap);
 	return -1;
 }
 

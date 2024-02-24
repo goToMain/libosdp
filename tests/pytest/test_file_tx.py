@@ -8,6 +8,7 @@ import time
 import random
 import pytest
 from osdp import *
+from conftest import make_fifo_pair, cleanup_fifo_pair
 
 sender_data = [ random.randint(0, 255) for _ in range(4096) ]
 
@@ -65,13 +66,19 @@ receiver_fops = {
 
 pd_cap = PDCapabilities([])
 
-pd_info_list = [
-    PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
-]
+f1, f2 = make_fifo_pair("file")
+key = KeyStore.gen_key()
 
-pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
-
-cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
+pd = PeripheralDevice(
+    PDInfo(101, f1, scbk=key, flags=[ LibFlag.EnforceSecure ]),
+    pd_cap,
+    log_level=LogLevel.Debug
+)
+cp = ControlPanel([
+        PDInfo(101, f2, scbk=key, flags=[ LibFlag.EnforceSecure ]),
+    ],
+    log_level=LogLevel.Debug
+)
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():
@@ -84,6 +91,7 @@ def setup_test():
 def teardown_test():
     cp.teardown()
     pd.teardown()
+    cleanup_fifo_pair("file")
 
 def test_file_transfer(utils):
     # Register file OPs and kick off a transfer

@@ -4,27 +4,33 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-import os
 from .constants import Capability, LibFlag
+from .channel import Channel
+
+class PdId:
+    def __init__(self, version: int, model: int, vendor_code: int,
+                 serial_number: int, firmware_version: int):
+        self.version = version
+        self.model = model
+        self.vendor_code = vendor_code
+        self.serial_number = serial_number
+        self.firmware_version = firmware_version
 
 class PDInfo:
-    def __init__(self, address: int, scbk: bytes=None, name: str='chn', flags=[],
-                 channel_type: str='fifo'):
+    def __init__(self, address: int, channel: Channel, scbk: bytes=None,
+                 name: str=None, flags=[], id: PdId=None):
         self.address = address
         self.flags = flags
         self.scbk = scbk
-        self.name = name
-        self.channel_device = '/tmp/pyosdp-' + name
-        self.channel_speed = 115200
-        self.channel_type = channel_type
-        self.version= 1
-        self.model= 1
-        self.vendor_code= 0xCAFEBABE
-        self.serial_number= 0xDEADBEAF
-        self.firmware_version= 0x0000F00D
-
-        if self.channel_type == 'unix_bus' and os.path.exists(self.channel_device):
-            os.remove(self.channel_device)
+        if name:
+            self.name = name
+        else:
+            self.name = "PD-" + str(address)
+        self.channel = channel
+        if id:
+            self.id = id
+        else:
+            self.id = PdId(1, 1, 0xcafebabe, 0xdeadbeaf, 0xdeaddead)
 
     def get_flags(self) -> int:
         ret = 0
@@ -38,16 +44,14 @@ class PDInfo:
             'address': self.address,
             'flags': self.get_flags(),
             'scbk': self.scbk,
-            'channel_type': self.channel_type,
-            'channel_speed': self.channel_speed,
-            'channel_device': self.channel_device,
+            'channel': self.channel,
 
             # Following are needed only for PD. For CP these are don't cares
-            'version': self.version,
-            'model': self.model,
-            'vendor_code': self.vendor_code,
-            'serial_number': self.serial_number,
-            'firmware_version': self.firmware_version
+            'version': self.id.version,
+            'model': self.id.model,
+            'vendor_code': self.id.vendor_code,
+            'serial_number': self.id.serial_number,
+            'firmware_version': self.id.firmware_version
         }
 
 class _PDCapEntity:

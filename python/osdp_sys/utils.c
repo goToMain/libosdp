@@ -227,3 +227,71 @@ int pyosdp_dict_get_object(PyObject *dict, const char *key, PyObject **obj)
 
 	return 0;
 }
+
+/* --- Channel --- */
+
+static int channel_read_callback(void *data, uint8_t *buf, int maxlen)
+{
+	int len;
+	PyObject *channel = data;
+	uint8_t *tmp;
+
+	PyObject *result = PyObject_CallMethod(channel, "read", "I", maxlen);
+
+	if (!result || !PyBytes_Check(result))
+		return -1;
+
+	PyArg_Parse(result, "y#", &tmp, &len);
+	if (len <= maxlen) {
+		memcpy(buf, tmp, len);
+	} else {
+		PyErr_SetString(PyExc_TypeError,
+				"read callback maxlen not respected");
+		len = -1;
+	}
+	Py_DECREF(result);
+	return len;
+}
+
+static int channel_write_callback(void *data, uint8_t *buf, int len)
+{
+	PyObject *channel = data;
+	PyObject *byte_array;
+
+	byte_array = Py_BuildValue("y#", buf, len);
+	if (byte_array == NULL)
+		return -1;
+
+	PyObject *result = PyObject_CallMethod(channel, "write", "O", byte_array);
+	if (!result || !PyLong_Check(result))
+		return -1;
+
+	len = (int)PyLong_AsLong(result);
+	Py_DECREF(result);
+	return len;
+}
+
+static void channel_flush_callback(void *data)
+{
+	PyObject *channel = data;
+
+	PyObject_CallMethod(channel, "flush", NULL);
+}
+
+void pyosdp_get_channel(PyObject *channel, struct osdp_channel *ops)
+{
+	int id = 0;
+	PyObject *id_obj;
+
+	id_obj = PyObject_GetAttrString(channel, "id");
+	if (id_obj && PyLong_Check(id_obj)) {
+		id = (int)PyLong_AsLong(id_obj);
+	}
+
+	ops->id = id;
+	ops->recv = channel_read_callback;
+	ops->send = channel_write_callback;
+	ops->flush = channel_flush_callback;
+	ops->data = channel;
+	Py_INCREF(channel);
+}

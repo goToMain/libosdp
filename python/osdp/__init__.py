@@ -12,6 +12,7 @@ from .constants import (
     Event, CardFormat, Capability, LogLevel, StatusReportType
 )
 from .helpers import PDInfo, PDCapabilities
+from .channel import Channel
 
 __author__ = 'Siddharth Chandrasekaran <sidcha.dev@gmail.com>'
 __copyright__ = 'Copyright 2021-2024 Siddharth Chandrasekaran'

@@ -8,6 +8,15 @@ import time
 import pytest
 
 from osdp import *
+from conftest import make_fifo_pair, cleanup_fifo_pair
+
+secure_pd_addr = 101
+insecure_pd_addr = 102
+
+f1_1, f1_2 = make_fifo_pair("secure_pd")
+f2_1, f2_2 = make_fifo_pair("insecure_pd")
+
+key = KeyStore.gen_key()
 
 pd_cap = PDCapabilities([
     (Capability.OutputControl, 1, 1),
@@ -17,23 +26,29 @@ pd_cap = PDCapabilities([
 ])
 
 pd_info_list = [
-    PDInfo(101, scbk=KeyStore.gen_key(), flags=[ LibFlag.EnforceSecure ], name='chn-0'),
-    PDInfo(102, name='chn-1')
+    PDInfo(secure_pd_addr, f1_1, scbk=key, flags=[ LibFlag.EnforceSecure ]),
+    PDInfo(insecure_pd_addr, f2_1)
 ]
 
 # TODO remove this.
-secure_pd_addr = pd_info_list[0].address
-secure_pd = PeripheralDevice(pd_info_list[0], pd_cap, log_level=LogLevel.Debug)
+secure_pd = PeripheralDevice(
+    PDInfo(secure_pd_addr, f1_2, scbk=key, flags=[ LibFlag.EnforceSecure ]),
+    pd_cap,
+    log_level=LogLevel.Debug
+)
 
-insecure_pd_addr = pd_info_list[1].address
-insecure_pd = PeripheralDevice(pd_info_list[1], pd_cap, log_level=LogLevel.Debug)
+insecure_pd = PeripheralDevice(
+    PDInfo(insecure_pd_addr, f2_2),
+    pd_cap,
+    log_level=LogLevel.Debug
+)
 
 pd_list = [
     secure_pd,
     insecure_pd,
 ]
 
-cp = ControlPanel(pd_info_list)
+cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():
@@ -48,6 +63,8 @@ def teardown_test():
     cp.teardown()
     for pd in pd_list:
         pd.teardown()
+    cleanup_fifo_pair("secure_pd")
+    cleanup_fifo_pair("insecure_pd")
 
 def test_command_output():
     test_cmd = {

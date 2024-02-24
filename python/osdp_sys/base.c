@@ -224,7 +224,6 @@ PyObject *pyosdp_get_source_info(pyosdp_base_t *self, PyObject *args)
 
 static void pyosdp_base_tp_dealloc(pyosdp_base_t *self)
 {
-	channel_manager_teardown(&self->channel_manager);
 	Py_XDECREF(self->fops.open_cb);
 	Py_XDECREF(self->fops.read_cb);
 	Py_XDECREF(self->fops.write_cb);
@@ -237,11 +236,6 @@ static int pyosdp_base_tp_init(pyosdp_base_t *self, PyObject *args, PyObject *kw
 	self->fops.read_cb = NULL;
 	self->fops.write_cb = NULL;
 	self->fops.close_cb = NULL;
-
-	channel_manager_init(&self->channel_manager);
-
-	osdp_logger_init("pyosdp", OSDP_LOG_INFO, NULL);
-
 	return 0;
 }
 

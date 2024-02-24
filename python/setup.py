@@ -85,16 +85,6 @@ utils_sources = [
     "utils/src/utils.c",
     "utils/src/logger.c",
     "utils/src/disjoint_set.c",
-    "utils/src/serial.c",
-    "utils/src/channel.c",
-    "utils/src/hashmap.c",
-    "utils/src/strutils.c",
-    "utils/src/memory.c",
-    "utils/src/fdutils.c",
-    "utils/src/event.c",
-    "utils/src/workqueue.c",
-    "utils/src/sockutils.c",
-    "utils/src/bus_server.c",
 ]
 
 utils_includes = [
@@ -105,16 +95,6 @@ utils_includes = [
     "utils/include/utils/utils.h",
     "utils/include/utils/logger.h",
     "utils/include/utils/disjoint_set.h",
-    "utils/include/utils/serial.h",
-    "utils/include/utils/channel.h",
-    "utils/include/utils/hashmap.h",
-    "utils/include/utils/strutils.h",
-    "utils/include/utils/memory.h",
-    "utils/include/utils/fdutils.h",
-    "utils/include/utils/event.h",
-    "utils/include/utils/workqueue.h",
-    "utils/include/utils/sockutils.h",
-    "utils/include/utils/bus_server.h",
 ]
 
 lib_sources = [

@@ -200,17 +200,14 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 	"OSDP Control Panel Class\n"                                                         \
 	"\n"                                                                                 \
 	"@param pd_info List of PD info dicts. See osdp_pd_info_t in osdp.h for more info\n" \
-	"@param master_key A hexadecimal string representation of the master key\n"          \
 	"\n"                                                                                 \
 	"@return None"
 static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs)
 {
-	int i, ret = -1, len;
+	int i, len;
 	uint8_t *scbk = NULL;
-	enum channel_type channel_type;
-	PyObject *py_info_list, *py_info;
+	PyObject *py_info_list, *py_info, *channel;
 	static char *kwlist[] = { "", NULL };
-	char *device = NULL, *channel_type_str = NULL;
 	osdp_t *ctx;
 	osdp_pd_info_t *info, *info_list = NULL;
 
@@ -255,16 +252,12 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 		if (pyosdp_dict_get_int(py_info, "flags", &info->flags))
 			goto error;
 
-		if (pyosdp_dict_get_int(py_info, "channel_speed",
-					&info->baud_rate))
-			goto error;
-
-		if (pyosdp_dict_get_str(py_info, "channel_type",
-					&channel_type_str))
-			goto error;
-
-		if (pyosdp_dict_get_str(py_info, "channel_device", &device))
-			goto error;
+		channel = PyDict_GetItemString(py_info, "channel");
+		if (channel == NULL) {
+			PyErr_Format(PyExc_KeyError, "channel object missing");
+			return -1;
+		}
+		pyosdp_get_channel(channel, &info->channel);
 
 		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &len) == 0) {
 			if (scbk && len != 16) {
@@ -275,25 +268,6 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			info->scbk = scbk;
 		}
 		PyErr_Clear();
-
-		channel_type = channel_guess_type(channel_type_str);
-		if (channel_type == CHANNEL_TYPE_ERR) {
-			PyErr_SetString(PyExc_ValueError,
-					"unable to guess channel type");
-			goto error;
-		}
-
-		ret = channel_open(&self->base.channel_manager, channel_type,
-				   device, info->baud_rate, 0);
-		if (ret != CHANNEL_ERR_NONE &&
-		    ret != CHANNEL_ERR_ALREADY_OPEN) {
-			PyErr_SetString(PyExc_PermissionError,
-					"Unable to open channel");
-			goto error;
-		}
-		channel_get(&self->base.channel_manager, device, &info->channel.id,
-			    &info->channel.data, &info->channel.send,
-			    &info->channel.recv, &info->channel.flush);
 	}
 
 	ctx = osdp_cp_setup(self->num_pd, info_list);
@@ -307,9 +281,7 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 	self->ctx = ctx;
 	return 0;
 error:
-	safe_free(info_list);
-	safe_free(channel_type_str);
-	safe_free(device);
+	free(info_list);
 	return -1;
 }
 

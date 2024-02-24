@@ -37,9 +37,12 @@ python3 setup.py install
 ### Control Panel Mode
 
 ```python
+# Create a communication channel
+channel = SerialChannel("/dev/ttyUSB0")
+
 # populate osdp_pd_info_t from python
 pd_info = [
-    PDInfo(101, scbk=KeyStore.gen_key(), name='chn-0'),
+    PDInfo(101, channel, scbk=KeyStore.gen_key()),
 ]
 
 # Create a CP device and kick-off the handler thread and wait till a secure
@@ -64,8 +67,11 @@ see [examples/cp_app.py][2] for more details.
 ### Peripheral Device mode:
 
 ```python
+# Create a communication channel
+channel = SerialChannel("/dev/ttyUSB0")
+
 # Describe the PD (setting scbk=None puts the PD in install mode)
-pd_info = PDInfo(101, scbk=None, name='chn-0')
+pd_info = PDInfo(101, channel, scbk=None)
 
 # Indicate the PD's capabilities to LibOSDP.
 pd_cap = PDCapabilities()

@@ -346,7 +346,7 @@ static PyMemberDef pyosdp_pd_tp_members[] = {
 };
 
 PyTypeObject PeripheralDeviceTypeObject = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0).tp_name = "PeripheralDevice",
+	PyVarObject_HEAD_INIT(NULL, 0).tp_name = "PeripheralDevice",
 	.tp_basicsize = sizeof(pyosdp_pd_t),
 	.tp_itemsize = 0,
 	.tp_dealloc = (destructor)pyosdp_pd_tp_dealloc,

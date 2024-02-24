@@ -333,7 +333,7 @@ static PyMemberDef pyosdp_cp_tp_members[] = {
 };
 
 static PyTypeObject ControlPanelTypeObject = {
-	PyVarObject_HEAD_INIT(&PyType_Type, 0).tp_name = "ControlPanel",
+	PyVarObject_HEAD_INIT(NULL, 0).tp_name = "ControlPanel",
 	.tp_doc = pyosdp_cp_tp_init_doc,
 	.tp_basicsize = sizeof(pyosdp_cp_t),
 	.tp_itemsize = 0,

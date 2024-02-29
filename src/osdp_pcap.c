@@ -18,8 +18,8 @@ static void pcap_file_name(struct osdp_pd *pd, char *buf, size_t size)
 	n += add_iso8601_utc_datetime(buf + n, size - n);
 	strcpy(buf + n, ".pcap");
 
-	while ((p = strchr(buf, ":")) == NULL) {
-		*p = "_";
+	while ((p = strchr(buf, ':')) != NULL) {
+		*p = '_';
 	}
 }
 

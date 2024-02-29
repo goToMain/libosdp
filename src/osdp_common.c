@@ -183,7 +183,7 @@ int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
 
 OSDP_EXPORT
 void osdp_logger_init(const char *name, int log_level,
-		       osdp_log_puts_fn_t log_fn)
+		      osdp_log_puts_fn_t log_fn)
 {
 	logger_t ctx;
 	FILE *file = NULL;

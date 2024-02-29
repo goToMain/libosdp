@@ -125,12 +125,8 @@ uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *pd, const uint8_t *buf)
 {
 	struct osdp_packet_header *pkt;
 
-	ARG_UNUSED(pd);
 	pkt = (struct osdp_packet_header *)(buf + packet_has_mark(pd));
-	if (pkt->control & PKT_CONTROL_SCB) {
-		return pkt->data;
-	}
-	return NULL;
+	return (pkt->control & PKT_CONTROL_SCB) ? pkt->data : NULL;
 }
 
 int osdp_phy_in_sc_handshake(int is_reply, int id)
@@ -464,7 +460,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			 * as if it was the first time we are seeing it.
 			 */
 			pd->seq_number -= 1;
-			LOG_INF("received a sequence repeat packet!");
+			LOG_INF("Received a sequence repeat packet!");
 		}
 		/**
 		 * For packets addressed to the broadcast address, the reply
@@ -490,7 +486,8 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 	}
 	cur = osdp_phy_get_seq_number(pd, is_pd_mode(pd));
 	if (cur != comp && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
-		LOG_ERR("Packet sequence mismatch %d/%d", cur, comp);
+		LOG_ERR("Packet sequence mismatch expected: %d received: %d",
+			cur, comp);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_NACK;

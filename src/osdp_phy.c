@@ -546,6 +546,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 	uint8_t *data, *mac, *buf = pd->packet_buf;
 	int mac_offset, is_cmd, len = pd->packet_buf_len;
 	struct osdp_packet_header *pkt;
+	bool is_sc_active = sc_is_active(pd);
 
 	if (packet_has_mark(pd)) {
 		buf += 1;
@@ -570,7 +571,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_NACK;
 		}
-		if (!sc_is_active(pd) && pkt->data[1] > SCS_14) {
+		if (!is_sc_active && pkt->data[1] > SCS_14) {
 			LOG_ERR("Invalid SCS type (%x)", pkt->data[1]);
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
@@ -598,15 +599,16 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		 * plain text. To work with such PDs, we must also discard our
 		 * secure session.
 		 *
-		 * The way we do this is by calling osdp_keyset_complete() which
-		 * copies the key in ephemeral_data to the current SCBK.
+		 * For now, let's just pretend that SC is deactivated so the
+		 * rest of this method finishes normally. The actual secure
+		 * channel is actually discarded from the CP state machine.
 		 */
 		if (is_cp_mode(pd) && pd->cmd_id == CMD_KEYSET &&
 		    pkt->data[0] == REPLY_ACK) {
-			osdp_keyset_complete(pd);
+			is_sc_active = false;
 		}
 
-		if (sc_is_active(pd)) {
+		if (is_sc_active) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
@@ -614,7 +616,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		}
 	}
 
-	if (sc_is_active(pd) &&
+	if (is_sc_active &&
 	    pkt->control & PKT_CONTROL_SCB && pkt->data[1] >= SCS_15) {
 		/* validate MAC */
 		is_cmd = is_pd_mode(pd);

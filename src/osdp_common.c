@@ -121,11 +121,6 @@ const char *osdp_reply_name(int reply_id)
 	return name;
 }
 
-void osdp_keyset_complete(struct osdp_pd *pd)
-{
-	cp_keyset_complete(pd, true);
-}
-
 int osdp_rb_push(struct osdp_rb *p, uint8_t data)
 {
 	size_t next;

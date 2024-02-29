@@ -940,10 +940,34 @@ static int cp_get_online_command(struct osdp_pd *pd)
 	return -1;
 }
 
+static void cp_keyset_complete(struct osdp_pd *pd)
+{
+	struct osdp_cmd *cmd;
+
+	if (!ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		memcpy(pd->sc.scbk, cmd->keyset.data, 16);
+	} else {
+		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+	}
+	sc_deactivate(pd);
+	make_request(pd, CP_REQ_RESTART_SC);
+	LOG_INF("SCBK set; restarting SC to verify new SCBK");
+}
+
 static bool cp_check_online_response(struct osdp_pd *pd)
 {
 	/* Always allow an ACK from the PD; Also, the most common case */
 	if (pd->reply_id == REPLY_ACK) {
+		if (pd->cmd_id == CMD_KEYSET) {
+			/**
+			 * When we received an ACK for keyset (either in current
+			 * SC session or in plaintext after PD discarded the SC
+			 * in favour of the new SCBK), we need to call to commit
+			 * the new key pd->sc.scbk and restart the SC.
+			 */
+			cp_keyset_complete(pd);
+		}
 		return true;
 	}
 
@@ -1035,15 +1059,14 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 	case OSDP_CP_STATE_SC_CHLNG:
 		return OSDP_CP_STATE_SC_SCRYPT;
 	case OSDP_CP_STATE_SC_SCRYPT:
+		sc_activate(pd);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_WRN("SC active with SCBK-D. Set SCBK");
 			fill_local_keyset_cmd(pd);
-			sc_activate(pd);
 			return OSDP_CP_STATE_SET_SCBK;
 		}
 		return OSDP_CP_STATE_ONLINE;
 	case OSDP_CP_STATE_SET_SCBK:
-		cp_keyset_complete(pd, false);
 		return OSDP_CP_STATE_SC_CHLNG;
 	case OSDP_CP_STATE_ONLINE:
 		if (cp_sc_should_retry(pd)) {
@@ -1116,28 +1139,6 @@ static inline enum osdp_cp_state_e get_next_state(struct osdp_pd *pd, int err)
 	return (err == 0) ? get_next_ok_state(pd) : get_next_err_state(pd);
 }
 
-/**
- * This gets called from osdp_phy_decode_packet() when some PDs send the keyset
- * response (ACK) in plain text since they discarded the SC in favour of the new
- * SCBK we set.
- */
-void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc)
-{
-	struct osdp_cmd *cmd;
-
-	sc_deactivate(pd);
-	if (!ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
-		memcpy(pd->sc.scbk, cmd->keyset.data, 16);
-	} else {
-		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-	}
-	if (restart_sc) {
-		make_request(pd, CP_REQ_RESTART_SC);
-	}
-	LOG_INF("SCBK set; restarting SC to verify new SCBK");
-}
-
 static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 {
 	enum osdp_cp_state_e cur = pd->state;
@@ -1151,9 +1152,6 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 
 	switch (next) {
 	case OSDP_CP_STATE_ONLINE:
-		if (cur == OSDP_CP_STATE_SC_SCRYPT) {
-			sc_activate(pd);
-		}
 		pd->wait_ms = 0;
 		LOG_INF("Online; %s SC", sc_is_active(pd) ? "With" : "Without");
 		break;
@@ -1171,6 +1169,9 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		sc_deactivate(pd);
 		LOG_ERR("Going offline for %d seconds; Was in '%s' state",
 			pd->wait_ms / 1000, state_get_name(cur));
+		break;
+	case OSDP_CP_STATE_SC_CHLNG:
+		osdp_sc_setup(pd);
 		break;
 	default: break;
 	}

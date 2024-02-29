@@ -387,12 +387,6 @@ struct osdp {
 	cp_event_callback_t event_callback;
 };
 
-#ifdef CONFIG_OSDP_STATIC_PD
-static inline void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc) { }
-#else
-void cp_keyset_complete(struct osdp_pd *pd, bool restart_sc);
-#endif
-
 void osdp_keyset_complete(struct osdp_pd *pd);
 
 /* from osdp_phy.c */

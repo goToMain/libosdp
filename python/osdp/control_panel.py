@@ -20,7 +20,6 @@ class ControlPanel():
             self,
             pd_info_list: list[PDInfo],
             log_level: LogLevel=LogLevel.Info,
-            master_key: bytes=None,
             event_handler: Callable[[int, dict], int]=None
         ) -> None:
         self.pd_addr = []
@@ -31,10 +30,7 @@ class ControlPanel():
             info_list.append(pd_info.get())
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
         osdp_sys.set_loglevel(log_level)
-        if master_key:
-            self.ctx = osdp_sys.ControlPanel(info_list, master_key=master_key)
-        else:
-            self.ctx = osdp_sys.ControlPanel(info_list)
+        self.ctx = osdp_sys.ControlPanel(info_list)
         self.set_event_handler(event_handler)
         self.event = None
         self.lock = None

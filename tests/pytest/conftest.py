@@ -62,9 +62,8 @@ class TestUtils:
     def __init__(self):
         self.ks = KeyStore()
 
-    def create_cp(self, pd_info_list, sc_wait=False, online_wait=False,
-                  master_key=None):
-        cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug, master_key=master_key)
+    def create_cp(self, pd_info_list, sc_wait=False, online_wait=False):
+        cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
         cp.start()
         if sc_wait:
             assert cp.sc_wait_all()

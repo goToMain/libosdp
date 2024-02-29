@@ -198,7 +198,7 @@ function osdp_protocol.dissector(buffer, pinfo, tree)
         -- Plain text block
         local id = buffer(offset, 1):uint()
         payload_subtree:add(plaintext_id, buffer(offset, 1))
-            :append_text(" (" .. get_id_name(id, is_cmd) .. " )")
+            :append_text(" (" .. get_id_name(id, is_cmd) .. ")")
         -- +1 and -1 below are to skip the Command/Response ID
         payload_subtree:add(plaintext_data, buffer(offset + 1, payload_len - 1))
         pinfo.cols.info = "Plaintext Message"

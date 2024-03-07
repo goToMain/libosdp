@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 #
 #  Copyright (c) 2020-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+import argparse
 import serial
 from osdp import *
 
@@ -11,8 +13,8 @@ class SerialChannel(Channel):
     def __init__(self, device: str, speed: int):
         self.dev = serial.Serial(device, speed, timeout=1)
 
-    def read(self, max: int):
-        return self.dev.read(max)
+    def read(self, max_read: int):
+        return self.dev.read(max_read)
 
     def write(self, data: bytes):
         return self.dev.write(data)
@@ -23,14 +25,20 @@ class SerialChannel(Channel):
     def __del__(self):
         self.dev.close()
 
+parser = argparse.ArgumentParser(prog = 'cp_app', description = "LibOSDP CP APP Example")
+parser.add_argument("device", type = str, metavar = "PATH", help = "Path to serial device")
+parser.add_argument("--baudrate", type = int, metavar = "N", default = 115200, help = "Serial port's baud rate (default: 115200)")
+parser.add_argument("--loglevel", type = int, metavar = "LEVEL", default = 6, help = "LibOSDP log level; can be 0-7 (default: 6)")
+args = parser.parse_args()
+
 ## Describe the PD (setting scbk=None puts the PD in install mode)
-channel = SerialChannel("/dev/ttyUSB0")
+channel = SerialChannel(args.device, args.baudrate)
 pd_info = [
     PDInfo(101, channel, scbk=KeyStore.gen_key()),
 ]
 
 ## Create a CP device and kick-off the handler thread
-cp = ControlPanel(pd_info, log_level=LogLevel.Debug)
+cp = ControlPanel(pd_info, log_level=args.loglevel)
 cp.start()
 cp.sc_wait_all()
 

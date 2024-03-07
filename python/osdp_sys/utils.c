@@ -232,7 +232,7 @@ int pyosdp_dict_get_object(PyObject *dict, const char *key, PyObject **obj)
 
 static int channel_read_callback(void *data, uint8_t *buf, int maxlen)
 {
-	int len;
+	Py_ssize_t len;
 	PyObject *channel = data;
 	uint8_t *tmp;
 

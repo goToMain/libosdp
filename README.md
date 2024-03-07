@@ -62,11 +62,12 @@ commands and replies and their support status in LibOSDP [here][22].
   * [OpenSSL][8] (host and target, optional - recommended)
   * [MbedTLS][7] (host and target, optional)
   * [pytest][5] (host, optional; for running the integrated test suite)
+  * python3-venv (host, optional; for running integration test suite)
 
 ### For ubuntu
 
 ```sh
-sudo apt install cmake python3 python3-pip python3-dev libssl-dev
+sudo apt install cmake python3 python3-pip python3-dev python3-venv libssl-dev
 ```
 
 ## Compile LibOSDP

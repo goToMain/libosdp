@@ -20,8 +20,7 @@ jobs:
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
-        # windows-2022 -- currently not supported
-        os: [ubuntu-22.04, macos-13, macos-14]
+        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
 
     steps:
       - uses: actions/checkout@v4

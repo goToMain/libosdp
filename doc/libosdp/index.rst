@@ -8,3 +8,4 @@ LibOSDP
    cross-compiling
    secure-channel
    debugging
+   compatibility

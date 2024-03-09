@@ -11,17 +11,20 @@ OSDP - Open Supervised Device Protocol
    :target: https://github.com/goToMain/libosdp/actions?query=workflow%3A%22Build+CI%22
    :alt: Build status
 
-This is an open source implementation of Open Supervised Device Protocol
-(OSDP) developed by `Security Industry Association`_  (SIA).
-The protocol is intended to improve interoperability among access control and security
-products. OSDP is currently in-process to become a standard recognized by the
-American National Standards Institute (ANSI).
+This is a cross-platform open source implementation of IEC 60839-11-5 Open
+Supervised Device Protocol (OSDP). The protocol is intended to improve
+interoperability among access control and security products. It supports Secure
+Channel (SC) for encrypted and authenticated communication between configured
+devices.
 
 OSDP describes the communication protocol for interfacing one or more Peripheral
-Devices (PD) to a Control Panel (CP). The OSDP specification describes the protocol
-implementation over a two-wire RS-485 multi-drop serial communication channel.
-Nevertheless, this protocol can be used to transfer secure data over any physical
-channel. Have a look at the `protocol design documents`_ to get a better idea.
+Devices (PD) to a Control Panel (CP) over a two-wire RS-485 multi-drop serial
+communication channel. Nevertheless, this protocol can be used to transfer
+secure data over any stream based physical channel. Have a look at the
+`protocol design documents`_ to get a better idea.
+
+This protocol is developed and maintained by `Security Industry Association`_
+(SIA).
 
 .. _Security Industry Association: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 .. _protocol design documents: protocol/index.html
@@ -29,11 +32,18 @@ channel. Have a look at the `protocol design documents`_ to get a better idea.
 Salient Features of LibOSDP
 ---------------------------
 
--  Supports secure channel communication (AES-128).
--  Can be used to setup a PD or CP mode of operation.
--  Exposes a well defined contract though ``include/osdp.h``.
--  No run-time memory allocation. All memory is allocated at init-time.
--  Well designed source code architecture.
+  - Supports secure channel communication (AES-128)
+  - Can be used to setup a PD or CP mode of operation
+  - Exposes a well defined contract though a single header file
+  - Cross-platform; runs on bare-metal, Linux, Mac, and even Windows
+  - No run-time memory allocation. All memory is allocated at init-time
+  - No external dependencies (for ease of cross compilation)
+  - Fully non-blocking, asynchronous design
+  - Provides Rust, Python3, and C++ bindings for the C library for faster
+    integration into various development phases.
+  - Includes dozens of integration and unit tests which are incorporated in CI
+    to ensure higher quality of releases.
+  - Built-in, sophisticated, debugging infrastructure and tools ([see][14]).
 
 Supported Commands and Replies
 ------------------------------

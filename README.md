@@ -2,10 +2,11 @@
 
 [![Latest Release][1]][2] [![Build CI][3]][4] [![PyPI Version][16]][12]
 
-This is an open source implementation of IEC 60839-11-5 Open Supervised Device
-Protocol (OSDP). The protocol is intended to improve interoperability among
-access control and security products. It supports Secure Channel (SC) for
-encrypted and authenticated communication between configured devices.
+This is a cross-platform open source implementation of IEC 60839-11-5 Open
+Supervised Device Protocol (OSDP). The protocol is intended to improve
+interoperability among access control and security products. It supports Secure
+Channel (SC) for encrypted and authenticated communication between configured
+devices.
 
 OSDP describes the communication protocol for interfacing one or more Peripheral
 Devices (PD) to a Control Panel (CP) over a two-wire RS-485 multi-drop serial
@@ -21,11 +22,14 @@ This protocol is developed and maintained by [Security Industry Association][20]
   - Supports secure channel communication (AES-128)
   - Can be used to setup a PD or CP mode of operation
   - Exposes a well defined contract though a single header file
+  - Cross-platform; runs on bare-metal, Linux, Mac, and even Windows
   - No run-time memory allocation. All memory is allocated at init-time
   - No external dependencies (for ease of cross compilation)
   - Fully non-blocking, asynchronous design
-  - Provides C++, Rust and Python3 bindings for the C library for faster
-    testing/integration
+  - Provides Rust, Python3, and C++ bindings for the C library for faster
+    integration into various development phases.
+  - Includes dozens of integration and unit tests which are incorporated in CI
+    to ensure higher quality of releases.
   - Built-in, sophisticated, debugging infrastructure and tools ([see][14]).
 
 ## Language Support

@@ -63,6 +63,7 @@ of the protocol support only the most common among them. You can see a
    libosdp/cross-compiling
    libosdp/secure-channel
    libosdp/debugging
+   libosdp/compatibility
 
 .. toctree::
    :caption: Protocol

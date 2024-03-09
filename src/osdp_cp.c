@@ -1104,6 +1104,11 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 			return OSDP_CP_STATE_SC_CHLNG;
 		}
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+		/**
+		 * SC setup failed; Update sc_tstamp so the next retry happens
+		 * after OSDP_PD_SC_RETRY_MS.
+		 */
+		pd->sc_tstamp = osdp_millis_now();
 		return OSDP_CP_STATE_ONLINE;
 	case OSDP_CP_STATE_SC_SCRYPT:
 		if (is_enforce_secure(pd)) {

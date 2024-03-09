@@ -17,5 +17,9 @@ pushd ../../python
 python3 setup.py install
 popd
 
+if [[ "$1" == "-n" ]]; then
+	exit
+fi
+
 echo "[-] Running tests capturing all output.."
 pytest -vv --show-capture=all

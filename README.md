@@ -19,7 +19,9 @@ This protocol is developed and maintained by [Security Industry Association][20]
 
 ## Salient Features of LibOSDP
 
-  - Supports secure channel communication (AES-128)
+  - Supports secure channel communication (AES-128) by default and provides a
+    custom init-time flag to enforce a higher level of security not mandated by
+    the specification
   - Can be used to setup a PD or CP mode of operation
   - Exposes a well defined contract though a single header file
   - Cross-platform; runs on bare-metal, Linux, Mac, and even Windows
@@ -31,6 +33,40 @@ This protocol is developed and maintained by [Security Industry Association][20]
   - Includes dozens of integration and unit tests which are incorporated in CI
     to ensure higher quality of releases.
   - Built-in, sophisticated, debugging infrastructure and tools ([see][14]).
+
+## Usage Overview
+
+A device complying with OSDP can either be a CP or a PD. There can be only one
+CP on a bus which can talk to multiple PDs. LibOSDP allows your application to
+work either as a CP or a PD so depending on what you want to do you have to do
+some things differently.
+
+LibOSDP creates the following constructs which allow interactions between
+devices on the OSDP bus. These should not be confused with the protocol
+specified terminologies that may use the same names. They are:
+  - Channel - Something that allows two OSDP devices to talk to each other
+  - Commands - A call for action from a CP to one of its PDs
+  - Events - A call for action from a PD to its CP
+
+You start by implementing the `osdp_channel` interface; this allows LibOSDP to
+communicate with other osdp devices on the bus. Then you describe the PD you
+are
+  - talking to on the bus (in case of CP mode of operation) or,
+  - going to behave as on the bus (in case of PD mode of operation)
+by using the `osdp_pd_info_t` struct.
+
+You can use `osdp_pd_info_t` struct (or an array of it in case of CP) to create
+a `osdp_t` context. Then your app needs to call the `osdp_cp/pd_refresh()` as
+frequently as possible. To meet the OSDP specified timing requirements, your
+app must call this method at least once every 50ms.
+
+After this point, the CP context can,
+  - send commands to any one of the PDs (to control LEDs, Buzzers, etc.,)
+  - register a closure for events that are sent from a PD
+
+and the PD context can,
+  - notify it's controlling CP about an event (card read, key press, etc.,)
+  - register a closure for commands issued by the CP
 
 ## Language Support
 

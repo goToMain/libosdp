@@ -24,7 +24,7 @@ local payload = ProtoField.new("OSDP Payload", "Payload", ftypes.BYTES)
 
 -- SC sub entries
 local scb = ProtoField.new("Secure Channel Block", "SCB", ftypes.BYTES)
-local sc_data = ProtoField.new("Enctrypted Data Block", "SC_DATA", ftypes.BYTES)
+local sc_data = ProtoField.new("Encrypted Data Block", "SC_DATA", ftypes.BYTES)
 local sc_mac = ProtoField.new("Message Authentication Code", "SC_MAC", ftypes.BYTES)
 
 -- Plaintext sub entries
@@ -174,7 +174,7 @@ function osdp_protocol.dissector(buffer, pinfo, tree)
         -- +1 and -1 below are to skip the Command/Response ID
         offset = offset + scb_len + 1
         payload_len = payload_len - scb_len - 1
-        local info = "Seure Message"
+        local info = "Secure Message"
         if scb_type < 0x15 then
             info = "SC Handshake"
         end

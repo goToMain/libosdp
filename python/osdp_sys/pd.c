@@ -51,11 +51,15 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 	PyObject *event_dict;
 	struct osdp_event event;
 
-	if (!PyArg_ParseTuple(args, "O", &event_dict))
+	if (!PyArg_ParseTuple(args, "O", &event_dict)) {
+		PyErr_SetString(PyExc_TypeError, "Failed to parse event dict!");
 		return NULL;
+	}
 
-	if (pyosdp_make_struct_event(&event, event_dict))
+	if (pyosdp_make_struct_event(&event, event_dict)) {
+		PyErr_SetString(PyExc_TypeError, "Unable to get event struct!");
 		return NULL;
+	}
 
 	if (osdp_pd_notify_event(self->ctx, &event)) {
 		Py_RETURN_FALSE;

@@ -99,8 +99,10 @@ static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 	PyObject *cmd_dict;
 	struct osdp_cmd cmd;
 
-	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd_dict))
+	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd_dict)) {
+		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
 		Py_RETURN_FALSE;
+	}
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");

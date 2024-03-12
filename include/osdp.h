@@ -179,10 +179,6 @@ enum osdp_pd_nak_code_e {
 /**
  * @brief PD capability structure. Each PD capability has a 3 byte
  * representation.
- *
- * @param function_code .
- * @param compliance_level 
- * @param num_items Number of such capability entities in PD.
  */
 struct osdp_pd_cap {
 	/**
@@ -194,6 +190,9 @@ struct osdp_pd_cap {
 	 * with this capability.
 	 */
 	uint8_t compliance_level;
+	/**
+	 * Number of such capability entities in PD
+	 */
 	uint8_t num_items;
 };
 
@@ -765,7 +764,7 @@ struct osdp_event_mfgrep {
  * @brief OSDP PD Events
  */
 enum osdp_event_type {
-	OSDP_EVENT_CARDREAD = 0,  /**< Card read event */
+	OSDP_EVENT_CARDREAD = 1,  /**< Card read event */
 	OSDP_EVENT_KEYPRESS,      /**< Keypad press event */
 	OSDP_EVENT_MFGREP,        /**< Manufacturer specific reply event */
 	OSDP_EVENT_STATUS,        /**< Status event */
@@ -813,9 +812,9 @@ typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
  * receives an event from the PD.
  *
  * @param arg Opaque pointer provided by the application during callback
- *            registration.
+ * registration.
  * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
- *           osdp_cp_setup()
+ * osdp_cp_setup()
  * @param ev pointer to osdp_event struct (filled by libosdp).
  *
  * @retval 0 on handling the event successfully.
@@ -860,7 +859,7 @@ void osdp_pd_teardown(osdp_t *ctx);
  *
  * @param ctx OSDP context
  * @param cap pointer to array of cap (`struct osdp_pd_cap`) terminated by a
- *        capability with cap->function_code set to 0.
+ * capability with cap->function_code set to 0.
  */
 void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap);
 
@@ -905,7 +904,7 @@ int osdp_pd_flush_events(osdp_t *ctx);
  * intact.
  *
  * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
- *        treated as an array of length num_pd.
+ * treated as an array of length num_pd.
  * @param info Pointer to info struct populated by application.
  *
  * @retval OSDP Context on success
@@ -934,7 +933,7 @@ void osdp_cp_teardown(osdp_t *ctx);
  *
  * @param ctx OSDP context
  * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
- *           osdp_cp_setup()
+ * osdp_cp_setup()
  * @param cmd command pointer. Must be filled by application.
  *
  * @retval 0 on success
@@ -952,9 +951,9 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd);
  *
  * @param ctx OSDP context
  * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
- *           osdp_cp_setup()
+ * osdp_cp_setup()
  * @param id A pointer to struct osdp_pd_id that will be filled with the
- *           PD ID information that the PD last returned.
+ * PD ID information that the PD last returned.
  *
  * @retval 0 on success
  * @retval -1 on failure
@@ -968,9 +967,9 @@ int osdp_cp_get_pd_id(const osdp_t *ctx, int pd, struct osdp_pd_id *id);
  *
  * @param ctx OSDP context
  * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
- *           osdp_cp_setup()
+ * osdp_cp_setup()
  * @param cap in/out; struct osdp_pd_cap pointer with osdp_pd_cap::function_code
- *            set to the function code to get data for.
+ * set to the function code to get data for.
  *
  * @retval 0 on success
  * @retval -1 on failure
@@ -992,9 +991,9 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
  *
  * @param ctx OSDP context
  * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
- *           osdp_cp_setup()
+ * osdp_cp_setup()
  * @param flags One or more of the public flags (OSDP_FLAG_XXX) exported from
- *              osdp.h. Any other bits will cause this method to fail.
+ * osdp.h. Any other bits will cause this method to fail.
  * @param do_set when true: set `flags` in ctx; when false: clear `flags` in ctx
  *
  * @retval 0 on success
@@ -1116,7 +1115,7 @@ void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask);
  * @brief Open a pre-agreed file
  *
  * @param arg Opaque pointer that was provided in @ref osdp_file_ops when the
- *            ops struct was registered.
+ * ops struct was registered.
  * @param file_id File ID of pre-agreed file between this CP and PD
  * @param size Size of the file that was opened (filled by application)
  *
@@ -1129,11 +1128,11 @@ typedef int (*osdp_file_open_fn_t)(void *arg, int file_id, int *size);
  * @brief Read a chunk of file data into buffer
  *
  * @param arg Opaque pointer that was provided in @ref osdp_file_ops when the
- *            ops struct was registered.
+ * ops struct was registered.
  * @param buf Buffer to store file data read
  * @param size Number of bytes to read from file into buffer
  * @param offset Number of bytes from the beginning of the file to
- *               start reading from.
+ * start reading from.
  *
  * @retval Number of bytes read
  * @retval 0 on EOF
@@ -1148,11 +1147,11 @@ typedef int (*osdp_file_read_fn_t)(void *arg, void *buf, int size, int offset);
  * @brief Write a chunk of file data from buffer to disk.
  *
  * @param arg Opaque pointer that was provided in @ref osdp_file_ops when the
- *            ops struct was registered.
+ * ops struct was registered.
  * @param buf Buffer with file data to be stored to disk
  * @param size Number of bytes to write to disk
  * @param offset Number of bytes from the beginning of the file to
- *               start writing too.
+ * start writing too.
  *
  * @retval Number of bytes written
  * @retval 0 on EOF
@@ -1168,7 +1167,7 @@ typedef int (*osdp_file_write_fn_t)(void *arg, const void *buf,
  * @brief Close file that corresponds to a given file descriptor
  *
  * @param arg Opaque pointer that was provided in @ref osdp_file_ops when the
- *            ops struct was registered.
+ * ops struct was registered.
  *
  * @retval 0 on success
  * @retval -1 on errors.

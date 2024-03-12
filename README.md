@@ -62,11 +62,11 @@ app must call this method at least once every 50ms.
 
 After this point, the CP context can,
   - send commands to any one of the PDs (to control LEDs, Buzzers, etc.,)
-  - register a closure for events that are sent from a PD
+  - register a callback for events that are sent from a PD
 
 and the PD context can,
   - notify it's controlling CP about an event (card read, key press, etc.,)
-  - register a closure for commands issued by the CP
+  - register a callback for commands issued by the CP
 
 ## Language Support
 

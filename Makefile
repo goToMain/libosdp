@@ -27,16 +27,13 @@ endif
 all: libosdp $(TARGETS)
 
 .PHONY: libosdp
-libosdp: $(O)/utils/libutils.a
+libosdp: $(O)/libosdp.a $(O)/libosdp.pc
 
 .PHONY: pd_app
 pd_app: $(O)/pd_app.elf
 
 .PHONY: cp_app
 cp_app: $(O)/cp_app.elf
-
-.PHONY: libutils
-libutils: $(O)/utils/libutils.a
 
 $(O)/%.o: %.c
 	@echo "  CC $<"
@@ -47,9 +44,6 @@ $(O)/libosdp.a: CCFLAGS_EXTRA=-Iutils/include -Iinclude -Isrc -I$(O)
 $(O)/libosdp.a: $(OBJ_LIBOSDP)
 	@echo "  AR $(@F)"
 	$(Q)$(AR) qc $@ $^
-
-$(O)/utils/libutils.a:
-	$(Q)make -C utils Q=$(Q) O=$(O)/utils CC=$(CC)
 
 ## Samples
 
@@ -75,9 +69,21 @@ check: clean $(OBJ_TEST)
 .PHONY: clean
 clean:
 	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_TEST)
-	$(Q)rm -f $(O)/*.a $(O)/*.elf
-	$(Q)make -C utils Q=$(Q) O=$(O)/utils clean
+	$(Q)rm -f $(O)/*.a $(O)/*.elf $(O)/*.pc
 
 .PHONY: distclean
 distclean: clean
-	$(Q)rm -rf config.make $(O)
+	$(Q)rm config.make
+	$(Q)rm -rf $(O)
+
+## Install
+
+.PHONY: install
+install: libosdp
+	install -d $(DESTDIR)$(PREFIX)/lib/
+	install -m 644 $(O)/libosdp.a $(DESTDIR)$(PREFIX)/lib/
+	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig
+	install -m 644 $(O)/libosdp.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	install -d $(DESTDIR)$(PREFIX)/include/
+	install -m 644 include/osdp.h $(DESTDIR)$(PREFIX)/include/
+	install -m 644 include/osdp.hpp $(DESTDIR)$(PREFIX)/include/

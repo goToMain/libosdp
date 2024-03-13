@@ -24,6 +24,7 @@ usage() {
 	  --static-pd                  Setup PD single statically
 	  --lib-only                   Only build the library
 	  --cross-compile PREFIX       Use to pass a compiler prefix
+	  --prefix PATH                Install path prefix (default: /usr)
 	  --build-dir                  Build output directory (default: ./build)
 	  -d, --debug                  Enable debug builds
 	  -f, --force                  Use this flags to override some checks
@@ -40,6 +41,7 @@ while [ $# -gt 0 ]; do
 	--data-trace)          DATA_TRACE=1;;
 	--skip-mark)           SKIP_MARK_BYTE=1;;
 	--cross-compile)       CROSS_COMPILE=$2; shift;;
+	--prefix)              PREFIX=$2; shift;;
 	--crypto)              CRYPTO=$2; shift;;
 	--crypto-include-dir)  CRYPTO_INCLUDE_DIR=$2; shift;;
 	--crypto-ld-flags)     CRYPTO_LD_FLAGS=$2; shift;;
@@ -163,17 +165,29 @@ if [[ ! -z "${LIB_ONLY}" ]]; then
 	TARGETS=""
 fi
 
+if [[ -z "${PREFIX}" ]]; then
+	PREFIX="/usr"
+fi
+
+## Generate libosdp.pc
+echo "Generating libosdp.pc"
+sed -e "s|@CMAKE_INSTALL_PREFIX@|${PREFIX}|" \
+    -e "s|@PROJECT_NAME@|${PROJECT_NAME}|" \
+    -e "s|@PROJECT_DESCRIPTION@|Open Supervised Device Protocol (OSDP) Library|" \
+    -e "s|@PROJECT_URL@|https://github.com/goToMain/libosdp|" \
+    -e "s|@PROJECT_VERSION@|${PROJECT_VERSION}|" \
+	misc/libosdp.pc.in > ${BUILD_DIR}/libosdp.pc
+
 ## Generate osdp_config.h
 echo "Generating osdp_config.h"
-CONFIG_OUT=${BUILD_DIR}/osdp_config.h
-cp src/osdp_config.h.in ${CONFIG_OUT}
-sed -ie "s/@PROJECT_VERSION@/${PROJECT_VERSION}/" ${CONFIG_OUT}
-sed -ie "s/@PROJECT_NAME@/${PROJECT_NAME}/" ${CONFIG_OUT}
-sed -ie "s/@GIT_BRANCH@/${GIT_BRANCH}/" ${CONFIG_OUT}
-sed -ie "s/@GIT_REV@/${GIT_REV}/" ${CONFIG_OUT}
-sed -ie "s/@GIT_TAG@/${GIT_TAG}/" ${CONFIG_OUT}
-sed -ie "s/@GIT_DIFF@/${GIT_DIFF}/" ${CONFIG_OUT}
-sed -ie "s|@REPO_ROOT@|${SCRIPT_DIR}|" ${CONFIG_OUT}
+sed -e "s|@PROJECT_VERSION@|${PROJECT_VERSION}|" \
+    -e "s|@PROJECT_NAME@|${PROJECT_NAME}|" \
+    -e "s|@GIT_BRANCH@|${GIT_BRANCH}|" \
+    -e "s|@GIT_REV@|${GIT_REV}|" \
+    -e "s|@GIT_TAG@|${GIT_TAG}|" \
+    -e "s|@GIT_DIFF@|${GIT_DIFF}|" \
+    -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" \
+	src/osdp_config.h.in > ${BUILD_DIR}/osdp_config.h
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"
@@ -199,10 +213,10 @@ CCFLAGS=${CCFLAGS}
 CXXFLAGS=${CXXFLAGS}
 LDFLAGS=${LDFLAGS}
 SRC_LIBOSDP=${LIBOSDP_SOURCES}
-SRC_OSDPCTL=${OSDPCTL_SOURCES}
 SRC_TEST=${TEST_SOURCES}
 TARGETS=${TARGETS}
 BUILD_DIR=$(realpath ${BUILD_DIR})
+PREFIX=${PREFIX}
 ---
 echo
 echo "LibOSDP lean build system configured!"

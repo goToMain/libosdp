@@ -1,5 +1,5 @@
-Command structures
-==================
+LibOSDP App Commands
+====================
 
 LibOSDP exposes the following structures thought ``osdp.h``. This document
 attempts to document each of its members. The following structure is used as a
@@ -8,43 +8,24 @@ wrapper for all the commands for convenience.
 .. code:: c
 
     struct osdp_cmd {
-        enum osdp_cmd_e id;
+        enum osdp_cmd_e id; // Command ID. Used to select specific commands in union
         union {
-            struct osdp_cmd_led    led;
+            struct osdp_cmd_led led;
             struct osdp_cmd_buzzer buzzer;
-            struct osdp_cmd_text   text;
+            struct osdp_cmd_text text;
             struct osdp_cmd_output output;
             struct osdp_cmd_comset comset;
             struct osdp_cmd_keyset keyset;
-            struct osdp_cmd_mfg    mfg;
+            struct osdp_cmd_mfg mfg;
+	    struct osdp_cmd_file_tx file_tx;
+	    struct osdp_status_report status;
         };
     };
 
-.. doxygenenum:: osdp_cmd_e
+Below are the structure of each of the command structures.
 
-.. doxygenstruct:: osdp_cmd
-   :members:
-
-Command LED
+LED command
 -----------
-
-.. code:: c
-
-    struct osdp_cmd_led_params {
-        uint8_t control_code;
-        uint8_t on_count;
-        uint8_t off_count;
-        uint8_t on_color;
-        uint8_t off_color;
-        uint16_t timer_count;
-    };
-
-    struct osdp_cmd_led {
-        uint8_t reader;
-        uint8_t number;
-        struct osdp_cmd_led_params temporary;
-        struct osdp_cmd_led_params permanent;
-    };
 
 .. doxygenstruct:: osdp_cmd_led_params
    :members:
@@ -52,77 +33,52 @@ Command LED
 .. doxygenstruct:: osdp_cmd_led
    :members:
 
-Command Output
+Buzzer command
 --------------
-
-.. code:: c
-
-    struct osdp_cmd_output {
-        uint8_t output_no;
-        uint8_t control_code;
-        uint16_t timer_count;
-    };
-
-.. doxygenstruct:: osdp_cmd_output
-   :members:
-
-Command Buzzer
---------------
-
-.. code:: c
-
-    struct osdp_cmd_buzzer {
-        uint8_t reader;
-        uint8_t control_code;
-        uint8_t on_count;
-        uint8_t off_count;
-        uint8_t rep_count;
-    };
 
 .. doxygenstruct:: osdp_cmd_buzzer
    :members:
 
-Command Text
+Text command
 ------------
-
-.. code:: c
-
-    struct osdp_cmd_text {
-        uint8_t reader;
-        uint8_t control_code;
-        uint8_t temp_time;
-        uint8_t offset_row;
-        uint8_t offset_col;
-        uint8_t length;
-        uint8_t data[32];
-    };
 
 .. doxygenstruct:: osdp_cmd_text
    :members:
 
-Command Comset
+Output command
 --------------
 
-.. code:: c
+.. doxygenstruct:: osdp_cmd_output
+   :members:
 
-    struct osdp_cmd_comset {
-        uint8_t address;
-        uint32_t baud_rate;
-    };
+Comset command
+--------------
 
 .. doxygenstruct:: osdp_cmd_comset
    :members:
 
-Command Keyset
+Keyset command
 --------------
-
-.. code:: c
-
-    struct osdp_cmd_keyset {
-        uint8_t type;
-        uint8_t length;
-        uint8_t data[OSDP_CMD_KEYSET_KEY_MAX_LEN];
-    };
 
 .. doxygenstruct:: osdp_cmd_keyset
    :members:
+
+Manufacture specific command
+----------------------------
+
+.. doxygenstruct:: osdp_cmd_mfg
+   :members:
+
+File transfer command
+---------------------
+
+.. doxygenstruct:: osdp_cmd_file_tx
+   :members:
+
+Status report command
+---------------------
+
+.. doxygenstruct:: osdp_status_report
+   :members:
+
+.. doxygenenum:: osdp_status_report_type

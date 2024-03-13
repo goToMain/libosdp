@@ -126,6 +126,7 @@ of the protocol support only the most common among them. You can see a
    api/peripheral-device
    api/miscellaneous
    api/command-structure
+   api/event-structure
    api/channel
 
 .. toctree::

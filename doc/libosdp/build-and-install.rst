@@ -45,7 +45,7 @@ HTML docs of LibOSDP depends on python3, pip3, doxygen, sphinx, and breathe.
 
 .. code:: sh
 
-    pip3 install -r requirements.txt
+    pip3 install -r doc/requirements.txt
     mkdir build && cd build
     cmake ..
     make html_docs
@@ -77,15 +77,23 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 Add LibOSDP to your cmake project
 ---------------------------------
 
-If you are familiar with cmake, then adding LibOSDP to your project is
-super simple. First off, add the following to your CMakeLists.txt
+Cmake find_package
+^^^^^^^^^^^^^^^^^^
+
+Build and install LibOSDP to some standard location such ``/usr/local/`` and
+then use cmake's popular find_package() method.
+
+Cmake external project
+^^^^^^^^^^^^^^^^^^^^^^
+
+Start by adding the following to your CMakeLists.txt
 
 .. code:: cmake
 
     include(ExternalProject)
     ExternalProject_Add(ext_libosdp
         GIT_REPOSITORY    https://github.com/cbsiddharth/libosdp.git
-        GIT_TAG           master
+        GIT_TAG           v3.0.2 # update this to the latest version
         SOURCE_DIR        ${CMAKE_BINARY_DIR}/libosdp/src
         BINARY_DIR        ${CMAKE_BINARY_DIR}/libosdp/build
         CONFIGURE_COMMAND cmake ${CMAKE_BINARY_DIR}/libosdp/src
@@ -95,7 +103,7 @@ super simple. First off, add the following to your CMakeLists.txt
     include_directories("${CMAKE_BINARY_DIR}/libosdp/install/usr/local/include")
     link_directories("${CMAKE_BINARY_DIR}/libosdp/install/usr/local/lib")
 
-Next you must add ``ext_libosdp`` as a dependency to your target. That
+Next, you must add ``ext_libosdp`` as a dependency to your target. That's
 it! now you can link your application to osdp library. Following example shows
 how you can do this.
 
@@ -110,3 +118,9 @@ how you can do this.
     add_executable(${OSDP_APP} ${OSDP_APP_SRC})
     add_dependencies(${OSDP_APP} ext_libosdp)
     target_link_libraries(${OSDP_APP} osdp)
+
+Using pkg-config
+^^^^^^^^^^^^^^^^
+
+If you are familiar with pkg-config based dependency resolution methods, LibOSDP
+provides a libosdp.pc file which is installed along with the library.

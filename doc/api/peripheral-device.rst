@@ -6,7 +6,6 @@ returns a single opaque pointer of type ``osdp_t`` where it maintains all it's
 internal data. All applications consuming this library must pass this context
 pointer all API calls.
 
-
 Device lifecycle management
 ---------------------------
 
@@ -37,17 +36,23 @@ Commands
 
 .. doxygenfunction:: osdp_pd_set_command_callback
 
-Refer to the `command structure`_ document for more information on how to
-populate the ``cmd`` structure for these function.
+Refer to the `command structure`_ document for more information on how the
+``cmd`` structure is framed.
 
 .. _command structure: command-structure.html
 
 Events
 ------
 
-.. doxygenstruct:: osdp_event
-   :members:
+When a PD app has some event (card read, key press, etc.,) to be reported to the
+CP, it creates the corresponding event structure and calls
+``osdp_pd_notify_event`` to deliver it to the CP on the next osdp_POLL command.
 
 .. doxygenfunction:: osdp_pd_notify_event
 
 .. doxygenfunction:: osdp_pd_flush_events
+
+Refer to the `event structure`_ document for more information on how to
+populate the ``event`` structure for these function.
+
+.. _event structure: event-structure.html

@@ -8,4 +8,5 @@ API
    peripheral-device
    miscellaneous
    command-structure
+   event-structure
    channel

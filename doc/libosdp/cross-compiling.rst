@@ -1,5 +1,13 @@
 Cross Compiling
----------------
+===============
+
+LibOSDP is written in C and does not depend on any other libraries. You can
+compile it to pretty much any platform (even Windows). Follow the cross
+compilation best practice for your platform. This document gives you some ideas
+on how this can be done but is in no way conclusive.
+
+Using Cmake
+-----------
 
 LibOSDP can be compiled with your cross compiler by passing a toolchain file to
 cmake. This can be done by invoking cmake with the command line argument
@@ -36,3 +44,15 @@ For convenience, the ``toolchain-file.cmake`` file can be placed in a common pat
     mkdir build && cd build
     cmake -DCMAKE_TOOLCHAIN_FILE=/opt/toolchain/armv8l-linux-gnueabihf/toolchain-file.cmake ..
     make
+
+Using make build
+----------------
+
+You could use the ``--cross-compile`` flag in configure.sh and then invoke make
+to build the library.
+
+.. code:: sh
+
+    ./configure.sh --cross-compile arm-none-
+    make
+    make DESTDIR=/opt/arm-none-sysroot/ install

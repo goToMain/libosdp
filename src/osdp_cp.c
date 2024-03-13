@@ -1471,6 +1471,21 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, const struct osdp_cmd *cmd)
 }
 
 OSDP_EXPORT
+int osdp_cp_flush_events(osdp_t *ctx, int pd_idx)
+{
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
+	struct osdp_cmd *cmd;
+	int count = 0;
+
+	while (cp_cmd_dequeue(pd, &cmd) == 0) {
+		cp_cmd_free(pd, cmd);
+		count++;
+	}
+	return count;
+}
+
+OSDP_EXPORT
 int osdp_cp_get_pd_id(const osdp_t *ctx, int pd_idx, struct osdp_pd_id *id)
 {
 	input_check(ctx, pd_idx);

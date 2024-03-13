@@ -945,6 +945,16 @@ void osdp_cp_teardown(osdp_t *ctx);
 int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd);
 
 /**
+ * @brief Deletes all commands queued for a give PD
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
+ * osdp_cp_setup()
+ * @return int Count of events dequeued
+ */
+int osdp_cp_flush_events(osdp_t *ctx, int pd);
+
+/**
  * @brief Get PD ID information as reported by the PD. Calling this method
  * before the CP has had a the chance to get this information will return
  * invalid/stale results.

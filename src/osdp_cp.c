@@ -1471,7 +1471,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd_idx, const struct osdp_cmd *cmd)
 }
 
 OSDP_EXPORT
-int osdp_cp_flush_events(osdp_t *ctx, int pd_idx)
+int osdp_cp_flush_commands(osdp_t *ctx, int pd_idx)
 {
 	input_check(ctx, pd_idx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);

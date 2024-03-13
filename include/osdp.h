@@ -958,7 +958,7 @@ int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd);
  * osdp_cp_setup()
  * @return int Count of events dequeued
  */
-int osdp_cp_flush_events(osdp_t *ctx, int pd);
+int osdp_cp_flush_commands(osdp_t *ctx, int pd);
 
 /**
  * @brief Get PD ID information as reported by the PD. Calling this method

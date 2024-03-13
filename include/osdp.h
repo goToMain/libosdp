@@ -230,6 +230,12 @@ typedef int (*osdp_read_fn_t)(void *data, uint8_t *buf, int maxlen);
  *
  * @retval +ve: number of bytes sent. must be <= `len`
  * @retval -ve on errors
+ *
+ * @note For now, LibOSDP expects method to write/queue all or no bytes over
+ * the channel per-invocation; ie., it does not support partial writes and is a
+ * known limitation. Since an OSDP packet isn't so large, and typical TX
+ * buffers are much larger than that, it's not as bad as it sounds and hence
+ * not on the priority list to be fixed.
  */
 typedef int (*osdp_write_fn_t)(void *data, uint8_t *buf, int len);
 
@@ -616,7 +622,7 @@ struct osdp_cmd_file_tx {
 	/**
 	 * Reserved and set to zero by OSDP spec.
 	 *
-	 * Note: The upper bits are used by libosdp as:
+	 * @note: The upper bits are used by libosdp as:
 	 *    bit-31 - OSDP_CMD_FILE_TX_FLAG_CANCEL: cancel an ongoing transfer
 	 */
 	uint32_t flags;
@@ -736,10 +742,11 @@ struct osdp_event_keypress {
 /**
  * @brief OSDP Event Manufacturer Specific Command
  *
- * Note: OSDP spec v2.2 makes this structure fixed at 4 bytes. LibOSDP allows
- * for some additional data to be passed in this command using the @a data and
- * @a length fields. To be fully compliant with the specification, set @a
- * length to 0.
+ * @note OSDP spec v2.2 makes this structure fixed at 4 bytes (3-byte vendor
+ * code and 1-byte data). LibOSDP allows for some additional data to be passed
+ * in this command using the @a data and @a length fields while using the
+ * 1-byte data (as specified in the specification) as @a command. To be fully
+ * compliant with the specification, you can set @a length to 0.
  */
 struct osdp_event_mfgrep {
 	/**
@@ -776,8 +783,7 @@ enum osdp_event_type {
  */
 struct osdp_event {
 	/**
-	 * Event type.
-	 * Used to select specific event in union.
+	 * Event type. Used to select specific event in union.
 	 */
 	enum osdp_event_type type;
 	/** Event */
@@ -1079,10 +1085,10 @@ void osdp_logger_init(const char *name, int log_level,
  * logger configured in their application.
  *
  * @param cb The callback function. See `osdp_log_callback_fn_t` for more
- *           details.
+ * details.
  *
- * Note: This function has to be called before osdp_{cp,pd}_setup(). Otherwise
- *       it will be ignored.
+ * @note This function has to be called before osdp_{cp,pd}_setup(). Otherwise
+ * it will be ignored.
  */
 void osdp_set_log_callback(osdp_log_callback_fn_t cb);
 
@@ -1107,7 +1113,7 @@ const char *osdp_get_source_info();
  *
  * @param ctx OSDP context
  * @param bitmask pointer to an array of bytes. must be as large as
- *                (num_pds + 7 / 8).
+ * (num_pds + 7 / 8).
  */
 void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 
@@ -1117,7 +1123,7 @@ void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask);
  *
  * @param ctx OSDP context
  * @param bitmask pointer to an array of bytes. must be as large as
- *                (num_pds + 7 / 8).
+ * (num_pds + 7 / 8).
  */
 void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 

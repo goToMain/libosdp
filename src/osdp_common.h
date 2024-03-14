@@ -107,24 +107,31 @@ union osdp_ephemeral_data {
  *    input_check(ctx);
  *    input_check(ctx, pd);
  */
-#define input_check_init(ctx)                                                  \
-	assert(ctx);                                                           \
-	TO_OSDP(ctx)->_magic = OSDP_CTX_MAGIC;
-#define input_check_osdp_ctx(ctx)                                              \
-	assert(ctx);                                                           \
-	assert(TO_OSDP(ctx)->_magic == OSDP_CTX_MAGIC);
-#define input_check_pd_offset(ctx, pd)                                         \
-	if (pd < 0 || pd >= NUM_PD(ctx)) {                                     \
-		LOG_PRINT("Invalid PD number %d", pd);                         \
-		return -1;                                                     \
-	}
-#define input_check2(_1, _2)                                                   \
-	input_check_osdp_ctx(_1);                                              \
+#define input_check_init(_ctx) do { \
+		struct osdp *__ctx = (struct osdp *)_ctx; \
+		assert(__ctx); \
+		__ctx->_magic = OSDP_CTX_MAGIC; \
+	} while (0)
+#define input_check_osdp_ctx(_ctx) do { \
+		struct osdp *__ctx = (struct osdp *)_ctx; \
+		BUG_ON(__ctx  == NULL); \
+		BUG_ON(__ctx->_magic != OSDP_CTX_MAGIC); \
+	} while (0)
+#define input_check_pd_offset(_ctx, _pd) do { \
+		struct osdp *__ctx = (struct osdp *)_ctx; \
+		int __pd = _pd; \
+		if (__pd < 0 || __pd >= __ctx->_num_pd) { \
+			LOG_PRINT("Invalid PD number %d", __pd); \
+			return -1; \
+		} \
+	} while (0)
+#define input_check2(_1, _2) \
+	input_check_osdp_ctx(_1); \
 	input_check_pd_offset(_1, _2);
-#define input_check1(_1)                                                       \
+#define input_check1(_1) \
 	input_check_osdp_ctx(_1);
 #define get_macro(_1, _2, macro, ...) macro
-#define input_check(...)                                                       \
+#define input_check(...) \
 	get_macro(__VA_ARGS__, input_check2, input_check1)(__VA_ARGS__)
 
 /**

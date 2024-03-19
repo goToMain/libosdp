@@ -86,6 +86,22 @@ else()
 	list(APPEND LIB_OSDP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/crypto/tinyaes_src.c)
 endif()
 
+# For shared library (gcc/linux), utils must be recompiled with -fPIC. Right
+# now cmake doesn't support `--whole-archvive ... --no-whole-archive` directive
+# to linker (see https://gitlab.kitware.com/cmake/cmake/-/issues/20078).
+#
+# Note: Mac seems to be impervious to this issue, I suppose it treats all
+# objects relocatable by default (?).
+#
+list(APPEND LIB_OSDP_UTILS_SRC
+	${PROJECT_SOURCE_DIR}/utils/src/utils.c
+	${PROJECT_SOURCE_DIR}/utils/src/list.c
+	${PROJECT_SOURCE_DIR}/utils/src/queue.c
+	${PROJECT_SOURCE_DIR}/utils/src/slab.c
+	${PROJECT_SOURCE_DIR}/utils/src/disjoint_set.c
+	${PROJECT_SOURCE_DIR}/utils/src/logger.c
+)
+
 # These variables are used in other parts of this projects for rebuilding
 # LibOSDP as they see fit. For instance pyosdp is built by setuptools.
 set(LIB_OSDP_SOURCES ${LIB_OSDP_SOURCES} PARENT_SCOPE)
@@ -98,7 +114,7 @@ add_definitions(${LIB_OSDP_DEFINITIONS})
 
 ## build libosdpstatic.a
 
-add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SOURCES})
+add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
 set_target_properties(${LIB_OSDP_STATIC} PROPERTIES COMPILE_FLAGS -DOSDP_STATIC_DEFINE)
 target_link_libraries(${LIB_OSDP_STATIC} ${LIB_OSDP_LIBRARIES})
 
@@ -119,22 +135,6 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-# For shared library (gcc/linux), utils must be recompiled with -fPIC. Right
-# now cmake doesn't support `--whole-archvive ... --no-whole-archive` directive
-# to linker (see https://gitlab.kitware.com/cmake/cmake/-/issues/20078).
-#
-# Note: Mac seems to be impervious to this issue, I suppose it treats all
-# objects relocatable by default (?).
-#
-list(APPEND LIB_OSDP_UTILS_SRC
-	${PROJECT_SOURCE_DIR}/utils/src/utils.c
-	${PROJECT_SOURCE_DIR}/utils/src/list.c
-	${PROJECT_SOURCE_DIR}/utils/src/queue.c
-	${PROJECT_SOURCE_DIR}/utils/src/slab.c
-	${PROJECT_SOURCE_DIR}/utils/src/disjoint_set.c
-	${PROJECT_SOURCE_DIR}/utils/src/logger.c
-)
-
 if (CONFIG_OSDP_PACKET_TRACE OR CONFIG_OSDP_DATA_TRACE)
 	list(APPEND LIB_OSDP_UTILS_SRC
 		${PROJECT_SOURCE_DIR}/utils/src/pcap_gen.c
@@ -151,10 +151,15 @@ elseif (MbedTLS_FOUND)
 	target_link_libraries(${LIB_OSDP_SHARED} PUBLIC MbedTLS::mbedcrypto)
 endif()
 
+list(APPEND LIB_OSDP_HEADERS
+	${PROJECT_SOURCE_DIR}/include/osdp.h
+	${PROJECT_SOURCE_DIR}/include/osdp.hpp
+)
+
 set_target_properties(${LIB_OSDP_SHARED} PROPERTIES
 	VERSION ${PROJECT_VERSION}
 	SOVERSION ${PROJECT_VERSION_MAJOR}
-	PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/include/osdp.h
+	PUBLIC_HEADER "${LIB_OSDP_HEADERS}"
 )
 
 target_include_directories(${LIB_OSDP_SHARED}

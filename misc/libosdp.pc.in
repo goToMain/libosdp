@@ -7,5 +7,5 @@ Name: @PROJECT_NAME@
 Description: @PROJECT_DESCRIPTION@
 URL: @PROJECT_URL@
 Version: @PROJECT_VERSION@
-Libs: -L${libdir} -losdp
+Libs: -L${libdir} -l@LIB_TARGET@
 Cflags: -I${includedir}

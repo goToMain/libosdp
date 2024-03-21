@@ -23,17 +23,15 @@ jobs:
         submodules: recursive
     - name: Configure
       run: |
-        cmake -DCMAKE_BUILD_TYPE=Debug .
+        cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCONFIG_OSDP_LIB_ONLY=on .
     - name: Build
-      run: cmake --build . --parallel 8
+      run: cmake --build build --parallel 8
     - name: Pack built binaries
       run: |
-        cmake --build . -t package
-        cmake --build . -t package_source
-        rm -rf ./packages/_CPack_Packages/
-        rm -f ./packages/*.tar.bz2
+        cmake --build build -t package
+        cmake --build build -t package_source
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
         name: libosdp-${{ matrix.os }}-binaries.zip
-        path: ./packages/
+        path: build/artifacts/

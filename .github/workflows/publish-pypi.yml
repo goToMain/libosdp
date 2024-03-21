@@ -8,10 +8,9 @@ name: Publish PyPI
 
 on:
   workflow_dispatch:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching Python-v*, i.e. v2.4.0
+  workflow_run:
+    workflows: ["Create Release"]
+    types: [completed]
 
 jobs:
   build_wheels:
@@ -21,7 +20,6 @@ jobs:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
         os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
-
     steps:
       - uses: actions/checkout@v4
         with:

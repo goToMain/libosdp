@@ -18,10 +18,14 @@ if ("${GIT_REV}" STREQUAL "")
 	set(GIT_BRANCH "None")
 else()
 	execute_process(
-		COMMAND bash -c "git diff --quiet --exit-code || echo +"
-		OUTPUT_VARIABLE GIT_DIFF
+		COMMAND git diff --quiet --exit-code
+		RESULT_VARIABLE RETURN_CODE
 		OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET
 	)
+	if(RETURN_CODE AND NOT RETURN_CODE EQUAL 0)
+		set(GIT_DIFF "+")
+	endif()
 	execute_process(
 		COMMAND git describe --exact-match --tags
 		OUTPUT_VARIABLE GIT_TAG ERROR_QUIET

@@ -26,7 +26,11 @@ include(BuildType)
 include(GNUInstallDirs)
 
 ## Global settings
-add_compile_options(-Wall -Wextra)
+if(MSVC)
+	add_compile_options(/W4 /WX)
+else()
+	add_compile_options(-Wall -Wextra)
+endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

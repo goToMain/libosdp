@@ -25,11 +25,11 @@ jobs:
       run: |
         cmake -DCMAKE_BUILD_TYPE=Debug .
     - name: Build
-      run: VERBOSE=1 make
+      run: cmake --build . --parallel 8
     - name: Pack built binaries
       run: |
-        make package
-        make package_source
+        cmake --build . -t package
+        cmake --build . -t package_source
         rm -rf ./packages/_CPack_Packages/
         rm -f ./packages/*.tar.bz2
     - name: Upload artifacts

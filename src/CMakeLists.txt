@@ -48,6 +48,7 @@ endif()
 
 # Generate osdp_config.h in build dir.
 set(REPO_ROOT ${CMAKE_SOURCE_DIR})
+message("REPO_ROOT ${REPO_ROOT}")
 configure_file(osdp_config.h.in osdp_config.h @ONLY)
 
 list(APPEND LIB_OSDP_SOURCES

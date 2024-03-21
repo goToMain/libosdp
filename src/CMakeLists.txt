@@ -161,15 +161,6 @@ install(
 	ARCHIVE DESTINATION ${LIBOSDP_LIBRARY_DIR}
 	PUBLIC_HEADER DESTINATION include/libosdp
 )
-
-# generate osdp_export.h for OSDP_EXPORT() macro
-# must be placed after the target definitions.
-include(GenerateExportHeader)
-generate_export_header(${LIB_OSDP_STATIC}
-	BASE_NAME OSDP
-	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
-)
-
 endif() # CONFIG_BUILD_STATIC
 
 ################################################
@@ -230,15 +221,34 @@ install(
 	PUBLIC_HEADER DESTINATION include/libosdp
 )
 
-# generate osdp_export.h for OSDP_EXPORT() macro
-# must be placed after the target definitions.
-include(GenerateExportHeader)
-generate_export_header(${LIB_OSDP_SHARED}
-	BASE_NAME OSDP
-	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
-)
-
 endif() # CONFIG_BUILD_SHARED
+
+if (MSVC)
+	# MSVC expects the function declation to match the definition.
+	# This requires osdp.h also have a lot of OSDP_EXPORT prefixes which
+	# looks ugly. So for now, we will just disable this entirely.
+	string(CONCAT EXPORT_CONTENT
+		"#ifndef OSDP_EXPORT_H\n"
+		"#define OSDP_EXPORT_H\n"
+		"\n"
+		"#define OSDP_EXPORT\n"
+		"#define OSDP_NO_EXPORT\n"
+		"#define OSDP_DEPRECATED_EXPORT\n"
+		"#endif"
+	)
+	file(
+		GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
+		CONTENT "${EXPORT_CONTENT}"
+	)
+else()
+	# generate osdp_export.h for OSDP_EXPORT macro
+	# must be placed after the target definitions.
+	include(GenerateExportHeader)
+	generate_export_header(${LIB_TARGET}
+		BASE_NAME OSDP
+		EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
+	)
+endif() # MSVC
 
 # pkg-config file
 configure_file(

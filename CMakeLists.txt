@@ -26,9 +26,7 @@ include(BuildType)
 include(GNUInstallDirs)
 
 ## Global settings
-if(MSVC)
-	add_compile_options(/W4 /WX)
-else()
+if(NOT MSVC)
 	add_compile_options(-Wall -Wextra)
 endif()
 

@@ -20,5 +20,5 @@ set(PD_SAMPLE cpp_pd_sample)
 add_executable(${CP_SAMPLE} cp_app.cpp)
 add_executable(${PD_SAMPLE} pd_app.cpp)
 
-target_link_libraries(${CP_SAMPLE} osdp)
-target_link_libraries(${PD_SAMPLE} osdp)
+target_link_libraries(${CP_SAMPLE} PRIVATE $<IF:$<TARGET_EXISTS:osdp>,osdp,osdpstatic>)
+target_link_libraries(${PD_SAMPLE} PRIVATE $<IF:$<TARGET_EXISTS:osdp>,osdp,osdpstatic>)

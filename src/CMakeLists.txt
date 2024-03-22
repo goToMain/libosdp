@@ -70,6 +70,10 @@ if (CONFIG_OSDP_PACKET_TRACE OR CONFIG_OSDP_DATA_TRACE)
 	)
 endif()
 
+list(APPEND LIB_OSDP_INCLUDE_DIRS
+	${PROJECT_BINARY_DIR}/include
+)
+
 list(APPEND LIB_OSDP_PRIVATE_INCLUDE_DIRS
 	${CMAKE_CURRENT_SOURCE_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}
@@ -107,6 +111,7 @@ list(APPEND LIB_OSDP_UTILS_SRC
 list(APPEND LIB_OSDP_HEADERS
 	${PROJECT_SOURCE_DIR}/include/osdp.h
 	${PROJECT_SOURCE_DIR}/include/osdp.hpp
+	${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
 )
 
 # These variables are used in other parts of this projects for rebuilding
@@ -141,6 +146,7 @@ set_target_properties(${LIB_OSDP_STATIC} PROPERTIES
 target_include_directories(${LIB_OSDP_STATIC}
 	PUBLIC
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 		$<INSTALL_INTERFACE:include/libosdp>
 	PRIVATE
 		${LIB_OSDP_INCLUDE_DIRS}
@@ -161,6 +167,7 @@ install(
 	ARCHIVE DESTINATION ${LIBOSDP_LIBRARY_DIR}
 	PUBLIC_HEADER DESTINATION include/libosdp
 )
+
 endif() # CONFIG_BUILD_STATIC
 
 ################################################
@@ -201,6 +208,7 @@ set_target_properties(${LIB_OSDP_SHARED} PROPERTIES
 target_include_directories(${LIB_OSDP_SHARED}
 	PUBLIC
 		$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 		$<INSTALL_INTERFACE:include/libosdp>
 	PRIVATE
 		${LIB_OSDP_PRIVATE_INCLUDE_DIRS}
@@ -227,10 +235,10 @@ endif() # CONFIG_BUILD_SHARED
 include(GenerateExportHeader)
 generate_export_header(${LIB_TARGET}
 	BASE_NAME osdp
-	EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
+	EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/include/osdp_export.h
 )
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
+install(FILES ${PROJECT_BINARY_DIR}/include/osdp_export.h
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 	COMPONENT headers
 )

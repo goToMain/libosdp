@@ -16,10 +16,8 @@ endif()
 set(CP_SAMPLE c_cp_sample)
 set(PD_SAMPLE c_pd_sample)
 
-include_directories(${LIBOSDP_INCLUDE_DIR} ${CMAKE_SOURCE_DIRECTORY}/include)
-
 add_executable(${CP_SAMPLE} cp_app.c)
 add_executable(${PD_SAMPLE} pd_app.c)
 
-target_link_libraries(${CP_SAMPLE} osdp)
-target_link_libraries(${PD_SAMPLE} osdp)
+target_link_libraries(${CP_SAMPLE} PRIVATE $<IF:$<TARGET_EXISTS:osdp>,osdp,osdpstatic>)
+target_link_libraries(${PD_SAMPLE} PRIVATE $<IF:$<TARGET_EXISTS:osdp>,osdp,osdpstatic>)

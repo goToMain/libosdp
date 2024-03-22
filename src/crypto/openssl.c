@@ -17,7 +17,12 @@ void osdp_crypt_setup()
 
 void osdp_openssl_fatal(void)
 {
-	ERR_print_errors_fp(stderr);
+	/**
+	 * ERR_print_errors_fp(stderr) is not available when build as a shared
+	 * library in some platforms. Maybe we should call ERR_print_errors_cb()
+	 * in future but for now, we will just fprintf.
+	 */
+	fprintf(stderr, "Openssl fatal error\n");
 	abort();
 }
 

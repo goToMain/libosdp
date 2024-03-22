@@ -50,7 +50,7 @@ jobs:
         submodules: recursive
     - name: Install dependencies
       run: |
-        apt install -y python3-sphinx
+        sudo apt install -y python3-sphinx
         pip3 install -r doc/requirements.txt
     - name: Configure
       run: cmake -DCMAKE_BUILD_TYPE=Debug .

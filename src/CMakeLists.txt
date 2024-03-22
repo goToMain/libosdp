@@ -111,7 +111,7 @@ list(APPEND LIB_OSDP_UTILS_SRC
 list(APPEND LIB_OSDP_HEADERS
 	${PROJECT_SOURCE_DIR}/include/osdp.h
 	${PROJECT_SOURCE_DIR}/include/osdp.hpp
-	${CMAKE_CURRENT_BINARY_DIR}/osdp_export.h
+	${PROJECT_BINARY_DIR}/include/osdp_export.h
 )
 
 # These variables are used in other parts of this projects for rebuilding
@@ -222,11 +222,16 @@ endif()
 
 install(
 	TARGETS ${LIB_OSDP_SHARED}
-	COMPONENT distributables
 	EXPORT LibOSDPTargets
-	LIBRARY DESTINATION ${LIBOSDP_LIBRARY_DIR}
-	ARCHIVE DESTINATION ${LIBOSDP_LIBRARY_DIR}
-	PUBLIC_HEADER DESTINATION include/libosdp
+	LIBRARY
+		COMPONENT distributables
+		DESTINATION ${LIBOSDP_LIBRARY_DIR}
+	ARCHIVE
+		COMPONENT distributables
+		DESTINATION ${LIBOSDP_LIBRARY_DIR}
+	PUBLIC_HEADER
+		COMPONENT headers
+		DESTINATION include/libosdp
 )
 
 endif() # CONFIG_BUILD_SHARED
@@ -261,6 +266,7 @@ install(EXPORT LibOSDPTargets
 	FILE LibOSDPTargets.cmake
 	NAMESPACE libosdp::
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
+	COMPONENT config_files
 )
 configure_package_config_file(
 	${PROJECT_SOURCE_DIR}/cmake/LibOSDPConfig.cmake.in
@@ -277,4 +283,5 @@ install(FILES
           "${CMAKE_BINARY_DIR}/LibOSDPConfig.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/LibOSDPConfigVersion.cmake"
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
+	COMPONENT config_files
 )

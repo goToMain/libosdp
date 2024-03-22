@@ -26,10 +26,18 @@ set(SYSTEM_NAME ${CMAKE_SYSTEM_NAME}-${CMAKE_HOST_SYSTEM_PROCESSOR})
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PACKAGE_NAME}.src")
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_SOURCE_IGNORE_FILES
-	/.git/
-	/.github/
-	/build*
+	.git/
+	.github/
+    .vscode/
+    .venv/
+    .pytest_cache
+	build/
+    tags
+    __pycache__/
 	/_config.yml
+    /python/dist/
+    /python/libosdp.egg-info/
+    /python/vendor/
 )
 
 # Binaries
@@ -38,7 +46,11 @@ set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}-${SYSTEM_NAME}")
 include(CPackComponent)
 cpack_add_component(distributables
 	DISPLAY_NAME  ${PROJECT_NAME}
-	DESCRIPTION   "Distributables (Libaray, Binaries, Headers, etc.,)"
+    DESCRIPTION   "Distributables (shared/static libararies, binaries, etc.,)"
+)
+cpack_add_component(distributables
+	DISPLAY_NAME  ${PROJECT_NAME}
+    DESCRIPTION   "Development headers"
 )
 cpack_add_component(config_files
 	DISPLAY_NAME  ${PROJECT_NAME}

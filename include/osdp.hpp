@@ -15,7 +15,7 @@
 
 namespace OSDP {
 
-class Common {
+class OSDP_EXPORT Common {
 public:
 	Common() : _ctx(nullptr) {}
 
@@ -59,7 +59,7 @@ protected:
 	osdp_t *_ctx;
 };
 
-class ControlPanel : public Common {
+class OSDP_EXPORT ControlPanel : public Common {
 public:
 	ControlPanel() {}
 
@@ -103,7 +103,7 @@ public:
 
 };
 
-class PeripheralDevice : public Common {
+class OSDP_EXPORT PeripheralDevice : public Common {
 public:
 	PeripheralDevice() {}
 

@@ -202,6 +202,8 @@ cat > ${BUILD_DIR}/osdp_export.h <<----
 #endif /* OSDP_EXPORT_H */
 ---
 
+CCFLAGS+=" -I${BUILD_DIR}"
+
 ## Generate Makefile
 echo "Generating config.make"
 cat > config.make << ---

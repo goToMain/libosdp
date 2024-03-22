@@ -87,3 +87,5 @@ install: libosdp
 	install -d $(DESTDIR)$(PREFIX)/include/
 	install -m 644 include/osdp.h $(DESTDIR)$(PREFIX)/include/
 	install -m 644 include/osdp.hpp $(DESTDIR)$(PREFIX)/include/
+	install -m 644 $(O)/osdp_export.h $(DESTDIR)$(PREFIX)/include/
+

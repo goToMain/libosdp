@@ -22,11 +22,11 @@ jobs:
       with:
         submodules: recursive
     - name: Configure
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCONFIG_OSDP_LIB_ONLY=on .
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug .
     - name: Build
       run: cmake --build build --parallel 8
     - name: Run unit-tests
-      run: cmake --build build --target check-ut
+      run: cmake --build build --parallel 8 --target check-ut
     - name: Run pytest
       run: tests/pytest/run.sh
     - name: Pack built binaries

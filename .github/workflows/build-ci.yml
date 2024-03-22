@@ -19,21 +19,16 @@ jobs:
     - uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: configure
-      run: |
-        cmake -DCMAKE_BUILD_TYPE=Debug .
-    - name: make
-      run: VERBOSE=1 make
-    - name: pacakge
-      run: |
-        make package
-        make package_source
-        rm -rf ./packages/_CPack_Packages/
-        rm -f ./packages/*.tar.bz2
+    - name: Configure
+      run: cmake -DCMAKE_BUILD_TYPE=Debug .
+    - name: Build
+      run: cmake --build . --parallel 7
+    - name: Package
+      run: cmake --build . --target package  --target package_source
     - uses: actions/upload-artifact@v2
       with:
-        name: libosdp-ci-binaries.zip
-        path: ./packages/
+        name: libosdp-ubuntu-latest-binaries.zip
+        path: artifacts/
 
   MakeBuild:
     runs-on: ubuntu-latest
@@ -47,20 +42,33 @@ jobs:
     - name: make
       run: make V=1
 
+  DocBuild:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Install dependencies
+      run: |
+        apt install -y python3-sphinx
+        pip3 install -r doc/requirements.txt
+    - name: Configure
+      run: cmake -DCMAKE_BUILD_TYPE=Debug .
+    - name: Build docs
+      run: cmake --build . --parallel 7 --target html_docs
+
   Test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
       with:
         submodules: recursive
-    - name: configure
-      run: cmake .
-    - name: pytest
-      run: |
-        ./tests/pytest/run.sh
-    - name: unit-tests
-      run: |
-        make check-ut
+    - name: Configure
+      run: cmake -DCMAKE_BUILD_TYPE=Debug .
+    - name: Run unit-tests
+      run: cmake --build . --parallel 7 --target check-ut
+    - name: Run pytest
+      run: tests/pytest/run.sh
 
   CheckPatch:
     runs-on: ubuntu-latest
@@ -81,12 +89,9 @@ jobs:
         with:
           submodules: recursive
       - name: Install pypa/build
-        run: |
-          python3 -m pip install build --user
+        run: python3 -m pip install build --user
       - name: Build a binary wheel and a source tarball
-        run: |
-          pushd python
-          python3 -m build
+        run: python3 -m build python
       - name: Store the distribution packages
         uses: actions/upload-artifact@v3
         with:

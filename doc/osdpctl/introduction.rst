@@ -48,7 +48,7 @@ used to start it.
     osdpctl pd-0.cfg stop
 
 Send control commands to an OSDP service
----------------------------------------
+----------------------------------------
 
 A command to be sent to a running CP/PD service must be of the following format.
 Some of these commands will in-turn be sent by the CP/PD device to its connected

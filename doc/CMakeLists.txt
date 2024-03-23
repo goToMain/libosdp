@@ -7,7 +7,18 @@ if(SPHINX_FOUND AND DOXYGEN_FOUND)
 get_target_property(LIBOSDP_PUBLIC_HEADER_DIR osdp INTERFACE_INCLUDE_DIRECTORIES)
 file(GLOB_RECURSE LIBOSDP_PUBLIC_HEADERS ${LIBOSDP_PUBLIC_HEADER_DIR}/*.h)
 
-set(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/include/osdp.h ${CMAKE_SOURCE_DIR}/src")
+# Copy public header and patch it for doxygen run
+configure_file(
+	${PROJECT_SOURCE_DIR}/include/osdp.h
+	${CMAKE_CURRENT_BINARY_DIR}/include/osdp.h
+	COPYONLY
+)
+execute_process(
+	COMMAND sed -ie "/^#include <osdp_export.h>$/d" ${CMAKE_CURRENT_BINARY_DIR}/include/osdp.h
+	COMMAND sed -ie "/^OSDP_EXPORT$/d" ${CMAKE_CURRENT_BINARY_DIR}/include/osdp.h
+)
+
+set(DOXYGEN_INPUT_DIRS ${CMAKE_CURRENT_BINARY_DIR}/include/)
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
 

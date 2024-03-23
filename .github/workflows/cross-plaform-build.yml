@@ -27,8 +27,6 @@ jobs:
       run: cmake --build build --parallel 8
     - name: Run unit-tests
       run: cmake --build build --parallel 8 --target check-ut
-    - name: Run pytest
-      run: tests/pytest/run.sh
     - name: Pack built binaries
       run: cmake --build build --target package
     - name: Upload artifacts

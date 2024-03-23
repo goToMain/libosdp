@@ -8,14 +8,13 @@ rm -rf __pycache__/
 rm -rf .venv ../../python/{build,dist,libosdp.egg-info,vendor}
 python3 -m venv .venv
 source ./.venv/bin/activate
+pip install --upgrade pip
 
 echo "[-] Installing dependencies.."
 pip install -r requirements.txt
 
 echo "[-] Installing libosdp.."
-pushd ../../python
-python3 setup.py install
-popd
+pip install ../../python
 
 if [[ "$1" == "-n" ]]; then
 	exit

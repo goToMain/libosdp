@@ -33,7 +33,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: LibOSDP-${{ github.ref }}-${{ matrix.os }}-binaries
+        name: LibOSDP-${{ matrix.os }}-binaries
         path: build/artifacts/
 
   build:

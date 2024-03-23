@@ -5,7 +5,8 @@
  */
 
 #include <iostream>
-#include <unistd.h>
+#include <chrono>
+#include <thread>
 #include <osdp.hpp>
 
 int sample_pd_send_func(void *data, uint8_t *buf, int len)
@@ -86,7 +87,7 @@ int main()
 		pd.refresh();
 
 		// your application code.
-		usleep(1000);
+		std::this_thread::sleep_for(std::chrono::microseconds(10 * 1000));
 	}
 
 	return 0;

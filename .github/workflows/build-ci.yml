@@ -22,7 +22,7 @@ jobs:
     - name: Configure
       run: cmake -DCMAKE_BUILD_TYPE=Debug .
     - name: Build
-      run: cmake --build . --parallel 7
+      run: cmake --build . --parallel 7 --target all --target cpp_cp_sample --target cpp_pd_sample
     - name: Package
       run: cmake --build . --target package  --target package_source
     - uses: actions/upload-artifact@v2

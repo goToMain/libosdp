@@ -369,14 +369,19 @@ enum osdp_status_report_type {
  *
  * This can is used by the PD to indicate various status change reports. Upto a
  * maximum of 32 statuses can be reported using this API.
- *
- * @param type The kind of event to report see `enum osdp_event_status_type_e`
- * @param nr_entries Number of valid bits in `status`
- * @param status Status bit mask
  */
 struct osdp_status_report {
+	/**
+	 * The kind of event to report see `enum osdp_event_status_type_e`
+	 */
 	enum osdp_status_report_type type;
+	/**
+	 * Number of valid bits in `status`
+	 */
 	int nr_entries;
+	/**
+	 * Status bit mask
+	 */
 	uint32_t mask;
 };
 
@@ -392,21 +397,26 @@ struct osdp_status_report {
 
 /**
  * @brief Command sent from CP to Control digital output of PD.
- *
- * @param output_no 0 = First Output, 1 = Second Output, etc.
- * @param control_code One of the following:
- *    0 - NOP – do not alter this output
- *    1 - set the permanent state to OFF, abort timed operation (if any)
- *    2 - set the permanent state to ON, abort timed operation (if any)
- *    3 - set the permanent state to OFF, allow timed operation to complete
- *    4 - set the permanent state to ON, allow timed operation to complete
- *    5 - set the temporary state to ON, resume perm state on timeout
- *    6 - set the temporary state to OFF, resume permanent state on timeout
- * @param timer_count Time in units of 100 ms
  */
 struct osdp_cmd_output {
+	/**
+	 * 0 = First Output, 1 = Second Output, etc.
+	 */
 	uint8_t output_no;
+	/**
+	 * One of the following:
+	 *    0 - NOP – do not alter this output
+	 *    1 - set the permanent state to OFF, abort timed operation (if any)
+	 *    2 - set the permanent state to ON, abort timed operation (if any)
+	 *    3 - set the permanent state to OFF, allow timed operation to complete
+	 *    4 - set the permanent state to ON, allow timed operation to complete
+	 *    5 - set the temporary state to ON, resume perm state on timeout
+	 *    6 - set the temporary state to OFF, resume permanent state on timeout
+	 */
 	uint8_t control_code;
+	/**
+	 * Time in units of 100 ms
+	 */
 	uint16_t timer_count;
 };
 
@@ -574,11 +584,6 @@ struct osdp_cmd_comset {
 
 /**
  * @brief This command transfers an encryption key from the CP to a PD.
- *
- * @param type Type of keys:
- *   - 0x01 – Secure Channel Base Key
- * @param length Number of bytes of key data - (Key Length in bits + 7) / 8
- * @param data Key data
  */
 struct osdp_cmd_keyset {
 	/**
@@ -598,17 +603,23 @@ struct osdp_cmd_keyset {
 
 /**
  * @brief Manufacturer Specific Commands
- *
- * @param vendor_code 3-byte IEEE assigned OUI. Most Significant 8-bits are
- *        unused.
- * @param command 1-byte manufacturer defined osdp command
- * @param length Length of command data (optional)
- * @param data Command data (optional)
  */
 struct osdp_cmd_mfg {
+	/**
+	 * 3-byte IEEE assigned OUI. Most Significant 8-bits are unused
+	 */
 	uint32_t vendor_code;
+	/**
+	 * 1-byte manufacturer defined osdp command
+	 */
 	uint8_t command;
+	/**
+	 * length Length of command data (optional)
+	 */
 	uint8_t length;
+	/**
+	 * Command data (optional)
+	 */
 	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
 };
 
@@ -1243,7 +1254,7 @@ struct osdp_file_ops {
  * @retval 0 on success. -1 on errors.
  */
 OSDP_EXPORT
-int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
+int osdp_file_register_ops(osdp_t *ctx, int pd,
 			   const struct osdp_file_ops *ops);
 
 /**
@@ -1257,8 +1268,7 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
  * @retval 0 on success. -1 on errors.
  */
 OSDP_EXPORT
-int osdp_get_file_tx_status(const osdp_t *ctx, int pd_idx,
-			    int *size, int *offset);
+int osdp_get_file_tx_status(const osdp_t *ctx, int pd, int *size, int *offset);
 
 #ifdef __cplusplus
 }

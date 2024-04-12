@@ -305,7 +305,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		cmd.id = OSDP_CMD_STATUS;
 		cmd.status.type = OSDP_STATUS_REPORT_LOCAL;
-		if (do_command_callback(pd, &cmd)) {
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
@@ -324,7 +324,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		cmd.id = OSDP_CMD_STATUS;
 		cmd.status.type = OSDP_STATUS_REPORT_INPUT;
-		if (do_command_callback(pd, &cmd)) {
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
@@ -343,7 +343,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		cmd.id = OSDP_CMD_STATUS;
 		cmd.status.type = OSDP_STATUS_REPORT_OUTPUT;
-		if (do_command_callback(pd, &cmd)) {
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;
@@ -358,7 +358,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		cmd.id = OSDP_CMD_STATUS;
 		cmd.status.type = OSDP_STATUS_REPORT_REMOTE;
-		if (do_command_callback(pd, &cmd)) {
+		if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
 		event = (struct osdp_event *)pd->ephemeral_data;

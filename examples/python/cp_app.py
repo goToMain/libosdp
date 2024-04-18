@@ -11,7 +11,7 @@ from osdp import *
 
 class SerialChannel(Channel):
     def __init__(self, device: str, speed: int):
-        self.dev = serial.Serial(device, speed, timeout=1)
+        self.dev = serial.Serial(device, speed, timeout=0)
 
     def read(self, max_read: int):
         return self.dev.read(max_read)

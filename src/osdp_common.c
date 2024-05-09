@@ -223,9 +223,9 @@ const char *osdp_get_version()
 OSDP_EXPORT
 const char *osdp_get_source_info()
 {
-	if (strnlen(GIT_TAG, 8) > 0) {
+	if (strlen(GIT_TAG) > 0) {
 		return GIT_BRANCH " (" GIT_TAG ")";
-	} else if (strnlen(GIT_REV, 8) > 0) {
+	} else if (strlen(GIT_REV) > 0) {
 		return GIT_BRANCH " (" GIT_REV GIT_DIFF ")";
 	} else {
 		return GIT_BRANCH;

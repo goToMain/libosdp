@@ -518,7 +518,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd)
 		}
 		pd->packet_len = ret;
 		if (pd->packet_scan_skip) {
-			LOG_WRN("Packet scan skipped:%u mark:%d",
+			LOG_DBG("Packet scan skipped:%u mark:%d",
 				pd->packet_scan_skip,
 				ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK));
 			pd->packet_scan_skip = 0;

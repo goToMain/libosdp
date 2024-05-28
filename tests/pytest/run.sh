@@ -17,6 +17,11 @@ echo "[-] Installing libosdp.."
 pip install ../../python
 
 if [[ "$1" == "-n" ]]; then
+	echo "To run tests do:"
+	echo
+	echo "cd ${PYTEST_DIR}"
+	echo "source .venv/bin/activate"
+	echo "pytest -vv --show-capture=all [test_<name>.py]"
 	exit
 fi
 

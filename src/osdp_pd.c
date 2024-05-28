@@ -719,9 +719,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_2(pd->id.serial_number);
 		buf[len++] = BYTE_3(pd->id.serial_number);
 
-		buf[len++] = BYTE_3(pd->id.firmware_version);
 		buf[len++] = BYTE_2(pd->id.firmware_version);
 		buf[len++] = BYTE_1(pd->id.firmware_version);
+		buf[len++] = BYTE_0(pd->id.firmware_version);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_PDCAP:

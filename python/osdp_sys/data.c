@@ -679,3 +679,18 @@ int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event)
 	*dict = obj;
 	return 0;
 }
+
+PyObject *pyosdp_make_dict_pd_id(struct osdp_pd_id *pd_id)
+{
+	PyObject *obj = PyDict_New();
+	if (obj == NULL)
+		return -1;
+
+	pyosdp_dict_add_int(obj, "version", pd_id->version);
+	pyosdp_dict_add_int(obj, "model", pd_id->model);
+	pyosdp_dict_add_int(obj, "vendor_code", pd_id->vendor_code);
+	pyosdp_dict_add_int(obj, "serial_number", pd_id->serial_number);
+	pyosdp_dict_add_int(obj, "firmware_version", pd_id->firmware_version);
+
+	return obj;
+}

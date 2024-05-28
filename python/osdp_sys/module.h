@@ -91,5 +91,6 @@ int pyosdp_make_struct_cmd(struct osdp_cmd *cmd, PyObject *dict);
 int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd);
 int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event);
 int pyosdp_make_struct_event(struct osdp_event *event, PyObject *dict);
+PyObject *pyosdp_make_dict_pd_id(struct osdp_pd_id *pd_id);
 
 #endif /* _PYOSDP_H_ */

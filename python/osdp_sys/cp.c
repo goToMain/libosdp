@@ -86,6 +86,56 @@ static PyObject *pyosdp_cp_refresh(pyosdp_cp_t *self, pyosdp_cp_t *args)
 	Py_RETURN_NONE;
 }
 
+#define pyosdp_cp_get_pd_id_doc                                                      \
+	"Get PD_ID info as reported by the PD\n"                                     \
+	"\n"                                                                         \
+	"@param pd PD offset number\n"                                               \
+	"\n"                                                                         \
+	"@return dict with PD_ID info\n"
+static PyObject *pyosdp_cp_get_pd_id(pyosdp_cp_t *self, PyObject *args)
+{
+	int pd;
+	struct osdp_pd_id pd_id = {0};
+
+	if (!PyArg_ParseTuple(args, "I", &pd)) {
+		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
+		Py_RETURN_NONE;
+	}
+
+	if (osdp_cp_get_pd_id(self->ctx, pd, &pd_id)) {
+		PyErr_SetString(PyExc_ValueError, "invalid PD offset");
+		Py_RETURN_NONE;
+	}
+
+	return pyosdp_make_dict_pd_id(&pd_id);
+}
+
+#define pyosdp_cp_check_capability_doc                                                 \
+	"Get capability associated to a function_code as reported by the PD\n"       \
+	"\n"                                                                         \
+	"@param pd PD offset number\n"                                               \
+	"@param capability function code\n"                                          \
+	"\n"                                                                         \
+	"@return (compliance_level, num_items)\n"
+static PyObject *pyosdp_cp_check_capability(pyosdp_cp_t *self, PyObject *args)
+{
+	int pd, function_code;
+	struct osdp_pd_cap cap = {0};
+
+	if (!PyArg_ParseTuple(args, "II", &pd, &function_code)) {
+		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
+		Py_RETURN_NONE;
+	}
+
+	cap.function_code = function_code;
+	if (osdp_cp_get_capability(self->ctx, pd, &cap)) {
+		PyErr_SetString(PyExc_ValueError, "invalid PD offset or function code");
+		Py_RETURN_NONE;
+	}
+
+	return Py_BuildValue("(II)", cap.compliance_level, cap.num_items);
+}
+
 #define pyosdp_cp_send_command_doc                                                   \
 	"Send an OSDP command to a PD\n"                                             \
 	"\n"                                                                         \
@@ -327,6 +377,10 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  METH_NOARGS, pyosdp_cp_set_flag_doc },
 	{ "clear_flag", (PyCFunction)pyosdp_cp_clear_flag,
 	  METH_NOARGS, pyosdp_cp_clear_flag_doc },
+	{ "get_pd_id", (PyCFunction)pyosdp_cp_get_pd_id,
+	  METH_VARARGS, pyosdp_cp_get_pd_id_doc },
+	{ "check_capability", (PyCFunction)pyosdp_cp_check_capability,
+	  METH_VARARGS, pyosdp_cp_check_capability_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 

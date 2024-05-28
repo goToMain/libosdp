@@ -3,17 +3,14 @@
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
-import sys
-import os
-import tempfile
 import osdp_sys
 import time
 import queue
 import threading
-from typing import Callable
+from typing import Callable, Tuple
 
-from .helpers import PDInfo
-from .constants import LibFlag, LogLevel
+from .helpers import PDInfo, PdId
+from .constants import Capability, LibFlag, LogLevel
 
 class ControlPanel():
     def __init__(
@@ -72,6 +69,29 @@ class ControlPanel():
     def is_online(self, address):
         pd = self.pd_addr.index(address)
         return bool(self.status() & (1 << pd))
+
+    def get_pd_id(self, address: int) -> PdId:
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        pd_id_dict = self.ctx.get_pd_id(pd)
+        self.lock.release()
+        if pd_id_dict:
+            # version: int, model: int, vendor_code: int, serial_number: int, firmware_version: int
+            pd_id = PdId(
+                pd_id_dict['version'],
+                pd_id_dict['model'],
+                pd_id_dict['vendor_code'],
+                pd_id_dict['serial_number'],
+                pd_id_dict['firmware_version']
+            )
+        return pd_id
+
+    def check_capability(self, address: int, cap: Capability) -> Tuple[int, int]:
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        compliance_level, num_items = self.ctx.check_capability(pd, cap)
+        self.lock.release()
+        return (compliance_level, num_items)
 
     def get_num_online(self):
         online = 0

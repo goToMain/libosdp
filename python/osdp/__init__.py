@@ -11,7 +11,7 @@ from .constants import (
     LibFlag, Command, CommandLEDColor, CommandFileTxFlags,
     Event, CardFormat, Capability, LogLevel, StatusReportType
 )
-from .helpers import PDInfo, PDCapabilities
+from .helpers import PdId, PDInfo, PDCapabilities
 from .channel import Channel
 
 __author__ = 'Siddharth Chandrasekaran <sidcha.dev@gmail.com>'

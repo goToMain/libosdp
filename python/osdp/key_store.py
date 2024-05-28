@@ -28,10 +28,7 @@ class KeyStore():
             key.append(random.randint(0, 255))
         return bytes(key)
 
-    def store_key(self, name):
-        if name not in self.keys:
-            raise RuntimeError
-        key = self.keys[name]
+    def _store_key(self, key):
         with open(self.key_file(name), "w") as f:
             f.write(key.hex())
 
@@ -45,6 +42,11 @@ class KeyStore():
             raise RuntimeError
         self.keys[name] = self.gen_key(key_len)
         return self.keys[name]
+
+    def commit_key(self, name):
+        if name not in self.keys:
+            raise RuntimeError
+        self._store_key(self.keys[name])
 
     def update_key(self, name, key):
         if name not in self.keys:

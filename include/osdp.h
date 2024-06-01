@@ -365,7 +365,7 @@ enum osdp_status_report_type {
 /**
  * @brief Status report structure. Used by OSDP_CMD_STATUS and
  * OSDP_EVENT_STATUS. In case of command, it is used to send a query to the PD
- * while in the case of events, the PR responds back with this structure.
+ * while in the case of events, the PD responds back with this structure.
  *
  * This can is used by the PD to indicate various status change reports. Upto a
  * maximum of 32 statuses can be reported using this API.
@@ -651,8 +651,8 @@ enum osdp_cmd_e {
 	OSDP_CMD_KEYSET,      /**< Encryption Key Set Command */
 	OSDP_CMD_COMSET,      /**< PD communication configuration command */
 	OSDP_CMD_MFG,         /**< Manufacturer specific command */
-	OSDP_CMD_FILE_TX,     /**< File transfer comand */
-	OSDP_CMD_STATUS,      /**< Status report eommand */
+	OSDP_CMD_FILE_TX,     /**< File transfer command */
+	OSDP_CMD_STATUS,      /**< Status report command */
 	OSDP_CMD_SENTINEL     /**< Max command value */
 };
 
@@ -802,8 +802,8 @@ struct osdp_event {
 	union {
 		struct osdp_event_keypress keypress; /**< Keypress event structure */
 		struct osdp_event_cardread cardread; /**< Card read event structure */
-		struct osdp_event_mfgrep mfgrep;     /**< Manufacturer spefific response event struture */
-		struct osdp_status_report status;    /**< Status report event strcture */
+		struct osdp_event_mfgrep mfgrep;     /**< Manufacturer specific response event struture */
+		struct osdp_status_report status;    /**< Status report event structure */
 	};
 };
 

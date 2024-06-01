@@ -14,7 +14,7 @@ int sample_pd_send_func(void *data, uint8_t *buf, int len)
 	(void)(data);
 	(void)(buf);
 
-	// Fill these
+	// TODO (user): send buf of len bytes, over the UART channel.
 
 	return len;
 }
@@ -25,16 +25,8 @@ int sample_pd_recv_func(void *data, uint8_t *buf, int len)
 	(void)(buf);
 	(void)(len);
 
-	// Fill these
+	// TODO (user): read from UART channel into buf, for upto len bytes.
 
-	return 0;
-}
-
-int pd_command_handler(void *self, struct osdp_cmd *cmd)
-{
-	(void)(self);
-
-	std::cout << "PD: CMD: " << cmd->id << std::endl;
 	return 0;
 }
 
@@ -72,6 +64,14 @@ osdp_pd_info_t info_pd = {
 	},
 	.scbk = nullptr,
 };
+
+int pd_command_handler(void *data, struct osdp_cmd *cmd)
+{
+	(void)(data);
+
+	std::cout << "PD: CMD: " << cmd->id << std::endl;
+	return 0;
+}
 
 int main()
 {

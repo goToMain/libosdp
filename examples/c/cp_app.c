@@ -22,7 +22,7 @@ int sample_cp_send_func(void *data, uint8_t *buf, int len)
 	(void)(data);
 	(void)(buf);
 
-	// Fill these
+	// TODO (user): send buf of len bytes, over the UART channel.
 
 	return len;
 }
@@ -33,7 +33,7 @@ int sample_cp_recv_func(void *data, uint8_t *buf, int len)
 	(void)(buf);
 	(void)(len);
 
-	// Fill these
+	// TODO (user): read from UART channel into buf, for upto len bytes.
 
 	return 0;
 }

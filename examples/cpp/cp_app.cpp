@@ -14,7 +14,7 @@ int sample_cp_send_func(void *data, uint8_t *buf, int len)
 	(void)(data);
 	(void)(buf);
 
-	// Fill these
+	// TODO (user): send buf of len bytes, over the UART channel.
 
 	return len;
 }
@@ -25,7 +25,7 @@ int sample_cp_recv_func(void *data, uint8_t *buf, int len)
 	(void)(buf);
 	(void)(len);
 
-	// Fill these
+	// TODO (user): read from UART channel into buf, for upto len bytes.
 
 	return 0;
 }
@@ -49,6 +49,13 @@ osdp_pd_info_t pd_info[] = {
 	}
 };
 
+int event_handler(void *data, int pd, struct osdp_event *event) {
+	(void)(data);
+
+	std::cout << "PD" << pd << " EVENT: " << event->type << std::endl;
+	return 0;
+}
+
 int main()
 {
 	OSDP::ControlPanel cp;
@@ -56,6 +63,8 @@ int main()
 	cp.logger_init("osdp::cp", OSDP_LOG_DEBUG, NULL);
 
 	cp.setup(1, pd_info);
+
+	cp.set_event_callback(event_handler, nullptr);
 
 	while (1) {
 		// your application code.

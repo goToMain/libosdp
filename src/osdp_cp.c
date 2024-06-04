@@ -761,7 +761,7 @@ static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 		osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_RETRY_MS);
 }
 
-int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
+static int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
 	int cmd_id = -1;
 
@@ -940,6 +940,21 @@ static int cp_get_online_command(struct osdp_pd *pd)
 	return -1;
 }
 
+static void notify_sc_status(struct osdp_pd *pd)
+{
+	struct osdp *ctx = pd_to_osdp(pd);
+	struct osdp_event evt;
+
+
+	evt.type = OSDP_EVENT_NOTIFICATION;
+	evt.notif.type = OSDP_EVENT_NOTIFICATION_SC_STATUS;
+	evt.notif.arg0 = sc_is_active(pd);
+	evt.notif.arg1 = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+	if (ctx->event_callback) {
+		ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	}
+}
+
 static void cp_keyset_complete(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
@@ -951,6 +966,7 @@ static void cp_keyset_complete(struct osdp_pd *pd)
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 	}
 	sc_deactivate(pd);
+	notify_sc_status(pd);
 	make_request(pd, CP_REQ_RESTART_SC);
 	LOG_INF("SCBK set; restarting SC to verify new SCBK");
 }
@@ -1060,6 +1076,7 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 		return OSDP_CP_STATE_SC_SCRYPT;
 	case OSDP_CP_STATE_SC_SCRYPT:
 		sc_activate(pd);
+		notify_sc_status(pd);
 		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_WRN("SC active with SCBK-D. Set SCBK");
 			fill_local_keyset_cmd(pd);
@@ -1119,6 +1136,7 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 		return OSDP_CP_STATE_ONLINE;
 	case OSDP_CP_STATE_SET_SCBK:
 		sc_deactivate(pd);
+		notify_sc_status(pd);
 		if (is_enforce_secure(pd) ||
 		    ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
 			LOG_ERR("Failed to set SCBK; "
@@ -1173,6 +1191,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 			}
 		}
 		sc_deactivate(pd);
+		notify_sc_status(pd);
 		LOG_ERR("Going offline for %d seconds; Was in '%s' state",
 			pd->wait_ms / 1000, state_get_name(cur));
 		break;
@@ -1193,10 +1212,47 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 	pd->state = next;
 }
 
+static void notify_command_status(struct osdp_pd *pd, int status)
+{
+	int app_cmd;
+	struct osdp_event evt;
+	struct osdp *ctx = pd_to_osdp(pd);
+
+	switch (pd->cmd_id) {
+	case CMD_OUT:    app_cmd = OSDP_CMD_OUTPUT; break;
+	case CMD_LED:    app_cmd = OSDP_CMD_LED;    break;
+	case CMD_BUZ:    app_cmd = OSDP_CMD_BUZZER; break;
+	case CMD_TEXT:   app_cmd = OSDP_CMD_TEXT;   break;
+	case CMD_COMSET: app_cmd = OSDP_CMD_COMSET; break;
+	case CMD_ISTAT:  app_cmd = OSDP_CMD_STATUS; break;
+	case CMD_OSTAT:  app_cmd = OSDP_CMD_STATUS; break;
+	case CMD_LSTAT:  app_cmd = OSDP_CMD_STATUS; break;
+	case CMD_RSTAT:  app_cmd = OSDP_CMD_STATUS; break;
+	case CMD_KEYSET: app_cmd = OSDP_CMD_KEYSET; break;
+	case CMD_MFG:
+		if (pd->reply_id == REPLY_ACK) {
+			app_cmd = OSDP_CMD_MFG;
+			break;
+		}
+	default:
+		return;
+	}
+
+	evt.type = OSDP_EVENT_NOTIFICATION;
+	evt.notif.type = OSDP_EVENT_NOTIFICATION_COMMAND;
+	evt.notif.arg0 = app_cmd;
+	evt.notif.arg1 = status;
+
+	if (ctx->event_callback) {
+		ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	}
+}
+
 static int state_update(struct osdp_pd *pd)
 {
-	enum osdp_cp_state_e next, cur = pd->state;
 	int err;
+	bool status;
+	enum osdp_cp_state_e next, cur = pd->state;
 
 	if (cp_phy_running(pd)) {
 		err = cp_phy_state_update(pd);
@@ -1217,7 +1273,9 @@ static int state_update(struct osdp_pd *pd)
 		err = OSDP_CP_ERR_GENERIC;
 		__fallthrough;
 	case OSDP_CP_PHY_STATE_DONE:
-		if (!state_check_reply(pd)) {
+		status = state_check_reply(pd);
+		notify_command_status(pd, status);
+		if (!status) {
 			err = OSDP_CP_ERR_GENERIC;
 		}
 		osdp_phy_state_reset(pd, false);

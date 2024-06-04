@@ -543,6 +543,37 @@ static int pyosdp_make_struct_event_status(struct osdp_event *p, PyObject *dict)
 	return 0;
 }
 
+static int pyosdp_make_dict_event_notif(PyObject *obj, struct osdp_event *event)
+{
+	if (pyosdp_dict_add_int(obj, "type", event->notif.type))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "arg0", event->notif.arg0))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "arg1", event->notif.arg1))
+		return -1;
+	return 0;
+}
+
+static int pyosdp_make_struct_event_notif(struct osdp_event *p, PyObject *dict)
+{
+	int type, arg0, arg1;
+	struct osdp_event_notification *ev = &p->notif;
+
+	if (pyosdp_dict_get_int(dict, "type", &type))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "arg0", &arg0))
+		return -1;
+
+	if (pyosdp_dict_get_int(dict, "arg1", &arg1))
+		return -1;
+
+	ev->type = type;
+	ev->arg0 = arg0;
+	ev->arg1 = arg1;
+	return 0;
+}
+
 static struct {
 	int (*dict_to_struct)(struct osdp_cmd *, PyObject *);
 	int (*struct_to_dict)(PyObject *, struct osdp_cmd *);
@@ -604,6 +635,10 @@ static struct {
 	[OSDP_EVENT_STATUS] = {
 		.struct_to_dict = pyosdp_make_dict_event_status,
 		.dict_to_struct = pyosdp_make_struct_event_status,
+	},
+	[OSDP_EVENT_NOTIFICATION] = {
+		.struct_to_dict = pyosdp_make_dict_event_notif,
+		.dict_to_struct = pyosdp_make_struct_event_notif,
 	},
 };
 

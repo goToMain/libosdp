@@ -51,6 +51,13 @@ def teardown_test():
         pd.teardown()
     cleanup_fifo_pair("events")
 
+def check_event(event):
+    while True:
+        e = cp.get_event(secure_pd.address)
+        if e['event'] != Event.Notification:
+            break
+    assert e == event
+
 def test_event_keypad():
     event = {
         'event': Event.KeyPress,
@@ -58,7 +65,7 @@ def test_event_keypad():
         'data': bytes([9,1,9,2,6,3,1,7,7,0]),
     }
     secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
+    check_event(event)
 
 def test_event_mfg_reply():
     event = {
@@ -68,7 +75,7 @@ def test_event_mfg_reply():
         'data': bytes([9,1,9,2,6,3,1,7,7,0]),
     }
     secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
+    check_event(event)
 
 def test_event_cardread_ascii():
     event = {
@@ -79,7 +86,7 @@ def test_event_cardread_ascii():
         'data': bytes([9,1,9,2,6,3,1,7,7,0]),
     }
     secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
+    check_event(event)
 
 def test_event_cardread_wiegand():
     event = {
@@ -91,7 +98,7 @@ def test_event_cardread_wiegand():
         'data': bytes([0x55, 0xAA]),
     }
     secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
+    check_event(event)
 
 def test_event_input():
     event = {
@@ -101,7 +108,7 @@ def test_event_input():
         'mask': 0xAA, # bit mask of input/output status (upto 32)
     }
     secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
+    check_event(event)
 
 def test_event_output():
     event = {
@@ -111,4 +118,4 @@ def test_event_output():
         'mask': 0x55, # bit mask of input/output status (upto 32)
     }
     secure_pd.notify_event(event)
-    assert cp.get_event(secure_pd.address) == event
+    check_event(event)

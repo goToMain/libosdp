@@ -50,6 +50,20 @@ pd_list = [
 
 cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
 
+def cp_check_command_status(cmd):
+    event = {
+        'event': Event.Notification,
+        'type': EventNotification.Command,
+        'arg0': cmd,
+        'arg1': 1,
+    }
+    while True:
+        e = cp.get_event(secure_pd.address, timeout=1)
+        if (e['event'] == Event.Notification and
+            e['type'] == EventNotification.Command):
+            break
+    assert e == event
+
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():
     for pd in pd_list:
@@ -76,6 +90,7 @@ def test_command_output():
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.Output)
 
 def test_command_buzzer():
     test_cmd = {
@@ -89,6 +104,7 @@ def test_command_buzzer():
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.Buzzer)
 
 def test_command_text():
     test_cmd = {
@@ -103,6 +119,7 @@ def test_command_text():
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.Text)
 
 def test_command_led():
     test_cmd = {
@@ -119,12 +136,14 @@ def test_command_led():
     }
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.LED)
 
     test_cmd['temporary'] = False
     del test_cmd['timer_count']
 
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.LED)
 
 def test_command_comset():
     test_cmd = {
@@ -135,6 +154,7 @@ def test_command_comset():
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.Comset)
 
 def test_command_mfg():
     test_cmd = {
@@ -146,6 +166,7 @@ def test_command_mfg():
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.Manufacturer)
 
 def test_command_keyset():
     test_cmd = {
@@ -156,6 +177,7 @@ def test_command_keyset():
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    cp_check_command_status(Command.Keyset)
 
     # PD must be online and SC active after a KEYSET command
     time.sleep(0.5)

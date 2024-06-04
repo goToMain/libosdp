@@ -684,7 +684,7 @@ PyObject *pyosdp_make_dict_pd_id(struct osdp_pd_id *pd_id)
 {
 	PyObject *obj = PyDict_New();
 	if (obj == NULL)
-		return -1;
+		return NULL;
 
 	pyosdp_dict_add_int(obj, "version", pd_id->version);
 	pyosdp_dict_add_int(obj, "model", pd_id->model);

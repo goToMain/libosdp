@@ -39,6 +39,9 @@ int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 	pyosdp_cp_t *self = data;
 	PyObject *arglist, *result, *event_dict;
 
+	if (!self->event_cb)
+		return 0;
+
 	if (pyosdp_make_dict_event(&event_dict, event))
 		return -1;
 

@@ -26,8 +26,8 @@ pd_cap = PDCapabilities([
 ])
 
 pd_info_list = [
-    PDInfo(secure_pd_addr, f1_1, scbk=key, flags=[ LibFlag.EnforceSecure ]),
-    PDInfo(insecure_pd_addr, f2_1)
+    PDInfo(secure_pd_addr, f1_1, scbk=key, flags=[ LibFlag.EnforceSecure, LibFlag.EnableNotification ]),
+    PDInfo(insecure_pd_addr, f2_1, flags=[ LibFlag.EnableNotification ])
 ]
 
 # TODO remove this.
@@ -50,15 +50,15 @@ pd_list = [
 
 cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
 
-def cp_check_command_status(cmd):
+def cp_check_command_status(cmd, expected_outcome=True):
     event = {
         'event': Event.Notification,
         'type': EventNotification.Command,
         'arg0': cmd,
-        'arg1': 1,
+        'arg1': 1 if expected_outcome else 0,
     }
     while True:
-        e = cp.get_event(secure_pd.address, timeout=1)
+        e = cp.get_event(secure_pd.address)
         if (e['event'] == Event.Notification and
             e['type'] == EventNotification.Command):
             break

@@ -31,7 +31,7 @@ pd_list = [
 ]
 
 cp = ControlPanel([
-        PDInfo(101, f2, scbk=key, flags=[ LibFlag.EnforceSecure ])
+        PDInfo(101, f2, scbk=key, flags=[ LibFlag.EnforceSecure, LibFlag.EnableNotification ])
     ],
     log_level=LogLevel.Debug
 )

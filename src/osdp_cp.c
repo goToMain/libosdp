@@ -945,14 +945,16 @@ static void notify_sc_status(struct osdp_pd *pd)
 	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_event evt;
 
+	if (!ctx->event_callback ||
+	    !ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION)) {
+		return;
+	}
 
 	evt.type = OSDP_EVENT_NOTIFICATION;
 	evt.notif.type = OSDP_EVENT_NOTIFICATION_SC_STATUS;
 	evt.notif.arg0 = sc_is_active(pd);
 	evt.notif.arg1 = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-	if (ctx->event_callback) {
-		ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
-	}
+	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
 }
 
 static void cp_keyset_complete(struct osdp_pd *pd)
@@ -1218,6 +1220,11 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	struct osdp_event evt;
 	struct osdp *ctx = pd_to_osdp(pd);
 
+	if (!ctx->event_callback ||
+	    !ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION)) {
+		return;
+	}
+
 	switch (pd->cmd_id) {
 	case CMD_OUT:    app_cmd = OSDP_CMD_OUTPUT; break;
 	case CMD_LED:    app_cmd = OSDP_CMD_LED;    break;
@@ -1243,9 +1250,7 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	evt.notif.arg0 = app_cmd;
 	evt.notif.arg1 = status;
 
-	if (ctx->event_callback) {
-		ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
-	}
+	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
 }
 
 static int state_update(struct osdp_pd *pd)

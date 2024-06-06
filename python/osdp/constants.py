@@ -10,6 +10,7 @@ class LibFlag:
     EnforceSecure = osdp_sys.FLAG_ENFORCE_SECURE
     InstallMode = osdp_sys.FLAG_INSTALL_MODE
     IgnoreUnsolicited = osdp_sys.FLAG_IGN_UNSOLICITED
+    EnableNotification = osdp_sys.FLAG_ENABLE_NOTIFICATION
 
 class LogLevel:
     Emergency = osdp_sys.LOG_EMERG

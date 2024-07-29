@@ -1,4 +1,4 @@
-LibOSDP App Events
+Application Events
 ==================
 
 LibOSDP exposes the following structures thought ``osdp.h``. This document

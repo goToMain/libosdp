@@ -1,4 +1,4 @@
-LibOSDP App Commands
+Application Commands
 ====================
 
 LibOSDP exposes the following structures thought ``osdp.h``. This document

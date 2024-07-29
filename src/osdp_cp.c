@@ -1464,7 +1464,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
 	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
 		for (i = 0; i < NUM_PD(ctx); i++) {
-			pd = osdp_to_pd(ctx, 0);
+			pd = osdp_to_pd(ctx, i);
 			osdp_packet_capture_finish(pd);
 		}
 	}

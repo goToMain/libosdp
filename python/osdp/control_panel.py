@@ -184,7 +184,7 @@ class ControlPanel():
             count += 1
         return res
 
-    def online_wait(self, address, timeout=5):
+    def online_wait(self, address, timeout=8):
         count = 0
         res = False
         while count < timeout * 2:
@@ -194,6 +194,11 @@ class ControlPanel():
                 break
             count += 1
         return res
+
+    def offline_wait(self, address, timeout=8):
+        count = 0
+        time.sleep(timeout)
+        return self.is_online(address) == False
 
     def sc_wait(self, address, timeout=5):
         count = 0

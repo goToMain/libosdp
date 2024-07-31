@@ -251,7 +251,7 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
 			 * Only the data portion of message (after id byte)
-			 * is encrypted. While (en/de)crypting, we must skip
+			 * is encrypted. While (en)decrypting, we must skip
 			 * header, security block, and cmd/reply ID byte.
 			 *
 			 * Note: if cmd/reply has no data, we must set type to
@@ -633,7 +633,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		if (pkt->data[1] == SCS_17 || pkt->data[1] == SCS_18) {
 			/**
 			 * Only the data portion of message (after id byte)
-			 * is encrypted. While (en/de)crypting, we must skip
+			 * is encrypted. While (en)decrypting, we must skip
 			 * header (6), security block (2) and cmd/reply id (1)
 			 * bytes if cmd/reply has no data, use SCS_15/SCS_16.
 			 *
@@ -706,6 +706,7 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 	pd->packet_len = 0;
 	pd->phy_state = 0;
 	if (is_error) {
+		pd->phy_retry_count = 0;
 		pd->seq_number = -1;
 		if (pd->channel.flush) {
 			pd->channel.flush(pd->channel.data);

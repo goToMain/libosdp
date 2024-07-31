@@ -419,8 +419,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_NAK_DATA_LEN) {
 			break;
 		}
-		LOG_WRN("PD replied with NAK(%d) for CMD(%02x)",
-			buf[pos], pd->cmd_id);
+		LOG_WRN("PD replied with NAK(%d) for CMD: %s(%02x)",
+			buf[pos], osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_PDID:
@@ -675,7 +675,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	if (ret != OSDP_CP_ERR_NONE) {
-		LOG_ERR("Failed to decode reply %s(%02x) for command %s(%02x)",
+		LOG_ERR("Failed to decode REPLY: %s(%02x) for CMD: %s(%02x)",
 			osdp_reply_name(pd->reply_id), pd->reply_id,
 			osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 	}
@@ -849,11 +849,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		/* Check if we have any commands in the queue */
 		if (cp_build_and_send_packet(pd)) {
-			LOG_ERR("Failed to build/send packet for CMD(%d)",
-				pd->cmd_id);
-			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
-			ret = OSDP_CP_ERR_GENERIC;
-			break;
+			LOG_ERR("Failed to build/send packet for CMD: %s(%02x)",
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
+			goto error;
 		}
 		ret = OSDP_CP_ERR_INPROG;
 		osdp_phy_state_reset(pd, false);
@@ -870,7 +868,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			if (pd->reply_id == REPLY_BUSY) {
 				pd->phy_tstamp = osdp_millis_now();
 				pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
-				pd->state = OSDP_CP_PHY_STATE_WAIT;
+				pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
 				return OSDP_CP_ERR_CAN_YIELD;
 			}
 			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
@@ -884,14 +882,22 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
 			return OSDP_CP_ERR_NONE;
 		}
-		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN ||
-		    osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
-			if (rc != OSDP_CP_ERR_GENERIC) {
-				LOG_ERR("Response timeout for CMD(%02x)",
-					pd->cmd_id);
+		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN) {
+			goto error;
+		}
+		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
+			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
+				pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
+				pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
+				pd->phy_retry_count += 1;
+				pd->phy_tstamp = osdp_millis_now();
+				LOG_WRN("No response in 200ms; probing (%d)",
+					pd->phy_retry_count);
+				return OSDP_CP_ERR_CAN_YIELD;
 			}
-			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
-			return OSDP_CP_ERR_GENERIC;
+			LOG_ERR("Response timeout for CMD: %s(%02x)",
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
+			goto error;
 		}
 		if (rc == OSDP_CP_ERR_RETRY_CMD) {
 			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
@@ -902,6 +908,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 	}
 
 	return ret;
+error:
+	pd->phy_state = OSDP_CP_PHY_STATE_ERR;
+	return OSDP_CP_ERR_GENERIC;
 }
 
 static const char *state_get_name(enum osdp_cp_state_e state)
@@ -1169,29 +1178,16 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 {
 	enum osdp_cp_state_e cur = pd->state;
 
-	switch (cur) {
-	case OSDP_CP_STATE_OFFLINE:
+	switch (next) {
+	case OSDP_CP_STATE_INIT:
 		osdp_phy_state_reset(pd, true);
 		break;
-	default: break;
-	}
-
-	switch (next) {
 	case OSDP_CP_STATE_ONLINE:
-		pd->wait_ms = 0;
 		LOG_INF("Online; %s SC", sc_is_active(pd) ? "With" : "Without");
 		break;
 	case OSDP_CP_STATE_OFFLINE:
 		pd->tstamp = osdp_millis_now();
-		if (pd->wait_ms == 0) {
-			/* first, retry after ~1 sec */
-			pd->wait_ms = 1 << 10;
-		} else {
-			/* then, bounded exponential back-off */
-			if (pd->wait_ms < OSDP_ONLINE_RETRY_WAIT_MAX_MS) {
-				pd->wait_ms <<= 1;
-			}
-		}
+		pd->wait_ms = OSDP_ONLINE_RETRY_WAIT_MAX_MS;
 		sc_deactivate(pd);
 		notify_sc_status(pd);
 		LOG_ERR("Going offline for %d seconds; Was in '%s' state",

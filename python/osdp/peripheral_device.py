@@ -74,7 +74,7 @@ class PeripheralDevice():
     def is_online(self):
         return self.ctx.is_online()
 
-    def sc_wait(self, timeout=5):
+    def sc_wait(self, timeout=8):
         count = 0
         res = False
         while count < timeout * 2:

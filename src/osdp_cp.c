@@ -886,6 +886,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		}
 		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN ||
 		    osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
+			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
+				pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
+				pd->state = OSDP_CP_PHY_STATE_WAIT;
+				pd->phy_retry_count += 1;
+				return OSDP_CP_ERR_CAN_YIELD;
+			}
 			if (rc != OSDP_CP_ERR_GENERIC) {
 				LOG_ERR("Response timeout for CMD(%02x)",
 					pd->cmd_id);
@@ -1169,29 +1175,16 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 {
 	enum osdp_cp_state_e cur = pd->state;
 
-	switch (cur) {
-	case OSDP_CP_STATE_OFFLINE:
+	switch (next) {
+	case OSDP_CP_STATE_INIT:
 		osdp_phy_state_reset(pd, true);
 		break;
-	default: break;
-	}
-
-	switch (next) {
 	case OSDP_CP_STATE_ONLINE:
-		pd->wait_ms = 0;
 		LOG_INF("Online; %s SC", sc_is_active(pd) ? "With" : "Without");
 		break;
 	case OSDP_CP_STATE_OFFLINE:
 		pd->tstamp = osdp_millis_now();
-		if (pd->wait_ms == 0) {
-			/* first, retry after ~1 sec */
-			pd->wait_ms = 1 << 10;
-		} else {
-			/* then, bounded exponential back-off */
-			if (pd->wait_ms < OSDP_ONLINE_RETRY_WAIT_MAX_MS) {
-				pd->wait_ms <<= 1;
-			}
-		}
+		pd->wait_ms = OSDP_ONLINE_RETRY_WAIT_MAX_MS;
 		sc_deactivate(pd);
 		notify_sc_status(pd);
 		LOG_ERR("Going offline for %d seconds; Was in '%s' state",

@@ -241,6 +241,7 @@ enum osdp_cp_state_e {
 	OSDP_CP_STATE_SC_SCRYPT,
 	OSDP_CP_STATE_SET_SCBK,
 	OSDP_CP_STATE_ONLINE,
+	OSDP_CP_STATE_PROBE,
 	OSDP_CP_STATE_OFFLINE,
 	OSDP_CP_STATE_SENTINEL
 };
@@ -339,6 +340,7 @@ struct osdp_pd {
 
 	int state;             /* FSM state (CP mode only) */
 	int phy_state;         /* phy layer FSM state (CP mode only) */
+	int phy_retry_count;   /* command retry counter */
 	uint32_t wait_ms;      /* wait time in MS to retry communication */
 	int64_t tstamp;        /* Last POLL command issued time in ticks */
 	int64_t sc_tstamp;     /* Last received secure reply time in ticks */

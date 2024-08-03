@@ -41,7 +41,7 @@ option(CONFIG_OSDP_LIB_ONLY "Only build the library" OFF)
 # Each subdirectory has it's own CMakeLists.txt
 include(GitSubmodules)
 add_subdirectory(src)
-if (NOT CONFIG_OSDP_STATIC_PD AND NOT CONFIG_OSDP_LIB_ONLY)
+if (NOT CONFIG_OSDP_STATIC_PD AND NOT CONFIG_OSDP_LIB_ONLY AND NOT MSVC)
 	add_subdirectory(utils)
 	add_subdirectory(tests/unit-tests)
 	add_subdirectory(examples/c)

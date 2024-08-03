@@ -1078,7 +1078,6 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd,
 
 /* --- Exported Methods --- */
 
-OSDP_EXPORT
 osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 {
 	struct osdp_pd *pd;
@@ -1163,7 +1162,6 @@ error:
 	return NULL;
 }
 
-OSDP_EXPORT
 void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
@@ -1180,7 +1178,6 @@ void osdp_pd_teardown(osdp_t *ctx)
 #endif
 }
 
-OSDP_EXPORT
 void osdp_pd_refresh(osdp_t *ctx)
 {
 	input_check(ctx);
@@ -1189,7 +1186,6 @@ void osdp_pd_refresh(osdp_t *ctx)
 	osdp_pd_update(pd);
 }
 
-OSDP_EXPORT
 void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap)
 {
 	input_check(ctx);
@@ -1198,7 +1194,6 @@ void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap)
 	osdp_pd_set_attributes(pd, cap, NULL);
 }
 
-OSDP_EXPORT
 void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 				  void *arg)
 {
@@ -1209,7 +1204,6 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 	pd->command_callback = cb;
 }
 
-OSDP_EXPORT
 int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
 {
 	input_check(ctx);
@@ -1226,7 +1220,6 @@ int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
 	return 0;
 }
 
-OSDP_EXPORT
 int osdp_pd_flush_events(osdp_t *ctx)
 {
 	input_check(ctx);

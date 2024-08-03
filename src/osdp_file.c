@@ -316,7 +316,6 @@ int osdp_file_tx_command(struct osdp_pd *pd, int file_id, uint32_t flags)
 
 /* --- Exported Methods --- */
 
-OSDP_EXPORT
 int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
 			   const struct osdp_file_ops *ops)
 {
@@ -336,7 +335,6 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
 	return 0;
 }
 
-OSDP_EXPORT
 int osdp_get_file_tx_status(const osdp_t *ctx, int pd_idx,
 			    int *size, int *offset)
 {

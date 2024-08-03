@@ -128,3 +128,43 @@ Using pkg-config
 
 If you are familiar with pkg-config based dependency resolution methods, LibOSDP
 provides a libosdp.pc file which is installed along with the library.
+
+Using vcpkg
+^^^^^^^^^^^
+
+vcpkg is a free and open-source C/C++ package manager maintained by Microsoft
+and the C++ community. A port for LibOSDP has already been merged to vcpkg
+upstream -- this means you can consume LibOSDP directly from vcpkg and use all
+the generators it supports.
+
+Follow the `getting started document _DOC>`_ from Microsoft to setup vckpg.
+After that, you careate a new application and pull in LibOSDP as a dependency.
+
+.. _DOC: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started
+
+.. code:: shell
+
+    mkdir osdp_app && cd osdp_app
+    vcpkg new --application
+    vcpkg add port libosdp
+
+After that, you can add your app sources, find the libosdp package and link it
+to your target with,
+
+.. code:: cmake
+
+    find_package(LibOSDP CONFIG REQUIRED)
+    target_link_libraries(
+        main
+        PRIVATE $<IF:$<TARGET_EXISTS:libosdp::osdp>,libosdp::osdp,libosdp::osdpstatic>
+    )
+
+To build the project, you must set the `CMAKE_TOOLCHAIN_FILE` to the one
+provided by vcpkg for the dependencies to be pulled in correctly.
+
+.. code:: shell
+
+    cmake -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -B build .
+    cmake --build build
+
+Note: This is the recommended method to consume LibOSDP in Windows platforms.

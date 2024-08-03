@@ -15,13 +15,14 @@ Cmake is the recommented way for building libosdp.
 
 .. code:: sh
 
-    mkdir build && cd build
-    cmake ..
-    make
+    cmake -B build
+    cmake --build build --parallel
 
-    # (optional)
-    make check
-    make DESTDIR=/your/install/path install
+Optionally, you could install libosdp using,
+
+.. code:: sh
+
+    cmake --build build --target install
 
 Make Build
 ----------
@@ -35,9 +36,6 @@ own Makefile to be chained in some other build system. Please see `configure.sh
     ./configure.sh
     make
 
-    # (optional)
-    make check
-
 Build html docs
 ---------------
 
@@ -46,9 +44,20 @@ HTML docs of LibOSDP depends on python3, pip3, doxygen, sphinx, and breathe.
 .. code:: sh
 
     pip3 install -r doc/requirements.txt
-    mkdir build && cd build
-    cmake ..
-    make html_docs
+    cmake -B build
+    cmake --build build --target html_docs --parallel
+
+
+Running the test suite
+----------------------
+
+If you are adding features to LibOSDP, you might want to kick off the test
+suite to ensure that you changes are valid and has not regressed any other
+features. To do this run,
+
+.. code:: sh
+
+    ./scripts/run_tests.sh
 
 Compile-time configuration options
 ----------------------------------

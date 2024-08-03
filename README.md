@@ -137,14 +137,12 @@ that are exposed by libosdp.
 
 ```sh
 git clone https://github.com/goToMain/libosdp --recurse-submodules
-# git submodule update --init (if you missed doing --recurse-submodules earlier)
 cd libosdp
-mkdir build && cd build
-cmake ..
-make
+cmake -B build .
+cmake --build build --parallel
 ```
 
-Refer to [this document][23] for more information on build and cross
+Refer to the [documentation][23] for more information on build and cross
 compilation.
 
 ### Run the test suite

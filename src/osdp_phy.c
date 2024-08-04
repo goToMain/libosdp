@@ -590,22 +590,31 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		data = pkt->data + pkt->data[0];
 		len -= pkt->data[0]; /* consume security block */
 	} else {
-		/**
-		 * If the current packet is an ACK for a KEYSET, the PD might
-		 * have discarded the secure channel session keys in favour of
-		 * the new key we sent and hence this packet may reach us in
-		 * plain text. To work with such PDs, we must also discard our
-		 * secure session.
-		 *
-		 * For now, let's just pretend that SC is deactivated so the
-		 * rest of this method finishes normally. The actual secure
-		 * channel is actually discarded from the CP state machine.
-		 */
-		if (is_cp_mode(pd) && pd->cmd_id == CMD_KEYSET &&
-		    pkt->data[0] == REPLY_ACK) {
-			is_sc_active = false;
+		if (is_cp_mode(pd)) {
+			/**
+			 * If the current packet is an ACK for a KEYSET, the PD
+			 * might have discarded the secure channel session keys
+			 * in favour of the new key we sent and hence this packet
+			 * may reach us in plain text. To work with such PDs, we
+			 * must also discard our secure session.
+			 *
+			 * For now, let's just pretend that SC is deactivated so
+			 * the rest of this method finishes normally. The actual
+			 * secure channel is actually discarded from the CP
+			 * state machine.
+			 */
+			if (pd->cmd_id == CMD_KEYSET && pkt->data[0] == REPLY_ACK) {
+				is_sc_active = false;
+			}
+			/**
+			 * When the PD discards it's secure channel for some
+			 * reason, it responds with NACK(6) in plaintext. There
+			 * may be other cases too. So we will allow NAKs in
+			 */
+			if (is_sc_active && pkt->data[0] == REPLY_NAK) {
+				is_sc_active = false;
+			}
 		}
-
 		if (is_sc_active) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;

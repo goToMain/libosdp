@@ -855,6 +855,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		}
 		ret = OSDP_CP_ERR_INPROG;
 		osdp_phy_state_reset(pd, false);
+		pd->reply_id = REPLY_INVALID;
 		pd->phy_state = OSDP_CP_PHY_STATE_REPLY_WAIT;
 		pd->phy_tstamp = osdp_millis_now();
 		break;
@@ -998,8 +999,8 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 		return true;
 	}
 
-	/* A NAK is always an error */
-	if (pd->reply_id == REPLY_NAK) {
+	/* A NAK or no response is always an error */
+	if (pd->reply_id == REPLY_NAK || pd->reply_id == REPLY_INVALID) {
 		return false;
 	}
 

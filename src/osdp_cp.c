@@ -1436,7 +1436,7 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 
 	SET_CURRENT_PD(ctx, 0);
 
-	LOG_PRINT("Setup complete; LibOSDP-%s %s NumPDs: %d Channels: %d",
+	LOG_PRINT("CP Setup complete; LibOSDP-%s %s NumPDs:%d Channels:%d",
 		  osdp_get_version(), osdp_get_source_info(),
 		  num_pd, ctx->num_channels);
 

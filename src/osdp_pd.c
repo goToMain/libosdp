@@ -1153,7 +1153,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 		osdp_packet_capture_init(pd);
 	}
 
-	LOG_PRINT("Setup complete; LibOSDP-%s %s",
+	LOG_PRINT("PD Setup complete; LibOSDP-%s %s",
 		  osdp_get_version(), osdp_get_source_info());
 
 	return (osdp_t *)ctx;

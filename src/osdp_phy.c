@@ -486,7 +486,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 	}
 	cur = osdp_phy_get_seq_number(pd, is_pd_mode(pd));
 	if (cur != comp && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
-		LOG_ERR("Packet sequence mismatch expected: %d received: %d",
+		LOG_ERR("Packet sequence mismatch (%d/%d)",
 			cur, comp);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;

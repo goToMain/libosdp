@@ -1109,6 +1109,8 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 		return OSDP_CP_STATE_SC_CHLNG;
 	case OSDP_CP_STATE_ONLINE:
 		if (cp_sc_should_retry(pd)) {
+			LOG_INF("Attempting to restart SC after %d seconds",
+				OSDP_PD_SC_RETRY_MS/1000);
 			return OSDP_CP_STATE_SC_CHLNG;
 		}
 		return OSDP_CP_STATE_ONLINE;

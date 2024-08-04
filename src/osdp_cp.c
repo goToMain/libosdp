@@ -986,8 +986,10 @@ static void cp_keyset_complete(struct osdp_pd *pd)
 	}
 	sc_deactivate(pd);
 	notify_sc_status(pd);
-	make_request(pd, CP_REQ_RESTART_SC);
-	LOG_INF("SCBK set; restarting SC to verify new SCBK");
+	if (pd->state == OSDP_CP_STATE_ONLINE) {
+		make_request(pd, CP_REQ_RESTART_SC);
+		LOG_INF("SCBK set; restarting SC to verify new SCBK");
+	}
 }
 
 static bool cp_check_online_response(struct osdp_pd *pd)

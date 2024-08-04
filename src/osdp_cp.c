@@ -742,6 +742,13 @@ static int cp_process_reply(struct osdp_pd *pd)
 		return OSDP_CP_ERR_NO_DATA;
 	case OSDP_ERR_PKT_BUSY:
 		return OSDP_CP_ERR_RETRY_CMD;
+	case OSDP_ERR_PKT_NACK:
+		/* CP cannot do anything about an invalid reply from a PD. So it
+		 * just default to going offline and retrying after a while. The
+		 * reason for this failure was probably better logged by lower
+		 * layers so we can treat it as a generic failure.
+		 */
+		__fallthrough;
 	default:
 		return OSDP_CP_ERR_GENERIC;
 	}

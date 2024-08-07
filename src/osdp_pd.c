@@ -150,7 +150,7 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		}
 		break;
 	case OSDP_EVENT_KEYPRESS:
-		reply_code = REPLY_KEYPPAD;
+		reply_code = REPLY_KEYPAD;
 		break;
 	case OSDP_EVENT_STATUS:
 		switch(event->status.type) {
@@ -785,7 +785,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BIT_IS_SET(event->status.mask, 0); // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
-	case REPLY_KEYPPAD:
+	case REPLY_KEYPAD:
 		event = (struct osdp_event *)pd->ephemeral_data;
 		assert_buf_len(REPLY_KEYPAD_LEN + event->keypress.length, max_len);
 		buf[len++] = pd->reply_id;

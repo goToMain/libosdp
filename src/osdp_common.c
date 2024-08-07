@@ -100,7 +100,7 @@ const char *osdp_reply_name(int reply_id)
 		[REPLY_RSTATR    - REPLY_ACK] = "RSTATR",
 		[REPLY_RAW       - REPLY_ACK] = "RAW",
 		[REPLY_FMT       - REPLY_ACK] = "FMT",
-		[REPLY_KEYPPAD   - REPLY_ACK] = "KEYPPAD",
+		[REPLY_KEYPAD    - REPLY_ACK] = "KEYPAD",
 		[REPLY_COM       - REPLY_ACK] = "COM",
 		[REPLY_BIOREADR  - REPLY_ACK] = "BIOREADR",
 		[REPLY_BIOMATCHR - REPLY_ACK] = "BIOMATCHR",

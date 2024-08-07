@@ -39,7 +39,7 @@
 #define REPLY_NAK_DATA_LEN             1
 #define REPLY_CCRYPT_DATA_LEN          32
 #define REPLY_RMAC_I_DATA_LEN          16
-#define REPLY_KEYPPAD_DATA_LEN         2   /* variable length command */
+#define REPLY_KEYPAD_DATA_LEN          2   /* variable length command */
 #define REPLY_RAW_DATA_LEN             4   /* variable length command */
 #define REPLY_FMT_DATA_LEN             3   /* variable length command */
 #define REPLY_BUSY_DATA_LEN            0
@@ -558,14 +558,14 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->baud_rate = temp32;
 		ret = OSDP_CP_ERR_NONE;
 		break;
-	case REPLY_KEYPPAD:
-		if (len < REPLY_KEYPPAD_DATA_LEN) {
+	case REPLY_KEYPAD:
+		if (len < REPLY_KEYPAD_DATA_LEN) {
 			break;
 		}
 		event.type = OSDP_EVENT_KEYPRESS;
 		event.keypress.reader_no = buf[pos++];
 		event.keypress.length = buf[pos++];
-		if ((len - REPLY_KEYPPAD_DATA_LEN) != event.keypress.length) {
+		if ((len - REPLY_KEYPAD_DATA_LEN) != event.keypress.length) {
 			break;
 		}
 		memcpy(event.keypress.data, buf + pos, event.keypress.length);
@@ -1022,7 +1022,7 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 		    pd->reply_id == REPLY_MFGREP ||
 		    pd->reply_id == REPLY_RAW ||
 		    pd->reply_id == REPLY_FMT ||
-		    pd->reply_id == REPLY_KEYPPAD) {
+		    pd->reply_id == REPLY_KEYPAD) {
 			return true;
 		}
 		return ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED);

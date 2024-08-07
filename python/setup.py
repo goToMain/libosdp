@@ -147,12 +147,13 @@ try_vendor_sources(
 )
 
 definitions = [
-    # "CONFIG_OSDP_PACKET_TRACE",
+    "CONFIG_OSDP_PACKET_TRACE",
     # "CONFIG_OSDP_DATA_TRACE",
     # "CONFIG_OSDP_SKIP_MARK_BYTE",
 ]
 
-if "CONFIG_OSDP_PACKET_TRACE" in definitions:
+if ("CONFIG_OSDP_PACKET_TRACE" in definitions or
+    "CONFIG_OSDP_DATA_TRACE" in definitions):
     source_files += [
         "src/osdp_pcap.c",
         "utils/src/pcap_gen.c",

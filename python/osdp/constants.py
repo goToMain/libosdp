@@ -11,6 +11,7 @@ class LibFlag:
     InstallMode = osdp_sys.FLAG_INSTALL_MODE
     IgnoreUnsolicited = osdp_sys.FLAG_IGN_UNSOLICITED
     EnableNotification = osdp_sys.FLAG_ENABLE_NOTIFICATION
+    CapturePackets = osdp_sys.FLAG_CAPTURE_PACKETS
 
 class LogLevel:
     Emergency = osdp_sys.LOG_EMERG

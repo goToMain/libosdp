@@ -63,6 +63,16 @@ extern "C" {
 #define OSDP_FLAG_ENABLE_NOTIFICATION 0x00080000
 
 /**
+ * @brief Capture raw osdp packets as seen by this device to a pcap file.
+ * LibOSDP must be built with CONFIG_OSDP_PACKET_TRACE or CONFIG_OSDP_DATA_TRACE
+ * for this flag to be in effect.
+ *
+ * @note The app must call osdp_{cp,pd}_teardown() before existing for the
+ * capture file to be finalized and written to the disk.
+ */
+#define OSDP_FLAG_CAPTURE_PACKETS 0x00100000
+
+/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {

@@ -1148,8 +1148,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	SET_FLAG(pd, PD_FLAG_PD_MODE); /* used in checks in phy */
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
-	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+	if (is_capture_enabled(pd)) {
 		osdp_packet_capture_init(pd);
 	}
 
@@ -1167,8 +1166,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 	assert(ctx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
-	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+	if (is_capture_enabled(pd)) {
 		osdp_packet_capture_finish(pd);
 	}
 

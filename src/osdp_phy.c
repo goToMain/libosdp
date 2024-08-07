@@ -228,7 +228,7 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	pkt->len_lsb = BYTE_0(len + 2);
 	pkt->len_msb = BYTE_1(len + 2);
 
-	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+	if (is_data_trace_enabled(pd)) {
 		uint8_t control;
 
 		/**
@@ -315,7 +315,7 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 		return OSDP_ERR_PKT_BUILD;
 	}
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+	if (is_packet_trace_enabled(pd)) {
 		osdp_capture_packet(pd, buf, len);
 	}
 
@@ -532,7 +532,7 @@ int osdp_phy_check_packet(struct osdp_pd *pd)
 	if (pd->packet_buf_len != pd->packet_len)
 		return OSDP_ERR_PKT_WAIT;
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE)) {
+	if (is_packet_trace_enabled(pd)) {
 		osdp_capture_packet(pd, pd->packet_buf, pd->packet_buf_len);
 	}
 
@@ -671,7 +671,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+	if (is_data_trace_enabled(pd)) {
 		int ret = len;
 
 		/**

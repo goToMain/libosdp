@@ -520,4 +520,20 @@ static inline bool test_request(struct osdp_pd *pd, uint32_t req) {
 	return pd->request & req;
 }
 
+static inline bool is_capture_enabled(struct osdp_pd *pd) {
+	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
+	        (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
+	         IS_ENABLED(CONFIG_OSDP_DATA_TRACE)));
+}
+
+static inline bool is_data_trace_enabled(struct osdp_pd *pd) {
+	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
+	        IS_ENABLED(CONFIG_OSDP_DATA_TRACE));
+}
+
+static inline bool is_packet_trace_enabled(struct osdp_pd *pd) {
+	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
+	        IS_ENABLED(CONFIG_OSDP_PACKET_TRACE));
+}
+
 #endif	/* _OSDP_COMMON_H_ */

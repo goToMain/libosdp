@@ -1427,8 +1427,7 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
 		logger_set_name(&pd->logger, name);
 
-		if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
-		    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
+		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_init(pd);
 		}
 	}
@@ -1467,10 +1466,9 @@ void osdp_cp_teardown(osdp_t *ctx)
 	int i;
 	struct osdp_pd *pd;
 
-	if (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
-	    IS_ENABLED(CONFIG_OSDP_DATA_TRACE)) {
-		for (i = 0; i < NUM_PD(ctx); i++) {
-			pd = osdp_to_pd(ctx, i);
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = osdp_to_pd(ctx, i);
+		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_finish(pd);
 		}
 	}

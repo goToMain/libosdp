@@ -5,9 +5,18 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
+import signal
 import argparse
 import serial
 from osdp import *
+
+exit_event = 0
+def signal_handler(sig, frame):
+    global exit_event
+    print('Received SIGINT, quitting...')
+    exit_event = 1
+
+signal.signal(signal.SIGINT, signal_handler)
 
 class SerialChannel(Channel):
     def __init__(self, device: str, speed: int):
@@ -57,19 +66,13 @@ card_event = {
     'data': bytes([9,1,9,2,6,3,1,7,7,0]),
 }
 
-count = 0 # loop counter
-
-while True:
+while not exit_event:
     ## Check if we have any commands from the CP
     cmd = pd.get_command(timeout=5)
     if cmd:
         print(f"PD: Received command: {cmd}")
 
-    ## Send a card read event to CP
-    pd.notify_event(card_event)
-
-    # if count >= 5:
-    #     break
-    count += 1
+        ## Send a card read event to CP
+        pd.notify_event(card_event)
 
 pd.teardown()

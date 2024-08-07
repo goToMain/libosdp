@@ -5,7 +5,7 @@
  */
 
 #include "osdp_common.h"
-#include "osdp_pcap.h"
+#include "osdp_diag.h"
 
 #define OSDP_PKT_MARK                  0xFF
 #define OSDP_PKT_SOM                   0x53

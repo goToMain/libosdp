@@ -145,7 +145,7 @@ LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src
 LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c"
 
 if [[ ! -z "${PACKET_TRACE}" ]] || [[ ! -z "${DATA_TRACE}" ]]; then
-	LIBOSDP_SOURCES+=" src/osdp_pcap.c utils/src/pcap_gen.c"
+	LIBOSDP_SOURCES+=" src/osdp_diag.c utils/src/pcap_gen.c"
 fi
 
 if [[ -z "${STATIC_PD}" ]]; then

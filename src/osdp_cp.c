@@ -10,7 +10,7 @@
 
 #include "osdp_common.h"
 #include "osdp_file.h"
-#include "osdp_pcap.h"
+#include "osdp_diag.h"
 
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1

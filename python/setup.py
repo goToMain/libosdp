@@ -132,8 +132,8 @@ other_files = [
     "src/osdp_config.h.in",
 
     # Optional when PACKET_TRACE is enabled
-    "src/osdp_pcap.c",
-    "src/osdp_pcap.h",
+    "src/osdp_diag.c",
+    "src/osdp_diag.h",
     "utils/include/utils/pcap_gen.h",
     "utils/src/pcap_gen.c",
 ]
@@ -155,7 +155,7 @@ definitions = [
 if ("CONFIG_OSDP_PACKET_TRACE" in definitions or
     "CONFIG_OSDP_DATA_TRACE" in definitions):
     source_files += [
-        "src/osdp_pcap.c",
+        "src/osdp_diag.c",
         "utils/src/pcap_gen.c",
     ]
 

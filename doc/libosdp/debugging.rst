@@ -52,7 +52,8 @@ To enable packet trace builds, follow these steps:
     cmake -DCONFIG_OSDP_PACKET_TRACE=on ..
     make
 
-After, this when you run your application, libosdp will produce a `.pcap` file
+During CP/PD setup, you must set PD info flag `OSDP_FLAG_CAPTURE_PACKETS`.
+After this when you run your application, libosdp will produce a `.pcap` file
 int the current directory which contains all the packets it decoded from the
 communication channel.
 
@@ -72,7 +73,8 @@ To enable data trace builds, follow these steps:
     cmake -DCONFIG_OSDP_DATA_TRACE=on ..
     make
 
-After, this when you run your application, libosdp will produce a `.pcap` file
+During CP/PD setup, you must set PD info flag `OSDP_FLAG_CAPTURE_PACKETS`.
+After this when you run your application, libosdp will produce a `.pcap` file
 in the current directory which contains all the packets it decoded from the
 communication channel.
 

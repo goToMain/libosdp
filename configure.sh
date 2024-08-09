@@ -57,7 +57,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-mkdir -p ${BUILD_DIR}
+mkdir -p ${BUILD_DIR}/include
 
 if [ -f config.make ] && [ -z "$FORCE" ]; then
 	echo "LibOSDP already configured! Use --force to re-configure"
@@ -187,11 +187,11 @@ sed -e "s|@PROJECT_VERSION@|${PROJECT_VERSION}|" \
     -e "s|@GIT_TAG@|${GIT_TAG}|" \
     -e "s|@GIT_DIFF@|${GIT_DIFF}|" \
     -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" \
-	src/osdp_config.h.in > ${BUILD_DIR}/osdp_config.h
+	src/osdp_config.h.in > ${BUILD_DIR}/include/osdp_config.h
 
 ## Generate osdp_exports.h
 echo "Generating osdp_exports.h"
-cat > ${BUILD_DIR}/osdp_export.h <<----
+cat > ${BUILD_DIR}/include/osdp_export.h <<----
 #ifndef OSDP_EXPORT_H
 #define OSDP_EXPORT_H
 
@@ -202,7 +202,7 @@ cat > ${BUILD_DIR}/osdp_export.h <<----
 #endif /* OSDP_EXPORT_H */
 ---
 
-CCFLAGS+=" -I${BUILD_DIR}"
+CCFLAGS+=" -I${BUILD_DIR}/include"
 
 ## Generate Makefile
 echo "Generating config.make"

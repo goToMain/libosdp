@@ -527,7 +527,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.status.type = OSDP_STATUS_REPORT_LOCAL;
 		event.status.nr_entries = 2;
 		event.status.mask = !!buf[pos++];
-		event.status.mask = !!buf[pos++] << 1;
+		event.status.mask |= !!buf[pos++] << 1;
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
 		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;

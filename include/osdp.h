@@ -817,6 +817,12 @@ enum osdp_event_notification_type {
 	 * arg1: scbk type -- 0: scbk; 1: scbk-d
 	 */
 	OSDP_EVENT_NOTIFICATION_SC_STATUS,
+	/**
+	 * PD state change
+	 *
+	 * arg0: status -- 0: offline; 1: online
+	 */
+	OSDP_EVENT_NOTIFICATION_PD_STATUS,
 };
 
 /**

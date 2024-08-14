@@ -56,6 +56,7 @@ class CommandFileTxFlags:
 class EventNotification:
     Command = osdp_sys.EVENT_NOTIFICATION_COMMAND
     SecureChannelStatus = osdp_sys.EVENT_NOTIFICATION_SC_STATUS
+    PeripheralDeviceStatus = osdp_sys.EVENT_NOTIFICATION_PD_STATUS
 
 class Event:
     CardRead = osdp_sys.EVENT_CARDREAD

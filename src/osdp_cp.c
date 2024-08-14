@@ -958,6 +958,22 @@ static int cp_get_online_command(struct osdp_pd *pd)
 	return -1;
 }
 
+static void notify_pd_status(struct osdp_pd *pd, bool is_online)
+{
+	struct osdp *ctx = pd_to_osdp(pd);
+	struct osdp_event evt;
+
+	if (!ctx->event_callback ||
+	    !ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION)) {
+		return;
+	}
+
+	evt.type = OSDP_EVENT_NOTIFICATION;
+	evt.notif.type = OSDP_EVENT_NOTIFICATION_PD_STATUS;
+	evt.notif.arg0 = is_online;
+	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+}
+
 static void notify_sc_status(struct osdp_pd *pd)
 {
 	struct osdp *ctx = pd_to_osdp(pd);
@@ -1197,6 +1213,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		break;
 	case OSDP_CP_STATE_ONLINE:
 		LOG_INF("Online; %s SC", sc_is_active(pd) ? "With" : "Without");
+		notify_pd_status(pd, true);
 		break;
 	case OSDP_CP_STATE_OFFLINE:
 		pd->tstamp = osdp_millis_now();
@@ -1205,6 +1222,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		notify_sc_status(pd);
 		LOG_ERR("Going offline for %d seconds; Was in '%s' state",
 			pd->wait_ms / 1000, state_get_name(cur));
+		notify_pd_status(pd, true);
 		break;
 	case OSDP_CP_STATE_SC_CHLNG:
 		osdp_sc_setup(pd);

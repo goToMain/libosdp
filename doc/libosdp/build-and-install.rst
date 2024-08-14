@@ -82,6 +82,8 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | --lib-only          | CONFIG_OSDP_LIB_ONLY          | OFF       | Only build the library                    |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
+| N/A                 | CONFIG_BUILD_SANITIZER        | ON        | Enable different sanitizers during build  |
++---------------------+-------------------------------+-----------+-------------------------------------------+
 | N/A                 | CONFIG_BUILD_SHARED           | ON        | Build shared library                      |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | N/A                 | CONFIG_BUILD_STATIC           | ON        | Build static library                      |

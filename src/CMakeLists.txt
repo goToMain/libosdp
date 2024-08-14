@@ -9,7 +9,7 @@ option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 option(CONFIG_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)
 option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
 option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
-option(CONFIG_BUILD_ASAN "Address sanitizer enabled builds" OFF)
+option(CONFIG_BUILD_SANITIZER "Enable different sanitizers during build" OFF)
 option(CONFIG_BUILD_STATIC "Build static library" ON)
 option(CONFIG_BUILD_SHARED "Build shared library" ON)
 
@@ -154,9 +154,13 @@ target_include_directories(${LIB_OSDP_STATIC}
 		${PROJECT_SOURCE_DIR}/utils/include
 )
 
-if (CONFIG_BUILD_ASAN)
-	target_compile_options(${LIB_OSDP_STATIC} PRIVATE -fsanitize=address)
-	target_link_options(${LIB_OSDP_STATIC} PRIVATE -fsanitize=address)
+if (CONFIG_BUILD_SANITIZER)
+	target_compile_options(${LIB_OSDP_STATIC} PRIVATE
+		-fsanitize=address,undefined,leak
+	)
+	target_link_options(${LIB_OSDP_STATIC} PRIVATE
+		-fsanitize=address,undefined,leak
+	)
 endif()
 
 install(
@@ -215,9 +219,13 @@ target_include_directories(${LIB_OSDP_SHARED}
 		${PROJECT_SOURCE_DIR}/utils/include
 )
 
-if (CONFIG_BUILD_ASAN)
-	target_compile_options(${LIB_OSDP_SHARED} PRIVATE -fsanitize=address)
-	target_link_options(${LIB_OSDP_SHARED} PRIVATE -fsanitize=address)
+if (CONFIG_BUILD_SANITIZER)
+	target_compile_options(${LIB_OSDP_SHARED} PRIVATE
+		-fsanitize=address,undefined,leak
+	)
+	target_link_options(${LIB_OSDP_SHARED} PRIVATE
+		-fsanitize=address,undefined,leak
+	)
 endif()
 
 install(

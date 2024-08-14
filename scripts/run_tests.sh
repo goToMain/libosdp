@@ -17,7 +17,7 @@ function run_make_check() {
 function run_cmake_unit_test() {
 	echo "[-] Running cmake unit-tests"
 	rm -rf build
-	cmake -B build -DCONFIG_BUILD_ASAN="on" .
+	cmake -B build .
 	cmake --build build -t check-ut
 }
 

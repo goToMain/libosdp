@@ -11,11 +11,13 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 
+#include <utils/utils.h>
+
 void osdp_crypt_setup()
 {
 }
 
-void osdp_openssl_fatal(void)
+void __noreturn osdp_openssl_fatal(void)
 {
 	/**
 	 * ERR_print_errors_fp(stderr) is not available when build as a shared

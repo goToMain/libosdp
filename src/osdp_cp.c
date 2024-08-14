@@ -1471,6 +1471,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_finish(pd);
 		}
+		safe_free(pd->file);
 	}
 
 	safe_free(osdp_to_pd(ctx, 0));

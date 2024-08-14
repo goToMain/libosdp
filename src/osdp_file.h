@@ -75,8 +75,8 @@ struct osdp_file {
 	int file_id;
 	enum file_tx_state_e state;
 	int length;
-	int size;
-	int offset;
+	uint32_t size;
+	uint32_t offset;
 	int errors;
 	bool cancel_req;
 	struct osdp_file_ops ops;

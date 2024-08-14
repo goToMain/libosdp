@@ -8,6 +8,13 @@
 
 #include "osdp_file.h"
 
+#define FILE_TRANSFER_HEADER_SIZE     11
+#define FILE_TRANSFER_STAT_SIZE       7
+
+#define PACK_U16_LE(lsb, msb) (((msb) << 8) | (lsb))
+#define PACK_U32_LE(lsb, b1, b2, msb) \
+	(((msb) << 24) | ((b2) << 16) | ((b1) << 8) | (lsb))
+
 static inline void file_state_reset(struct osdp_file *f)
 {
 	f->flags = 0;
@@ -29,9 +36,9 @@ static inline bool file_tx_in_progress(struct osdp_file *f)
 
 int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int buf_available;
-	struct osdp_cmd_file_xfer *p = (struct osdp_cmd_file_xfer *)buf;
+	int buf_available, len = 0;
 	struct osdp_file *f = TO_FILE(pd);
+	uint8_t *data = buf + FILE_TRANSFER_HEADER_SIZE;
 
 	/**
 	 * We should never reach this function if a valid file transfer as in
@@ -39,9 +46,9 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	 */
 	BUG_ON(f == NULL || f->state != OSDP_FILE_INPROG);
 
-	if ((size_t)max_len <= sizeof(struct osdp_cmd_file_xfer)) {
+	if ((size_t)max_len <= FILE_TRANSFER_HEADER_SIZE) {
 		LOG_ERR("TX_Build: insufficient space need:%zu have:%d",
-			sizeof(struct osdp_cmd_file_xfer), max_len);
+			FILE_TRANSFER_HEADER_SIZE, max_len);
 		goto reply_abort;
 	}
 
@@ -54,16 +61,12 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	 *
 	 * TODO: Try to add smarts here later.
 	 */
-	buf_available = max_len - sizeof(struct osdp_cmd_file_xfer) - 16;
+	buf_available = max_len - FILE_TRANSFER_HEADER_SIZE - 16;
 
-	p->type = f->file_id;
-	p->offset = f->offset;
-	p->size = f->size;
-
-	f->length = f->ops.read(f->ops.arg, p->data, buf_available, p->offset);
+	f->length = f->ops.read(f->ops.arg, data, buf_available, f->offset);
 	if (f->length < 0) {
 		LOG_ERR("TX_Build: user read failed! rc:%d len:%d off:%d",
-			f->length, buf_available, p->offset);
+			f->length, buf_available, f->offset);
 		goto reply_abort;
 	}
 	if (f->length == 0) {
@@ -71,9 +74,22 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		goto reply_abort;
 	}
 
-	p->length = f->length;
+	/* fill the packet buffer (layout: struct osdp_cmd_file_xfer) */
 
-	return sizeof(struct osdp_cmd_file_xfer) + f->length;
+	buf[len++] = f->file_id;
+	buf[len++] = BYTE_0(f->size);
+	buf[len++] = BYTE_1(f->size);
+	buf[len++] = BYTE_2(f->size);
+	buf[len++] = BYTE_3(f->size);
+	buf[len++] = BYTE_0(f->offset);
+	buf[len++] = BYTE_1(f->offset);
+	buf[len++] = BYTE_2(f->offset);
+	buf[len++] = BYTE_3(f->offset);
+	buf[len++] = BYTE_0(f->length);
+	buf[len++] = BYTE_1(f->length);
+	assert(len == FILE_TRANSFER_HEADER_SIZE);
+
+	return len + f->length;
 
 reply_abort:
 	LOG_ERR("TX_Build: Aborting file transfer due to unrecoverable error!");
@@ -84,7 +100,7 @@ reply_abort:
 int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	struct osdp_file *f = TO_FILE(pd);
-	struct osdp_cmd_file_stat *p = (struct osdp_cmd_file_stat *)buf;
+	struct osdp_cmd_file_stat stat;
 
 	if (f == NULL) {
 		LOG_ERR("Stat_Decode: File ops not registered!");
@@ -102,7 +118,12 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	if (p->status == 0) {
+	stat.control = buf[0];
+	stat.delay = PACK_U16_LE(buf[1], buf[2]);
+	stat.status = PACK_U16_LE(buf[3], buf[4]);
+	stat.rx_size = PACK_U16_LE(buf[5], buf[6]);
+
+	if (stat.status == 0) {
 		f->offset += f->length;
 		f->errors = 0;
 	} else {
@@ -129,13 +150,19 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int rc;
 	struct osdp_file *f = TO_FILE(pd);
-	struct osdp_cmd_file_xfer *p = (struct osdp_cmd_file_xfer *)buf;
+	struct osdp_cmd_file_xfer xfer;
 	struct osdp_cmd cmd;
+	uint8_t *data = buf + FILE_TRANSFER_HEADER_SIZE;
 
 	if (f == NULL) {
 		LOG_ERR("TX_Decode: File ops not registered!");
 		return -1;
 	}
+
+	xfer.type = buf[0];
+	xfer.size = PACK_U32_LE(buf[1], buf[2], buf[3], buf[4]);
+	xfer.offset = PACK_U32_LE(buf[5], buf[6], buf[7], buf[8]);
+	xfer.length = PACK_U16_LE(buf[9], buf[10]);
 
 	if (f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
 		if (pd->command_callback) {
@@ -145,22 +172,22 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 			 */
 			cmd.id = OSDP_CMD_FILE_TX;
 			cmd.file_tx.flags = f->flags;
-			cmd.file_tx.id = p->type;
+			cmd.file_tx.id = xfer.type;
 			rc = pd->command_callback(pd->command_callback_arg, &cmd);
 			if (rc < 0)
 				return -1;
 		}
 
 		/* new file write request */
-		int size = (int)p->size;
-		if (f->ops.open(f->ops.arg, p->type, &size) < 0) {
-			LOG_ERR("TX_Decode: Open failed! fd:%d", p->type);
+		int size = (int)xfer.size;
+		if (f->ops.open(f->ops.arg, xfer.type, &size) < 0) {
+			LOG_ERR("TX_Decode: Open failed! fd:%d", xfer.type);
 			return -1;
 		}
 
 		LOG_INF("TX_Decode: Starting file transfer");
 		file_state_reset(f);
-		f->file_id = p->type;
+		f->file_id = xfer.type;
 		f->size = size;
 		f->state = OSDP_FILE_INPROG;
 	}
@@ -176,10 +203,10 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	f->length = f->ops.write(f->ops.arg, p->data, p->length, p->offset);
-	if (f->length != p->length) {
+	f->length = f->ops.write(f->ops.arg, data, xfer.length, xfer.offset);
+	if (f->length != xfer.length) {
 		LOG_ERR("TX_Decode: user write failed! rc:%d len:%d off:%d",
-			f->length, p->length, p->offset);
+			f->length, xfer.length, xfer.offset);
 		f->errors++;
 		return -1;
 	}
@@ -189,7 +216,7 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	struct osdp_cmd_file_stat *p = (struct osdp_cmd_file_stat *)buf;
+	int len = 0, status = 0;
 	struct osdp_file *f = TO_FILE(pd);
 
 	if (f == NULL) {
@@ -209,16 +236,10 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 	if (f->length > 0) {
-		p->status = 0;
-		f->errors = 0;
 		f->offset += f->length;
 	} else {
-		p->status = -1;
+		status = -1;
 	}
-
-	p->rx_size = 0;
-	p->control = 0;
-	p->delay = 0;
 	f->length = 0;
 
 	assert(f->offset <= f->size);
@@ -231,7 +252,18 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		LOG_INF("TX_Decode: File receive complete");
 	}
 
-	return sizeof(struct osdp_cmd_file_stat);
+	/* fill the packet buffer (layout: struct osdp_cmd_file_stat) */
+
+	buf[len++] = 0; /* control */
+	buf[len++] = 0; /* delay */
+	buf[len++] = 0; /* delay */
+	buf[len++] = BYTE_0(status);
+	buf[len++] = BYTE_1(status);
+	buf[len++] = 0; /* rx_size */
+	buf[len++] = 0; /* rx_size */
+	assert(len == FILE_TRANSFER_STAT_SIZE);
+
+	return len;
 }
 
 /* --- State Management --- */

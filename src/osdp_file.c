@@ -11,10 +11,6 @@
 #define FILE_TRANSFER_HEADER_SIZE     11
 #define FILE_TRANSFER_STAT_SIZE       7
 
-#define PACK_U16_LE(lsb, msb) (((msb) << 8) | (lsb))
-#define PACK_U32_LE(lsb, b1, b2, msb) \
-	(((msb) << 24) | ((b2) << 16) | ((b1) << 8) | (lsb))
-
 static inline void file_state_reset(struct osdp_file *f)
 {
 	f->flags = 0;
@@ -36,7 +32,8 @@ static inline bool file_tx_in_progress(struct osdp_file *f)
 
 int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int buf_available, len = 0;
+	int len = 0;
+	int buf_available;
 	struct osdp_file *f = TO_FILE(pd);
 	uint8_t *data = buf + FILE_TRANSFER_HEADER_SIZE;
 
@@ -75,18 +72,10 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 	/* fill the packet buffer (layout: struct osdp_cmd_file_xfer) */
-
-	buf[len++] = f->file_id;
-	buf[len++] = BYTE_0(f->size);
-	buf[len++] = BYTE_1(f->size);
-	buf[len++] = BYTE_2(f->size);
-	buf[len++] = BYTE_3(f->size);
-	buf[len++] = BYTE_0(f->offset);
-	buf[len++] = BYTE_1(f->offset);
-	buf[len++] = BYTE_2(f->offset);
-	buf[len++] = BYTE_3(f->offset);
-	buf[len++] = BYTE_0(f->length);
-	buf[len++] = BYTE_1(f->length);
+	U8_TO_BYTES_LE(f->file_id, buf, len);
+	U32_TO_BYTES_LE(f->size, buf, len);
+	U32_TO_BYTES_LE(f->offset, buf, len);
+	U16_TO_BYTES_LE(f->length, buf, len);
 	assert(len == FILE_TRANSFER_HEADER_SIZE);
 
 	return len + f->length;
@@ -99,6 +88,7 @@ reply_abort:
 
 int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
+	int pos = 0;
 	struct osdp_file *f = TO_FILE(pd);
 	struct osdp_cmd_file_stat stat;
 
@@ -118,10 +108,11 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	stat.control = buf[0];
-	stat.delay = PACK_U16_LE(buf[1], buf[2]);
-	stat.status = PACK_U16_LE(buf[3], buf[4]);
-	stat.rx_size = PACK_U16_LE(buf[5], buf[6]);
+	BYTES_TO_U8_LE(buf, pos, stat.control);
+	BYTES_TO_U16_LE(buf, pos, stat.delay);
+	BYTES_TO_U16_LE(buf, pos, stat.status);
+	BYTES_TO_U16_LE(buf, pos, stat.rx_size);
+	assert(pos == len);
 
 	if (stat.status == 0) {
 		f->offset += f->length;
@@ -149,6 +140,7 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int rc;
+	int pos = 0;
 	struct osdp_file *f = TO_FILE(pd);
 	struct osdp_cmd_file_xfer xfer;
 	struct osdp_cmd cmd;
@@ -159,10 +151,18 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	xfer.type = buf[0];
-	xfer.size = PACK_U32_LE(buf[1], buf[2], buf[3], buf[4]);
-	xfer.offset = PACK_U32_LE(buf[5], buf[6], buf[7], buf[8]);
-	xfer.length = PACK_U16_LE(buf[9], buf[10]);
+	if ((size_t)len <= sizeof(struct osdp_cmd_file_xfer)) {
+		LOG_ERR("TX_Decode: invalid decode len:%d exp>=%zu",
+			len, sizeof(struct osdp_cmd_file_xfer));
+		return -1;
+	}
+
+	BYTES_TO_U8_LE(buf, pos, xfer.type);
+	BYTES_TO_U32_LE(buf, pos, xfer.size);
+	BYTES_TO_U32_LE(buf, pos, xfer.offset);
+	BYTES_TO_U16_LE(buf, pos, xfer.length);
+	assert(pos == sizeof(struct osdp_cmd_file_xfer));
+	assert(xfer.length + pos == len);
 
 	if (f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
 		if (pd->command_callback) {
@@ -194,12 +194,6 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	if (f->state != OSDP_FILE_INPROG) {
 		LOG_ERR("TX_Decode: File transfer is not in progress!");
-		return -1;
-	}
-
-	if ((size_t)len <= sizeof(struct osdp_cmd_file_xfer)) {
-		LOG_ERR("TX_Decode: invalid decode len:%d exp>=%zu",
-			len, sizeof(struct osdp_cmd_file_xfer));
 		return -1;
 	}
 
@@ -254,13 +248,10 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	/* fill the packet buffer (layout: struct osdp_cmd_file_stat) */
 
-	buf[len++] = 0; /* control */
-	buf[len++] = 0; /* delay */
-	buf[len++] = 0; /* delay */
-	buf[len++] = BYTE_0(status);
-	buf[len++] = BYTE_1(status);
-	buf[len++] = 0; /* rx_size */
-	buf[len++] = 0; /* rx_size */
+	U8_TO_BYTES_LE(0, buf, len); /* control */
+	U16_TO_BYTES_LE(0, buf, len); /* delay */
+	U16_TO_BYTES_LE(status, buf, len);
+	U16_TO_BYTES_LE(0, buf, len); /* rx_size */
 	assert(len == FILE_TRANSFER_STAT_SIZE);
 
 	return len;

@@ -69,6 +69,7 @@ enum file_tx_state_e {
 	OSDP_FILE_IDLE,
 	OSDP_FILE_INPROG,
 	OSDP_FILE_DONE,
+	OSDP_FILE_KEEP_ALIVE,
 };
 
 struct osdp_file {

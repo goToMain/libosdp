@@ -11,6 +11,14 @@
 #define FILE_TRANSFER_HEADER_SIZE     11
 #define FILE_TRANSFER_STAT_SIZE       7
 
+#define OSDP_FILE_TX_STATUS_ACK                0
+#define OSDP_FILE_TX_STATUS_CONTENTS_PROCESSED 1
+#define OSDP_FILE_TX_STATUS_PD_RESET           2
+#define OSDP_FILE_TX_STATUS_KEEP_ALIVE         3
+#define OSDP_FILE_TX_STATUS_ERR_ABORT         -1
+#define OSDP_FILE_TX_STATUS_ERR_UNKNOWN       -2
+#define OSDP_FILE_TX_STATUS_ERR_INVALID       -3
+
 static inline void file_state_reset(struct osdp_file *f)
 {
 	f->flags = 0;
@@ -32,9 +40,19 @@ static inline bool file_tx_in_progress(struct osdp_file *f)
 
 /* --- Sender CMD/RESP Handers --- */
 
-int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
+static void write_file_tx_header(struct osdp_file *f, uint8_t *buf)
 {
 	int len = 0;
+
+	U8_TO_BYTES_LE(f->file_id, buf, len);
+	U32_TO_BYTES_LE(f->size, buf, len);
+	U32_TO_BYTES_LE(f->offset, buf, len);
+	U16_TO_BYTES_LE(f->length, buf, len);
+	assert(len == FILE_TRANSFER_HEADER_SIZE);
+}
+
+int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
+{
 	int buf_available;
 	struct osdp_file *f = TO_FILE(pd);
 	uint8_t *data = buf + FILE_TRANSFER_HEADER_SIZE;
@@ -43,12 +61,19 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	 * We should never reach this function if a valid file transfer as in
 	 * progress.
 	 */
-	BUG_ON(f == NULL || f->state != OSDP_FILE_INPROG);
+	BUG_ON(f == NULL);
+	BUG_ON(f->state != OSDP_FILE_INPROG && f->state != OSDP_FILE_KEEP_ALIVE);
 
 	if ((size_t)max_len <= FILE_TRANSFER_HEADER_SIZE) {
 		LOG_ERR("TX_Build: insufficient space need:%zu have:%d",
 			FILE_TRANSFER_HEADER_SIZE, max_len);
 		goto reply_abort;
+	}
+
+	if (f->state == OSDP_FILE_KEEP_ALIVE) {
+		LOG_DBG("TX_Build: keep-alive");
+		write_file_tx_header(f, buf);
+		return FILE_TRANSFER_HEADER_SIZE;
 	}
 
 	/**
@@ -74,13 +99,9 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	}
 
 	/* fill the packet buffer (layout: struct osdp_cmd_file_xfer) */
-	U8_TO_BYTES_LE(f->file_id, buf, len);
-	U32_TO_BYTES_LE(f->size, buf, len);
-	U32_TO_BYTES_LE(f->offset, buf, len);
-	U16_TO_BYTES_LE(f->length, buf, len);
-	assert(len == FILE_TRANSFER_HEADER_SIZE);
+	write_file_tx_header(f, buf);
 
-	return len + f->length;
+	return FILE_TRANSFER_HEADER_SIZE + f->length;
 
 reply_abort:
 	LOG_ERR("TX_Build: Aborting file transfer due to unrecoverable error!");
@@ -91,6 +112,7 @@ reply_abort:
 int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int pos = 0;
+	bool do_close = false;
 	struct osdp_file *f = TO_FILE(pd);
 	struct osdp_cmd_file_stat stat;
 
@@ -115,27 +137,41 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	BYTES_TO_U16_LE(buf, pos, stat.status);
 	BYTES_TO_U16_LE(buf, pos, stat.rx_size);
 	assert(pos == len);
+	assert(f->offset + f->length <= f->size);
 
-	if (stat.status == 0) {
-		f->offset += f->length;
-		f->errors = 0;
-	} else {
-		f->errors++;
+	if (stat.status != OSDP_FILE_TX_STATUS_ACK &&
+	    stat.status != OSDP_FILE_TX_STATUS_CONTENTS_PROCESSED &&
+	    stat.status != OSDP_FILE_TX_STATUS_PD_RESET &&
+	    stat.status != OSDP_FILE_TX_STATUS_KEEP_ALIVE) {
+		LOG_ERR("Stat_Decode: File transfer error; "
+		        "status:%d offset:%d", stat.status, f->offset);
+		return -1;
 	}
-	f->length = 0;
+
+	f->offset += f->length;
+	do_close = f->length && (f->offset == f->size);
 	f->wait_time_ms = stat.delay;
 	f->tstamp = osdp_millis_now();
+	f->length = 0;
+	f->errors = 0;
+	if (f->offset != f->size) {
+		/* Transfer is in progress */
+		return 0;
+	}
 
-	assert(f->offset <= f->size);
-	if (f->offset == f->size) { /* EOF */
-		if (f->ops.close(f->ops.arg) < 0) {
-			LOG_ERR("Stat_Decode: Close failed!");
-			return -1;
-		}
+	/* File transfer complete; close file and end file transfer */
+
+	if (do_close && f->ops.close(f->ops.arg) < 0) {
+		LOG_ERR("Stat_Decode: Close failed! ... continuing");
+	}
+
+	if (stat.status == OSDP_FILE_TX_STATUS_KEEP_ALIVE) {
+		f->state = OSDP_FILE_KEEP_ALIVE;
+		LOG_INF("Stat_Decode: File transfer done; keep alive");
+	} else {
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("Stat_Decode: File transfer complete");
 	}
-
 	return 0;
 }
 

@@ -14,6 +14,7 @@
 #define OSDP_FILE_TX_STATE_IDLE         0
 #define OSDP_FILE_TX_STATE_PENDING      1
 #define OSDP_FILE_TX_STATE_ERROR       -1
+#define OSDP_FILE_TX_STATE_WAIT        -2
 
 /**
  * @brief OSDP specified command: File Transfer:
@@ -79,6 +80,8 @@ struct osdp_file {
 	uint32_t offset;
 	int errors;
 	bool cancel_req;
+	int64_t tstamp;
+	uint32_t wait_time_ms;
 	struct osdp_file_ops ops;
 };
 

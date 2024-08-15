@@ -952,6 +952,7 @@ static int cp_get_online_command(struct osdp_pd *pd)
 	switch(osdp_get_file_tx_state(pd)) {
 	case OSDP_FILE_TX_STATE_PENDING: return CMD_FILETRANSFER;
 	case OSDP_FILE_TX_STATE_ERROR:   return CMD_ABORT;
+	default: break;
 	}
 
 	return -1;

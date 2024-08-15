@@ -20,6 +20,8 @@ static inline void file_state_reset(struct osdp_file *f)
 	f->size = 0;
 	f->state = OSDP_FILE_IDLE;
 	f->file_id = 0;
+	f->tstamp = 0;
+	f->wait_time_ms = 0;
 	f->cancel_req = false;
 }
 
@@ -121,6 +123,8 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		f->errors++;
 	}
 	f->length = 0;
+	f->wait_time_ms = stat.delay;
+	f->tstamp = osdp_millis_now();
 
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
@@ -275,6 +279,10 @@ int osdp_get_file_tx_state(struct osdp_pd *pd)
 
 	if (!f || f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
 		return OSDP_FILE_TX_STATE_IDLE;
+	}
+
+	if (osdp_millis_since(f->tstamp) < f->wait_time_ms) {
+		return OSDP_FILE_TX_STATE_WAIT;
 	}
 
 	if (f->errors > OSDP_FILE_ERROR_RETRY_MAX || f->cancel_req) {

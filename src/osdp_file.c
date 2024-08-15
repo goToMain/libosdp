@@ -19,6 +19,10 @@
 #define OSDP_FILE_TX_STATUS_ERR_UNKNOWN       -2
 #define OSDP_FILE_TX_STATUS_ERR_INVALID       -3
 
+#define OSDP_FILE_TX_FLAG_EXCLUSIVE            0x01000000
+#define OSDP_FILE_TX_FLAG_PLAIN_TEXT           0x02000000
+#define OSDP_FILE_TX_FLAG_POLL_RESP            0x04000000
+
 static inline void file_state_reset(struct osdp_file *f)
 {
 	f->flags = 0;
@@ -68,6 +72,10 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		LOG_ERR("TX_Build: insufficient space need:%zu have:%d",
 			FILE_TRANSFER_HEADER_SIZE, max_len);
 		goto reply_abort;
+	}
+
+	if (ISSET_FLAG(f, OSDP_FILE_TX_FLAG_PLAIN_TEXT)) {
+		LOG_WRN("TX_Build: Ignoring plaintext file transfer request");
 	}
 
 	if (f->state == OSDP_FILE_KEEP_ALIVE) {
@@ -132,6 +140,7 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
+	/* Collect struct osdp_cmd_file_stat */
 	BYTES_TO_U8_LE(buf, pos, stat.control);
 	BYTES_TO_U16_LE(buf, pos, stat.delay);
 	BYTES_TO_U16_LE(buf, pos, stat.status);
@@ -139,14 +148,10 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	assert(pos == len);
 	assert(f->offset + f->length <= f->size);
 
-	if (stat.status != OSDP_FILE_TX_STATUS_ACK &&
-	    stat.status != OSDP_FILE_TX_STATUS_CONTENTS_PROCESSED &&
-	    stat.status != OSDP_FILE_TX_STATUS_PD_RESET &&
-	    stat.status != OSDP_FILE_TX_STATUS_KEEP_ALIVE) {
-		LOG_ERR("Stat_Decode: File transfer error; "
-		        "status:%d offset:%d", stat.status, f->offset);
-		return -1;
-	}
+	/* Collect control flags */
+	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_EXCLUSIVE, stat.control & 0x01)
+	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_PLAIN_TEXT, stat.control & 0x02)
+	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_POLL_RESP, stat.control & 0x04)
 
 	f->offset += f->length;
 	do_close = f->length && (f->offset == f->size);
@@ -154,6 +159,7 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	f->tstamp = osdp_millis_now();
 	f->length = 0;
 	f->errors = 0;
+
 	if (f->offset != f->size) {
 		/* Transfer is in progress */
 		return 0;
@@ -165,14 +171,24 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_ERR("Stat_Decode: Close failed! ... continuing");
 	}
 
-	if (stat.status == OSDP_FILE_TX_STATUS_KEEP_ALIVE) {
+	switch (stat.status) {
+	case OSDP_FILE_TX_STATUS_KEEP_ALIVE:
 		f->state = OSDP_FILE_KEEP_ALIVE;
 		LOG_INF("Stat_Decode: File transfer done; keep alive");
-	} else {
+		return 0;
+	case OSDP_FILE_TX_STATUS_PD_RESET:
+		make_request(pd, CP_REQ_OFFLINE);
+		__fallthrough;
+	case OSDP_FILE_TX_STATUS_CONTENTS_PROCESSED:
 		f->state = OSDP_FILE_DONE;
 		LOG_INF("Stat_Decode: File transfer complete");
+		return 0;
+	default:
+		LOG_ERR("Stat_Decode: File transfer error; "
+		        "status:%d offset:%d", stat.status, f->offset);
+		f->errors++;
+		return -1;
 	}
-	return 0;
 }
 
 /* --- Receiver CMD/RESP Handler --- */
@@ -225,10 +241,10 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 			return -1;
 		}
 
-		LOG_INF("TX_Decode: Starting file transfer");
+		LOG_INF("TX_Decode: Starting file transfer of size: %d", xfer.size);
 		file_state_reset(f);
 		f->file_id = xfer.type;
-		f->size = size;
+		f->size = xfer.size;
 		f->state = OSDP_FILE_INPROG;
 	}
 
@@ -250,8 +266,12 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 
 int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int len = 0, status = 0;
+	int len = 0;
 	struct osdp_file *f = TO_FILE(pd);
+	struct osdp_cmd_file_stat stat = {
+		.status = OSDP_FILE_TX_STATUS_ACK,
+		.control = 0x01, /* interleaving, secure channel, no activity */
+	};
 
 	if (f == NULL) {
 		LOG_ERR("Stat_Build: File ops not registered!");
@@ -272,10 +292,10 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	if (f->length > 0) {
 		f->offset += f->length;
 	} else {
-		status = -1;
+		stat.status = OSDP_FILE_TX_STATUS_ERR_INVALID;
 	}
+	LOG_DBG("length: %d offset: %d size: %d", f->length, f->offset, f->size);
 	f->length = 0;
-
 	assert(f->offset <= f->size);
 	if (f->offset == f->size) { /* EOF */
 		if (f->ops.close(f->ops.arg) < 0) {
@@ -283,15 +303,16 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			return -1;
 		}
 		f->state = OSDP_FILE_DONE;
+		stat.status = OSDP_FILE_TX_STATUS_CONTENTS_PROCESSED;
 		LOG_INF("TX_Decode: File receive complete");
 	}
 
 	/* fill the packet buffer (layout: struct osdp_cmd_file_stat) */
 
-	U8_TO_BYTES_LE(0, buf, len); /* control */
-	U16_TO_BYTES_LE(0, buf, len); /* delay */
-	U16_TO_BYTES_LE(status, buf, len);
-	U16_TO_BYTES_LE(0, buf, len); /* rx_size */
+	U8_TO_BYTES_LE(stat.control, buf, len);
+	U16_TO_BYTES_LE(stat.delay, buf, len);
+	U16_TO_BYTES_LE(stat.status, buf, len);
+	U16_TO_BYTES_LE(stat.rx_size, buf, len);
 	assert(len == FILE_TRANSFER_STAT_SIZE);
 
 	return len;
@@ -309,25 +330,38 @@ void osdp_file_tx_abort(struct osdp_pd *pd)
 	}
 }
 
-int osdp_get_file_tx_state(struct osdp_pd *pd)
+/**
+ * @brief Return the next command that the CP should send to the PD.
+ *
+ * @param pd PD context
+ * @retval +ve - Send this OSDP command
+ * @retval  -1 - don't send any command, wait for me
+ * @retval   0 - nothing to send; let some other module decide
+ */
+int osdp_file_tx_get_command(struct osdp_pd *pd)
 {
 	struct osdp_file *f = TO_FILE(pd);
 
 	if (!f || f->state == OSDP_FILE_IDLE || f->state == OSDP_FILE_DONE) {
-		return OSDP_FILE_TX_STATE_IDLE;
-	}
-
-	if (osdp_millis_since(f->tstamp) < f->wait_time_ms) {
-		return OSDP_FILE_TX_STATE_WAIT;
+		return 0;
 	}
 
 	if (f->errors > OSDP_FILE_ERROR_RETRY_MAX || f->cancel_req) {
 		LOG_ERR("Aborting transfer of file fd:%d", f->file_id);
 		osdp_file_tx_abort(pd);
-		return OSDP_FILE_TX_STATE_ERROR;
+		return CMD_ABORT;
 	}
 
-	return OSDP_FILE_TX_STATE_PENDING;
+	if (f->wait_time_ms &&
+	    osdp_millis_since(f->tstamp) < f->wait_time_ms) {
+		return ISSET_FLAG(f, OSDP_FILE_TX_FLAG_EXCLUSIVE) ? -1 : 0;
+	}
+
+	if (ISSET_FLAG(f, OSDP_FILE_TX_FLAG_POLL_RESP)) {
+		return CMD_POLL;
+	}
+
+	return CMD_FILETRANSFER;
 }
 
 /**

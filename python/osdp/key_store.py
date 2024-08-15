@@ -29,7 +29,7 @@ class KeyStore():
         return bytes(key)
 
     def _store_key(self, key):
-        with open(self.key_file(name), "w") as f:
+        with open(self.key_file(key), "w") as f:
             f.write(key.hex())
 
     def get_key(self, name):

@@ -46,9 +46,10 @@
 #define LOG_NOT(...)   __logger_log(&pd->logger, LOG_NOTICE, __FILE__, __LINE__, __VA_ARGS__)
 #define LOG_DBG(...)   __logger_log(&pd->logger, LOG_DEBUG,  __FILE__, __LINE__, __VA_ARGS__)
 
-#define ISSET_FLAG(p, f) (((p)->flags & (f)) == (f))
-#define SET_FLAG(p, f)	 ((p)->flags |= (f))
-#define CLEAR_FLAG(p, f) ((p)->flags &= ~(f))
+#define ISSET_FLAG(p, f)       (((p)->flags & (f)) == (f))
+#define SET_FLAG(p, f)          ((p)->flags |= (f))
+#define CLEAR_FLAG(p, f)        ((p)->flags &= ~(f))
+#define SET_FLAG_V(p, f, v)     if ((v)) SET_FLAG(p, f); else CLEAR_FLAG(p, f);
 
 #define BYTE_0(x) (uint8_t)(((x) >> 0) & 0xFF)
 #define BYTE_1(x) (uint8_t)(((x) >> 8) & 0xFF)
@@ -265,6 +266,11 @@ union osdp_ephemeral_data {
 #define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
 #define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
 #define PD_FLAG_PKT_BROADCAST  BIT(14) /* this packet was addressed to 0x7F */
+
+/* CP event requests; used with make_request() and check_request() */
+#define CP_REQ_RESTART_SC              0x00000001
+#define CP_REQ_EVENT_SEND              0x00000002
+#define CP_REQ_OFFLINE                 0x00000001
 
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,

@@ -1232,7 +1232,9 @@ void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask);
  * @param arg Opaque pointer that was provided in @ref osdp_file_ops when the
  * ops struct was registered.
  * @param file_id File ID of pre-agreed file between this CP and PD
- * @param size Size of the file that was opened (filled by application)
+ * @param size Size of the file that was opened (to be populated by sender). In
+ * case of receiver, this value is just just input to indicate the incoming file
+ * size.
  *
  * @retval 0 on success
  * @retval -1 on errors

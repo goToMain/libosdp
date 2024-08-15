@@ -45,10 +45,6 @@
 #define REPLY_BUSY_DATA_LEN            0
 #define REPLY_MFGREP_LEN               4   /* variable length command */
 
-/* CP event requests */
-#define CP_REQ_RESTART_SC              0x00000001
-#define CP_REQ_EVENT_SEND              0x00000002
-
 enum osdp_cp_error_e {
 	OSDP_CP_ERR_NONE = 0,
 	OSDP_CP_ERR_GENERIC = -1,
@@ -939,20 +935,20 @@ static const char *state_get_name(enum osdp_cp_state_e state)
 static int cp_get_online_command(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
+	int ret;
 
 	if (cp_cmd_dequeue(pd, &cmd) == 0) {
 		return cp_translate_cmd(pd, cmd);
 	}
 
+	ret = osdp_file_tx_get_command(pd);
+	if (ret != 0) {
+		return ret;
+	}
+
 	if (osdp_millis_since(pd->tstamp) > OSDP_PD_POLL_TIMEOUT_MS) {
 		pd->tstamp = osdp_millis_now();
 		return CMD_POLL;
-	}
-
-	switch(osdp_get_file_tx_state(pd)) {
-	case OSDP_FILE_TX_STATE_PENDING: return CMD_FILETRANSFER;
-	case OSDP_FILE_TX_STATE_ERROR:   return CMD_ABORT;
-	default: break;
 	}
 
 	return -1;
@@ -1194,12 +1190,6 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 
 static inline enum osdp_cp_state_e get_next_state(struct osdp_pd *pd, int err)
 {
-	if (pd->state == OSDP_CP_STATE_ONLINE &&
-	    check_request(pd, CP_REQ_RESTART_SC)) {
-		osdp_phy_state_reset(pd, true);
-		return OSDP_CP_STATE_SC_CHLNG;
-	}
-
 	return (err == 0) ? get_next_ok_state(pd) : get_next_err_state(pd);
 }
 
@@ -1318,9 +1308,18 @@ static int state_update(struct osdp_pd *pd)
 
 	next = get_next_state(pd, err);
 
-	if (next == OSDP_CP_STATE_ONLINE &&
-	    check_request(pd, CP_REQ_EVENT_SEND)) {
-		do_event_callback(pd);
+	if (pd->state == OSDP_CP_STATE_ONLINE || next == OSDP_CP_STATE_ONLINE) {
+		if (check_request(pd, CP_REQ_RESTART_SC)) {
+			osdp_phy_state_reset(pd, true);
+			next = OSDP_CP_STATE_SC_CHLNG;
+		}
+		if (check_request(pd, CP_REQ_OFFLINE)) {
+			LOG_INF("Going offline due to request");
+			next = OSDP_CP_STATE_OFFLINE;
+		}
+		if (check_request(pd, CP_REQ_EVENT_SEND)) {
+			do_event_callback(pd);
+		}
 	}
 
 	if (cur != next) {

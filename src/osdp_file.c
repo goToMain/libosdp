@@ -149,7 +149,7 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	assert(f->offset + f->length <= f->size);
 
 	/* Collect control flags */
-	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_EXCLUSIVE, stat.control & 0x01)
+	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_EXCLUSIVE, !(stat.control & 0x01))
 	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_PLAIN_TEXT, stat.control & 0x02)
 	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_POLL_RESP, stat.control & 0x04)
 

@@ -270,7 +270,7 @@ union osdp_ephemeral_data {
 /* CP event requests; used with make_request() and check_request() */
 #define CP_REQ_RESTART_SC              0x00000001
 #define CP_REQ_EVENT_SEND              0x00000002
-#define CP_REQ_OFFLINE                 0x00000001
+#define CP_REQ_OFFLINE                 0x00000004
 
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,

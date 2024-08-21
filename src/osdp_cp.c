@@ -766,10 +766,8 @@ static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 
 static int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
-	int cmd_id = -1;
-
+	/* Make a local copy of osdp_cmd command to be used later */
 	memcpy(pd->ephemeral_data, cmd, sizeof(struct osdp_cmd));
-	cp_cmd_free(pd, cmd);
 	cmd = (struct osdp_cmd *)pd->ephemeral_data;
 
 	switch (cmd->id) {
@@ -788,11 +786,11 @@ static int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		default: return -1;
 		}
 	case OSDP_CMD_KEYSET:
-		cmd_id = CMD_KEYSET;
 		if (cmd->keyset.type != 1 || !sc_is_active(pd)) {
-			cmd_id = -1;
+			return -1;
+		} else {
+			return CMD_KEYSET;
 		}
-		return cmd_id;
 	case OSDP_CMD_FILE_TX:
 		/**
 		 * This external command is handled as multiple command from
@@ -802,7 +800,8 @@ static int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		__fallthrough;
 	default: BUG();
 	}
-	return cmd_id;
+
+	return -1;
 }
 
 static void fill_local_keyset_cmd(struct osdp_pd *pd)
@@ -938,7 +937,9 @@ static int cp_get_online_command(struct osdp_pd *pd)
 	int ret;
 
 	if (cp_cmd_dequeue(pd, &cmd) == 0) {
-		return cp_translate_cmd(pd, cmd);
+		ret = cp_translate_cmd(pd, cmd);
+		cp_cmd_free(pd, cmd);
+		return ret;
 	}
 
 	ret = osdp_file_tx_get_command(pd);

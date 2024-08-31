@@ -589,35 +589,31 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		ret = OSDP_PD_ERR_REPLY;
+		pd->reply_id = REPLY_NAK;
+		pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 		if (!pd_cmd_cap_ok(pd, NULL)) {
 			break;
 		}
-		/**
-		 * For CMD_KEYSET to be accepted, PD must be
-		 * ONLINE and SC_ACTIVE.
-		 */
 		if (!sc_is_active(pd)) {
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
 			LOG_ERR("Keyset with SC inactive");
+			break;
+		}
+		if (!pd->command_callback) {
+			LOG_ERR("Keyset not permitted without setting a command"
+				" callback; rejecting new KEY");
 			break;
 		}
 		cmd.id = OSDP_CMD_KEYSET;
 		cmd.keyset.type = buf[pos++];
 		cmd.keyset.length = buf[pos++];
 		memcpy(cmd.keyset.data, buf + pos, 16);
-		if (!pd->command_callback) {
-			LOG_ERR("Keyset without a command callback! The SC new "
-				"SCBK will be lost when the PD reboots.");
-		} else if (!do_command_callback(pd, &cmd)) {
+		if (!do_command_callback(pd, &cmd)) {
+			LOG_ERR("Keyset with SC inactive");
 			break;
 		}
-		memcpy(pd->sc.scbk, cmd.keyset.data, 16);
-		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-		CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
-		sc_deactivate(pd);
-		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
+		pd->reply_id = REPLY_ACK;
+		memcpy(pd->ephemeral_data, cmd.keyset.data, 16);
 		break;
 	case CMD_CHLNG:
 		if (len != CMD_CHLNG_DATA_LEN) {
@@ -1042,7 +1038,14 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	}
 
 	ret = pd_send_reply(pd);
-	if (ret != OSDP_PD_ERR_NONE) {
+	if (ret == OSDP_PD_ERR_NONE) {
+		if (pd->cmd_id == CMD_KEYSET && pd->reply_id == REPLY_ACK) {
+			memcpy(pd->sc.scbk, pd->ephemeral_data, 16);
+			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+			CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
+			sc_deactivate(pd);
+		}
+	} else {
 		/**
 		 * PD received and decoded a valid command from CP but failed to
 		 * send the intended response?? This should not happen; but if
@@ -1050,9 +1053,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		 * it and limp back home.
 		 */
 		LOG_EM("REPLY send failed! CP may be waiting..");
-		return;
 	}
-
 	osdp_phy_state_reset(pd, false);
 }
 

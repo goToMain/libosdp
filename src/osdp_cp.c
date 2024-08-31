@@ -868,12 +868,6 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			if (sc_is_active(pd)) {
 				pd->sc_tstamp = osdp_millis_now();
 			}
-			if (pd->reply_id == REPLY_BUSY) {
-				pd->phy_tstamp = osdp_millis_now();
-				pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
-				pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
-				return OSDP_CP_ERR_CAN_YIELD;
-			}
 			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
 			return OSDP_CP_ERR_NONE;
 		}
@@ -888,6 +882,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN) {
 			goto error;
 		}
+		if (rc == OSDP_CP_ERR_RETRY_CMD) {
+			pd->phy_tstamp = osdp_millis_now();
+			pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
+			pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
+			return OSDP_CP_ERR_CAN_YIELD;
+		}
 		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
 				pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
@@ -901,10 +901,6 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			LOG_ERR("Response timeout for CMD: %s(%02x)",
 				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 			goto error;
-		}
-		if (rc == OSDP_CP_ERR_RETRY_CMD) {
-			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
-			return OSDP_CP_ERR_NONE;
 		}
 		ret = OSDP_CP_ERR_INPROG;
 		break;

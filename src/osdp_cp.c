@@ -1415,7 +1415,11 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 		pd = osdp_to_pd(ctx, i);
 		pd->idx = i;
 		pd->osdp_ctx = ctx;
-		pd->name = info->name;
+		if (info->name) {
+			strncpy(pd->name, info->name, OSDP_PD_NAME_MAXLEN - 1);
+		} else {
+			snprintf(pd->name, OSDP_PD_NAME_MAXLEN, "PD-%d", info->address);
+		}
 		pd->baud_rate = info->baud_rate;
 		pd->address = info->address;
 		pd->flags = info->flags;

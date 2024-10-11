@@ -25,7 +25,7 @@ jobs:
       run: cmake --build . --parallel 7 --target all --target cpp_cp_sample --target cpp_pd_sample
     - name: Package
       run: cmake --build . --target package  --target package_source
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: libosdp-ubuntu-latest-binaries.zip
         path: artifacts/
@@ -94,7 +94,7 @@ jobs:
       - name: Build a binary wheel and a source tarball
         run: python3 -m build python
       - name: Store the distribution packages
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
           path: python/dist/

@@ -44,13 +44,9 @@ static int pyosdp_make_struct_cmd_output(struct osdp_cmd *p, PyObject *dict)
 static int pyosdp_make_dict_cmd_led(PyObject *obj, struct osdp_cmd *cmd)
 {
 	bool is_temporary = false;
-	bool cancel_temporary = false;
 	struct osdp_cmd_led_params *p = &cmd->led.permanent;
 
-	if (cmd->led.temporary.control_code == 1 &&
-	    cmd->led.permanent.control_code != 0) {
-		cancel_temporary = true;
-	} else if (cmd->led.temporary.control_code) {
+	if (cmd->led.temporary.control_code != 0) {
 		p = &cmd->led.temporary;
 		is_temporary = true;
 	}
@@ -70,14 +66,8 @@ static int pyosdp_make_dict_cmd_led(PyObject *obj, struct osdp_cmd *cmd)
 		return -1;
 	if (pyosdp_dict_add_int(obj, "off_count", p->off_count))
 		return -1;
-	if (is_temporary) {
-		if (pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
-			return -1;
-	}
-	if (cancel_temporary) {
-		if (pyosdp_dict_add_bool(obj, "cancel_temporary", cancel_temporary))
-			return -1;
-	}
+	if (is_temporary && pyosdp_dict_add_int(obj, "timer_count", p->timer_count))
+		return -1;
 	return 0;
 }
 

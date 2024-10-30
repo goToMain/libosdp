@@ -18,6 +18,8 @@ set(PROJECT_HOMEPAGE     "https://libosdp.sidcha.dev/")
 set(PROJECT_DESCRIPTION  "Open Supervised Device Protocol (OSDP) Library")
 set(PROJECT_LICENSE      "Apache License, Version 2.0 (Apache-2.0)")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)

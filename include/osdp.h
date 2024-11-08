@@ -73,6 +73,14 @@ extern "C" {
 #define OSDP_FLAG_CAPTURE_PACKETS 0x00100000
 
 /**
+ * @brief Allow empty SCS_17 and SCS_18 packets.  This is non-conforming
+ * to the standard.
+ *
+ * @note this is a PD mode only flag
+ */
+#define OSDP_FLAG_ALLOW_EMPTY_SCS17_SCS18 0x00200000
+
+/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {

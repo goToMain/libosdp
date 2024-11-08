@@ -581,4 +581,8 @@ static inline bool is_packet_trace_enabled(struct osdp_pd *pd) {
 	        IS_ENABLED(CONFIG_OSDP_PACKET_TRACE));
 }
 
+static inline bool allow_scs17_scs18_empty(struct osdp_pd *pd) {
+	return ISSET_FLAG(pd, OSDP_FLAG_ALLOW_EMPTY_SCS17_SCS18);
+}
+
 #endif	/* _OSDP_COMMON_H_ */

@@ -139,6 +139,10 @@ int osdp_decrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 		return -1;
 	}
 
+	if (sc_allow_empty_encrypted_data_block(pd) && length == 0) {
+		return 0;
+	}
+
 	memcpy(iv, is_cmd ? pd->sc.r_mac : pd->sc.c_mac, 16);
 	for (i = 0; i < 16; i++) {
 		iv[i] = ~iv[i];

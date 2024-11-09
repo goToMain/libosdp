@@ -148,7 +148,7 @@ and the C++ community. A port for LibOSDP has already been merged to vcpkg
 upstream -- this means you can consume LibOSDP directly from vcpkg and use all
 the generators it supports.
 
-Follow the `getting started document _DOC>`_ from Microsoft to setup vckpg.
+Follow the `getting started document <_DOC>`_ from Microsoft to setup vckpg.
 After that, you careate a new application and pull in LibOSDP as a dependency.
 
 .. _DOC: https://learn.microsoft.com/en-us/vcpkg/get_started/get-started

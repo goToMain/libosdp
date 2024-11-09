@@ -2,8 +2,8 @@
 
 set -e
 
-TEST_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-ROOT_DIR="${TEST_DIR}/../"
+SCRIPTS_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+ROOT_DIR="${SCRIPTS_DIR}/../"
 
 function run_make_check() {
 	echo "[-] Running make check"
@@ -23,7 +23,7 @@ function run_cmake_unit_test() {
 
 function run_pytest() {
 	echo "[-] Creating an isolated environment.."
-	pushd ${TEST_DIR}
+	pushd ${SCRIPTS_DIR}
 	rm -rf __pycache__/
 	rm -rf .venv ${ROOT_DIR}/python/{build,dist,libosdp.egg-info,vendor}
 	python3 -m venv .venv

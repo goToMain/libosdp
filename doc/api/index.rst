@@ -6,6 +6,7 @@ API
 
    control-panel
    peripheral-device
+   pd-info
    miscellaneous
    command-structure
    event-structure

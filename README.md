@@ -1,6 +1,12 @@
 # LibOSDP - Open Supervised Device Protocol Library
 
-[![Latest Release][1]][2] [![Build CI][3]][4] [![PyPI Version][16]][12] [![PlatformIO Registry][17]][18] [![Vcpkg Version][32]][33]
+[![Latest Release][1]][2]
+[![Build CI][3]][4]
+[![PyPI Version][16]][12]
+[![PlatformIO Registry][17]][18]
+[![Vcpkg Version][32]][33]
+[![Crates.io libosdp version][34]][35]
+[![Crates.io osdpctl version][36]][37]
 
 This is a cross-platform open source implementation of IEC 60839-11-5 Open
 Supervised Device Protocol (OSDP). The protocol is intended to improve
@@ -254,3 +260,7 @@ Your support will ensure sustained development of LibOSDP.
 [31]: https://github.com/goToMain/libosdp/issues
 [32]: https://img.shields.io/vcpkg/v/libosdp
 [33]: https://vcpkg.link/ports/libosdp
+[34]: https://img.shields.io/crates/v/libosdp?style=flat&logo=rust&logoColor=DDD&label=crate%20%3A%20libosdp&link=https%3A%2F%2Fcrates.io%2Fcrates%2Flibosdp
+[35]: https://crates.io/crates/libosdp
+[36]: https://img.shields.io/crates/v/osdpctl?style=flat&logo=rust&logoColor=DDD&label=crate%20%3A%20osdpctl&link=https%3A%2F%2Fcrates.io%2Fcrates%2Fosdpctl
+[37]: https://crates.io/crates/osdpctl

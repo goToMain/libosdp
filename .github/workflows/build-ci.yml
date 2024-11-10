@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        example:
+        examples:
           - examples/platformio/cp.ino
           - examples/platformio/pd.ino
     steps:

@@ -1,0 +1,35 @@
+{
+  "name": "LibOSDP",
+  "version": "3.0.6",
+  "description": "A cross-platform open source implementation of IEC 60839-11-5 Open Supervised Device Protocol (OSDP). The protocol is intended to improve interoperability among access control and security products. It supports Secure Channel (SC) for encrypted and authenticated communication between configured devices.",
+  "authors": [{
+    "name": "Siddharth Chandrasekaran",
+    "email": "sidcha.dev@gmail.com"
+  }],
+  "license": "Apache-2.0",
+  "keywords": ["OSDP", "LibOSDP", "CP", "PD", "ACS"],
+  "frameworks": ["arduino"],
+  "dependencies": [],
+  "build": {
+    "srcFilter": [
+      "+<**/*.c>",
+      "-<osdp_diag.c>",
+      "-<crypto/mbedtls.c>",
+      "-<crypto/openssl.c>",
+      "+<../utils/src/disjoint_set.c>",
+      "+<../utils/src/list.c>",
+      "+<../utils/src/logger.c>",
+      "+<../utils/src/queue.c>",
+      "+<../utils/src/slab.c>",
+      "+<../utils/src/utils.c>",
+      "+<../platformio/platformio.cpp>"
+    ],
+    "includeDir": ".",
+    "flags": [
+      "-I include",
+      "-I utils/include",
+      "-I platformio",
+      "-D __BARE_METAL__"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 usage() {
 	cat >&2<<----
@@ -38,6 +38,18 @@ function cmake_inc_version() {
 	}' -- -$inc $dir/CMakeLists.txt
 }
 
+function platformio_inc_version() {
+	inc=$1
+	perl -pi -se '
+	if (/^#define PROJECT_VERSION (\s+) "(\d+)\.(\d+)\.(\d+)"$/) {
+		$maj=$2; $min=$3; $pat=$4;
+		if ($major) { $maj+=1; $min=0; $pat=0; }
+		if ($minor) { $min+=1; $pat=0; }
+		$pat+=1 if $patch;
+		$_="#define PROJECT_VERSION $1 \"$maj.$min.$pat\"\n"
+	}' -- -$inc platformio/osdp_config.h
+}
+
 function generate_change_log() {
 	last_rel=$(git tag --list 'v*' --sort=v:refname | tail -1)
 	version=$(perl -ne 'print $1 if (/ VERSION (\d+.\d+.\d)\)$/)' CMakeLists.txt)
@@ -62,6 +74,7 @@ function generate_change_log() {
 function prepare_libosdp_release() {
 	cmake_inc_version "." $1
 	setup_py_inc_version "python" $1
+	platformio_inc_version $1
 	generate_change_log > /tmp/rel.txt
 	printf '%s\n\n\n%s\n' "$(cat /tmp/rel.txt)" "$(cat CHANGELOG)" > CHANGELOG
 }

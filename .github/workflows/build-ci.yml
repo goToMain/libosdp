@@ -98,3 +98,29 @@ jobs:
         with:
           name: python-package-distributions
           path: python/dist/
+
+  PlatformIO:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example:
+          - examples/platformio/cp.ino
+          - examples/platformio/pd.ino
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build PlatformIO examples
+        run: pio ci --lib . --board=megaatmega2560
+        env:
+          PLATFORMIO_CI_SRC: ${{ matrix.examples }}

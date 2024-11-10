@@ -30,4 +30,4 @@ jobs:
       env:
         PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
       run: |
-        pio package publish
+        pio package publish --type library --no-interactive --owner sidcha

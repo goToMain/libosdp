@@ -48,6 +48,15 @@ function platformio_inc_version() {
 		$pat+=1 if $patch;
 		$_="#define PROJECT_VERSION $1 \"$maj.$min.$pat\"\n"
 	}' -- -$inc platformio/osdp_config.h
+
+	perl -pi -se '
+	if (/^  "version": "(\d+)\.(\d+)\.(\d+)",$/) {
+		$maj=$1; $min=$2; $pat=$3;
+		if ($major) { $maj+=1; $min=0; $pat=0; }
+		if ($minor) { $min+=1; $pat=0; }
+		$pat+=1 if $patch;
+		$_="  \"version\": \"$maj.$min.$pat\",\n"
+	}' -- -$inc library.json
 }
 
 function generate_change_log() {

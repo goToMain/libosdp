@@ -108,6 +108,8 @@ jobs:
           - examples/platformio/pd.ino
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/cache@v4
         with:
           path: |
@@ -121,4 +123,4 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build PlatformIO examples
-        run: pio ci --lib . --board=megaatmega2560 ${{ matrix.examples }}
+        run: pio ci --verbose --lib . --board=megaatmega2560 ${{ matrix.examples }}

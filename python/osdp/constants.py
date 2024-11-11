@@ -12,6 +12,7 @@ class LibFlag:
     IgnoreUnsolicited = osdp_sys.FLAG_IGN_UNSOLICITED
     EnableNotification = osdp_sys.FLAG_ENABLE_NOTIFICATION
     CapturePackets = osdp_sys.FLAG_CAPTURE_PACKETS
+    AllowEmptyEncryptedDataBlock = osdp_sys.FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK
 
 class LogLevel:
     Emergency = osdp_sys.LOG_EMERG

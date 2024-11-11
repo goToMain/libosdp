@@ -664,7 +664,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 				 * used SCS_15/SCS_16 but we will be tolerant
 				 * towards those faulty implementations.
 				 */
-				LOG_INF("Received encrypted data block with 0 "
+				LOG_WRN_ONCE("Received encrypted data block with 0 "
 					"length; tolerating non-conformance!");
 			}
 			len += 1; /* put back cmd/reply ID */

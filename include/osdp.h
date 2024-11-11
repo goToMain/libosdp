@@ -73,6 +73,17 @@ extern "C" {
 #define OSDP_FLAG_CAPTURE_PACKETS 0x00100000
 
 /**
+ * @brief Allow an empty encrypted data block(SCS_17 and SCS_18 packets).
+ * This is non-conforming to the standard.  If there is no data to be
+ * transferred, the CP should instead use the SCS_15/SCS_16 messages.
+ * Some OSDP implementations are buggy and send a 0-length data block with
+ * the SCS_17 and SCS_18 messages, this flag accepts that buggy behavior.
+ *
+ * @note this is a PD mode only flag
+ */
+#define OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK 0x00200000
+
+/**
  * @brief Various PD capability function codes.
  */
 enum osdp_pd_cap_function_code_e {

@@ -168,8 +168,7 @@ is how you can run them:
 ```sh
 mkdir build && cd build
 cmake ..
-make python_install
-make check
+make check-ut
 ```
 
 To add new tests for the feature you are working one, see the other tests in

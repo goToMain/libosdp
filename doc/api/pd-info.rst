@@ -24,3 +24,5 @@ individual flag documentation below.
 .. doxygendefine:: OSDP_FLAG_ENABLE_NOTIFICATION
 
 .. doxygendefine:: OSDP_FLAG_CAPTURE_PACKETS
+
+.. doxygendefine:: OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK

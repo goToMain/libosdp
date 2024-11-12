@@ -16,7 +16,7 @@ jobs:
   CmakeBuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Configure
@@ -33,7 +33,7 @@ jobs:
   MakeBuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: configure
@@ -45,7 +45,7 @@ jobs:
   DocBuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Install dependencies
@@ -61,7 +61,7 @@ jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Configure
@@ -74,7 +74,7 @@ jobs:
   CheckPatch:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: ClangFormatCheck
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install pypa/build

@@ -114,7 +114,7 @@ function do_libosdp_release() {
 	fi
 	git add CHANGELOG CMakeLists.txt python/setup.py &&
 	git commit -s -m "Release v$version" &&
-	git tag "v$version" -a -m "Release v$version"
+	git tag "v$version" -s -a -m "Release v$version"
 }
 
 INC="patch"

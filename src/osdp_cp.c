@@ -1355,10 +1355,11 @@ static int cp_refresh(struct osdp_pd *pd)
 
 static int cp_detect_connection_topology(struct osdp *ctx)
 {
-	int i, j;
+	int i, j, num_channels;
+	int *channel_lock = NULL;
 	struct osdp_pd *pd;
 	struct disjoint_set set;
-	int channel_lock[OSDP_PD_MAX] = { 0 };
+	int channels[OSDP_PD_MAX] = { 0 };
 
 	if (disjoint_set_make(&set, NUM_PD(ctx)))
 		return -1;
@@ -1366,53 +1367,55 @@ static int cp_detect_connection_topology(struct osdp *ctx)
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = osdp_to_pd(ctx, i);
 		for (j = 0; j < i; j++) {
-			if (channel_lock[j] == pd->channel.id) {
+			if (channels[j] == pd->channel.id) {
 				SET_FLAG(osdp_to_pd(ctx, j), PD_FLAG_CHN_SHARED);
 				SET_FLAG(pd, PD_FLAG_CHN_SHARED);
 				disjoint_set_union(&set, i, j);
 			}
 		}
-		channel_lock[i] = pd->channel.id;
+		channels[i] = pd->channel.id;
 	}
 
-	ctx->num_channels = disjoint_set_num_roots(&set);
-	if (ctx->num_channels != NUM_PD(ctx)) {
-		ctx->channel_lock = calloc(1, sizeof(int) * NUM_PD(ctx));
-		if (ctx->channel_lock == NULL) {
+	num_channels = disjoint_set_num_roots(&set);
+	if (num_channels != NUM_PD(ctx)) {
+		channel_lock = calloc(1, sizeof(int) * NUM_PD(ctx));
+		if (channel_lock == NULL) {
 			LOG_PRINT("Failed to allocate osdp channel locks");
 			return -1;
 		}
 	}
 
+	safe_free(ctx->channel_lock);
+	ctx->num_channels = num_channels;
+	ctx->channel_lock = channel_lock;
 	return 0;
 }
 
-static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
+static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_list)
 {
-	int i;
-	struct osdp_pd *pd = NULL;
-	struct osdp *ctx;
+	int i, old_num_pd;
+	struct osdp_pd *old_pd_array, *new_pd_array, *pd;
 	const osdp_pd_info_t *info;
-	char name[24] = {0};
+	char name[24] = { 0 };
 
-	ctx = calloc(1, sizeof(struct osdp));
-	if (ctx == NULL) {
-		LOG_PRINT("Failed to allocate osdp context");
-		return NULL;
+	assert(num_pd);
+	assert(info_list);
+	old_num_pd = ctx->_num_pd;
+	old_pd_array = ctx->pd;
+
+	new_pd_array = calloc(sizeof(struct osdp_pd), old_num_pd + num_pd);
+	if (new_pd_array == NULL) {
+		LOG_PRINT("Failed to allocate new osdp_pd[] context");
+		return -1;
 	}
 
-	input_check_init(ctx);
-
-	ctx->pd = calloc(1, sizeof(struct osdp_pd) * num_pd);
-	if (ctx->pd == NULL) {
-		LOG_PRINT("Failed to allocate osdp_pd[] context");
-		goto error;
-	}
-	ctx->_num_pd = num_pd;
+	ctx->pd = new_pd_array;
+	ctx->_num_pd = old_num_pd + num_pd;
+	memcpy(new_pd_array, old_pd_array, sizeof(struct osdp_pd) * old_num_pd);
 
 	for (i = 0; i < num_pd; i++) {
 		info = info_list + i;
-		pd = osdp_to_pd(ctx, i);
+		pd = osdp_to_pd(ctx, i + old_num_pd);
 		pd->idx = i;
 		pd->osdp_ctx = ctx;
 		if (info->name) {
@@ -1457,26 +1460,60 @@ static struct osdp *__cp_setup(int num_pd, const osdp_pd_info_t *info_list)
 	}
 
 	SET_CURRENT_PD(ctx, 0);
+	if (old_num_pd) {
+		free(old_pd_array);
+	}
+	return 0;
+
+error:
+	ctx->pd = old_pd_array;
+	ctx->_num_pd = old_num_pd;
+	free(new_pd_array);
+	return -1;
+}
+
+/* --- Exported Methods --- */
+
+osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info)
+{
+	struct osdp *ctx;
+
+	ctx = calloc(1, sizeof(struct osdp));
+	if (ctx == NULL) {
+		LOG_PRINT("Failed to allocate osdp context");
+		return NULL;
+	}
+
+	input_check_init(ctx);
+
+	if (num_pd && cp_add_pd(ctx, num_pd, info)) {
+		goto error;
+	}
 
 	LOG_PRINT("CP Setup complete; LibOSDP-%s %s NumPDs:%d Channels:%d",
-		  osdp_get_version(), osdp_get_source_info(),
-		  num_pd, ctx->num_channels);
-
+		  osdp_get_version(), osdp_get_source_info(), num_pd,
+		  ctx->num_channels);
 	return ctx;
 error:
 	osdp_cp_teardown((osdp_t *)ctx);
 	return NULL;
 }
 
-/* --- Exported Methods --- */
-
-osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info_list)
+int osdp_cp_add_pd(osdp_t *ctx, int num_pd, const osdp_pd_info_t *info)
 {
-	assert(info_list);
-	assert(num_pd > 0);
-	assert(num_pd <= OSDP_PD_MAX);
+	input_check(ctx);
+	assert(num_pd);
+	assert(info);
 
-	return (osdp_t *)__cp_setup(num_pd, info_list);
+	if(cp_add_pd(ctx, num_pd, info)) {
+		LOG_PRINT("Failed to add PDs");
+		return -1;
+	}
+
+	LOG_PRINT("Added %d PDs; TotalPDs:%d Channels:%d",
+		  num_pd, ((struct osdp *)ctx)->_num_pd,
+		  ((struct osdp *)ctx)->num_channels);
+	return 0;
 }
 
 void osdp_cp_teardown(osdp_t *ctx)
@@ -1504,7 +1541,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 	int next_pd_idx, refresh_count = 0;
 	struct osdp_pd *pd;
 
-	do {
+	while(refresh_count < NUM_PD(ctx)) {
 		pd = GET_CURRENT_PD(ctx);
 
 		if (cp_refresh(pd) < 0)
@@ -1515,7 +1552,8 @@ void osdp_cp_refresh(osdp_t *ctx)
 			next_pd_idx = 0;
 		}
 		SET_CURRENT_PD(ctx, next_pd_idx);
-	} while (++refresh_count < NUM_PD(ctx));
+		refresh_count++;
+	}
 }
 
 void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)

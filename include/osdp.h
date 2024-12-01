@@ -1015,6 +1015,19 @@ OSDP_EXPORT
 osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info);
 
 /**
+ * @brief Adds more PD devices in the CP control list.
+ *
+ * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
+ * treated as an array of length num_pd.
+ * @param info Pointer to info struct populated by application.
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+OSDP_EXPORT
+int osdp_cp_add_pd(osdp_t *ctx, int num_pd, const osdp_pd_info_t *info);
+
+/**
  * @brief Periodic refresh method. Must be called by the application at least
  * once every 50ms to meet OSDP timing requirements.
  *

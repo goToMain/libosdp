@@ -76,6 +76,16 @@ public:
 		return _ctx != nullptr;
 	}
 
+	bool setup()
+	{
+		return setup(0, nullptr);
+	}
+
+	int add_pd(int num_pd, osdp_pd_info_t *info)
+	{
+		return osdp_cp_add_pd(_ctx, num_pd, info);
+	}
+
 	void refresh()
 	{
 		osdp_cp_refresh(_ctx);

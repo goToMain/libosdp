@@ -73,6 +73,11 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 		BYTE_0(OSDP_PACKET_BUF_SIZE),
 		BYTE_1(OSDP_PACKET_BUF_SIZE),
 	},
+	{
+		OSDP_PD_CAP_OSDP_VERSION,
+		2, /* SIA OSDP 2.2 */
+		0, /* N/A */
+	},
 	{ -1, 0, 0 } /* Sentinel */
 };
 

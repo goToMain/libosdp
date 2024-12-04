@@ -170,6 +170,8 @@ static const char *cp_get_cap_name(int cap)
 		[OSDP_PD_CAP_SMART_CARD_SUPPORT] = "SmartCard",
 		[OSDP_PD_CAP_READERS] = "Reader",
 		[OSDP_PD_CAP_BIOMETRICS] = "Biometric",
+		[OSDP_PD_CAP_SECURE_PIN_ENTRY] = "SecurePinEntry",
+		[OSDP_PD_CAP_OSDP_VERSION] = "OsdpVersion",
 	};
 	return cap_name[cap];
 }

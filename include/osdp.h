@@ -186,6 +186,22 @@ enum osdp_pd_cap_function_code_e {
 	OSDP_PD_CAP_BIOMETRICS,
 
 	/**
+	 * This capability indicates if the reader is capable of supporting
+	 * Secure Pin Entry (SPE) for smart cards
+	 */
+	OSDP_PD_CAP_SECURE_PIN_ENTRY,
+
+	/**
+	 * This capability indicates the version of OSDP the PD supports
+	 *
+	 * Compliance Levels:
+	 *   0 - Unspecified
+	 *   1 - IEC 60839-11-5
+	 *   2 - SIA OSDP 2.2
+	 */
+	OSDP_PD_CAP_OSDP_VERSION,
+
+	/**
 	 * Capability Sentinel
 	 */
 	OSDP_PD_CAP_SENTINEL

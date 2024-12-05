@@ -741,17 +741,12 @@ struct osdp_cmd {
 enum osdp_event_cardread_format_e {
 	OSDP_CARD_FMT_RAW_UNSPECIFIED, /**< Unspecified card format */
 	OSDP_CARD_FMT_RAW_WIEGAND,     /**< Wiegand card format */
-	OSDP_CARD_FMT_ASCII,           /**< ASCII card format */
+	OSDP_CARD_FMT_ASCII,           /**< ASCII card format (deprecated; don't use) */
 	OSDP_CARD_FMT_SENTINEL         /**< Max card format value */
 };
 
 /**
  * @brief OSDP event cardread
- *
- * @note When @a format is set to OSDP_CARD_FMT_RAW_UNSPECIFIED or
- * OSDP_CARD_FMT_RAW_WIEGAND, the length is expressed in bits. OTOH, when it is
- * set to OSDP_CARD_FMT_ASCII, the length is in bytes. The number of bytes to
- * read from the @a data field must be interpreted accordingly.
  */
 struct osdp_event_cardread {
 	/**
@@ -769,7 +764,7 @@ struct osdp_event_cardread {
 	 */
 	int direction;
 	/**
-	 * Length of card data in bytes or bits depending on @a format
+	 * Length of card data in bits
 	 */
 	int length;
 	/**

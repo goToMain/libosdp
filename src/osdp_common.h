@@ -229,7 +229,7 @@ union osdp_ephemeral_data {
 #define REPLY_OSTATR	0x4A
 #define REPLY_RSTATR	0x4B
 #define REPLY_RAW	0x50
-#define REPLY_FMT	0x51
+#define REPLY_FMT	0x51 /* deprecated */
 #define REPLY_KEYPAD	0x53
 #define REPLY_COM	0x54
 #define REPLY_BIOREADR	0x57

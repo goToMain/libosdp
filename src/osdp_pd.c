@@ -44,7 +44,6 @@
 #define REPLY_RMAC_I_LEN               17
 #define REPLY_KEYPAD_LEN               2
 #define REPLY_RAW_LEN                  4
-#define REPLY_FMT_LEN                  3
 #define REPLY_MFGREP_LEN               4 /* variable length command */
 
 enum osdp_pd_error_e {
@@ -148,7 +147,14 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		    event->cardread.format == OSDP_CARD_FMT_RAW_WIEGAND) {
 			reply_code = REPLY_RAW;
 		} else if (event->cardread.format == OSDP_CARD_FMT_ASCII) {
-			reply_code = REPLY_FMT;
+			/**
+			 * osdp_FMT was underspecifed by SIA from get-go. It
+			 * was marked for deprecation in v2.2.2.
+			 *
+			 * See: https://github.com/goToMain/libosdp/issues/206
+			 */
+			LOG_WRN("Event CardRead::format::OSDP_CARD_FMT_ASCII"
+				" is deprecated. Ignoring");
 		} else {
 			LOG_ERR("Event: cardread; Error: unknown format");
 			break;
@@ -812,17 +818,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
-	case REPLY_FMT:
-		event = (struct osdp_event *)pd->ephemeral_data;
-		assert_buf_len(REPLY_FMT_LEN + event->cardread.length, max_len);
-		buf[len++] = pd->reply_id;
-		buf[len++] = (uint8_t)event->cardread.reader_no;
-		buf[len++] = (uint8_t)event->cardread.direction;
-		buf[len++] = (uint8_t)event->cardread.length;
-		memcpy(buf + len, event->cardread.data, event->cardread.length);
-		len += event->cardread.length;
-		ret = OSDP_PD_ERR_NONE;
-		break;
 	case REPLY_COM:
 		assert_buf_len(REPLY_COM_LEN, max_len);
 		/**

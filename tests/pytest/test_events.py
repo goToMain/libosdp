@@ -77,17 +77,6 @@ def test_event_mfg_reply():
     secure_pd.notify_event(event)
     check_event(event)
 
-def test_event_cardread_ascii():
-    event = {
-        'event': Event.CardRead,
-        'reader_no': 1,
-        'direction': 1,
-        'format': CardFormat.ASCII,
-        'data': bytes([9,1,9,2,6,3,1,7,7,0]),
-    }
-    secure_pd.notify_event(event)
-    check_event(event)
-
 def test_event_cardread_wiegand():
     event = {
         'event': Event.CardRead,

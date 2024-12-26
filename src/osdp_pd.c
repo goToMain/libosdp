@@ -379,7 +379,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_ID:
-		if (len != CMD_ID_DATA_LEN) {
+		if (len > CMD_ID_DATA_LEN) {
 			break;
 		}
 		pos++;		/* Skip reply type info. */
@@ -387,7 +387,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_CAP:
-		if (len != CMD_CAP_DATA_LEN) {
+		if (len > CMD_CAP_DATA_LEN) {
 			break;
 		}
 		pos++;		/* Skip reply type info. */

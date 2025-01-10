@@ -19,5 +19,8 @@ pkgs.mkShell {
 
     # examples
     python3Packages.pyserial
+
+    # others
+    git
   ];
 }

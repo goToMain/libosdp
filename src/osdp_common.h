@@ -385,7 +385,7 @@ struct osdp_pd {
 	int idx;               /* Offset into osdp->pd[] for this PD */
 	uint32_t flags;        /* Used with: ISSET_FLAG, SET_FLAG, CLEAR_FLAG */
 
-	int baud_rate;         /* Serial baud/bit rate */
+	uint32_t baud_rate;    /* Serial baud/bit rate */
 	int address;           /* PD address */
 	int seq_number;        /* Current packet sequence number */
 	struct osdp_pd_id id;  /* PD ID information (as received from app) */

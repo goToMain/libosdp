@@ -35,6 +35,7 @@ class Command:
     Buzzer = osdp_sys.CMD_BUZZER
     LED = osdp_sys.CMD_LED
     Comset = osdp_sys.CMD_COMSET
+    ComsetDone = osdp_sys.CMD_COMSET_DONE
     Text = osdp_sys.CMD_TEXT
     Manufacturer = osdp_sys.CMD_MFG
     Keyset = osdp_sys.CMD_KEYSET

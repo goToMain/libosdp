@@ -828,11 +828,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_1(cmd->comset.baud_rate);
 		buf[len++] = BYTE_2(cmd->comset.baud_rate);
 		buf[len++] = BYTE_3(cmd->comset.baud_rate);
-
-		pd->address = (int)cmd->comset.address;
-		pd->baud_rate = (int)cmd->comset.baud_rate;
-		LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
-			pd->address, pd->baud_rate);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_NAK:
@@ -999,6 +994,7 @@ static inline void pd_error_reset(struct osdp_pd *pd)
 static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
+	struct osdp_cmd *cmd;
 
 	/**
 	 * If secure channel is established, we need to make sure that
@@ -1038,6 +1034,28 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 			sc_deactivate(pd);
+		} else if (pd->cmd_id == CMD_COMSET &&
+			   pd->reply_id == REPLY_COM) {
+			/* COMSET command succeeded all the way:
+			 *
+			 * - CP requested the change (with OSDP_CMD_COMSET)
+			 * - PD app ack-ed this change (but didn't commit
+			 *   the change to it's non-volatile storage)
+			 * - CP was notified that the command succeeded. So
+			 *   it should have switched to the new settings
+			 *
+			 *  Now we must notify the PD app so it can actually
+			 *  switch the channel speed, reset any other state
+			 *  it held and commit this change to non-volatile
+			 *  storage.
+			 */
+			cmd = (struct osdp_cmd *)pd->ephemeral_data;
+			cmd->id = OSDP_CMD_COMSET_DONE;
+			do_command_callback(pd, cmd);
+			pd->address = (int)cmd->comset.address;
+			pd->baud_rate = (int)cmd->comset.baud_rate;
+			LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
+				pd->address, pd->baud_rate);
 		}
 	} else {
 		/**

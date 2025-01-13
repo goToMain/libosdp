@@ -610,6 +610,10 @@ static struct {
 		.dict_to_struct = pyosdp_make_struct_cmd_comset,
 		.struct_to_dict = pyosdp_make_dict_cmd_comset,
 	},
+	[OSDP_CMD_COMSET_DONE] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_comset,
+		.struct_to_dict = pyosdp_make_dict_cmd_comset,
+	},
 	[OSDP_CMD_MFG] = {
 		.dict_to_struct = pyosdp_make_struct_cmd_mfg,
 		.struct_to_dict = pyosdp_make_dict_cmd_mfg,

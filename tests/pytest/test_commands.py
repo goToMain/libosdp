@@ -151,9 +151,15 @@ def test_command_comset():
         'address': secure_pd_addr,
         'baud_rate': 9600
     }
+    test_cmd_done = {
+        'command': Command.ComsetDone,
+        'address': secure_pd_addr,
+        'baud_rate': 9600
+    }
     assert cp.is_online(secure_pd_addr)
     assert cp.send_command(secure_pd_addr, test_cmd)
     assert secure_pd.get_command() == test_cmd
+    assert secure_pd.get_command() == test_cmd_done
     cp_check_command_status(Command.Comset)
 
 def test_command_mfg():

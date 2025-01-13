@@ -691,16 +691,17 @@ struct osdp_cmd_file_tx {
  * @brief OSDP application exposed commands
  */
 enum osdp_cmd_e {
-	OSDP_CMD_OUTPUT = 1,  /**< Output control command */
-	OSDP_CMD_LED,         /**< Reader LED control command */
-	OSDP_CMD_BUZZER,      /**< Reader buzzer control command */
-	OSDP_CMD_TEXT,        /**< Reader text output command */
-	OSDP_CMD_KEYSET,      /**< Encryption Key Set Command */
-	OSDP_CMD_COMSET,      /**< PD communication configuration command */
-	OSDP_CMD_MFG,         /**< Manufacturer specific command */
-	OSDP_CMD_FILE_TX,     /**< File transfer command */
-	OSDP_CMD_STATUS,      /**< Status report command */
-	OSDP_CMD_SENTINEL     /**< Max command value */
+	OSDP_CMD_OUTPUT = 1, /**< Output control command */
+	OSDP_CMD_LED, /**< Reader LED control command */
+	OSDP_CMD_BUZZER, /**< Reader buzzer control command */
+	OSDP_CMD_TEXT, /**< Reader text output command */
+	OSDP_CMD_KEYSET, /**< Encryption Key Set Command */
+	OSDP_CMD_COMSET, /**< PD communication configuration command */
+	OSDP_CMD_COMSET_DONE, /**< end of PD communication configuration response, need to update baudrate */
+	OSDP_CMD_MFG, /**< Manufacturer specific command */
+	OSDP_CMD_FILE_TX, /**< File transfer command */
+	OSDP_CMD_STATUS, /**< Status report command */
+	OSDP_CMD_SENTINEL /**< Max command value */
 };
 
 /**

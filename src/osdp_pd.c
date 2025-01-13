@@ -1038,6 +1038,14 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 			sc_deactivate(pd);
+		} else if (pd->cmd_id == CMD_COMSET &&
+			   pd->reply_id == REPLY_COM) {
+			if (pd->command_callback) {
+				struct osdp_cmd cmd;
+				cmd.id = OSDP_CMD_COMSET_DONE;
+				pd->command_callback(pd->command_callback_arg,
+						     &cmd);
+			}
 		}
 	} else {
 		/**

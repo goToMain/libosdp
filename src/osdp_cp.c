@@ -477,40 +477,38 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_OSTATR: {
-		uint32_t status_mask = 0;
 		int cap_num = OSDP_PD_CAP_OUTPUT_CONTROL;
 
-		if (len != pd->cap[cap_num].num_items || len > 32) {
+		if (len != pd->cap[cap_num].num_items ||
+		    len > OSDP_STATUS_REPORT_MAX_LEN) {
 			LOG_ERR("Invalid output status report length %d", len);
 			return OSDP_CP_ERR_GENERIC;
-		}
-		for (i = 0; i < len; i++) {
-			status_mask |= !!buf[pos++] << i;
 		}
 		event.type = OSDP_EVENT_STATUS;
 		event.status.type = OSDP_STATUS_REPORT_OUTPUT;
 		event.status.nr_entries = len;
-		event.status.mask = status_mask;
+		for (i = 0; i < len; i++) {
+			event.status.report[i] = buf[pos++];
+		}
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
 		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	}
 	case REPLY_ISTATR: {
-		uint32_t status_mask = 0;
 		int cap_num = OSDP_PD_CAP_CONTACT_STATUS_MONITORING;
 
-		if (len != pd->cap[cap_num].num_items || len > 32) {
+		if (len != pd->cap[cap_num].num_items ||
+		    len > OSDP_STATUS_REPORT_MAX_LEN) {
 			LOG_ERR("Invalid input status report length %d", len);
 			return OSDP_CP_ERR_GENERIC;
-		}
-		for (i = 0; i < len; i++) {
-			status_mask |= !!buf[pos++] << i;
 		}
 		event.type = OSDP_EVENT_STATUS;
 		event.status.type = OSDP_STATUS_REPORT_INPUT;
 		event.status.nr_entries = len;
-		event.status.mask = status_mask;
+		for (i = 0; i < len; i++) {
+			event.status.report[i] = buf[pos++];
+		}
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
 		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
@@ -523,8 +521,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.type = OSDP_EVENT_STATUS;
 		event.status.type = OSDP_STATUS_REPORT_LOCAL;
 		event.status.nr_entries = 2;
-		event.status.mask = !!buf[pos++];
-		event.status.mask |= !!buf[pos++] << 1;
+		event.status.report[0] = buf[pos++];
+		event.status.report[1] = buf[pos++];
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
 		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
@@ -536,7 +534,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.type = OSDP_EVENT_STATUS;
 		event.status.type = OSDP_STATUS_REPORT_REMOTE;
 		event.status.nr_entries = 1;
-		event.status.mask = !!buf[pos++];
+		event.status.report[0] = buf[pos++];
 		memcpy(pd->ephemeral_data, &event, sizeof(event));
 		make_request(pd, CP_REQ_EVENT_SEND);
 		ret = OSDP_CP_ERR_NONE;
@@ -1396,7 +1394,7 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 	old_num_pd = ctx->_num_pd;
 	old_pd_array = ctx->pd;
 
-	new_pd_array = calloc(sizeof(struct osdp_pd), old_num_pd + num_pd);
+	new_pd_array = calloc(old_num_pd + num_pd, sizeof(struct osdp_pd));
 	if (new_pd_array == NULL) {
 		LOG_PRINT("Failed to allocate new osdp_pd[] context");
 		return -1;

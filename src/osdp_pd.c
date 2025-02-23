@@ -752,7 +752,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_buf_len(n + 1, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = !!(event->status.mask & (1 << i));
+			buf[len++] = event->status.report[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -766,7 +766,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_buf_len(n + 1, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = !!(event->status.mask & (1 << i));
+			buf[len++] = event->status.report[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -775,15 +775,15 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_buf_len(REPLY_LSTATR_LEN, max_len);
 		event = (struct osdp_event *)pd->ephemeral_data;
 		buf[len++] = pd->reply_id;
-		buf[len++] = BIT_IS_SET(event->status.mask, 0); // tamper
-		buf[len++] = BIT_IS_SET(event->status.mask, 1); // power
+		buf[len++] = event->status.report[0]; // tamper
+		buf[len++] = event->status.report[1]; // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
 		assert_buf_len(REPLY_RSTATR_LEN, max_len);
 		event = (struct osdp_event *)pd->ephemeral_data;
 		buf[len++] = pd->reply_id;
-		buf[len++] = BIT_IS_SET(event->status.mask, 0); // power
+		buf[len++] = event->status.report[0]; // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_KEYPAD:

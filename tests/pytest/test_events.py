@@ -93,8 +93,7 @@ def test_event_input():
     event = {
         'event': Event.Status,
         'type': StatusReportType.Input,
-        'nr_entries': 8,
-        'mask': 0xAA, # bit mask of input/output status (upto 32)
+        'report': bytes([1, 0, 1, 0, 1, 0, 1, 0])
     }
     secure_pd.notify_event(event)
     check_event(event)
@@ -103,8 +102,7 @@ def test_event_output():
     event = {
         'event': Event.Status,
         'type': StatusReportType.Output,
-        'nr_entries': 8,
-        'mask': 0x55, # bit mask of input/output status (upto 32)
+        'report': bytes([0, 1, 0, 1, 0, 1, 0, 1])
     }
     secure_pd.notify_event(event)
     check_event(event)

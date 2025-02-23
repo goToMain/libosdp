@@ -360,30 +360,29 @@ static int pyosdp_make_dict_cmd_status(PyObject *obj, struct osdp_cmd *cmd)
 {
 	if (pyosdp_dict_add_int(obj, "type", cmd->status.type))
 		return -1;
-	if (pyosdp_dict_add_int(obj, "nr_entries", cmd->status.nr_entries))
-		return -1;
-	if (pyosdp_dict_add_int(obj, "mask", cmd->status.mask))
+	if (pyosdp_dict_add_bytes(obj, "report", cmd->status.report, cmd->status.nr_entries))
 		return -1;
 	return 0;
 }
 
 static int pyosdp_make_struct_cmd_status(struct osdp_cmd *p, PyObject *dict)
 {
-	int type, nr_entries, mask;
+	int type, nr_entries;
+	uint8_t *report;
 	struct osdp_status_report *cmd = &p->status;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;
 
-	if (pyosdp_dict_get_int(dict, "nr_entries", &nr_entries))
+	if (pyosdp_dict_get_bytes_allow_empty(dict, "report", &report, &nr_entries))
 		return -1;
 
-	if (pyosdp_dict_get_int(dict, "mask", &mask))
+	if (nr_entries > OSDP_STATUS_REPORT_MAX_LEN)
 		return -1;
 
 	cmd->type = type;
 	cmd->nr_entries = nr_entries;
-	cmd->mask = mask;
+	memcpy(cmd->report, report, nr_entries);
 	return 0;
 }
 
@@ -526,30 +525,29 @@ static int pyosdp_make_dict_event_status(PyObject *obj, struct osdp_event *event
 {
 	if (pyosdp_dict_add_int(obj, "type", event->status.type))
 		return -1;
-	if (pyosdp_dict_add_int(obj, "nr_entries", event->status.nr_entries))
-		return -1;
-	if (pyosdp_dict_add_int(obj, "mask", event->status.mask))
+	if (pyosdp_dict_add_bytes(obj, "report", event->status.report, event->status.nr_entries))
 		return -1;
 	return 0;
 }
 
 static int pyosdp_make_struct_event_status(struct osdp_event *p, PyObject *dict)
 {
-	int type, nr_entries, mask;
+	int type, nr_entries;
+	uint8_t *report;
 	struct osdp_status_report *ev = &p->status;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;
 
-	if (pyosdp_dict_get_int(dict, "nr_entries", &nr_entries))
+	if (pyosdp_dict_get_bytes(dict, "report", &report, &nr_entries))
 		return -1;
 
-	if (pyosdp_dict_get_int(dict, "mask", &mask))
+	if (nr_entries > OSDP_STATUS_REPORT_MAX_LEN)
 		return -1;
 
 	ev->type = type;
 	ev->nr_entries = nr_entries;
-	ev->mask = mask;
+	memcpy(ev->report, report, nr_entries);
 	return 0;
 }
 

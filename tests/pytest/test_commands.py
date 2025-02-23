@@ -192,8 +192,7 @@ def test_command_status():
     def evt_handler(pd, event):
         assert event['event'] == Event.Status
         assert event['type'] == StatusReportType.Input
-        assert event['mask'] == 0x55
-        assert event['nr_entries'] == 8
+        assert event['report'] == bytes([ 0, 1, 0, 1, 0, 1, 0, 1 ])
         return 0
 
     def cmd_handler(command):
@@ -202,8 +201,7 @@ def test_command_status():
         cmd = {
             'command': Command.Status,
             'type': StatusReportType.Input,
-            'mask': 0x55,
-            'nr_entries': 8,
+            'report': bytes([ 0, 1, 0, 1, 0, 1, 0, 1 ])
         }
         return 0, cmd
 
@@ -214,7 +212,6 @@ def test_command_status():
     test_cmd = {
         'command': Command.Status,
         'type': StatusReportType.Input,
-        'mask': 0,
-        'nr_entries': 0,
+        'report': bytes([]),
     }
     cp.send_command(secure_pd_addr, test_cmd)

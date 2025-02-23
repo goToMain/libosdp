@@ -47,7 +47,7 @@ int pyosdp_fops_read(void *arg, void *buf, int size, int offset)
 
 	bytes = PyObject_CallObject(self->fops.read_cb, arglist);
 
-	rc = pyosdp_parse_bytes(bytes, (uint8_t **)&rec_bytes, &len);
+	rc = pyosdp_parse_bytes(bytes, (uint8_t **)&rec_bytes, &len, false);
 	if (rc == 0) {
 		if (len <= size)
 			memcpy(buf, rec_bytes, len);

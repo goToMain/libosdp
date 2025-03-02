@@ -1194,6 +1194,10 @@ void osdp_pd_teardown(osdp_t *ctx)
 		osdp_packet_capture_finish(pd);
 	}
 
+	if (pd->channel.close) {
+		pd->channel.close(pd->channel.data);
+	}
+
 #ifndef CONFIG_OSDP_STATIC_PD
 	safe_free(pd->file);
 	safe_free(pd);

@@ -297,6 +297,14 @@ typedef int (*osdp_write_fn_t)(void *data, uint8_t *buf, int len);
 typedef void (*osdp_flush_fn_t)(void *data);
 
 /**
+ * @brief pointer to function that closes the underlying channel. This call is
+ * made when LibOSDP is terminating, once per PD.
+ *
+ * @param data for use by underlying layers. osdp_channel::data is passed
+ */
+typedef void (*osdp_close_fn_t)(void *data);
+
+/**
  * @brief User defined communication channel abstraction for OSDP devices.
  * The methods for read/write/flush are expected to be non-blocking.
  */
@@ -325,6 +333,10 @@ struct osdp_channel {
 	 * Pointer to function used to flush the channel (optional)
 	 */
 	osdp_flush_fn_t flush;
+	/**
+	 * Pointer to function used to close the channel (optional)
+	 */
+	osdp_close_fn_t close;
 };
 
 /**

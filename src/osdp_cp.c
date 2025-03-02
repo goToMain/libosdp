@@ -1572,6 +1572,9 @@ void osdp_cp_teardown(osdp_t *ctx)
 			osdp_packet_capture_finish(pd);
 		}
 		safe_free(pd->file);
+		if (pd->channel.close) {
+			pd->channel.close(pd->channel.data);
+		}
 	}
 
 	safe_free(osdp_to_pd(ctx, 0));

@@ -140,12 +140,11 @@ int osdp_phy_in_sc_handshake(int is_reply, int id)
 
 int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
-	int exp_len, id, scb_len = 0;
+	int id, scb_len = 0;
 	struct osdp_packet_header *pkt;
 
-	exp_len = sizeof(struct osdp_packet_header) + 64; /* 64 is estimated */
-	if (max_len < exp_len) {
-		LOG_ERR("packet_init: out of space! CMD: %02x", pd->cmd_id);
+	if (max_len < OSDP_MINIMUM_PACKET_SIZE) {
+		LOG_ERR("packet_init: packet size too small");
 		return OSDP_ERR_PKT_FMT;
 	}
 

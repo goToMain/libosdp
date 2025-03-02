@@ -38,5 +38,6 @@
 #define OSDP_CMD_ID_OFFSET                      (5)
 #define OSDP_PCAP_LINK_TYPE                     (162)
 #define OSDP_PD_NAME_MAXLEN                     (16)
+#define OSDP_MINIMUM_PACKET_SIZE		(128)
 
 #endif /* _OSDP_CONFIG_H_ */

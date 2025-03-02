@@ -73,6 +73,6 @@ while not exit_event:
         print(f"PD: Received command: {cmd}")
 
         ## Send a card read event to CP
-        pd.notify_event(card_event)
+        pd.submit_event(card_event)
 
 pd.teardown()

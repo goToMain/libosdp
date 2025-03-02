@@ -23,7 +23,7 @@ def test_set_new_scbk(utils):
         'type': 1,
         'data': new_key
     }
-    assert cp.send_command(pd_addr, keyset_cmd)
+    assert cp.submit_command(pd_addr, keyset_cmd)
     cmd = pd.get_command()
     assert cmd == keyset_cmd
     utils.ks.update_key('sc-keys-pd', new_key)

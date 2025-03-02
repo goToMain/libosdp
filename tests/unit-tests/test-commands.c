@@ -104,7 +104,7 @@ void run_command_tests(struct test *t)
 
 	struct osdp_cmd cmd = test_make_cmd(OSDP_CMD_BUZZER);
 
-	if (osdp_cp_send_command(cp_ctx, 0, &cmd)) {
+	if (osdp_cp_submit_command(cp_ctx, 0, &cmd)) {
 		printf(SUB_1 "Failed to send command\n");
 		goto error;
 	}

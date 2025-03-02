@@ -56,11 +56,16 @@ class PeripheralDevice():
             return None
         return cmd
 
-    def notify_event(self, event):
+    def submit_event(self, event):
         self.lock.acquire()
-        ret = self.ctx.notify_event(event)
+        ret = self.ctx.submit_event(event)
         self.lock.release()
         return ret
+
+    def notify_event(self, event):
+        from warnings import warn
+        warn("This method has been renamed to submit_event", DeprecationWarning, 2)
+        return self.submit_event(event)
 
     def register_file_ops(self, fops):
         self.lock.acquire()

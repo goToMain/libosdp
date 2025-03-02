@@ -139,14 +139,14 @@ static PyObject *pyosdp_cp_check_capability(pyosdp_cp_t *self, PyObject *args)
 	return Py_BuildValue("(II)", cap.compliance_level, cap.num_items);
 }
 
-#define pyosdp_cp_send_command_doc                                                   \
+#define pyosdp_cp_submit_command_doc                                                   \
 	"Send an OSDP command to a PD\n"                                             \
 	"\n"                                                                         \
 	"@param pd PD offset number\n"                                               \
 	"@param command A dict of command keys and values. See osdp.h for details\n" \
 	"\n"                                                                         \
 	"@return boolean status of command submission\n"
-static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
+static PyObject *pyosdp_cp_submit_command(pyosdp_cp_t *self, PyObject *args)
 {
 	int pd, ret;
 	PyObject *cmd_dict;
@@ -165,7 +165,7 @@ static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 	if (pyosdp_make_struct_cmd(&cmd, cmd_dict))
 		Py_RETURN_FALSE;
 
-	ret = osdp_cp_send_command(self->ctx, pd, &cmd);
+	ret = osdp_cp_submit_command(self->ctx, pd, &cmd);
 
 	if (ret == 0)
 		Py_RETURN_TRUE;
@@ -369,8 +369,8 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  METH_NOARGS, pyosdp_cp_refresh_doc },
 	{ "set_event_callback", (PyCFunction)pyosdp_cp_set_event_callback,
 	  METH_VARARGS, pyosdp_cp_set_event_callback_doc },
-	{ "send_command", (PyCFunction)pyosdp_cp_send_command,
-	  METH_VARARGS, pyosdp_cp_send_command_doc },
+	{ "submit_command", (PyCFunction)pyosdp_cp_submit_command,
+	  METH_VARARGS, pyosdp_cp_submit_command_doc },
 	{ "status", (PyCFunction)pyosdp_cp_pd_status,
 	  METH_NOARGS, pyosdp_cp_pd_status_doc },
 	{ "sc_status", (PyCFunction)pyosdp_cp_sc_status,

@@ -252,7 +252,7 @@ void run_file_tx_tests(struct test *t, bool line_noise)
 			.flags = 0,
 		}
 	};
-	if (osdp_cp_send_command(cp_ctx, 0, &cmd)) {
+	if (osdp_cp_submit_command(cp_ctx, 0, &cmd)) {
 		printf(SUB_1 "Failed to initiate file tx command\n");
 		goto error;
 	}

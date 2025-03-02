@@ -40,13 +40,13 @@ static PyObject *pyosdp_pd_is_sc_active(pyosdp_pd_t *self, PyObject *args)
 		Py_RETURN_FALSE;
 }
 
-#define pyosdp_pd_notify_event_doc                                               \
+#define pyosdp_pd_submit_event_doc                                               \
 	"Notify the CP of an OSDP event\n"                                       \
 	"\n"                                                                     \
 	"@param event A dict of event keys and values. See osdp.h for details\n" \
 	"\n"                                                                     \
 	"@return None\n"
-static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
+static PyObject *pyosdp_pd_submit_event(pyosdp_pd_t *self, PyObject *args)
 {
 	PyObject *event_dict;
 	struct osdp_event event = {};
@@ -61,7 +61,7 @@ static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 		return NULL;
 	}
 
-	if (osdp_pd_notify_event(self->ctx, &event)) {
+	if (osdp_pd_submit_event(self->ctx, &event)) {
 		Py_RETURN_FALSE;
 	}
 
@@ -334,8 +334,8 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	  METH_NOARGS, pyosdp_pd_refresh_doc },
 	{ "set_command_callback", (PyCFunction)pyosdp_pd_set_command_callback,
 	  METH_VARARGS, pyosdp_pd_set_command_callback_doc },
-	{ "notify_event", (PyCFunction)pyosdp_pd_notify_event,
-	  METH_VARARGS, pyosdp_pd_notify_event_doc },
+	{ "submit_event", (PyCFunction)pyosdp_pd_submit_event,
+	  METH_VARARGS, pyosdp_pd_submit_event_doc },
 	{ "is_sc_active", (PyCFunction)pyosdp_pd_is_sc_active,
 	  METH_NOARGS, pyosdp_pd_is_sc_active_doc },
 	{ "is_online", (PyCFunction)pyosdp_pd_is_online,

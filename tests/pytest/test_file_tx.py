@@ -102,7 +102,7 @@ def test_file_transfer(utils):
         'id': 13,
         'flags': 0
     }
-    assert cp.send_command(101, file_tx_cmd)
+    assert cp.submit_command(101, file_tx_cmd)
     assert pd.get_command() == file_tx_cmd
 
     # Monitor transfer status
@@ -133,7 +133,7 @@ def test_file_tx_abort(utils):
         'id': 13,
         'flags': 0
     }
-    assert cp.send_command(101, file_tx_cmd)
+    assert cp.submit_command(101, file_tx_cmd)
     assert pd.get_command() == file_tx_cmd
 
     # Allow some number of transfers to go through
@@ -144,7 +144,7 @@ def test_file_tx_abort(utils):
         'id': 13,
         'flags': CommandFileTxFlags.Cancel
     }
-    assert cp.send_command(101, file_tx_abort)
+    assert cp.submit_command(101, file_tx_abort)
 
     # Allow some time for CP to send the abort to PD
     time.sleep(0.2)

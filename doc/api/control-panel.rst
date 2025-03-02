@@ -40,10 +40,10 @@ Commands
 --------
 
 Commands are sent from the CP to the PD to perform various actions. The CP app
-has to create a command struct and then call ``osdp_cp_send_command`` to enqueue
+has to create a command struct and then call ``osdp_cp_submit_command`` to enqueue
 the command to a particular PD.
 
-.. doxygenfunction:: osdp_cp_send_command
+.. doxygenfunction:: osdp_cp_submit_command
 
 .. doxygenfunction:: osdp_cp_flush_commands
 

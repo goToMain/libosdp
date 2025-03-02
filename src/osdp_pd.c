@@ -1231,7 +1231,7 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 	pd->command_callback = cb;
 }
 
-int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
+int osdp_pd_submit_event(osdp_t *ctx, const struct osdp_event *event)
 {
 	input_check(ctx);
 	struct osdp_event *ev;
@@ -1245,6 +1245,11 @@ int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
 	memcpy(ev, event, sizeof(struct osdp_event));
 	pd_event_enqueue(pd, ev);
 	return 0;
+}
+
+int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
+{
+	return osdp_pd_submit_event(ctx, event);
 }
 
 int osdp_pd_flush_events(osdp_t *ctx)

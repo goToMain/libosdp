@@ -91,9 +91,15 @@ public:
 		osdp_cp_refresh(_ctx);
 	}
 
+	[[deprecated]]
 	int send_command(int pd, struct osdp_cmd *cmd)
 	{
-		return osdp_cp_send_command(_ctx, pd, cmd);
+		return osdp_cp_submit_command(_ctx, pd, cmd);
+	}
+
+	int submit_command(int pd, struct osdp_cmd *cmd)
+	{
+		return osdp_cp_submit_command(_ctx, pd, cmd);
 	}
 
 	void set_event_callback(cp_event_callback_t cb, void *arg)
@@ -140,9 +146,15 @@ public:
 		osdp_pd_set_command_callback(_ctx, cb, args);
 	}
 
+	[[deprecated]]
 	int notify_event(struct osdp_event *event)
 	{
-		return osdp_pd_notify_event(_ctx, event);
+		return osdp_pd_submit_event(_ctx, event);
+	}
+
+	int submit_event(struct osdp_event *event)
+	{
+		return osdp_pd_submit_event(_ctx, event);
 	}
 
 	int flush_events()

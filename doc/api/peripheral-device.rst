@@ -43,9 +43,9 @@ Events
 
 When a PD app has some event (card read, key press, etc.,) to be reported to the
 CP, it creates the corresponding event structure and calls
-``osdp_pd_notify_event`` to deliver it to the CP on the next osdp_POLL command.
+``osdp_pd_submit_event`` to deliver it to the CP on the next osdp_POLL command.
 
-.. doxygenfunction:: osdp_pd_notify_event
+.. doxygenfunction:: osdp_pd_submit_event
 
 .. doxygenfunction:: osdp_pd_flush_events
 

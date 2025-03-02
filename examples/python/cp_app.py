@@ -59,7 +59,7 @@ led_cmd = {
 count = 0  # loop counter
 while True:
     ## Send LED command to PD-0
-    cp.send_command(pd_info[0].address, led_cmd)
+    cp.submit_command(pd_info[0].address, led_cmd)
 
     ## Check if we have an event from PD
     event = cp.get_event(pd_info[0].address, timeout=2)

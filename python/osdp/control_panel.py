@@ -119,12 +119,17 @@ class ControlPanel():
                 sc_active += 1
         return sc_active
 
-    def send_command(self, address, cmd):
+    def submit_command(self, address, cmd):
         pd = self.pd_addr.index(address)
         self.lock.acquire()
-        ret = self.ctx.send_command(pd, cmd)
+        ret = self.ctx.submit_command(pd, cmd)
         self.lock.release()
         return ret
+
+    def send_command(self, address, cmd):
+        from warnings import warn
+        warn("This method has been renamed to submit_command", DeprecationWarning, 2)
+        return self.submit_command(address, cmd)
 
     def set_flag(self, address, flag: LibFlag):
         pd = self.pd_addr.index(address)

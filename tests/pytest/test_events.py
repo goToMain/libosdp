@@ -64,7 +64,7 @@ def test_event_keypad():
         'reader_no': 1,
         'data': bytes([9,1,9,2,6,3,1,7,7,0]),
     }
-    secure_pd.notify_event(event)
+    secure_pd.submit_event(event)
     check_event(event)
 
 def test_event_mfg_reply():
@@ -74,7 +74,7 @@ def test_event_mfg_reply():
         'mfg_command': 0x10,
         'data': bytes([9,1,9,2,6,3,1,7,7,0]),
     }
-    secure_pd.notify_event(event)
+    secure_pd.submit_event(event)
     check_event(event)
 
 def test_event_cardread_wiegand():
@@ -86,7 +86,7 @@ def test_event_cardread_wiegand():
         'format': CardFormat.Wiegand,
         'data': bytes([0x55, 0xAA]),
     }
-    secure_pd.notify_event(event)
+    secure_pd.submit_event(event)
     check_event(event)
 
 def test_event_input():
@@ -95,7 +95,7 @@ def test_event_input():
         'type': StatusReportType.Input,
         'report': bytes([1, 0, 1, 0, 1, 0, 1, 0])
     }
-    secure_pd.notify_event(event)
+    secure_pd.submit_event(event)
     check_event(event)
 
 def test_event_output():
@@ -104,5 +104,5 @@ def test_event_output():
         'type': StatusReportType.Output,
         'report': bytes([0, 1, 0, 1, 0, 1, 0, 1])
     }
-    secure_pd.notify_event(event)
+    secure_pd.submit_event(event)
     check_event(event)

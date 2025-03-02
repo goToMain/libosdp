@@ -668,7 +668,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 	}
 
-	if (pd->cmd_id != CMD_POLL) {
+	if (pd->cmd_id != CMD_POLL ||
+	    (pd->cmd_id == CMD_POLL && pd->reply_id != REPLY_ACK)) {
 		LOG_DBG("CMD: %s(%02x) REPLY: %s(%02x)",
 			osdp_cmd_name(pd->cmd_id), pd->cmd_id,
 			osdp_reply_name(pd->reply_id), pd->reply_id);

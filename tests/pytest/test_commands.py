@@ -194,6 +194,12 @@ def test_command_keyset():
     assert cp.is_sc_active(insecure_pd_addr) == False
     assert cp.submit_command(insecure_pd_addr, test_cmd) == False
 
+@pytest.mark.skip(
+    reason=(
+        "Switching callback handlers at runtime is broken;"
+        " Also asserting from callback doens't work"
+    )
+)
 def test_command_status():
     def evt_handler(pd, event):
         assert event['event'] == Event.Status

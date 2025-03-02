@@ -12,6 +12,6 @@ indent_style = space
 indent_size = 2
 
 # 4 space indentation
-[*.{py.in,py,md,cmake,rs,lua}]
+[*.{py.in,py,md,cmake,rs,lua,json}]
 indent_style = space
 indent_size = 4

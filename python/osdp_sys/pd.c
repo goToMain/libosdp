@@ -49,7 +49,7 @@ static PyObject *pyosdp_pd_is_sc_active(pyosdp_pd_t *self, PyObject *args)
 static PyObject *pyosdp_pd_notify_event(pyosdp_pd_t *self, PyObject *args)
 {
 	PyObject *event_dict;
-	struct osdp_event event;
+	struct osdp_event event = {};
 
 	if (!PyArg_ParseTuple(args, "O", &event_dict)) {
 		PyErr_SetString(PyExc_TypeError, "Failed to parse event dict!");

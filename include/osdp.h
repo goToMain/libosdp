@@ -29,6 +29,7 @@ extern "C" {
  * possible. Fail where these assumptions don't hold.
  *   - Don't allow use of SCBK-D.
  *   - Assume that a KEYSET was successful at an earlier time.
+ *   - CP does not allow user requested broadcast commands (see OSDP_CMD_FLAG_BROADCAST)
  *
  * @note This flag is recommended in production use.
  */
@@ -702,19 +703,27 @@ enum osdp_cmd_e {
 	OSDP_CMD_MFG,         /**< Manufacturer specific command */
 	OSDP_CMD_FILE_TX,     /**< File transfer command */
 	OSDP_CMD_STATUS,      /**< Status report command */
-	OSDP_CMD_COMSET_DONE, /**< Comeset completed; Alias for OSDP_CMD_COMSET */
+	OSDP_CMD_COMSET_DONE, /**< Comset completed; Alias for OSDP_CMD_COMSET */
 	OSDP_CMD_SENTINEL     /**< Max command value */
 };
+
+/**
+ * @brief When set (`struct osdp_cmd::flags`), the command is sent out with the
+ * OSDP packet broadcast flag to the PD.
+ *
+ * According to the OSDP specification: "the use of the broadcast address should
+ * be limited to controlled (single PD) configurations". So this flag will be
+ * ignored in ENFORCE_SECURE mode.
+ */
+#define OSDP_CMD_FLAG_BROADCAST 0x000000001
 
 /**
  * @brief OSDP Command Structure. This is a wrapper for all individual OSDP
  * commands.
  */
 struct osdp_cmd {
-	/**
-	 * Command ID. Used to select specific commands in union.
-	 */
-	enum osdp_cmd_e id;
+	enum osdp_cmd_e id;    /**< Command ID. Used to select specific commands in union */
+	uint32_t flags;        /**< Flags; see OSDP_CMD_FLAG_* flags for possibilities */
 	/** Command */
 	union {
 		struct osdp_cmd_led led;          /**< LED command structure */
@@ -883,10 +892,8 @@ enum osdp_event_type {
  * @brief OSDP Event structure.
  */
 struct osdp_event {
-	/**
-	 * Event type. Used to select specific event in union.
-	 */
-	enum osdp_event_type type;
+	enum osdp_event_type type;  /**< Event type. Used to select specific event in union */
+	uint32_t flags;             /**< Flags; reserved, set to zero */
 	/** Event */
 	union {
 		struct osdp_event_keypress keypress; /**< Keypress event structure */

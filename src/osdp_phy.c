@@ -164,12 +164,12 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	pkt = (struct osdp_packet_header *)buf;
 	pkt->som = OSDP_PKT_SOM;
 	pkt->pd_address = pd->address & 0x7F;	/* Use only the lower 7 bits */
+	if (ISSET_FLAG(pd, PD_FLAG_PKT_BROADCAST)) {
+		pkt->pd_address = 0x7F;
+		CLEAR_FLAG(pd, PD_FLAG_PKT_BROADCAST);
+	}
+	/* PD must reply with MSB of it's address set */
 	if (is_pd_mode(pd)) {
-		/* PD must reply with MSB of it's address set */
-		if (ISSET_FLAG(pd, PD_FLAG_PKT_BROADCAST)) {
-			pkt->pd_address = 0x7F; /* made 0xFF below */
-			CLEAR_FLAG(pd, PD_FLAG_PKT_BROADCAST);
-		}
 		pkt->pd_address |= 0x80;
 		id = pd->reply_id;
 	} else {

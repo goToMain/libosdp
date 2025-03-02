@@ -148,7 +148,7 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 			reply_code = REPLY_RAW;
 		} else if (event->cardread.format == OSDP_CARD_FMT_ASCII) {
 			/**
-			 * osdp_FMT was underspecifed by SIA from get-go. It
+			 * osdp_FMT was underspecified by SIA from get-go. It
 			 * was marked for deprecation in v2.2.2.
 			 *
 			 * See: https://github.com/goToMain/libosdp/issues/206

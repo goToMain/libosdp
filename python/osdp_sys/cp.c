@@ -150,7 +150,7 @@ static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 {
 	int pd, ret;
 	PyObject *cmd_dict;
-	struct osdp_cmd cmd;
+	struct osdp_cmd cmd = {};
 
 	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd_dict)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
@@ -162,7 +162,6 @@ static PyObject *pyosdp_cp_send_command(pyosdp_cp_t *self, PyObject *args)
 		Py_RETURN_FALSE;
 	}
 
-	memset(&cmd, 0, sizeof(struct osdp_cmd));
 	if (pyosdp_make_struct_cmd(&cmd, cmd_dict))
 		Py_RETURN_FALSE;
 

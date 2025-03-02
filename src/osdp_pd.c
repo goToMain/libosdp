@@ -277,7 +277,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	struct osdp_cmd cmd;
 	struct osdp_event *event;
 
-	pd->reply_id = 0;
+	pd->reply_id = REPLY_NAK;
+	pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
 	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
 
@@ -908,6 +909,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
+	default: BUG();
 	}
 
 	if (smb && (smb[1] > SCS_14) && sc_is_active(pd)) {

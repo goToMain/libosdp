@@ -1,0 +1,61 @@
+{
+    "C_Cpp.files.exclude": {
+        "python/vendor/**": true
+    },
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/include/",
+        "${workspaceFolder}/utils/include/"
+    ],
+    "files.associations": {
+        "**/*.h": "c",
+        "*.in": "c",
+    },
+    "files.watcherExclude": {
+        "python/vendor/**": true
+    },
+    "files.exclude": {
+        "python/vendor/**": true,
+        "python/build/**": true,
+        "**/*.egg-info/**": true
+    },
+    "python.analysis.extraPaths": [
+        "./python"
+    ],
+    "search.exclude": {
+        "python/vendor/**": true
+    },
+    "cSpell.words": [
+        "ACURXSIZE",
+        "BIOMATCH",
+        "BIOMATCHR",
+        "BIOREAD",
+        "BIOREADR",
+        "CAPDET",
+        "CARDREAD",
+        "CHLNG",
+        "CRAUTH",
+        "CRAUTHR",
+        "FTSTAT",
+        "ISTATR",
+        "libosdp",
+        "LSTATR",
+        "MFGERRR",
+        "MFGREP",
+        "MFGSTATR",
+        "osdp",
+        "OSTATR",
+        "PDCAP",
+        "PDID",
+        "PIVDATA",
+        "PIVDATAR",
+        "RMAC",
+        "RMODE",
+        "RSTATR",
+        "scbk",
+        "SCBKD",
+        "TDSET",
+        "UNSUP",
+        "Wiegand"
+    ],
+}

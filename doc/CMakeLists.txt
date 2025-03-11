@@ -28,7 +28,7 @@ configure_file(Doxyfile.in Doxyfile @ONLY)
 add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
                    DEPENDS ${LIBOSDP_PUBLIC_HEADERS}
                    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
-                   MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
+                   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
                    COMMENT "Generating doxygen docs")
 
 add_custom_target(Doxygen DEPENDS ${DOXYGEN_INDEX_FILE})

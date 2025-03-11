@@ -328,9 +328,41 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 	return OSDP_ERR_PKT_NONE;
 }
 
+static bool phy_rescan_packet_buf(struct osdp_pd *pd)
+{
+	unsigned long j = packet_has_mark(pd);
+	unsigned long i = j + 1; /* +1 to skip current SoM */
+
+	while (i < pd->packet_buf_len && pd->packet_buf[i] != OSDP_PKT_SOM) {
+		i++;
+	}
+
+	if (i < pd->packet_buf_len) {
+		/* found another SoM; move the rest of the bytes down */
+		if (i && pd->packet_buf[i - 1] == OSDP_PKT_MARK) {
+			pd->packet_buf[0] = OSDP_PKT_MARK;
+			j = 1;
+			SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+		} else {
+			j = 0;
+			CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+		}
+		while (i < pd->packet_buf_len) {
+			pd->packet_buf[j++] = pd->packet_buf[i++];
+		}
+		pd->packet_buf_len = j;
+		return true;
+	}
+
+	/* nothing found, discarded all */
+	pd->packet_buf_len = 0;
+	return false;
+}
+
 static int phy_check_header(struct osdp_pd *pd)
 {
-	int pkt_len, len, target_len;
+	unsigned long pkt_len;
+	int len;
 	struct osdp_packet_header *pkt;
 	uint8_t cur_byte = 0, prev_byte = 0;
 	uint8_t *buf = pd->packet_buf;
@@ -360,11 +392,10 @@ static int phy_check_header(struct osdp_pd *pd)
 	}
 
 	/* Found start of a new packet; wait until we have atleast the header */
-	target_len = sizeof(struct osdp_packet_header);
 	len = osdp_rb_pop_buf(&pd->rx_rb, buf + pd->packet_buf_len,
-			      target_len - pd->packet_buf_len);
+			      sizeof(struct osdp_packet_header) - 1);
 	pd->packet_buf_len += len;
-	if (pd->packet_buf_len < target_len) {
+	if (pd->packet_buf_len < sizeof(struct osdp_packet_header)) {
 		return OSDP_ERR_PKT_WAIT;
 	}
 
@@ -376,18 +407,23 @@ static int phy_check_header(struct osdp_pd *pd)
 		return OSDP_ERR_PKT_FMT;
 	}
 
-	if ((is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
-	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
-		LOG_WRN("Ignoring packet with invalid PD_ADDR.MSB");
-		return OSDP_ERR_PKT_SKIP;
-	}
-
-	/* validate packet length */
+	/* validate packet */
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-
 	if (pkt_len > OSDP_PACKET_BUF_SIZE ||
-	    (unsigned long)pkt_len < sizeof(struct osdp_packet_header) + 1) {
-		return OSDP_ERR_PKT_FMT;
+	    pkt_len < sizeof(struct osdp_packet_header) + 1 ||
+	    (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
+	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+		/*
+		 * Since SoM byte was encountered and the packet structure is
+		 * invalid, we cannot just discard all bytes extracted so far
+		 * as there may another valid SoM in the subsequent stream. So
+		 * we need to re-scan rest of the extracted bytes for another
+		 * SoM before we can discard the extracted bytes.
+		 */
+		if (phy_rescan_packet_buf(pd)) {
+			LOG_DBG("Found nested SoM in re-scan; re-parsing");
+		}
+		return OSDP_ERR_PKT_WAIT;
 	}
 
 	return pkt_len + packet_has_mark(pd);

@@ -407,8 +407,8 @@ struct osdp_pd {
 	/* Raw bytes received from the serial line for this PD */
 	struct osdp_rb rx_rb;
 	uint8_t packet_buf[OSDP_PACKET_BUF_SIZE];
-	int packet_len;
-	int packet_buf_len;
+	unsigned long packet_len;
+	unsigned long packet_buf_len;
 	uint32_t packet_scan_skip;
 
 	int cmd_id;            /* Currently processing command ID */

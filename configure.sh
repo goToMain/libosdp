@@ -9,7 +9,7 @@ usage() {
 	cat >&2<<----
 	LibOSDP build configure script
 
-	Configures a bare minimum build environemt for LibOSDP. This is not a
+	Configures a bare minimum build environment for LibOSDP. This is not a
 	replacement for cmake and intended only for those users who don't care
 	about all the bells and whistles and need only the library.
 
@@ -65,7 +65,7 @@ if [ -f config.make ] && [ -z "$FORCE" ]; then
 fi
 
 if [[ ("$OSTYPE" == "cygwin") || ("$OSTYPE" == "win32") ]]; then
-	echo "Warning: unsuported platform. Expect issues!"
+	echo "Warning: unsupported platform. Expect issues!"
 fi
 
 ## Toolchains

@@ -197,7 +197,7 @@ def test_command_keyset():
 @pytest.mark.skip(
     reason=(
         "Switching callback handlers at runtime is broken;"
-        " Also asserting from callback doens't work"
+        " Also asserting from callback doesn't work"
     )
 )
 def test_command_status():

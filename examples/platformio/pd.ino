@@ -75,7 +75,7 @@ int pd_command_handler(void *data, struct osdp_cmd *cmd)
 {
     (void)(data);
 
-    Serial.println("Recieved a command!");
+    Serial.println("Received a command!");
     return 0;
 }
 

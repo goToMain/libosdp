@@ -165,7 +165,7 @@ void test_cp_phy_teardown(struct test *t)
 
 void run_cp_phy_tests(struct test *t)
 {
-	printf("\nBeing cp_phy tests\n");
+	printf("\nStarting cp_phy tests\n");
 
 	if (test_cp_phy_setup(t))
 		return;

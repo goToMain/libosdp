@@ -59,7 +59,7 @@ int event_handler(void *data, int pd, struct osdp_event *event)
 {
     (void)(data);
 
-    Serial.println("Recieved an event!");
+    Serial.println("Received an event!");
     return 0;
 }
 

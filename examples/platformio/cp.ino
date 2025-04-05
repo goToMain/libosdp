@@ -47,8 +47,8 @@ osdp_pd_info_t pd_info[] = {
         .channel = {
             .data = nullptr,
             .id = 0,
-            .recv = serial1_send_func,
-            .send = serial1_recv_func,
+            .recv = serial1_recv_func,
+            .send = serial1_send_func,
             .flush = nullptr
         },
         .scbk = nullptr,

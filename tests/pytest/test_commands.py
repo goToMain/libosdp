@@ -163,8 +163,7 @@ def test_command_mfg():
     test_cmd = {
         'command': Command.Manufacturer,
         'vendor_code': 0x00030201,
-        'mfg_command': 13,
-        'data': bytes([9,1,9,2,6,3,1,7,7,0])
+        'data': bytes([13,9,1,9,2,6,3,1,7,7,0])
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)

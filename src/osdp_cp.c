@@ -300,7 +300,6 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
-		buf[len++] = cmd->mfg.command;
 		memcpy(buf + len, cmd->mfg.data, cmd->mfg.length);
 		len += cmd->mfg.length;
 		break;
@@ -631,7 +630,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.mfgrep.vendor_code = buf[pos++];
 		event.mfgrep.vendor_code |= buf[pos++] << 8;
 		event.mfgrep.vendor_code |= buf[pos++] << 16;
-		event.mfgrep.command = buf[pos++];
 		event.mfgrep.length = len - REPLY_MFGREP_LEN;
 		if (event.mfgrep.length > OSDP_EVENT_MFGREP_MAX_DATALEN) {
 			break;

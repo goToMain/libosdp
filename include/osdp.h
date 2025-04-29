@@ -453,7 +453,7 @@ struct osdp_status_report {
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
-#define OSDP_CMD_MFG_MAX_DATALEN       64
+#define OSDP_CMD_MFG_MAX_DATALEN       253 /* OSDP_PACKET_BUF_SIZE (256) - vendor code length (3) */
 
 /**
  * @brief Command sent from CP to Control digital output of PD.
@@ -670,17 +670,13 @@ struct osdp_cmd_mfg {
 	 */
 	uint32_t vendor_code;
 	/**
-	 * 1-byte manufacturer defined osdp command
-	 */
-	uint8_t command;
-	/**
-	 * length Length of command data (optional)
-	 */
-	uint8_t length;
-	/**
-	 * Command data (optional)
+	 * Command data
 	 */
 	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
+	/**
+	 * Length of the data (internal use)
+	 */
+	uint8_t length;
 };
 
 /**
@@ -837,10 +833,6 @@ struct osdp_event_mfgrep {
 	 * 3-bytes IEEE assigned OUI of manufacturer
 	 */
 	uint32_t vendor_code;
-	/**
-	 * 1-byte reply code
-	 */
-	uint8_t command;
 	/**
 	 * Length of manufacturer data in bytes (optional)
 	 */

@@ -823,6 +823,16 @@ static inline bool cp_phy_kick(struct osdp_pd *pd)
 	return false;
 }
 
+static void cp_phy_state_done(struct osdp_pd *pd)
+{
+	/* called when we have a valid response from the PD */
+	if (sc_is_active(pd)) {
+		pd->sc_tstamp = osdp_millis_now();
+	}
+	pd->phy_retry_count = 0;
+	pd->phy_state = OSDP_CP_PHY_STATE_DONE;
+}
+
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
@@ -858,18 +868,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		rc = cp_process_reply(pd);
 		if (rc == OSDP_CP_ERR_NONE) {
 			pd->tstamp = osdp_millis_now();
-			if (sc_is_active(pd)) {
-				pd->sc_tstamp = osdp_millis_now();
-			}
-			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
+			cp_phy_state_done(pd);
 			return OSDP_CP_ERR_NONE;
 		}
 		if (rc == OSDP_CP_ERR_UNKNOWN && pd->cmd_id == CMD_POLL &&
 		    ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED)) {
-			if (sc_is_active(pd)) {
-				pd->sc_tstamp = osdp_millis_now();
-			}
-			pd->phy_state = OSDP_CP_PHY_STATE_DONE;
+			cp_phy_state_done(pd);
 			return OSDP_CP_ERR_NONE;
 		}
 		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN) {

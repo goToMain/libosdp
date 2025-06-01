@@ -833,6 +833,13 @@ static void cp_phy_state_done(struct osdp_pd *pd)
 	pd->phy_state = OSDP_CP_PHY_STATE_DONE;
 }
 
+static void cp_phy_state_wait(struct osdp_pd *pd, uint32_t wait_ms)
+{
+	pd->wait_ms = wait_ms;
+	pd->phy_tstamp = osdp_millis_now();
+	pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
+}
+
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
@@ -880,19 +887,15 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			goto error;
 		}
 		if (rc == OSDP_CP_ERR_RETRY_CMD) {
-			pd->phy_tstamp = osdp_millis_now();
-			pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
-			pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
+			cp_phy_state_wait(pd, OSDP_CMD_RETRY_WAIT_MS);
 			return OSDP_CP_ERR_CAN_YIELD;
 		}
 		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
-				pd->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
-				pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
 				pd->phy_retry_count += 1;
-				pd->phy_tstamp = osdp_millis_now();
 				LOG_WRN("No response in 200ms; probing (%d)",
 					pd->phy_retry_count);
+				cp_phy_state_wait(pd, OSDP_CMD_RETRY_WAIT_MS);
 				return OSDP_CP_ERR_CAN_YIELD;
 			}
 			LOG_ERR("Response timeout for CMD: %s(%02x)",

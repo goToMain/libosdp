@@ -58,4 +58,7 @@
         "UNSUP",
         "Wiegand"
     ],
+    "editor.rulers": [
+        80
+    ],
 }

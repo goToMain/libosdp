@@ -30,17 +30,23 @@ option(OPT_BUILD_STATIC "Build static library" ON)
 option(OPT_BUILD_SHARED "Build shared library" ON)
 option(OPT_OSDP_STATIC_PD "Setup PD single statically" OFF)
 option(OPT_OSDP_LIB_ONLY "Only build the library" OFF)
+option(OPT_BUILD_BARE_METAL "Build library for bare metal targets" OFF)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)
 include(GitInfo)
 include(BuildType)
-include(GNUInstallDirs)
 
 ## Global settings
 if(NOT MSVC)
 	add_compile_options(-Wall -Wextra)
+endif()
+
+if (OPT_BUILD_BARE_METAL)
+	add_compile_options(-D__BARE_METAL__)
+else()
+	include(GNUInstallDirs)
 endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

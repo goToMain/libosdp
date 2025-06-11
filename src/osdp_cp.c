@@ -1489,7 +1489,7 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		if (cp_cmd_queue_init(pd)) {
 			goto error;
 		}
-		if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
+		if (IS_ENABLED(OPT_OSDP_SKIP_MARK_BYTE)) {
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
 

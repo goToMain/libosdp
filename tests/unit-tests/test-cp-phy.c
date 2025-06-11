@@ -41,7 +41,7 @@ int test_cp_build_packet_poll(struct osdp *ctx)
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[512] = { CMD_POLL };
 	uint8_t expected[] = {
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
 		0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90
@@ -62,7 +62,7 @@ int test_cp_build_packet_id(struct osdp *ctx)
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[512] = { CMD_ID, 0x00 };
 	uint8_t expected[] = {
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
 		0x53, 0x65, 0x09, 0x00, 0x05, 0x61, 0x00, 0xe9, 0x4d
@@ -83,7 +83,7 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 	int len, err;
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	uint8_t packet[] = {
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
 		0x53, 0xe5, 0x08, 0x00, 0x05, 0x40, 0xe3, 0xa5

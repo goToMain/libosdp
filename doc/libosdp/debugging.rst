@@ -49,7 +49,7 @@ To enable packet trace builds, follow these steps:
 .. code:: sh
 
     mkdir build-pt && cd build-pt
-    cmake -DCONFIG_OSDP_PACKET_TRACE=on ..
+    cmake -DOPT_OSDP_PACKET_TRACE=on ..
     make
 
 During CP/PD setup, you must set PD info flag `OSDP_FLAG_CAPTURE_PACKETS`.
@@ -70,7 +70,7 @@ To enable data trace builds, follow these steps:
 .. code:: sh
 
     mkdir build-dt && cd build-dt
-    cmake -DCONFIG_OSDP_DATA_TRACE=on ..
+    cmake -DOPT_OSDP_DATA_TRACE=on ..
     make
 
 During CP/PD setup, you must set PD info flag `OSDP_FLAG_CAPTURE_PACKETS`.

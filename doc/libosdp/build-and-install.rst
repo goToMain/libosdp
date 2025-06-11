@@ -70,23 +70,23 @@ the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | Configure.sh flag   | CMake OPTION                  | Default   | Description                               |
 +=====================+===============================+===========+===========================================+
-| --packet-trace      | CONFIG_OSDP_PACKET_TRACE      | OFF       | Enable raw packet trace for diagnostics   |
+| --packet-trace      | OPT_OSDP_PACKET_TRACE         | OFF       | Enable raw packet trace for diagnostics   |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| --data-trace        | CONFIG_OSDP_DATA_TRACE        | OFF       | Enable command/reply data buffer tracing  |
+| --data-trace        | OPT_OSDP_DATA_TRACE           | OFF       | Enable command/reply data buffer tracing  |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| --skip-mark         | CONFIG_OSDP_SKIP_MARK_BYTE    | OFF       | Don't send the leading mark byte (0xFF)   |
+| --skip-mark         | OPT_OSDP_SKIP_MARK_BYTE       | OFF       | Don't send the leading mark byte (0xFF)   |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| --no-colours        | CONFIG_DISABLE_PRETTY_LOGGING | OFF       | Don't colourize log outputs               |
+| --no-colours        | OPT_DISABLE_PRETTY_LOGGING    | OFF       | Don't colourize log outputs               |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| --static-pd         | CONFIG_OSDP_STATIC_PD         | OFF       | Setup PD single statically                |
+| --static-pd         | OPT_OSDP_STATIC_PD            | OFF       | Setup PD single statically                |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| --lib-only          | CONFIG_OSDP_LIB_ONLY          | OFF       | Only build the library                    |
+| --lib-only          | OPT_OSDP_LIB_ONLY             | OFF       | Only build the library                    |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| N/A                 | CONFIG_BUILD_SANITIZER        | ON        | Enable different sanitizers during build  |
+| N/A                 | OPT_BUILD_SANITIZER           | ON        | Enable different sanitizers during build  |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| N/A                 | CONFIG_BUILD_SHARED           | ON        | Build shared library                      |
+| N/A                 | OPT_BUILD_SHARED              | ON        | Build shared library                      |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| N/A                 | CONFIG_BUILD_STATIC           | ON        | Build static library                      |
+| N/A                 | OPT_BUILD_STATIC              | ON        | Build static library                      |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project

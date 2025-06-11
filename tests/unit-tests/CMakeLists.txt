@@ -28,7 +28,7 @@ add_executable(${OSDP_UNIT_TEST} EXCLUDE_FROM_ALL ${OSDP_UNIT_TEST_SRC})
 
 target_link_libraries(${OSDP_UNIT_TEST} ${LIB_OSDP_TEST} osdp utils pthread)
 
-if (CONFIG_BUILD_SANITIZER)
+if (OPT_BUILD_SANITIZER)
 	target_compile_options(${OSDP_UNIT_TEST} PRIVATE
 		-fsanitize=address,undefined,leak
 	)

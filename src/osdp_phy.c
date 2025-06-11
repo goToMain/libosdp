@@ -150,7 +150,7 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	/**
 	 * In PD mode just follow what we received from CP. In CP mode, as we
-	 * initiate the transaction, choose based on CONFIG_OSDP_SKIP_MARK_BYTE.
+	 * initiate the transaction, choose based on OPT_OSDP_SKIP_MARK_BYTE.
 	 */
 	if ((is_pd_mode(pd) && packet_has_mark(pd)) ||
 	    (is_cp_mode(pd) && !ISSET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK))) {

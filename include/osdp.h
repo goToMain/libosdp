@@ -65,7 +65,7 @@ extern "C" {
 
 /**
  * @brief Capture raw osdp packets as seen by this device to a pcap file.
- * LibOSDP must be built with CONFIG_OSDP_PACKET_TRACE or CONFIG_OSDP_DATA_TRACE
+ * LibOSDP must be built with OPT_OSDP_PACKET_TRACE or OPT_OSDP_DATA_TRACE
  * for this flag to be in effect.
  *
  * @note The app must call osdp_{cp,pd}_teardown() before existing for the

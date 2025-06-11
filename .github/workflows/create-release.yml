@@ -25,7 +25,7 @@ jobs:
       with:
         submodules: recursive
     - name: Configure
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCONFIG_OSDP_LIB_ONLY=on .
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DOPT_OSDP_LIB_ONLY=on .
     - name: Build
       run: cmake --build build --parallel 8
     - name: Pack built binaries

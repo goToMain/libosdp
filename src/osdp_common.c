@@ -10,7 +10,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#ifndef CONFIG_DISABLE_PRETTY_LOGGING
+#ifndef OPT_DISABLE_PRETTY_LOGGING
 #endif
 
 #include "osdp_common.h"
@@ -194,7 +194,7 @@ void osdp_logger_init(const char *name, int log_level,
 	FILE *file = NULL;
 	int flags = LOGGER_FLAG_NONE;
 
-#ifdef CONFIG_DISABLE_PRETTY_LOGGING
+#ifdef OPT_DISABLE_PRETTY_LOGGING
 	flags |= LOGGER_FLAG_NO_COLORS;
 #endif
 	if (!log_fn)

@@ -8,7 +8,7 @@
 #include "osdp_file.h"
 #include "osdp_diag.h"
 
-#ifndef CONFIG_OSDP_STATIC_PD
+#ifndef OPT_OSDP_STATIC_PD
 #include <stdlib.h>
 #endif
 
@@ -1109,7 +1109,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	assert(info);
 
-#ifndef CONFIG_OSDP_STATIC_PD
+#ifndef OPT_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
 		LOG_PRINT("Failed to allocate osdp context");
@@ -1167,7 +1167,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 		memcpy(pd->sc.scbk, info->scbk, 16);
 	}
 	SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
-	if (IS_ENABLED(CONFIG_OSDP_SKIP_MARK_BYTE)) {
+	if (IS_ENABLED(OPT_OSDP_SKIP_MARK_BYTE)) {
 		SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 	}
 	osdp_pd_set_attributes(pd, info->cap, &info->id);
@@ -1201,7 +1201,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 		pd->channel.close(pd->channel.data);
 	}
 
-#ifndef CONFIG_OSDP_STATIC_PD
+#ifndef OPT_OSDP_STATIC_PD
 	safe_free(pd->file);
 	safe_free(pd);
 	safe_free(ctx);

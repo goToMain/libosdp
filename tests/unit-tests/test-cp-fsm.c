@@ -17,7 +17,7 @@ int test_cp_fsm_send(void *data, uint8_t *buf, int len)
 {
 	ARG_UNUSED(data);
 
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 	int cmd_id_offset = OSDP_CMD_ID_OFFSET + 1;
 #else
 	int cmd_id_offset = OSDP_CMD_ID_OFFSET;
@@ -46,20 +46,20 @@ int test_cp_fsm_receive(void *data, uint8_t *buf, int len)
 	ARG_UNUSED(data);
 
 	uint8_t resp_id[] = {
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
 		0x53, 0xe5, 0x14, 0x00, 0x04, 0x45, 0xa1, 0xa2, 0xa3, 0xb1,
 		0xc1, 0xd1, 0xd2, 0xd3, 0xd4, 0xe1, 0xe2, 0xe3, 0xf8, 0xd9
 	};
 	uint8_t resp_cap[] = {
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
 		0x53, 0xe5, 0x0b, 0x00, 0x05, 0x46, 0x04, 0x04, 0x01, 0xb3, 0xec
 	};
 	uint8_t resp_ack[] = {
-#ifndef CONFIG_OSDP_SKIP_MARK_BYTE
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
 		0xff,
 #endif
 		0x53, 0xe5, 0x08, 0x00, 0x06, 0x40, 0xb0, 0xf0

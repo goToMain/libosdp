@@ -81,23 +81,23 @@ fi
 
 ## Build options
 if [[ ! -z "${NO_COLOURS}" ]]; then
-	CCFLAGS+=" -DCONFIG_DISABLE_PRETTY_LOGGING"
+	CCFLAGS+=" -DOPT_DISABLE_PRETTY_LOGGING"
 fi
 
 if [[ ! -z "${PACKET_TRACE}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_PACKET_TRACE"
+	CCFLAGS+=" -DOPT_OSDP_PACKET_TRACE"
 fi
 
 if [[ ! -z "${DATA_TRACE}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_DATA_TRACE"
+	CCFLAGS+=" -DOPT_OSDP_DATA_TRACE"
 fi
 
 if [[ ! -z "${SKIP_MARK_BYTE}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_SKIP_MARK_BYTE"
+	CCFLAGS+=" -DOPT_OSDP_SKIP_MARK_BYTE"
 fi
 
 if [[ ! -z "${STATIC_PD}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_STATIC_PD"
+	CCFLAGS+=" -DOPT_OSDP_STATIC_PD"
 fi
 
 if [[ ! -z "${DEBUG}" ]]; then

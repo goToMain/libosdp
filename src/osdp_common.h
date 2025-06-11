@@ -269,7 +269,7 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_ACTIVE      BIT(7)  /* secure channel is active */
 #define PD_FLAG_PD_MODE        BIT(8)  /* device is setup as PD */
 #define PD_FLAG_CHN_SHARED     BIT(9)  /* PD's channel is shared */
-#define PD_FLAG_PKT_SKIP_MARK  BIT(10) /* CONFIG_OSDP_SKIP_MARK_BYTE */
+#define PD_FLAG_PKT_SKIP_MARK  BIT(10) /* OPT_OSDP_SKIP_MARK_BYTE */
 #define PD_FLAG_PKT_HAS_MARK   BIT(11) /* Packet has mark byte */
 #define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
 #define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
@@ -575,18 +575,18 @@ static inline bool test_request(struct osdp_pd *pd, uint32_t req) {
 
 static inline bool is_capture_enabled(struct osdp_pd *pd) {
 	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
-	        (IS_ENABLED(CONFIG_OSDP_PACKET_TRACE) ||
-	         IS_ENABLED(CONFIG_OSDP_DATA_TRACE)));
+	        (IS_ENABLED(OPT_OSDP_PACKET_TRACE) ||
+	         IS_ENABLED(OPT_OSDP_DATA_TRACE)));
 }
 
 static inline bool is_data_trace_enabled(struct osdp_pd *pd) {
 	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
-	        IS_ENABLED(CONFIG_OSDP_DATA_TRACE));
+	        IS_ENABLED(OPT_OSDP_DATA_TRACE));
 }
 
 static inline bool is_packet_trace_enabled(struct osdp_pd *pd) {
 	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
-	        IS_ENABLED(CONFIG_OSDP_PACKET_TRACE));
+	        IS_ENABLED(OPT_OSDP_PACKET_TRACE));
 }
 
 static inline bool sc_allow_empty_encrypted_data_block(struct osdp_pd *pd) {

@@ -5,7 +5,7 @@
 #
 
 execute_process(
-	COMMAND git log --pretty=format:'%h' -n 1
+	COMMAND git -C ${CMAKE_CURRENT_LIST_DIR} log --pretty=format:'%h' -n 1
 	OUTPUT_VARIABLE GIT_REV
 	ERROR_QUIET
 	OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -18,7 +18,7 @@ if ("${GIT_REV}" STREQUAL "")
 	set(GIT_BRANCH "None")
 else()
 	execute_process(
-		COMMAND git diff --quiet --exit-code
+		COMMAND git -C ${CMAKE_CURRENT_LIST_DIR} diff --quiet --exit-code
 		RESULT_VARIABLE RETURN_CODE
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 		ERROR_QUIET
@@ -27,12 +27,12 @@ else()
 		set(GIT_DIFF "+")
 	endif()
 	execute_process(
-		COMMAND git describe --exact-match --tags
+		COMMAND git -C ${CMAKE_CURRENT_LIST_DIR} describe --exact-match --tags
 		OUTPUT_VARIABLE GIT_TAG ERROR_QUIET
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
 	execute_process(
-		COMMAND git rev-parse --abbrev-ref HEAD
+		COMMAND git -C ${CMAKE_CURRENT_LIST_DIR} rev-parse --abbrev-ref HEAD
 		OUTPUT_VARIABLE GIT_BRANCH
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)

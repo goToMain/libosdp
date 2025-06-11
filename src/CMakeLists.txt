@@ -4,15 +4,6 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-## Options
-option(CONFIG_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
-option(CONFIG_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)
-option(CONFIG_OSDP_SKIP_MARK_BYTE "Don't send the leading mark byte (0xFF)" OFF)
-option(CONFIG_DISABLE_PRETTY_LOGGING "Don't colorize log ouputs" OFF)
-option(CONFIG_BUILD_SANITIZER "Enable different sanitizers during build" OFF)
-option(CONFIG_BUILD_STATIC "Build static library" ON)
-option(CONFIG_BUILD_SHARED "Build shared library" ON)
-
 if (NOT CONFIG_BUILD_STATIC AND NOT CONFIG_BUILD_SHARED)
 	message(FATAL_ERROR "Both static and shared builds must not be disabled")
 endif()

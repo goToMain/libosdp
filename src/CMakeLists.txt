@@ -247,6 +247,8 @@ install(FILES ${PROJECT_BINARY_DIR}/include/osdp_export.h
 	COMPONENT headers
 )
 
+if (NOT OPT_BUILD_BARE_METAL)
+
 # pkg-config file
 configure_file(
 	${PROJECT_SOURCE_DIR}/misc/libosdp.pc.in
@@ -284,3 +286,5 @@ install(FILES
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
 	COMPONENT config_files
 )
+
+endif() # NOT OPT_BUILD_BARE_METAL

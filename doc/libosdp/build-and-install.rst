@@ -63,9 +63,9 @@ Compile-time configuration options
 ----------------------------------
 
 LibOSDP can can be configured to enable/disable certain featured by passing the
-``-DCONFIG_XXX=ON/OFF`` flag to cmake. Following table lists all such config
+``-DOPT_XXX=ON/OFF`` flag to cmake. Following table lists all such config
 switches. For instance, if you want to also build static library, you can pass
-the flag ``-DCONFIG_OSDP_BUILD_STATIC=ON`` to cmake.
+the flag ``-DOPT_OSDP_BUILD_STATIC=ON`` to cmake.
 
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | Configure.sh flag   | CMake OPTION                  | Default   | Description                               |

@@ -22,6 +22,7 @@
       "+<../utils/src/queue.c>",
       "+<../utils/src/slab.c>",
       "+<../utils/src/utils.c>",
+      "+<../utils/src/crc16.c>",
       "+<../platformio/platformio.cpp>"
     ],
     "includeDir": ".",

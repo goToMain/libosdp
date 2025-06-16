@@ -85,6 +85,7 @@ utils_sources = [
     "utils/src/utils.c",
     "utils/src/logger.c",
     "utils/src/disjoint_set.c",
+    "utils/src/crc16.c",
 ]
 
 utils_includes = [
@@ -95,6 +96,7 @@ utils_includes = [
     "utils/include/utils/utils.h",
     "utils/include/utils/logger.h",
     "utils/include/utils/disjoint_set.h",
+    "utils/include/utils/crc16.h",
 ]
 
 lib_sources = [

@@ -69,7 +69,7 @@ check: clean $(OBJ_TEST)
 .PHONY: clean
 clean:
 	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_TEST)
-	$(Q)rm -f $(O)/*.a $(O)/*.elf $(O)/*.pc
+	$(Q)rm -f $(O)/*.a $(O)/*.elf
 
 .PHONY: distclean
 distclean: clean

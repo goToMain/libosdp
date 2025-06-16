@@ -15,7 +15,7 @@
 
 #include "osdp_common.h"
 
-#include <utils/crc.h>
+#include <utils/crc16.h>
 
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len)
 {

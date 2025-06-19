@@ -1,0 +1,47 @@
+config LIBOSDP
+	bool "Open Supervised Device Protocol (OSDP) driver"
+	select RING_BUFFER
+	select CRC
+	select RING_BUFFER
+	select CRYPTO
+	select CRYPTO_MBEDTLS_SHIM
+	select MBEDTLS
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	imply SERIAL_SUPPORT_INTERRUPT
+	imply UART_INTERRUPT_DRIVEN
+	imply UART_USE_RUNTIME_CONFIGURE
+	select CRC
+	help
+		Add support for Open Supervised Device Protocol (OSDP)
+
+config OSDP_UART_BAUD_RATE
+	int "OSDP UART baud rate"
+	default 115200
+	help
+		OSDP defines that baud rate can be either 9600 or 38400 or
+		115200.
+
+config OSDP_LOG_LEVEL
+	int "OSDP Logging Level"
+	default 1
+	help
+		Set the logging level for the OSDP driver
+
+config OSDP_UART_BUFFER_LENGTH
+	int "OSDP UART buffer length"
+	default 256
+	help
+		OSDP RX and TX buffer FIFO length.
+
+config OSDP_THREAD_STACK_SIZE
+	int "OSDP Thread stack size"
+	default 1024
+	help
+		Thread stack size for osdp refresh thread
+
+config APP_LINK_WITH_OSDP
+	bool "Make libsample header file available to application"
+	default y
+	depends on LIBOSDP
+

@@ -455,8 +455,6 @@ struct osdp_status_report {
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
 #define OSDP_CMD_MFG_MAX_DATALEN       64
 
-#define OSDP_CMD_FILE_TX_FLAG_CANCEL (1UL << 31)
-
 /**
  * @brief Command sent from CP to Control digital output of PD.
  */
@@ -686,6 +684,12 @@ struct osdp_cmd_mfg {
 };
 
 /**
+ * @brief A CP only flag that can be used by the application to cancel an
+ * in-flight file transfer.
+ */
+#define OSDP_CMD_FILE_TX_FLAG_CANCEL (1UL << 31)
+
+/**
  * @brief File transfer start command
  */
 struct osdp_cmd_file_tx {
@@ -696,8 +700,10 @@ struct osdp_cmd_file_tx {
 	/**
 	 * Reserved and set to zero by OSDP spec.
 	 *
-	 * @note: The upper bits are used by libosdp as:
-	 *    bit-31 - OSDP_CMD_FILE_TX_FLAG_CANCEL: cancel an ongoing transfer
+	 * @note: The upper bits are used by libosdp internally (IOW, not sent
+	 * over the OSDP bus). Currently the following flags are defined:
+	 *
+	 * - @ref OSDP_CMD_FILE_TX_FLAG_CANCEL
 	 */
 	uint32_t flags;
 };

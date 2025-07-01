@@ -12,39 +12,39 @@
 #include <stdlib.h>
 #endif
 
-#define CMD_POLL_DATA_LEN              0
-#define CMD_LSTAT_DATA_LEN             0
-#define CMD_ISTAT_DATA_LEN             0
-#define CMD_OSTAT_DATA_LEN             0
-#define CMD_RSTAT_DATA_LEN             0
-#define CMD_ID_DATA_LEN                1
-#define CMD_CAP_DATA_LEN               1
-#define CMD_OUT_DATA_LEN               4
-#define CMD_LED_DATA_LEN               14
-#define CMD_BUZ_DATA_LEN               5
-#define CMD_TEXT_DATA_LEN              6   /* variable length command */
-#define CMD_COMSET_DATA_LEN            5
-#define CMD_KEYSET_DATA_LEN            18
-#define CMD_CHLNG_DATA_LEN             8
-#define CMD_SCRYPT_DATA_LEN            16
-#define CMD_ABORT_DATA_LEN             0
-#define CMD_ACURXSIZE_DATA_LEN         2
-#define CMD_KEEPACTIVE_DATA_LEN        2
-#define CMD_MFG_DATA_LEN               4 /* variable length command */
+#define CMD_POLL_DATA_LEN	0
+#define CMD_LSTAT_DATA_LEN	0
+#define CMD_ISTAT_DATA_LEN	0
+#define CMD_OSTAT_DATA_LEN	0
+#define CMD_RSTAT_DATA_LEN	0
+#define CMD_ID_DATA_LEN		1
+#define CMD_CAP_DATA_LEN	1
+#define CMD_OUT_DATA_LEN	4
+#define CMD_LED_DATA_LEN	14
+#define CMD_BUZ_DATA_LEN	5
+#define CMD_TEXT_DATA_LEN	6 /* variable length command */
+#define CMD_COMSET_DATA_LEN	5
+#define CMD_KEYSET_DATA_LEN	18
+#define CMD_CHLNG_DATA_LEN	8
+#define CMD_SCRYPT_DATA_LEN	16
+#define CMD_ABORT_DATA_LEN	0
+#define CMD_ACURXSIZE_DATA_LEN	2
+#define CMD_KEEPACTIVE_DATA_LEN 2
+#define CMD_MFG_DATA_LEN	3 /* variable length command */
 
-#define REPLY_ACK_LEN                  1
-#define REPLY_PDID_LEN                 13
-#define REPLY_PDCAP_LEN                1   /* variable length command */
-#define REPLY_PDCAP_ENTITY_LEN         3
-#define REPLY_LSTATR_LEN               3
-#define REPLY_RSTATR_LEN               2
-#define REPLY_COM_LEN                  6
-#define REPLY_NAK_LEN                  2
-#define REPLY_CCRYPT_LEN               33
-#define REPLY_RMAC_I_LEN               17
-#define REPLY_KEYPAD_LEN               2
-#define REPLY_RAW_LEN                  4
-#define REPLY_MFGREP_LEN               4 /* variable length command */
+#define REPLY_ACK_LEN	       1
+#define REPLY_PDID_LEN	       13
+#define REPLY_PDCAP_LEN	       1 /* variable length command */
+#define REPLY_PDCAP_ENTITY_LEN 3
+#define REPLY_LSTATR_LEN       3
+#define REPLY_RSTATR_LEN       2
+#define REPLY_COM_LEN	       6
+#define REPLY_NAK_LEN	       2
+#define REPLY_CCRYPT_LEN       33
+#define REPLY_RMAC_I_LEN       17
+#define REPLY_KEYPAD_LEN       2
+#define REPLY_RAW_LEN	       4
+#define REPLY_MFGREP_LEN       3 /* variable length command */
 
 enum osdp_pd_error_e {
 	OSDP_PD_ERR_NONE = 0,
@@ -536,7 +536,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.mfg.vendor_code = buf[pos++]; /* vendor_code */
 		cmd.mfg.vendor_code |= buf[pos++] << 8;
 		cmd.mfg.vendor_code |= buf[pos++] << 16;
-		cmd.mfg.command = buf[pos++];
 		cmd.mfg.length = len - CMD_MFG_DATA_LEN;
 		if (cmd.mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
 			LOG_ERR("cmd length error");
@@ -549,13 +548,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		if (ret > 0) { /* App wants to send a REPLY_MFGREP to the CP */
-			memcpy(pd->ephemeral_data, &cmd,
-			       sizeof(struct osdp_cmd));
-			pd->reply_id = REPLY_MFGREP;
-		} else {
-			pd->reply_id = REPLY_ACK;
-		}
+		/* App wants to send a REPLY_MFGREP to the CP */
+		memcpy(pd->ephemeral_data, &cmd, sizeof(struct osdp_cmd));
+		pd->reply_id = REPLY_MFGREP;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_ACURXSIZE:
@@ -852,7 +847,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_0(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_1(cmd->mfg.vendor_code);
 		buf[len++] = BYTE_2(cmd->mfg.vendor_code);
-		buf[len++] = cmd->mfg.command;
 		memcpy(buf + len, cmd->mfg.data, cmd->mfg.length);
 		len += cmd->mfg.length;
 		ret = OSDP_PD_ERR_NONE;

@@ -60,7 +60,8 @@ osdp_pd_info_t info_pd = {
 		.id = 0,
 		.recv = sample_pd_recv_func,
 		.send = sample_pd_send_func,
-		.flush = nullptr
+		.flush = nullptr,
+		.close = nullptr,
 	},
 	.scbk = nullptr,
 };

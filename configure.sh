@@ -189,19 +189,6 @@ sed -e "s|@PROJECT_VERSION@|${PROJECT_VERSION}|" \
     -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" \
 	src/osdp_config.h.in > ${BUILD_DIR}/include/osdp_config.h
 
-## Generate osdp_exports.h
-echo "Generating osdp_exports.h"
-cat > ${BUILD_DIR}/include/osdp_export.h <<----
-#ifndef OSDP_EXPORT_H
-#define OSDP_EXPORT_H
-
-#define OSDP_EXPORT
-#define OSDP_NO_EXPORT
-#define OSDP_DEPRECATED_EXPORT
-
-#endif /* OSDP_EXPORT_H */
----
-
 CCFLAGS+=" -I${BUILD_DIR}/include"
 
 ## Generate Makefile

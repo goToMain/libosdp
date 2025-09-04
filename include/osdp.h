@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <osdp_export.h>
+#include "osdp_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1022,9 +1022,8 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
  * @retval 0 on success
  * @retval -1 on failure
  */
-OSDP_EXPORT
-int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
-	__attribute__((deprecated("Use osdp_pd_submit_event() instead!")));
+OSDP_DEPRECATED_EXPORT("Use osdp_pd_submit_event() instead!")
+int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event);
 
 /**
  * @brief Submit PD events to CP. These events are delivered to the CP as a
@@ -1113,9 +1112,8 @@ void osdp_cp_teardown(osdp_t *ctx);
  * @note This method only adds the command on to a particular PD's command
  * queue. The command itself can fail due to various reasons.
  */
-OSDP_EXPORT
-int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd)
-	__attribute__((deprecated("Use osdp_cp_submit_command() instead!")));
+OSDP_DEPRECATED_EXPORT("Use osdp_cp_submit_command() instead!")
+int osdp_cp_send_command(osdp_t *ctx, int pd, const struct osdp_cmd *cmd);
 
 /**
  * @brief Submit CP commands to PD. These commands are queued to be sent to the

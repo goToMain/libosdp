@@ -26,7 +26,6 @@
 
 #ifndef CONFIG_NO_GENERATED_HEADERS
 #include "osdp_config.h" /* generated */
-#include "osdp_export.h" /* generated */
 #endif
 
 #ifndef NULL

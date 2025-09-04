@@ -176,7 +176,6 @@ int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
 
 /* --- Exported Methods --- */
 
-OSDP_EXPORT
 void osdp_logger_init(const char *name, int log_level,
 		      osdp_log_puts_fn_t log_fn)
 {
@@ -194,7 +193,6 @@ void osdp_logger_init(const char *name, int log_level,
 	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
-OSDP_EXPORT
 void osdp_set_log_callback(osdp_log_callback_fn_t cb)
 {
 	logger_t ctx;
@@ -204,13 +202,11 @@ void osdp_set_log_callback(osdp_log_callback_fn_t cb)
 	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
-OSDP_EXPORT
 const char *osdp_get_version()
 {
 	return PROJECT_VERSION;
 }
 
-OSDP_EXPORT
 const char *osdp_get_source_info()
 {
 	if (strlen(GIT_TAG) > 0) {
@@ -222,7 +218,6 @@ const char *osdp_get_source_info()
 	}
 }
 
-OSDP_EXPORT
 void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 {
 	input_check(ctx);
@@ -245,7 +240,6 @@ void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 	}
 }
 
-OSDP_EXPORT
 void osdp_get_status_mask(const osdp_t *ctx, uint8_t *bitmask)
 {
 	input_check(ctx);

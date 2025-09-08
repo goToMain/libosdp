@@ -175,7 +175,7 @@ void run_cp_phy_tests(struct test *t)
 	DO_TEST(t, test_phy_decode_packet_ack);
 	DO_TEST(t, test_phy_decode_packet_ignore_leading_mark_bytes);
 
-	printf(SUB_1 "cp_phy tests %s\n", t->failure ? "succeeded" : "failed");
+	printf(SUB_1 "cp_phy tests %s\n", t->failure == 0 ? "succeeded" : "failed");
 
 	test_cp_phy_teardown(t);
 }

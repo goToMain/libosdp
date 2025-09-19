@@ -1255,7 +1255,7 @@ int osdp_pd_submit_event(osdp_t *ctx, const struct osdp_event *event)
 	struct osdp_event *ev;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
-	if (event->type <= OSDP_EVENT_NONE ||
+	if (event->type <= 0 ||
 	    event->type >= OSDP_EVENT_SENTINEL) {
 		return -1;
 	}

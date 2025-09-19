@@ -79,7 +79,7 @@ static int osdp_channel_receive(struct osdp_pd *pd)
 	return total_recv;
 }
 
-uint8_t osdp_compute_checksum(uint8_t *msg, int length)
+static uint8_t osdp_compute_checksum(uint8_t *msg, int length)
 {
 	uint8_t checksum = 0;
 	int i, whole_checksum;
@@ -175,7 +175,10 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		id = pd->cmd_id;
 	}
 	pkt->control = osdp_phy_get_seq_number(pd, is_cp_mode(pd));
-	pkt->control |= PKT_CONTROL_CRC;
+	if (is_pd_mode(pd) ||
+	    (is_cp_mode(pd) && ISSET_FLAG(pd, PD_FLAG_CP_USE_CRC))) {
+		pkt->control |= PKT_CONTROL_CRC;
+	}
 
 	if (sc_is_active(pd)) {
 		pkt->control |= PKT_CONTROL_SCB;
@@ -197,7 +200,7 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
 	uint8_t *data;
-	int data_len;
+	int data_len, checksum_len;
 
 	/* Do a sanity check only; we expect header to be pre-filled */
 	if ((unsigned long)len <= sizeof(struct osdp_packet_header)) {
@@ -223,9 +226,10 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		return OSDP_ERR_PKT_FMT;
 	}
 
-	/* len: with 2 byte CRC */
-	pkt->len_lsb = BYTE_0(len + 2);
-	pkt->len_msb = BYTE_1(len + 2);
+	/* len: with CRC (2 bytes) or checksum (1 byte) */
+	checksum_len = (pkt->control & PKT_CONTROL_CRC) ? 2 : 1;
+	pkt->len_lsb = BYTE_0(len + checksum_len);
+	pkt->len_msb = BYTE_1(len + checksum_len);
 
 	if (is_data_trace_enabled(pd)) {
 		uint8_t control;
@@ -271,14 +275,15 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			}
 			len += osdp_encrypt_data(pd, is_cp_mode(pd), data, data_len);
 		}
-		/* len: with 4bytes MAC; with 2 byte CRC; without 1 byte mark */
+		/* len: with 4bytes MAC; with CRC (2 bytes) or checksum (1 byte); without 1 byte mark */
 		if (len + 4 > max_len) {
 			goto out_of_space_error;
 		}
 
-		/* len: with 2 byte CRC; with 4 byte MAC */
-		pkt->len_lsb = BYTE_0(len + 2 + 4);
-		pkt->len_msb = BYTE_1(len + 2 + 4);
+		/* len: with CRC/checksum; with 4 byte MAC */
+		checksum_len = (pkt->control & PKT_CONTROL_CRC) ? 2 : 1;
+		pkt->len_lsb = BYTE_0(len + checksum_len + 4);
+		pkt->len_msb = BYTE_1(len + checksum_len + 4);
 
 		/* compute and extend the buf with 4 MAC bytes */
 		osdp_compute_mac(pd, is_cp_mode(pd), buf, len);
@@ -287,14 +292,22 @@ static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		len += 4;
 	}
 
-	/* fill crc16 */
-	if (len + 2 > max_len) {
-		goto out_of_space_error;
+	/* fill crc16 or checksum */
+	if (pkt->control & PKT_CONTROL_CRC) {
+		if (len + 2 > max_len) {
+			goto out_of_space_error;
+		}
+		crc16 = osdp_compute_crc16(buf, len);
+		buf[len + 0] = BYTE_0(crc16);
+		buf[len + 1] = BYTE_1(crc16);
+		len += 2;
+	} else {
+		if (len + 1 > max_len) {
+			goto out_of_space_error;
+		}
+		buf[len] = osdp_compute_checksum(buf, len);
+		len += 1;
 	}
-	crc16 = osdp_compute_crc16(buf, len);
-	buf[len + 0] = BYTE_0(crc16);
-	buf[len + 1] = BYTE_1(crc16);
-	len += 2;
 
 	return len + packet_has_mark(pd);
 

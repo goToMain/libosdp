@@ -273,6 +273,7 @@ union osdp_ephemeral_data {
 #define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
 #define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
 #define PD_FLAG_PKT_BROADCAST  BIT(14) /* this packet was addressed to 0x7F */
+#define PD_FLAG_CP_USE_CRC     BIT(15) /* CP uses CRC-16 instead of checksum */
 
 /* CP event requests; used with make_request() and check_request() */
 #define CP_REQ_RESTART_SC              0x00000001

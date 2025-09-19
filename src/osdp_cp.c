@@ -416,6 +416,13 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_NAK_DATA_LEN) {
 			break;
 		}
+		if (buf[pos] == OSDP_PD_NAK_MSG_CHK &&
+		    ISSET_FLAG(pd, PD_FLAG_CP_USE_CRC)) {
+			LOG_INF("PD NAK'd CRC-16, falling back to checksum");
+			CLEAR_FLAG(pd, PD_FLAG_CP_USE_CRC);
+			ret = OSDP_CP_ERR_RETRY_CMD;
+			break;
+		}
 		LOG_WRN("PD replied with NAK(%d) for CMD: %s(%02x)",
 			buf[pos], osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 		ret = OSDP_CP_ERR_NONE;
@@ -473,6 +480,16 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			SET_FLAG(pd, PD_FLAG_SC_CAPABLE);
 		} else {
 			CLEAR_FLAG(pd, PD_FLAG_SC_CAPABLE);
+		}
+
+		/* Check checksum/CRC support capability */
+		t1 = OSDP_PD_CAP_CHECK_CHARACTER_SUPPORT;
+		if (pd->cap[t1].function_code == t1) {
+			if (pd->cap[t1].compliance_level & 0x01) {
+				SET_FLAG(pd, PD_FLAG_CP_USE_CRC);
+			} else {
+				CLEAR_FLAG(pd, PD_FLAG_CP_USE_CRC);
+			}
 		}
 		ret = OSDP_CP_ERR_NONE;
 		break;
@@ -1479,6 +1496,8 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		pd->flags = info->flags;
 		pd->seq_number = -1;
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
+		/* Default to CRC-16 until we know PD capabilities */
+		SET_FLAG(pd, PD_FLAG_CP_USE_CRC);
 		memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
 			memcpy(pd->sc.scbk, info->scbk, 16);

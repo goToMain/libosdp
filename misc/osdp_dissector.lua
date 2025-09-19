@@ -115,9 +115,9 @@ function osdp_protocol.dissector(buffer, pinfo, tree)
     end
 
     local control_byte = buffer(pos + 4, 1):uint()
-    local has_crc16 = bit32.band(control_byte, 0x04) == 0x04
-    local has_scb = bit32.band(control_byte, 0x08) == 0x08
-    local trace_mangled = bit32.band(control_byte, 0x80) == 0x80
+    local has_crc16 = (control_byte & 0x04) == 0x04
+    local has_scb = (control_byte & 0x08) == 0x08
+    local trace_mangled = (control_byte & 0x80) == 0x80
 
     if has_crc16 then
         packet_check_len = 2
@@ -145,8 +145,8 @@ function osdp_protocol.dissector(buffer, pinfo, tree)
     control_subtree:add(control_trace, buffer(pos + 4, 1))
 
     pinfo.cols.protocol = osdp_protocol.name
-    local pd_address = bit32.band(buffer(pos + 1, 1):uint(), 0x7f)
-    local is_cmd = bit32.band(buffer(pos + 1, 1):uint(), 0x80) ~= 0x80
+    local pd_address = buffer(pos + 1, 1):uint() & 0x7f
+    local is_cmd = (buffer(pos + 1, 1):uint() & 0x80) ~= 0x80
     if is_cmd then
         pinfo.cols.src = "CP"
         pinfo.cols.dst = "PD[" .. tostring(pd_address) .. "]"

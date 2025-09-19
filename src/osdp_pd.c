@@ -105,6 +105,7 @@ static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 		LOG_ERR("Event slab allocation failed");
 		return NULL;
 	}
+	memset(&event->object, 0, sizeof(event->object));
 	return &event->object;
 }
 
@@ -184,7 +185,7 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		break;
 	default:
 		LOG_ERR("Unknown event type %d", event->type);
-		break;
+		BUG();
 	}
 	if (reply_code == 0) {
 		/* POLL command cannot fail even when there are errors here */
@@ -1253,6 +1254,11 @@ int osdp_pd_submit_event(osdp_t *ctx, const struct osdp_event *event)
 	input_check(ctx);
 	struct osdp_event *ev;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+
+	if (event->type <= OSDP_EVENT_NONE ||
+	    event->type >= OSDP_EVENT_SENTINEL) {
+		return -1;
+	}
 
 	ev = pd_event_alloc(pd);
 	if (ev == NULL) {

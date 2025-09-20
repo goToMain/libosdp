@@ -774,4 +774,9 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 #ifdef UNIT_TESTING
 int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
 			int len, int max_len) = osdp_phy_packet_finalize;
+
+/* Export packet creation functions through function pointers for testing */
+int (*test_osdp_phy_packet_init)(struct osdp_pd *pd, uint8_t *buf, int max_len) = osdp_phy_packet_init;
+uint16_t (*test_osdp_compute_crc16)(const uint8_t *buf, size_t len) = osdp_compute_crc16;
+uint8_t (*test_osdp_compute_checksum)(uint8_t *msg, int length) = osdp_compute_checksum;
 #endif

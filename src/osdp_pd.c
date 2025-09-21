@@ -1082,6 +1082,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
 				pd->address, pd->baud_rate);
 		}
+		osdp_phy_progress_sequence(pd);
 	} else {
 		/**
 		 * PD received and decoded a valid command from CP but failed to

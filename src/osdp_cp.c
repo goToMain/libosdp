@@ -52,6 +52,7 @@ enum osdp_cp_error_e {
 	OSDP_CP_ERR_CAN_YIELD = -4,
 	OSDP_CP_ERR_INPROG = -5,
 	OSDP_CP_ERR_UNKNOWN = -6,
+	OSDP_CP_ERR_SEQ_NUM = -7,
 };
 
 struct cp_cmd_node {
@@ -749,10 +750,16 @@ static int cp_process_reply(struct osdp_pd *pd)
 	case OSDP_ERR_PKT_BUSY:
 		return OSDP_CP_ERR_RETRY_CMD;
 	case OSDP_ERR_PKT_NACK:
-		/* CP cannot do anything about an invalid reply from a PD. So it
-		 * just default to going offline and retrying after a while. The
-		 * reason for this failure was probably better logged by lower
-		 * layers so we can treat it as a generic failure.
+		if (pd->ephemeral_data[0] == OSDP_PD_NAK_SEQ_NUM) {
+			LOG_WRN("NAK(SEQ_NUM); restarting communication");
+			osdp_phy_state_reset(pd, true);
+			sc_deactivate(pd);
+			pd->state = OSDP_CP_STATE_INIT;
+			return OSDP_CP_ERR_SEQ_NUM;
+		}
+		/* Other NACKs: CP cannot do anything about an invalid reply from a PD.
+		 * Default to going offline and retrying after a while. The reason for
+		 * this failure was probably better logged by lower layers.
 		 */
 		__fallthrough;
 	default:
@@ -892,11 +899,13 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		rc = cp_process_reply(pd);
 		if (rc == OSDP_CP_ERR_NONE) {
 			pd->tstamp = osdp_millis_now();
+			osdp_phy_progress_sequence(pd);
 			cp_phy_state_done(pd);
 			return OSDP_CP_ERR_NONE;
 		}
-		if (rc == OSDP_CP_ERR_UNKNOWN && pd->cmd_id == CMD_POLL &&
-		    ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED)) {
+		if (rc == OSDP_CP_ERR_SEQ_NUM ||
+		    (rc == OSDP_CP_ERR_UNKNOWN && pd->cmd_id == CMD_POLL &&
+		     ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED))) {
 			cp_phy_state_done(pd);
 			return OSDP_CP_ERR_NONE;
 		}

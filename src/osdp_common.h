@@ -462,6 +462,7 @@ int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 			 int len, int max_len);
+void osdp_phy_progress_sequence(struct osdp_pd *pd);
 
 /* from osdp_common.c */
 __weak int64_t osdp_millis_now(void);

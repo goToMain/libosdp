@@ -92,16 +92,28 @@ static uint8_t osdp_compute_checksum(uint8_t *msg, int length)
 	return checksum;
 }
 
-static int osdp_phy_get_seq_number(struct osdp_pd *pd, int do_inc)
+static inline int phy_get_next_seq_number(struct osdp_pd *pd)
 {
-	/* pd->seq_num is set to -1 to reset phy cmd state */
-	if (do_inc) {
-		pd->seq_number += 1;
-		if (pd->seq_number > 3) {
-			pd->seq_number = 1;
-		}
+	int next_seq = pd->seq_number;
+
+	next_seq += 1;
+	if (next_seq > 3) {
+		next_seq = 1;
 	}
-	return pd->seq_number & PKT_CONTROL_SQN;
+	return next_seq;
+}
+
+static inline void phy_rollback_seq_number(struct osdp_pd *pd)
+{
+	pd->seq_number -= 1;
+	if (pd->seq_number < 1) { /* rollback to zero is not supported */
+		pd->seq_number = 3;
+	}
+}
+
+static inline void phy_reset_seq_number(struct osdp_pd *pd)
+{
+	pd->seq_number = -1;
 }
 
 int osdp_phy_packet_get_data_offset(struct osdp_pd *pd, const uint8_t *buf)
@@ -174,7 +186,7 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	} else {
 		id = pd->cmd_id;
 	}
-	pkt->control = osdp_phy_get_seq_number(pd, is_cp_mode(pd));
+	pkt->control = phy_get_next_seq_number(pd);
 	if (is_pd_mode(pd) ||
 	    (is_cp_mode(pd) && ISSET_FLAG(pd, PD_FLAG_CP_USE_CRC))) {
 		pkt->control |= PKT_CONTROL_CRC;
@@ -194,8 +206,8 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	        sizeof(struct osdp_packet_header) + scb_len);
 }
 
-static int osdp_phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
-				    int len, int max_len)
+static int phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
+			       int len, int max_len)
 {
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
@@ -322,7 +334,7 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 	int ret;
 
 	/* finalize packet */
-	len = osdp_phy_packet_finalize(pd, buf, len, max_len);
+	len = phy_packet_finalize(pd, buf, len, max_len);
 	if (len < 0) {
 		return OSDP_ERR_PKT_BUILD;
 	}
@@ -496,7 +508,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			 * phy_get_seq_number()) and invalidate any established
 			 * secure channels.
 			 */
-			pd->seq_number = -1;
+			phy_reset_seq_number(pd);
 			sc_deactivate(pd);
 		}
 		else if (comp == pd->seq_number) {
@@ -507,7 +519,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			 * set to -1) and then process the packet all over again
 			 * as if it was the first time we are seeing it.
 			 */
-			pd->seq_number -= 1;
+			phy_rollback_seq_number(pd);
 			LOG_INF("Received a sequence repeat packet!");
 		}
 		/**
@@ -532,9 +544,9 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			}
 		}
 	}
-	cur = osdp_phy_get_seq_number(pd, is_pd_mode(pd));
+	cur = phy_get_next_seq_number(pd);
 	if (cur != comp && !ISSET_FLAG(pd, PD_FLAG_SKIP_SEQ_CHECK)) {
-		LOG_ERR("Packet sequence mismatch (%d/%d)",
+		LOG_ERR("Packet sequence mismatch (expected: %d, got: %d)",
 			cur, comp);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
@@ -764,16 +776,21 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 	pd->phy_state = 0;
 	if (is_error) {
 		pd->phy_retry_count = 0;
-		pd->seq_number = -1;
+		phy_reset_seq_number(pd);
 		if (pd->channel.flush) {
 			pd->channel.flush(pd->channel.data);
 		}
 	}
 }
 
+void osdp_phy_progress_sequence(struct osdp_pd *pd)
+{
+	pd->seq_number = phy_get_next_seq_number(pd);
+}
+
 #ifdef UNIT_TESTING
 int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
-			int len, int max_len) = osdp_phy_packet_finalize;
+			int len, int max_len) = phy_packet_finalize;
 
 /* Export packet creation functions through function pointers for testing */
 int (*test_osdp_phy_packet_init)(struct osdp_pd *pd, uint8_t *buf, int max_len) = osdp_phy_packet_init;

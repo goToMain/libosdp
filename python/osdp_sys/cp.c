@@ -243,6 +243,9 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 	if (self->ctx)
 		osdp_cp_teardown(self->ctx);
 
+	/* Free allocated name string */
+	free(self->name);
+
 	/* call base class destructor */
 	OSDPBaseType.tp_dealloc((PyObject *)self);
 
@@ -297,8 +300,10 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			goto error;
 		}
 
-		pyosdp_dict_get_str(py_info, "name", &self->name);
-		info->name = self->name;
+		if (pyosdp_dict_get_str(py_info, "name", &self->name) == 0)
+			info->name = self->name;
+		else
+			info->name = NULL;
 
 		if (pyosdp_dict_get_int(py_info, "address", &info->address))
 			goto error;
@@ -344,14 +349,13 @@ PyObject *pyosdp_cp_tp_repr(PyObject *self)
 	PyObject *py_string;
 
 	py_string = Py_BuildValue("s", "control panel object");
-	Py_INCREF(py_string);
 
 	return py_string;
 }
 
 static int pyosdp_cp_tp_traverse(pyosdp_cp_t *self, visitproc visit, void *arg)
 {
-	Py_VISIT(self->ctx);
+	Py_VISIT(self->event_cb);
 	return 0;
 }
 
@@ -376,9 +380,9 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	{ "sc_status", (PyCFunction)pyosdp_cp_sc_status,
 	  METH_NOARGS, pyosdp_cp_sc_status_doc },
 	{ "set_flag", (PyCFunction)pyosdp_cp_set_flag,
-	  METH_NOARGS, pyosdp_cp_set_flag_doc },
+	  METH_VARARGS, pyosdp_cp_set_flag_doc },
 	{ "clear_flag", (PyCFunction)pyosdp_cp_clear_flag,
-	  METH_NOARGS, pyosdp_cp_clear_flag_doc },
+	  METH_VARARGS, pyosdp_cp_clear_flag_doc },
 	{ "get_pd_id", (PyCFunction)pyosdp_cp_get_pd_id,
 	  METH_VARARGS, pyosdp_cp_get_pd_id_doc },
 	{ "check_capability", (PyCFunction)pyosdp_cp_check_capability,

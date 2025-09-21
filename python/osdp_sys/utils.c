@@ -101,6 +101,7 @@ int pyosdp_parse_bool(PyObject *obj, bool *res)
 	return 0;
 }
 
+/* NOTE: Caller must free the returned string with free() */
 int pyosdp_parse_str(PyObject *obj, char **str)
 {
 	char *s;
@@ -119,6 +120,11 @@ int pyosdp_parse_str(PyObject *obj, char **str)
 		return -1;
 	}
 	*str = strdup(s);
+	if (*str == NULL) {
+		PyErr_SetString(PyExc_MemoryError, "String allocation failed");
+		Py_DECREF(str_ref);
+		return -1;
+	}
 	Py_DECREF(str_ref);
 	return 0;
 }
@@ -283,10 +289,14 @@ static int channel_write_callback(void *data, uint8_t *buf, int len)
 		return -1;
 
 	PyObject *result = PyObject_CallMethod(channel, "write", "O", byte_array);
-	if (!result || !PyLong_Check(result))
+	if (!result || !PyLong_Check(result)) {
+		Py_DECREF(byte_array);
+		Py_XDECREF(result);
 		return -1;
+	}
 
 	len = (int)PyLong_AsLong(result);
+	Py_DECREF(byte_array);
 	Py_DECREF(result);
 	return len;
 }
@@ -294,8 +304,10 @@ static int channel_write_callback(void *data, uint8_t *buf, int len)
 static void channel_flush_callback(void *data)
 {
 	PyObject *channel = data;
+	PyObject *result;
 
-	PyObject_CallMethod(channel, "flush", NULL);
+	result = PyObject_CallMethod(channel, "flush", NULL);
+	Py_XDECREF(result);
 }
 
 void pyosdp_get_channel(PyObject *channel, struct osdp_channel *ops)

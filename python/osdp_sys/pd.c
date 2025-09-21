@@ -124,6 +124,7 @@ static PyObject *pyosdp_pd_set_command_callback(pyosdp_pd_t *self, PyObject *arg
 		return NULL;
 	}
 
+	Py_XDECREF(self->command_cb); /* release previous callback if any */
 	self->command_cb = callable;
 	Py_INCREF(self->command_cb);
 	osdp_pd_set_command_callback(self->ctx, pd_command_cb, (void *)self);
@@ -165,6 +166,9 @@ static void pyosdp_pd_tp_dealloc(pyosdp_pd_t *self)
 {
 	if (self->ctx)
 		osdp_pd_teardown(self->ctx);
+
+	/* Free allocated name string */
+	free(self->name);
 
 	/* call base class destructor */
 	OSDPBaseType.tp_dealloc((PyObject *)self);
@@ -247,8 +251,10 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 					 &py_pd_cap_list))
 		goto error;
 
-	pyosdp_dict_get_str(py_info, "name", &self->name);
-	info.name = self->name;
+	if (pyosdp_dict_get_str(py_info, "name", &self->name) == 0)
+		info.name = self->name;
+	else
+		info.name = NULL;
 
 	if (py_pd_cap_list && pyosdp_add_pd_cap(py_pd_cap_list, &info))
 		goto error;
@@ -308,15 +314,14 @@ PyObject *pyosdp_pd_tp_repr(PyObject *self)
 {
 	PyObject *py_string;
 
-	py_string = Py_BuildValue("s", "control panel object");
-	Py_INCREF(py_string);
+	py_string = Py_BuildValue("s", "peripheral device object");
 
 	return py_string;
 }
 
 static int pyosdp_pd_tp_traverse(pyosdp_pd_t *self, visitproc visit, void *arg)
 {
-	Py_VISIT(self->ctx);
+	Py_VISIT(self->command_cb);
 	return 0;
 }
 
@@ -341,7 +346,7 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	{ "is_online", (PyCFunction)pyosdp_pd_is_online,
 	  METH_NOARGS, pyosdp_pd_is_online_doc },
 	{ "flush_events", (PyCFunction)pyosdp_pd_flush_events,
-	  METH_VARARGS, pyosdp_pd_flush_events_doc },
+	  METH_NOARGS, pyosdp_pd_flush_events_doc },
 	{ NULL, NULL, 0, NULL } /* Sentinel */
 };
 

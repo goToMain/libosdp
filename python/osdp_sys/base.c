@@ -125,11 +125,15 @@ static PyObject *pyosdp_get_file_tx_status(pyosdp_base_t *self, PyObject *args)
 	if (dict == NULL)
 		Py_RETURN_NONE;
 
-	if (pyosdp_dict_add_int(dict, "size", size))
+	if (pyosdp_dict_add_int(dict, "size", size)) {
+		Py_DECREF(dict);
 		Py_RETURN_NONE;
+	}
 
-	if (pyosdp_dict_add_int(dict, "offset", offset))
+	if (pyosdp_dict_add_int(dict, "offset", offset)) {
+		Py_DECREF(dict);
 		Py_RETURN_NONE;
+	}
 
 	return dict;
 }
@@ -205,7 +209,6 @@ PyObject *pyosdp_get_version(pyosdp_base_t *self, PyObject *args)
 	obj = Py_BuildValue("s", version);
 	if (obj == NULL)
 		return NULL;
-	Py_INCREF(obj);
 	return obj;
 }
 
@@ -218,7 +221,6 @@ PyObject *pyosdp_get_source_info(pyosdp_base_t *self, PyObject *args)
 	obj = Py_BuildValue("s", info);
 	if (obj == NULL)
 		return NULL;
-	Py_INCREF(obj);
 	return obj;
 }
 

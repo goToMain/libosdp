@@ -118,7 +118,7 @@ static PyObject *pyosdp_set_loglevel(void *self, PyObject *args)
 {
 	int log_level = OSDP_LOG_DEBUG;
 
-	if (!PyArg_ParseTuple(args, "I", &log_level)) {
+	if (!PyArg_ParseTuple(args, "i", &log_level)) {
 		PyErr_SetString(PyExc_KeyError, "invalid log level");
 		return NULL;
 	}

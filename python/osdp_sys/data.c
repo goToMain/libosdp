@@ -187,8 +187,6 @@ static int pyosdp_make_dict_cmd_text(PyObject *obj, struct osdp_cmd *cmd)
 		return -1;
 	if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
 		return -1;
-	if (pyosdp_dict_add_int(obj, "reader", cmd->text.reader))
-		return -1;
 	if (cmd->text.length > (sizeof(buf) - 1))
 		return -1;
 	memcpy(buf, cmd->text.data, cmd->text.length);
@@ -682,11 +680,15 @@ int pyosdp_make_dict_cmd(PyObject **dict, struct osdp_cmd *cmd)
 	if (obj == NULL)
 		return -1;
 
-	if (pyosdp_dict_add_int(obj, "command", cmd->id))
+	if (pyosdp_dict_add_int(obj, "command", cmd->id)) {
+		Py_DECREF(obj);
 		return -1;
+	}
 
-	if (command_translator[cmd->id].struct_to_dict(obj, cmd))
+	if (command_translator[cmd->id].struct_to_dict(obj, cmd)) {
+		Py_DECREF(obj);
 		return -1;
+	}
 
 	*dict = obj;
 	return 0;
@@ -717,11 +719,15 @@ int pyosdp_make_dict_event(PyObject **dict, struct osdp_event *event)
 	if (obj == NULL)
 		return -1;
 
-	if (pyosdp_dict_add_int(obj, "event", event->type))
+	if (pyosdp_dict_add_int(obj, "event", event->type)) {
+		Py_DECREF(obj);
 		return -1;
+	}
 
-	if (event_translator[event->type].struct_to_dict(obj, event))
+	if (event_translator[event->type].struct_to_dict(obj, event)) {
+		Py_DECREF(obj);
 		return -1;
+	}
 
 	*dict = obj;
 	return 0;
@@ -733,11 +739,14 @@ PyObject *pyosdp_make_dict_pd_id(struct osdp_pd_id *pd_id)
 	if (obj == NULL)
 		return NULL;
 
-	pyosdp_dict_add_int(obj, "version", pd_id->version);
-	pyosdp_dict_add_int(obj, "model", pd_id->model);
-	pyosdp_dict_add_int(obj, "vendor_code", pd_id->vendor_code);
-	pyosdp_dict_add_int(obj, "serial_number", pd_id->serial_number);
-	pyosdp_dict_add_int(obj, "firmware_version", pd_id->firmware_version);
+	if (pyosdp_dict_add_int(obj, "version", pd_id->version) ||
+	    pyosdp_dict_add_int(obj, "model", pd_id->model) ||
+	    pyosdp_dict_add_int(obj, "vendor_code", pd_id->vendor_code) ||
+	    pyosdp_dict_add_int(obj, "serial_number", pd_id->serial_number) ||
+	    pyosdp_dict_add_int(obj, "firmware_version", pd_id->firmware_version)) {
+		Py_DECREF(obj);
+		return NULL;
+	}
 
 	return obj;
 }

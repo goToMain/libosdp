@@ -7,7 +7,7 @@
 import pytest
 
 from osdp import *
-from conftest import make_fifo_pair, cleanup_fifo_pair
+from conftest import make_fifo_pair, cleanup_fifo_pair, wait_for_non_notification_event
 
 pd_cap = PDCapabilities([
     (Capability.OutputControl, 1, 8),
@@ -41,7 +41,9 @@ def setup_test():
     for pd in pd_list:
         pd.start()
     cp.start()
-    cp.online_wait_all()
+    if not cp.online_wait_all(timeout=10):
+        teardown_test()
+        pytest.fail("Failed to bring all PDs online within timeout")
     yield
     teardown_test()
 
@@ -52,11 +54,7 @@ def teardown_test():
     cleanup_fifo_pair("events")
 
 def check_event(event):
-    while True:
-        e = cp.get_event(secure_pd.address)
-        if e['event'] != Event.Notification:
-            break
-    assert e == event
+    wait_for_non_notification_event(cp, secure_pd.address, event)
 
 def test_event_keypad():
     event = {

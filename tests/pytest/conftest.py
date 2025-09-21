@@ -58,6 +58,68 @@ class FIFOChannel(Channel):
         os.remove(self.fifo_read_path)
         os.remove(self.fifo_write_path)
 
+# ============================================================================
+# Test Helper Functions for OSDP Communication Assertions
+# ============================================================================
+# These helpers abstract away timeout handling and provide consistent error
+# messages when OSDP communication fails during tests.
+
+def assert_command_received(pd, expected_cmd, timeout=2):
+    """Helper to assert that a PD receives the expected command within timeout
+
+    Args:
+        pd: PeripheralDevice instance
+        expected_cmd: Expected command dict to match
+        timeout: Timeout in seconds (default: 2)
+
+    Returns:
+        The received command dict
+
+    Raises:
+        pytest.fail if timeout occurs or command doesn't match
+    """
+    cmd = pd.get_command(timeout=timeout)
+    if cmd is None:
+        pytest.fail(f"Timeout waiting for command after {timeout}s")
+    assert cmd == expected_cmd
+    return cmd
+
+def assert_event_received(cp, pd_address, expected_event, timeout=2):
+    """Helper to assert that a CP receives the expected event within timeout"""
+    event = cp.get_event(pd_address, timeout=timeout)
+    if event is None:
+        pytest.fail(f"Timeout waiting for event after {timeout}s")
+    assert event == expected_event
+    return event
+
+def wait_for_notification_event(cp, pd_address, expected_event, timeout=5):
+    """Helper to wait for a specific notification event, filtering out other events"""
+    timeout_count = 0
+    max_attempts = int(timeout * 2)  # Check every 0.5s
+
+    while timeout_count < max_attempts:
+        e = cp.get_event(pd_address, timeout=0.5)
+        if e and e['event'] == Event.Notification and e['type'] == expected_event['type']:
+            if e == expected_event:
+                return e
+        timeout_count += 1
+
+    pytest.fail(f"Timeout waiting for notification event after {timeout}s")
+
+def wait_for_non_notification_event(cp, pd_address, expected_event, timeout=5):
+    """Helper to wait for a non-notification event, filtering out notification events"""
+    timeout_count = 0
+    max_attempts = int(timeout * 2)  # Check every 0.5s
+
+    while timeout_count < max_attempts:
+        e = cp.get_event(pd_address, timeout=0.5)
+        if e and e['event'] != Event.Notification:
+            if e == expected_event:
+                return e
+        timeout_count += 1
+
+    pytest.fail(f"Timeout waiting for non-notification event after {timeout}s")
+
 class TestUtils:
     def __init__(self):
         self.ks = KeyStore()
@@ -66,9 +128,13 @@ class TestUtils:
         cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
         cp.start()
         if sc_wait:
-            assert cp.sc_wait_all()
+            if not cp.sc_wait_all(timeout=10):
+                cp.teardown()
+                pytest.fail("Failed to establish secure channel within timeout")
         elif online_wait:
-            assert cp.online_wait_all()
+            if not cp.online_wait_all(timeout=10):
+                cp.teardown()
+                pytest.fail("Failed to bring all PDs online within timeout")
         return cp
 
     def create_pd(self, pd_info):

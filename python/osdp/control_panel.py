@@ -26,8 +26,11 @@ class ControlPanel():
             self.pd_addr.append(pd_info.address)
             info_list.append(pd_info.get())
         self.event_queue = [ queue.Queue() for i in self.pd_addr ]
+        self.user_event_handler = None
         osdp_sys.set_loglevel(log_level)
         self.ctx = osdp_sys.ControlPanel(info_list)
+        # Always use our internal handler to ensure queue functionality
+        self.ctx.set_event_callback(self._internal_event_handler)
         self.set_event_handler(event_handler)
         self.event = None
         self.lock = None
@@ -42,13 +45,22 @@ class ControlPanel():
             time.sleep(0.020) #sleep for 20ms
 
     def set_event_handler(self, handler: Callable[[int, dict], int]):
-        if handler:
-            self.ctx.set_event_callback(handler)
-        else:
-            self.ctx.set_event_callback(self.event_handler)
+        """Set user event handler while maintaining queue functionality"""
+        self.user_event_handler = handler
 
-    def event_handler(self, pd, event) -> int:
+    def _internal_event_handler(self, pd, event) -> int:
+        """Internal handler that manages both queue and user callback"""
+        # Always put event in queue for get_event() compatibility
         self.event_queue[pd].put(event)
+
+        # If user has set a custom handler, call it too
+        if self.user_event_handler:
+            try:
+                return self.user_event_handler(pd, event)
+            except Exception as e:
+                print(f"Error in user event handler: {e}")
+                return -1
+
         return 0
 
     def get_event(self, address, timeout: int=5):
@@ -202,8 +214,14 @@ class ControlPanel():
 
     def offline_wait(self, address, timeout=8):
         count = 0
-        time.sleep(timeout)
-        return self.is_online(address) == False
+        res = False
+        while count < timeout * 2:
+            time.sleep(0.5)
+            if not self.is_online(address):
+                res = True
+                break
+            count += 1
+        return res
 
     def sc_wait(self, address, timeout=5):
         count = 0

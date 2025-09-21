@@ -8,7 +8,7 @@ import time
 import pytest
 
 from osdp import *
-from conftest import make_fifo_pair, cleanup_fifo_pair
+from conftest import make_fifo_pair, cleanup_fifo_pair, assert_command_received, wait_for_notification_event
 
 secure_pd_addr = 101
 insecure_pd_addr = 102
@@ -57,19 +57,16 @@ def cp_check_command_status(cmd, expected_outcome=True):
         'arg0': cmd,
         'arg1': 1 if expected_outcome else 0,
     }
-    while True:
-        e = cp.get_event(secure_pd.address)
-        if (e['event'] == Event.Notification and
-            e['type'] == EventNotification.Command):
-            break
-    assert e == event
+    wait_for_notification_event(cp, secure_pd.address, event)
 
 @pytest.fixture(scope='module', autouse=True)
 def setup_test():
     for pd in pd_list:
         pd.start()
     cp.start()
-    cp.online_wait_all()
+    if not cp.online_wait_all(timeout=10):
+        teardown_test()
+        pytest.fail("Failed to bring all PDs online within timeout")
     yield
     teardown_test()
 
@@ -89,7 +86,7 @@ def test_command_output():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.Output)
 
 def test_command_buzzer():
@@ -103,7 +100,7 @@ def test_command_buzzer():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.Buzzer)
 
 def test_command_text():
@@ -118,7 +115,7 @@ def test_command_text():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.Text)
 
 def test_command_led():
@@ -135,14 +132,14 @@ def test_command_led():
         'temporary': True
     }
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.LED)
 
     test_cmd['temporary'] = False
     del test_cmd['timer_count']
 
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.LED)
 
 def test_command_comset():
@@ -158,8 +155,8 @@ def test_command_comset():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
-    assert secure_pd.get_command() == test_cmd_done
+    assert_command_received(secure_pd, test_cmd)
+    assert_command_received(secure_pd, test_cmd_done)
     cp_check_command_status(Command.Comset)
 
 def test_command_mfg():
@@ -171,7 +168,7 @@ def test_command_mfg():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.Manufacturer)
 
 def test_command_keyset():
@@ -182,7 +179,7 @@ def test_command_keyset():
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
-    assert secure_pd.get_command() == test_cmd
+    assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.Keyset)
 
     # PD must be online and SC active after a KEYSET command
@@ -194,12 +191,6 @@ def test_command_keyset():
     assert cp.is_sc_active(insecure_pd_addr) == False
     assert cp.submit_command(insecure_pd_addr, test_cmd) == False
 
-@pytest.mark.skip(
-    reason=(
-        "Switching callback handlers at runtime is broken;"
-        " Also asserting from callback doesn't work"
-    )
-)
 def test_command_status():
     def evt_handler(pd, event):
         assert event['event'] == Event.Status

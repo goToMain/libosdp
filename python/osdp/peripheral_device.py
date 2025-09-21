@@ -19,12 +19,11 @@ class PeripheralDevice():
                  command_handler: Callable[[dict], Tuple[int, dict]]=None):
         self.command_queue = queue.Queue()
         self.address = pd_info.address
+        self.user_command_handler = None
         osdp_sys.set_loglevel(log_level)
         self.ctx = osdp_sys.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
-        if command_handler:
-            self.ctx.set_command_callback(command_handler)
-        else:
-            self.ctx.set_command_callback(self.command_handler)
+        # Always use our internal handler to ensure queue functionality
+        self.ctx.set_command_callback(self._internal_command_handler)
         self.set_command_handler(command_handler)
         self.event = None
         self.lock = None
@@ -38,15 +37,24 @@ class PeripheralDevice():
             lock.release()
             time.sleep(0.020) #sleep for 20ms
 
-    def command_handler(self, command) -> Tuple[int, dict]:
+    def _internal_command_handler(self, command) -> Tuple[int, dict]:
+        """Internal handler that manages both queue and user callback"""
+        # Always put command in queue for get_command() compatibility
         self.command_queue.put(command)
+
+        # If user has set a custom handler, call it too
+        if self.user_command_handler:
+            try:
+                return self.user_command_handler(command)
+            except Exception as e:
+                print(f"Error in user command handler: {e}")
+                return -1, None
+
         return 0, None
 
     def set_command_handler(self, handler: Callable[[dict], Tuple[int, dict]]):
-        if handler:
-            self.ctx.set_command_callback(handler)
-        else:
-            self.ctx.set_command_callback(self.command_handler)
+        """Set user command handler while maintaining queue functionality"""
+        self.user_command_handler = handler
 
     def get_command(self, timeout: int=5):
         block = timeout >= 0

@@ -465,7 +465,7 @@ int test_phy_decode_packet_sequence_mismatch(struct osdp *ctx)
 	osdp_rb_push_buf(&p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_NACK) {
-		printf("failed! Expected NACK for sequence mismatch, got %d\n", err);
+		printf("failed! Expected OSDP_ERR_PKT_NACK, got %d\n", err);
 		return -1;
 	}
 	printf("success!\n");

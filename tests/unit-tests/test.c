@@ -17,15 +17,23 @@
 #include <utils/workqueue.h>
 #include <utils/circbuf.h>
 
-#define MAX_TEST_WORK 5
+#define MAX_TEST_WORK 20  /* Increased for async fuzz testing */
 #define MOCK_BUF_LEN 512
 
 CIRCBUF_DEF(uint8_t, cp_to_pd_buf, MOCK_BUF_LEN);
 CIRCBUF_DEF(uint8_t, pd_to_cp_buf, MOCK_BUF_LEN);
 
+/* Runner types for independent CP and PD management */
+enum runner_type {
+	RUNNER_TYPE_CP,
+	RUNNER_TYPE_PD
+};
+
 struct test_async_data {
 	osdp_t *ctx;
 	void (*refresh)(osdp_t *ctx);
+	enum runner_type type;
+	bool is_running;
 	struct async_runner_s *runner;
 };
 
@@ -35,10 +43,14 @@ int async_runner(void *data)
 {
 	struct test_async_data *td = data;
 
+	if (!td->is_running) {
+		return WORK_DONE; /* Stop if marked as not running */
+	}
+
 	td->refresh(td->ctx);
 	usleep(10 * 1000);
 
-	return WORK_YIELD; // will be cancelled if needed.
+	return WORK_YIELD; /* Continue running */
 }
 
 void async_runner_free(void *data)
@@ -51,13 +63,16 @@ void async_runner_free(void *data)
 
 work_t *g_test_works[MAX_TEST_WORK];
 
-int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
+/* Generic async runner start function */
+static int async_runner_start_generic(osdp_t *ctx, void (*fn)(osdp_t *), enum runner_type type)
 {
 	int i, rc;
 
 	struct test_async_data *data = malloc(sizeof(struct test_async_data));
 	data->ctx = ctx;
 	data->refresh = fn;
+	data->type = type;
+	data->is_running = true;
 
 	for (i = 0; i < MAX_TEST_WORK; i++) {
 		if (g_test_works[i] == NULL)
@@ -66,7 +81,8 @@ int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
 
 	if (i == MAX_TEST_WORK) {
 		printf("async_runner_start: test works exhausted\n");
-		exit(EXIT_FAILURE);
+		free(data);
+		return -1;
 	}
 
 	g_test_works[i] = malloc(sizeof(work_t));
@@ -77,17 +93,49 @@ int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
 	rc = workqueue_add_work(&test_wq, g_test_works[i]);
 	if (rc != 0) {
 		printf("async_runner_start: test wq add work failed!\n");
-		exit(EXIT_FAILURE);
+		free(g_test_works[i]->arg);
+		free(g_test_works[i]);
+		g_test_works[i] = NULL;
+		return -1;
 	}
 
 	return i;
 }
 
+/* Start CP runner independently */
+int async_cp_runner_start(osdp_t *cp_ctx)
+{
+	printf("Starting CP async runner\n");
+	return async_runner_start_generic(cp_ctx, osdp_cp_refresh, RUNNER_TYPE_CP);
+}
+
+/* Start PD runner independently */
+int async_pd_runner_start(osdp_t *pd_ctx)
+{
+	printf("Starting PD async runner\n");
+	return async_runner_start_generic(pd_ctx, osdp_pd_refresh, RUNNER_TYPE_PD);
+}
+
+/* Legacy function for backward compatibility */
+int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *))
+{
+	enum runner_type type = (fn == osdp_cp_refresh) ? RUNNER_TYPE_CP : RUNNER_TYPE_PD;
+	return async_runner_start_generic(ctx, fn, type);
+}
+
 int async_runner_stop(int work_id)
 {
-	if (work_id < 0 || work_id > MAX_TEST_WORK || g_test_works[work_id]== NULL) {
+	if (work_id < 0 || work_id >= MAX_TEST_WORK || g_test_works[work_id] == NULL) {
 		printf("async_runner_stop: invalid work id!\n");
-		exit(EXIT_FAILURE);
+		return -1;
+	}
+
+	/* Mark as not running to allow graceful shutdown */
+	struct test_async_data *data = (struct test_async_data *)g_test_works[work_id]->arg;
+	if (data) {
+		data->is_running = false;
+		printf(SUB_1 "Stopping %s async runner\n",
+		       (data->type == RUNNER_TYPE_CP) ? "CP" : "PD");
 	}
 
 	workqueue_cancel_work(&test_wq, g_test_works[work_id]);
@@ -97,6 +145,18 @@ int async_runner_stop(int work_id)
 	g_test_works[work_id] = NULL;
 
 	return 0;
+}
+
+/* Stop CP runner specifically */
+int async_cp_runner_stop(int work_id)
+{
+	return async_runner_stop(work_id);
+}
+
+/* Stop PD runner specifically */
+int async_pd_runner_stop(int work_id)
+{
+	return async_runner_stop(work_id);
 }
 
 volatile bool g_introduce_line_noise;
@@ -167,6 +227,12 @@ int test_mock_cp_receive(void *data, uint8_t *buf, int len)
 	return i;
 }
 
+void test_mock_cp_flush(void *data)
+{
+	ARG_UNUSED(data);
+	CIRCBUF_FLUSH(pd_to_cp_buf);
+}
+
 int test_mock_pd_send(void *data, uint8_t *buf, int len)
 {
 	int i;
@@ -193,6 +259,12 @@ int test_mock_pd_receive(void *data, uint8_t *buf, int len)
 	return i;
 }
 
+void test_mock_pd_flush(void *data)
+{
+	ARG_UNUSED(data);
+	CIRCBUF_FLUSH(cp_to_pd_buf);
+}
+
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 {
 	osdp_logger_init("osdp", t->loglevel, NULL);
@@ -209,13 +281,13 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		.channel.data = NULL,
 		.channel.send = test_mock_cp_send,
 		.channel.recv = test_mock_cp_receive,
-		.channel.flush = NULL,
+		.channel.flush = test_mock_cp_flush,
 		.scbk = scbk,
 	};
 
 	*cp = osdp_cp_setup(1, &info_cp);
 	if (*cp == NULL) {
-		printf("   cp init failed!\n");
+		printf(SUB_1 "cp init failed!\n");
 		return -1;
 	}
 
@@ -240,6 +312,7 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		.channel.data = NULL,
 		.channel.send = test_mock_pd_send,
 		.channel.recv = test_mock_pd_receive,
+		.channel.flush = test_mock_pd_flush,
 		.scbk = scbk,
 	};
 
@@ -301,6 +374,8 @@ int main(int argc, char *argv[])
 	run_file_tx_tests(&t, false);
 
 	run_command_tests(&t);
+
+	run_async_fuzz_tests(&t);
 
 	rc = test_end(&t);
 

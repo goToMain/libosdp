@@ -61,4 +61,21 @@
     "editor.rulers": [
         80
     ],
+    "python.testing.pytestArgs": [
+        "tests/pytest"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "C_Cpp.intelliSenseEngine": "default",
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.autocomplete": "default",
+    "C_Cpp.configurationWarnings": "enabled",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.buildTask": true,
+    "cmake.configureOnOpen": false,
+    "debug.console.fontSize": 12,
+    "debug.console.fontFamily": "monospace",
+    "terminal.integrated.fontSize": 12,
+    "terminal.integrated.fontFamily": "monospace"
 }

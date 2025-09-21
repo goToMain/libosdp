@@ -7,6 +7,9 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 cmake_policy(SET CMP0063 NEW)
 
+# Generate compile_commands.json for IDE support
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(libosdp VERSION 3.0.8)
 
 set(PROJECT_AUTHOR       "Siddharth Chandrasekaran")

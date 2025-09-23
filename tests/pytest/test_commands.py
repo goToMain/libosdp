@@ -8,7 +8,7 @@ import time
 import pytest
 
 from osdp import *
-from conftest import make_fifo_pair, cleanup_fifo_pair, assert_command_received, wait_for_notification_event
+from conftest import make_fifo_pair, cleanup_fifo_pair, assert_command_received, wait_for_notification_event, wait_for_non_notification_event
 
 secure_pd_addr = 101
 insecure_pd_addr = 102
@@ -171,6 +171,76 @@ def test_command_mfg():
     assert_command_received(secure_pd, test_cmd)
     cp_check_command_status(Command.Manufacturer)
 
+def test_command_mfg_with_reply():
+    """Test manufacturer command that triggers automatic manufacturer reply"""
+    def evt_handler(pd, event):
+        print(f"DEBUG: Received event: {event}")
+        assert event['event'] == Event.ManufacturerReply
+        assert event['vendor_code'] == 0x00030201
+        assert event['mfg_command'] == 13
+        assert event['data'] == bytes([9,1,9,2,6,3,1,7,7,0])
+        return 0
+
+    def cmd_handler(command):
+        print(f"DEBUG: Received command: {command}")
+        assert command['command'] == Command.Manufacturer
+        assert command['vendor_code'] == 0x00030201
+        assert command['mfg_command'] == 13
+        assert command['data'] == bytes([9,1,9,2,6,3,1,7,7,0])
+        # Return positive value to trigger automatic manufacturer reply
+        # The reply data is echoed back from the command data
+        print("DEBUG: Command callback returning 1")
+        return 1, None
+
+    assert cp.is_online(secure_pd_addr)
+
+    # Backup original handlers
+    original_event_handler = getattr(cp, '_event_handler', None)
+    original_command_handler = getattr(secure_pd, 'user_command_handler', None)
+
+    try:
+        cp.set_event_handler(evt_handler)
+        secure_pd.set_command_handler(cmd_handler)
+
+        test_cmd = {
+            'command': Command.Manufacturer,
+            'vendor_code': 0x00030201,
+            'mfg_command': 13,
+            'data': bytes([9,1,9,2,6,3,1,7,7,0])
+        }
+
+        assert cp.submit_command(secure_pd_addr, test_cmd)
+
+        # The command should be received by the PD (with mfg_command field)
+        expected_cmd_received = {
+            'command': Command.Manufacturer,
+            'vendor_code': 0x00030201,
+            'mfg_command': 13,
+            'data': bytes([9,1,9,2,6,3,1,7,7,0])
+        }
+        assert_command_received(secure_pd, expected_cmd_received)
+
+        # The manufacturer reply event should be received by the CP
+        expected_event = {
+            'event': Event.ManufacturerReply,
+            'vendor_code': 0x00030201,
+            'mfg_command': 13,
+            'data': bytes([9,1,9,2,6,3,1,7,7,0])
+        }
+        wait_for_non_notification_event(cp, secure_pd_addr, expected_event)
+
+    finally:
+        # Restore original handlers
+        if original_event_handler is not None:
+            cp.set_event_handler(original_event_handler)
+        else:
+            cp.set_event_handler(None)
+
+        if original_command_handler is not None:
+            secure_pd.set_command_handler(original_command_handler)
+        else:
+            secure_pd.set_command_handler(None)
+
 def test_command_keyset():
     test_cmd = {
         'command': Command.Keyset,
@@ -209,12 +279,30 @@ def test_command_status():
         return 0, cmd
 
     assert cp.is_online(secure_pd_addr)
-    cp.set_event_handler(evt_handler)
-    secure_pd.set_command_handler(cmd_handler)
 
-    test_cmd = {
-        'command': Command.Status,
-        'type': StatusReportType.Input,
-        'report': bytes([]),
-    }
-    cp.submit_command(secure_pd_addr, test_cmd)
+    # Backup original handlers
+    original_event_handler = getattr(cp, '_event_handler', None)
+    original_command_handler = getattr(secure_pd, 'user_command_handler', None)
+
+    try:
+        cp.set_event_handler(evt_handler)
+        secure_pd.set_command_handler(cmd_handler)
+
+        test_cmd = {
+            'command': Command.Status,
+            'type': StatusReportType.Input,
+            'report': bytes([]),
+        }
+        cp.submit_command(secure_pd_addr, test_cmd)
+
+    finally:
+        # Restore original handlers
+        if original_event_handler is not None:
+            cp.set_event_handler(original_event_handler)
+        else:
+            cp.set_event_handler(None)
+
+        if original_command_handler is not None:
+            secure_pd.set_command_handler(original_command_handler)
+        else:
+            secure_pd.set_command_handler(None)

@@ -42,7 +42,7 @@
 #define REPLY_KEYPAD_DATA_LEN          2   /* variable length command */
 #define REPLY_RAW_DATA_LEN             4   /* variable length command */
 #define REPLY_BUSY_DATA_LEN            0
-#define REPLY_MFGREP_LEN               4   /* variable length command */
+#define REPLY_MFGREP_LEN               3   /* variable length command */
 
 enum osdp_cp_error_e {
 	OSDP_CP_ERR_NONE = 0,

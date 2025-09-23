@@ -44,7 +44,7 @@
 #define REPLY_RMAC_I_LEN               17
 #define REPLY_KEYPAD_LEN               2
 #define REPLY_RAW_LEN                  4
-#define REPLY_MFGREP_LEN               3 /* variable length command */
+#define REPLY_MFGREP_LEN               4 /* variable length command */
 
 enum osdp_pd_error_e {
 	OSDP_PD_ERR_NONE = 0,

@@ -561,7 +561,14 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < cmd.mfg.length; i++) {
 			cmd.mfg.data[i] = buf[pos++];
 		}
-		if (!do_command_callback(pd, &cmd)) {
+
+		ret = 0;
+		if (pd->command_callback) {
+			ret = pd->command_callback(pd->command_callback_arg, &cmd);
+		}
+		if (ret < 0) { /* Callback failed */
+			pd->reply_id = REPLY_NAK;
+			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}

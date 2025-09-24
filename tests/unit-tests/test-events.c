@@ -309,7 +309,6 @@ static bool test_mfgrep_event()
 		.type = OSDP_EVENT_MFGREP,
 		.mfgrep = {
 			.vendor_code = 0x00030201,
-			.command = 42,
 			.length = 8,
 		},
 	};
@@ -330,7 +329,6 @@ static bool test_mfgrep_event()
 	if (g_test_ctx.last_event_data) {
 		struct osdp_event *ev = (struct osdp_event *)g_test_ctx.last_event_data;
 		if (ev->mfgrep.vendor_code != event.mfgrep.vendor_code ||
-		    ev->mfgrep.command != event.mfgrep.command ||
 		    ev->mfgrep.length != event.mfgrep.length ||
 		    memcmp(ev->mfgrep.data, event.mfgrep.data, 8) != 0) {
 			printf(SUB_2 "MFGREP event data mismatch\n");

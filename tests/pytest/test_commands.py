@@ -163,7 +163,7 @@ def test_command_mfg():
     test_cmd = {
         'command': Command.Manufacturer,
         'vendor_code': 0x00030201,
-        'data': bytes([13,9,1,9,2,6,3,1,7,7,0])
+        'data': bytes([9,1,9,2,6,3,1,7,7,0])
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)
@@ -176,7 +176,6 @@ def test_command_mfg_with_reply():
         print(f"DEBUG: Received event: {event}")
         assert event['event'] == Event.ManufacturerReply
         assert event['vendor_code'] == 0x00030201
-        assert event['mfg_command'] == 13
         assert event['data'] == bytes([9,1,9,2,6,3,1,7,7,0])
         return 0
 
@@ -184,7 +183,6 @@ def test_command_mfg_with_reply():
         print(f"DEBUG: Received command: {command}")
         assert command['command'] == Command.Manufacturer
         assert command['vendor_code'] == 0x00030201
-        assert command['mfg_command'] == 13
         assert command['data'] == bytes([9,1,9,2,6,3,1,7,7,0])
         # Return positive value to trigger automatic manufacturer reply
         # The reply data is echoed back from the command data
@@ -204,17 +202,15 @@ def test_command_mfg_with_reply():
         test_cmd = {
             'command': Command.Manufacturer,
             'vendor_code': 0x00030201,
-            'mfg_command': 13,
             'data': bytes([9,1,9,2,6,3,1,7,7,0])
         }
 
         assert cp.submit_command(secure_pd_addr, test_cmd)
 
-        # The command should be received by the PD (with mfg_command field)
+        # The command should be received by the PD (without mfg_command field)
         expected_cmd_received = {
             'command': Command.Manufacturer,
             'vendor_code': 0x00030201,
-            'mfg_command': 13,
             'data': bytes([9,1,9,2,6,3,1,7,7,0])
         }
         assert_command_received(secure_pd, expected_cmd_received)
@@ -223,7 +219,6 @@ def test_command_mfg_with_reply():
         expected_event = {
             'event': Event.ManufacturerReply,
             'vendor_code': 0x00030201,
-            'mfg_command': 13,
             'data': bytes([9,1,9,2,6,3,1,7,7,0])
         }
         wait_for_non_notification_event(cp, secure_pd_addr, expected_event)

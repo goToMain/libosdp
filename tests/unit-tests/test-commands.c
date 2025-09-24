@@ -29,7 +29,6 @@ struct test_command_ctx {
 	/* Manufacturer command specific */
 	bool mfg_reply_expected;
 	uint32_t mfg_vendor_code;
-	uint8_t mfg_command;
 	uint8_t mfg_data[64];
 	int mfg_data_len;
 };
@@ -63,7 +62,6 @@ int test_commands_command_callback(void *arg, struct osdp_cmd *cmd)
 	if (cmd->id == OSDP_CMD_MFG) {
 		if (ctx->mfg_reply_expected &&
 		    cmd->mfg.vendor_code == ctx->mfg_vendor_code &&
-		    cmd->mfg.command == ctx->mfg_command &&
 		    cmd->mfg.length == ctx->mfg_data_len &&
 		    memcmp(cmd->mfg.data, ctx->mfg_data, ctx->mfg_data_len) == 0) {
 			/* Return positive value to trigger MFGREP */
@@ -296,7 +294,6 @@ static bool test_mfg_command_simple()
 		.id = OSDP_CMD_MFG,
 		.mfg = {
 			.vendor_code = 0x00030201,
-			.command = 13,
 			.length = 10,
 		},
 	};
@@ -319,7 +316,6 @@ static bool test_mfg_command_with_reply()
 	/* Set up expected manufacturer reply parameters */
 	g_test_ctx.mfg_reply_expected = true;
 	g_test_ctx.mfg_vendor_code = 0x00030201;
-	g_test_ctx.mfg_command = 13;
 	g_test_ctx.mfg_data_len = 10;
 	uint8_t test_data[] = {9,1,9,2,6,3,1,7,7,0};
 	memcpy(g_test_ctx.mfg_data, test_data, sizeof(test_data));
@@ -328,7 +324,6 @@ static bool test_mfg_command_with_reply()
 		.id = OSDP_CMD_MFG,
 		.mfg = {
 			.vendor_code = g_test_ctx.mfg_vendor_code,
-			.command = g_test_ctx.mfg_command,
 			.length = g_test_ctx.mfg_data_len,
 		},
 	};
@@ -355,7 +350,6 @@ static bool test_mfg_command_with_reply()
 	if (g_test_ctx.last_event_data) {
 		struct osdp_event *ev = (struct osdp_event *)g_test_ctx.last_event_data;
 		if (ev->mfgrep.vendor_code != g_test_ctx.mfg_vendor_code ||
-		    ev->mfgrep.command != g_test_ctx.mfg_command ||
 		    ev->mfgrep.length != g_test_ctx.mfg_data_len ||
 		    memcmp(ev->mfgrep.data, g_test_ctx.mfg_data, g_test_ctx.mfg_data_len) != 0) {
 			printf(SUB_2 "MFGREP event data mismatch\n");

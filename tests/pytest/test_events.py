@@ -69,8 +69,7 @@ def test_event_mfg_reply():
     event = {
         'event': Event.ManufacturerReply,
         'vendor_code': 0x153,
-        'mfg_command': 0x10,
-        'data': bytes([9,1,9,2,6,3,1,7,7,0]),
+        'data': bytes([0x10,9,1,9,2,6,3,1,7,7,0]),
     }
     secure_pd.submit_event(event)
     check_event(event)

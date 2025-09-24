@@ -670,17 +670,13 @@ struct osdp_cmd_mfg {
 	 */
 	uint32_t vendor_code;
 	/**
-	 * 1-byte manufacturer defined osdp command
-	 */
-	uint8_t command;
-	/**
-	 * length Length of command data (optional)
-	 */
-	uint8_t length;
-	/**
-	 * Command data (optional)
+	 * Command data
 	 */
 	uint8_t data[OSDP_CMD_MFG_MAX_DATALEN];
+	/**
+	 * Length of the data (internal use)
+	 */
+	uint8_t length;
 };
 
 /**
@@ -837,10 +833,6 @@ struct osdp_event_mfgrep {
 	 * 3-bytes IEEE assigned OUI of manufacturer
 	 */
 	uint32_t vendor_code;
-	/**
-	 * 1-byte reply code
-	 */
-	uint8_t command;
 	/**
 	 * Length of manufacturer data in bytes (optional)
 	 */

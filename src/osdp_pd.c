@@ -30,7 +30,7 @@
 #define CMD_ABORT_DATA_LEN             0
 #define CMD_ACURXSIZE_DATA_LEN         2
 #define CMD_KEEPACTIVE_DATA_LEN        2
-#define CMD_MFG_DATA_LEN               4 /* variable length command */
+#define CMD_MFG_DATA_LEN               3 /* variable length command */
 
 #define REPLY_ACK_LEN                  1
 #define REPLY_PDID_LEN                 13
@@ -279,7 +279,6 @@ static void pd_stage_event_mfgrep(struct osdp_pd *pd, struct osdp_cmd_mfg *cmd)
 	ev.type = OSDP_EVENT_MFGREP;
 	ev.flags = 0;
 
-	ev.mfgrep.command = cmd->command;
 	ev.mfgrep.length = cmd->length;
 	ev.mfgrep.vendor_code = cmd->vendor_code;
 	memcpy(ev.mfgrep.data, cmd->data, cmd->length);
@@ -552,7 +551,6 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.mfg.vendor_code = buf[pos++]; /* vendor_code */
 		cmd.mfg.vendor_code |= buf[pos++] << 8;
 		cmd.mfg.vendor_code |= buf[pos++] << 16;
-		cmd.mfg.command = buf[pos++];
 		cmd.mfg.length = len - CMD_MFG_DATA_LEN;
 		if (cmd.mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
 			LOG_ERR("cmd length error");
@@ -874,7 +872,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = BYTE_0(event->mfgrep.vendor_code);
 		buf[len++] = BYTE_1(event->mfgrep.vendor_code);
 		buf[len++] = BYTE_2(event->mfgrep.vendor_code);
-		buf[len++] = event->mfgrep.command;
 		memcpy(buf + len, event->mfgrep.data, event->mfgrep.length);
 		len += event->mfgrep.length;
 		ret = OSDP_PD_ERR_NONE;

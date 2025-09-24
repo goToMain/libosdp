@@ -164,6 +164,7 @@ TEST_SOURCES+=" tests/unit-tests/test-events.c"
 TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c"
 TEST_SOURCES+=" tests/unit-tests/test-file.c"
 TEST_SOURCES+=" tests/unit-tests/test-async-fuzz.c"
+TEST_SOURCES+=" tests/unit-tests/test-hotplug.c"
 TEST_SOURCES+=" ${LIBOSDP_SOURCES} ${UTILS_SOURCES}"
 
 if [[ ! -z "${LIB_ONLY}" ]]; then

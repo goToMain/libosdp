@@ -279,6 +279,8 @@ union osdp_ephemeral_data {
 #define CP_REQ_RESTART_SC              0x00000001
 #define CP_REQ_EVENT_SEND              0x00000002
 #define CP_REQ_OFFLINE                 0x00000004
+#define CP_REQ_DISABLE                 0x00000008
+#define CP_REQ_ENABLE                  0x00000010
 
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,
@@ -298,6 +300,7 @@ enum osdp_cp_state_e {
 	OSDP_CP_STATE_ONLINE,
 	OSDP_CP_STATE_PROBE,
 	OSDP_CP_STATE_OFFLINE,
+	OSDP_CP_STATE_DISABLED,
 	OSDP_CP_STATE_SENTINEL
 };
 

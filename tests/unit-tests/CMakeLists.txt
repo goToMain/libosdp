@@ -23,6 +23,7 @@ list(APPEND OSDP_UNIT_TEST_SRC
 	test-file.c
 	test-commands.c
 	test-events.c
+	test-hotplug.c
 	test-async-fuzz.c
 )
 

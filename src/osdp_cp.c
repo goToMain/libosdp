@@ -946,6 +946,7 @@ static const char *state_get_name(enum osdp_cp_state_e state)
 	case OSDP_CP_STATE_SET_SCBK:  return "SC-SetSCBK";
 	case OSDP_CP_STATE_ONLINE:    return "Online";
 	case OSDP_CP_STATE_OFFLINE:   return "Offline";
+	case OSDP_CP_STATE_DISABLED:  return "Disabled";
 	default:
 		BUG();
 	}
@@ -1155,6 +1156,8 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 			return OSDP_CP_STATE_INIT;
 		}
 		return OSDP_CP_STATE_OFFLINE;
+	case OSDP_CP_STATE_DISABLED:
+		return OSDP_CP_STATE_DISABLED;
 	default: BUG();
 	}
 }
@@ -1207,6 +1210,8 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 		return OSDP_CP_STATE_OFFLINE;
 	case OSDP_CP_STATE_OFFLINE:
 		return OSDP_CP_STATE_OFFLINE;
+	case OSDP_CP_STATE_DISABLED:
+		return OSDP_CP_STATE_DISABLED;
 	default: BUG();
 	}
 }
@@ -1239,6 +1244,13 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		break;
 	case OSDP_CP_STATE_SC_CHLNG:
 		osdp_sc_setup(pd);
+		break;
+	case OSDP_CP_STATE_DISABLED:
+		sc_deactivate(pd);
+		notify_sc_status(pd);
+		notify_pd_status(pd, false);
+		osdp_phy_state_reset(pd, true);
+		LOG_INF("PD disabled; going offline until re-enabled");
 		break;
 	default: break;
 	}
@@ -1345,6 +1357,14 @@ static int state_update(struct osdp_pd *pd)
 		}
 	}
 
+	if (check_request(pd, CP_REQ_DISABLE)) {
+		next = OSDP_CP_STATE_DISABLED;
+	}
+
+	if (check_request(pd, CP_REQ_ENABLE)) {
+		next = OSDP_CP_STATE_INIT;
+	}
+
 	if (cur != next) {
 		cp_state_change(pd, next);
 	}
@@ -1385,6 +1405,11 @@ static int cp_submit_command(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 	const uint32_t all_flags = (
 		OSDP_CMD_FLAG_BROADCAST
 	);
+
+	if (pd->state == OSDP_CP_STATE_DISABLED) {
+		LOG_ERR("PD is disabled");
+		return -1;
+	}
 
 	if (pd->state != OSDP_CP_STATE_ONLINE) {
 		LOG_ERR("PD is not online");
@@ -1715,6 +1740,52 @@ int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set)
 
 	do_set ? SET_FLAG(pd, flags) : CLEAR_FLAG(pd, flags);
 	return 0;
+}
+
+int osdp_cp_disable_pd(osdp_t *ctx, int pd_idx)
+{
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
+
+	if (pd->state == OSDP_CP_STATE_DISABLED) {
+		LOG_DBG("PD is already disabled");
+		return -1;
+	}
+
+	if (test_request(pd, CP_REQ_DISABLE)) {
+		LOG_DBG("PD disable request already pending");
+		return -1;
+	}
+
+	make_request(pd, CP_REQ_DISABLE);
+	return 0;
+}
+
+int osdp_cp_enable_pd(osdp_t *ctx, int pd_idx)
+{
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
+
+	if (pd->state != OSDP_CP_STATE_DISABLED) {
+		LOG_DBG("PD is already enabled");
+		return -1;
+	}
+
+	if (test_request(pd, CP_REQ_ENABLE)) {
+		LOG_DBG("PD enable request already pending");
+		return -1;
+	}
+
+	make_request(pd, CP_REQ_ENABLE);
+	return 0;
+}
+
+bool osdp_cp_is_pd_enabled(const osdp_t *ctx, int pd_idx)
+{
+	input_check(ctx, pd_idx);
+	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
+
+	return pd->state != OSDP_CP_STATE_DISABLED;
 }
 
 #ifdef UNIT_TESTING

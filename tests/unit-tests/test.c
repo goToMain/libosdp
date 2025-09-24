@@ -380,6 +380,8 @@ int main(int argc, char *argv[])
 
 	run_event_tests(&t);
 
+	run_hotplug_tests(&t);
+
 	run_async_fuzz_tests(&t);
 
 	rc = test_end(&t);

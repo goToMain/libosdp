@@ -1201,6 +1201,47 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
 OSDP_EXPORT
 int osdp_cp_modify_flag(osdp_t *ctx, int pd, uint32_t flags, bool do_set);
 
+/**
+ * @brief Disable a PD managed by the CP. Disabled PDs are brought to a safe
+ * state and will not process commands or generate events.
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
+ * osdp_cp_setup()
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+OSDP_EXPORT
+int osdp_cp_disable_pd(osdp_t *ctx, int pd);
+
+/**
+ * @brief Enable a previously disabled PD. The PD will start up as it would
+ * during initial setup.
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
+ * osdp_cp_setup()
+ *
+ * @retval 0 on success
+ * @retval -1 on failure
+ */
+OSDP_EXPORT
+int osdp_cp_enable_pd(osdp_t *ctx, int pd);
+
+/**
+ * @brief Check if a PD is currently enabled.
+ *
+ * @param ctx OSDP context
+ * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
+ * osdp_cp_setup()
+ *
+ * @retval true if PD is enabled
+ * @retval false if PD is disabled or on error
+ */
+OSDP_EXPORT
+bool osdp_cp_is_pd_enabled(const osdp_t *ctx, int pd);
+
 /* ------------------------------- */
 /*          Common Methods         */
 /* ------------------------------- */

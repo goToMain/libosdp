@@ -453,7 +453,7 @@ struct osdp_status_report {
 
 #define OSDP_CMD_TEXT_MAX_LEN          32
 #define OSDP_CMD_KEYSET_KEY_MAX_LEN    32
-#define OSDP_CMD_MFG_MAX_DATALEN       253 /* OSDP_PACKET_BUF_SIZE (256) - vendor code length (3) */
+#define OSDP_CMD_MFG_MAX_DATALEN       64
 
 /**
  * @brief Command sent from CP to Control digital output of PD.

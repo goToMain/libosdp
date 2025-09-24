@@ -157,6 +157,27 @@ class ControlPanel():
         self.lock.release()
         return ret
 
+    def disable_pd(self, address: int) -> bool:
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.disable_pd(pd)
+        self.lock.release()
+        return ret
+
+    def enable_pd(self, address: int) -> bool:
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.enable_pd(pd)
+        self.lock.release()
+        return ret
+
+    def is_pd_enabled(self, address: int) -> bool:
+        pd = self.pd_addr.index(address)
+        self.lock.acquire()
+        ret = self.ctx.is_pd_enabled(pd)
+        self.lock.release()
+        return ret
+
     def register_file_ops(self, address, fops):
         pd = self.pd_addr.index(address)
         self.lock.acquire()

@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2020-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2020-2025 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -22,6 +22,7 @@ list(APPEND OSDP_UNIT_TEST_SRC
 	test-cp-fsm.c
 	test-file.c
 	test-commands.c
+	test-events.c
 	test-async-fuzz.c
 )
 

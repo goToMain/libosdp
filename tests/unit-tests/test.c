@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2025 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -294,6 +294,9 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 	struct osdp_pd_cap cap[] = {
 		{ OSDP_PD_CAP_READER_AUDIBLE_OUTPUT, 1, 1 },
 		{ OSDP_PD_CAP_READER_LED_CONTROL, 1, 1 },
+		{ OSDP_PD_CAP_OUTPUT_CONTROL, 4, 1 },
+		{ OSDP_PD_CAP_READER_TEXT_OUTPUT, 1, 1 },
+		{ OSDP_PD_CAP_CONTACT_STATUS_MONITORING, 8, 1 },
 		{ -1, -1, -1 }
 	};
 
@@ -374,6 +377,8 @@ int main(int argc, char *argv[])
 	run_file_tx_tests(&t, false);
 
 	run_command_tests(&t);
+
+	run_event_tests(&t);
 
 	run_async_fuzz_tests(&t);
 

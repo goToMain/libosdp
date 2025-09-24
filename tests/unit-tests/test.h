@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+ * Copyright (c) 2019-2025 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,7 @@ void run_cp_phy_fsm_tests(struct test *t);
 void run_cp_phy_tests(struct test *t);
 void run_file_tx_tests(struct test *t, bool line_noise);
 void run_command_tests(struct test *t);
+void run_event_tests(struct test *t);
 void run_async_fuzz_tests(struct test *t);
 
 #endif

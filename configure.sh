@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-#  Copyright (c) 2021-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2021-2025 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #
@@ -144,6 +144,8 @@ LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_file.
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/slab.c utils/src/utils.c"
 LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c utils/src/crc16.c"
 
+UTILS_SOURCES+=" utils/src/workqueue.c utils/src/circbuf.c utils/src/event.c utils/src/fdutils.c"
+
 if [[ ! -z "${PACKET_TRACE}" ]] || [[ ! -z "${DATA_TRACE}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_diag.c utils/src/pcap_gen.c"
 fi
@@ -155,12 +157,14 @@ else
 	TARGETS="pd_app"
 fi
 
-TEST_SOURCES="tests/unit-tests/test.c tests/unit-tests/test-cp-phy.c"
+TEST_SOURCES="tests/unit-tests/test.c"
+TEST_SOURCES+=" tests/unit-tests/test-cp-phy.c"
 TEST_SOURCES+=" tests/unit-tests/test-commands.c"
-TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c tests/unit-tests/test-file.c"
+TEST_SOURCES+=" tests/unit-tests/test-events.c"
+TEST_SOURCES+=" tests/unit-tests/test-cp-fsm.c"
+TEST_SOURCES+=" tests/unit-tests/test-file.c"
 TEST_SOURCES+=" tests/unit-tests/test-async-fuzz.c"
-TEST_SOURCES+=" ${LIBOSDP_SOURCES} utils/src/workqueue.c utils/src/circbuf.c"
-TEST_SOURCES+=" utils/src/event.c utils/src/fdutils.c"
+TEST_SOURCES+=" ${LIBOSDP_SOURCES} ${UTILS_SOURCES}"
 
 if [[ ! -z "${LIB_ONLY}" ]]; then
 	TARGETS=""
@@ -174,7 +178,7 @@ fi
 echo "Generating libosdp.pc"
 sed -e "s|@CMAKE_INSTALL_PREFIX@|${PREFIX}|" \
     -e "s|@PROJECT_NAME@|${PROJECT_NAME}|" \
-    -e "s|@PROJECT_DESCRIPTION@|Open Supervised Device Protocol (OSDP) Library|" \
+    -e 's|@PROJECT_DESCRIPTION@|Open Supervised Device Protocol (OSDP) Library|' \
     -e "s|@PROJECT_URL@|https://github.com/goToMain/libosdp|" \
     -e "s|@PROJECT_VERSION@|${PROJECT_VERSION}|" \
 	misc/libosdp.pc.in > ${BUILD_DIR}/libosdp.pc

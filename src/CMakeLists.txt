@@ -103,7 +103,7 @@ list(APPEND LIB_OSDP_UTILS_SRC
 list(APPEND LIB_OSDP_HEADERS
 	${PROJECT_SOURCE_DIR}/include/osdp.h
 	${PROJECT_SOURCE_DIR}/include/osdp.hpp
-	${PROJECT_BINARY_DIR}/include/osdp_export.h
+	${PROJECT_SOURCE_DIR}/include/osdp_export.h
 )
 
 # These variables are used in other parts of this projects for rebuilding
@@ -242,7 +242,7 @@ install(
 
 endif() # OPT_BUILD_SHARED
 
-install(FILES ${PROJECT_BINARY_DIR}/include/osdp_export.h
+install(FILES ${PROJECT_SOURCE_DIR}/include/osdp_export.h
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 	COMPONENT headers
 )

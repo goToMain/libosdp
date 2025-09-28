@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2023-2024 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
+#  Copyright (c) 2023-2025 Siddharth Chandrasekaran <sidcha.dev@gmail.com>
 #
 #  SPDX-License-Identifier: Apache-2.0
 #

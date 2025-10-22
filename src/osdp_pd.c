@@ -673,6 +673,15 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(pd->sc.cp_cryptogram, buf + pos, CMD_SCRYPT_DATA_LEN);
+		if (osdp_verify_cp_cryptogram(pd)) {
+			/**
+			 * The PD can respond with NAK(5) when it fails to
+			 * verify the CP_crypt.
+			 */
+			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			LOG_WRN("failed to verify CP_crypt");
+			break;
+		}
 		pd->reply_id = REPLY_RMAC_I;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -910,18 +919,13 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		len += 16;
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_14;  /* type */
-		if (osdp_verify_cp_cryptogram(pd) == 0) {
-			smb[2] = 1;  /* CP auth succeeded */
-			sc_activate(pd);
-			pd->sc_tstamp = osdp_millis_now();
-			if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
-				LOG_WRN("SC Active with SCBK-D");
-			} else {
-				LOG_INF("SC Active");
-			}
+		smb[2] = 1;       /* CP auth succeeded */
+		sc_activate(pd);
+		pd->sc_tstamp = osdp_millis_now();
+		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+			LOG_WRN("SC Active with SCBK-D");
 		} else {
-			smb[2] = 0;  /* CP auth failed */
-			LOG_WRN("failed to verify CP_crypt");
+			LOG_INF("SC Active");
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;

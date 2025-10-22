@@ -442,6 +442,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		ret = OSDP_PD_ERR_REPLY;
+		bool is_cmd_led_error = false;
 		for (i = 0; i < len / CMD_LED_DATA_LEN; i++) {
 			cmd.id = OSDP_CMD_LED;
 			cmd.led.reader = buf[pos++];
@@ -463,18 +464,28 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			if (!pd_cmd_cap_ok(pd, &cmd)) {
 				break;
 			}
+			// The ON Time OFF Time values cannot both be set to zero.
+			if (((0x02 == cmd.led.temporary.control_code) && (0 == cmd.led.temporary.on_count) && (0 == cmd.led.temporary.off_count)) ||
+				((0x01 == cmd.led.permanent.control_code) && (0 == cmd.led.permanent.on_count) && (0 == cmd.led.permanent.off_count))) {
+				is_cmd_led_error = true;
+				break;
+			}
 			if (!do_command_callback(pd, &cmd)) {
 				break;
 			}
 		}
-		pd->reply_id = REPLY_ACK;
-		ret = OSDP_PD_ERR_NONE;
+		// no duration error detected on led command
+		if (!is_cmd_led_error) {
+			pd->reply_id = REPLY_ACK;
+			ret = OSDP_PD_ERR_NONE;
+		}
 		break;
 	case CMD_BUZ:
 		if ((len % CMD_BUZ_DATA_LEN) != 0) {
 			break;
 		}
 		ret = OSDP_PD_ERR_REPLY;
+		bool is_cmd_buz_error = false;
 		for (i = 0; i < len / CMD_BUZ_DATA_LEN; i++) {
 			cmd.id = OSDP_CMD_BUZZER;
 			cmd.buzzer.reader = buf[pos++];
@@ -485,12 +496,20 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			if (!pd_cmd_cap_ok(pd, &cmd)) {
 				break;
 			}
+			// The ON duration of the sound shall be nonzero unless the tone code is 0x01 (off.)
+			if ((0 == cmd.buzzer.on_count) && (1 != cmd.buzzer.control_code)) {
+				is_cmd_buz_error = true;
+				break;
+			}
 			if (!do_command_callback(pd, &cmd)) {
 				break;
 			}
 		}
-		pd->reply_id = REPLY_ACK;
-		ret = OSDP_PD_ERR_NONE;
+		// no duration error detected on buzzer command
+		if (!is_cmd_buz_error) {
+			pd->reply_id = REPLY_ACK;
+			ret = OSDP_PD_ERR_NONE;
+		}
 		break;
 	case CMD_TEXT:
 		if (len < CMD_TEXT_DATA_LEN) {

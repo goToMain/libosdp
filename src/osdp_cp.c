@@ -53,6 +53,7 @@ enum osdp_cp_error_e {
 	OSDP_CP_ERR_INPROG = -5,
 	OSDP_CP_ERR_UNKNOWN = -6,
 	OSDP_CP_ERR_SEQ_NUM = -7,
+	OSDP_CP_ERR_APP = -8, /* Application layer error */
 };
 
 struct cp_cmd_node {
@@ -657,7 +658,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		osdp_compute_session_keys(pd);
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
 			LOG_ERR("Failed to verify PD cryptogram");
-			return OSDP_CP_ERR_GENERIC;
+			return OSDP_CP_ERR_APP;
 		}
 		ret = OSDP_CP_ERR_NONE;
 		break;
@@ -895,19 +896,20 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
-		if (rc == OSDP_CP_ERR_NONE) {
+		if (rc == OSDP_CP_ERR_NONE || rc == OSDP_CP_ERR_APP) {
 			pd->tstamp = osdp_millis_now();
 			osdp_phy_progress_sequence(pd);
-			cp_phy_state_done(pd);
-			return OSDP_CP_ERR_NONE;
 		}
-		if (rc == OSDP_CP_ERR_SEQ_NUM ||
+		if (rc == OSDP_CP_ERR_NONE ||
+		    rc == OSDP_CP_ERR_SEQ_NUM ||
 		    (rc == OSDP_CP_ERR_UNKNOWN && pd->cmd_id == CMD_POLL &&
 		     ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED))) {
 			cp_phy_state_done(pd);
 			return OSDP_CP_ERR_NONE;
 		}
-		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN) {
+		if (rc == OSDP_CP_ERR_GENERIC ||
+		    rc == OSDP_CP_ERR_UNKNOWN ||
+		    rc == OSDP_CP_ERR_APP) {
 			goto error;
 		}
 		if (rc == OSDP_CP_ERR_RETRY_CMD) {

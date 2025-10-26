@@ -195,11 +195,44 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 	return reply_code;
 }
 
+static bool validate_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
+{
+	bool result = true;
+
+	switch (cmd->id) {
+	case OSDP_CMD_LED:
+		/* The ON Time OFF Time values cannot both be set to zero */
+		if (cmd->led.temporary.control_code == 0x02 && /* SET */
+		    cmd->led.temporary.on_count == 0 &&
+		    cmd->led.temporary.off_count == 0) {
+			result = false;
+		}
+		if (cmd->led.permanent.control_code == 0x01 &&  /* SET */
+		    cmd->led.permanent.on_count == 0 &&
+		    cmd->led.permanent.off_count == 0) {
+			result = false;
+		}
+		break;
+	case OSDP_CMD_OUTPUT:
+		/* ON duration must nonzero unless the control_code is 0x01 */
+		if (cmd->buzzer.on_count == 0 &&
+		    cmd->buzzer.control_code != 1) {
+			result = false;
+		}
+		break;
+	}
+
+	if (!result) {
+		LOG_ERR("Command validation failed!");
+	}
+	return result;
+}
+
 static bool do_command_callback(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
 	int ret = -1;
 
-	if (pd->command_callback) {
+	if (validate_command(pd, cmd) && pd->command_callback) {
 		ret = pd->command_callback(pd->command_callback_arg, cmd);
 	}
 	if (ret != 0) {

@@ -213,7 +213,7 @@ static bool validate_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 			result = false;
 		}
 		break;
-	case OSDP_CMD_OUTPUT:
+	case OSDP_CMD_BUZZER:
 		/* ON duration must nonzero unless the control_code is 0x01 */
 		if (cmd->buzzer.on_count == 0 &&
 		    cmd->buzzer.control_code != 1) {

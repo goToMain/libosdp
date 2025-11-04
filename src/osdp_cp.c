@@ -1291,10 +1291,16 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	case CMD_RSTAT:  app_cmd = OSDP_CMD_STATUS; break;
 	case CMD_KEYSET: app_cmd = OSDP_CMD_KEYSET; break;
 	case CMD_MFG:
-		if (pd->reply_id == REPLY_ACK) {
-			app_cmd = OSDP_CMD_MFG;
-			break;
+		if (pd->reply_id == REPLY_MFGREP) {
+			/**
+			* if we received a manufacturer-specific reply, there is
+			* a dedicated event (OSDP_EVENT_MFGREP) for it. So we
+			* can skip sending a notification event.
+			*/
+			return;
 		}
+		app_cmd = OSDP_CMD_MFG;
+		break;
 	default:
 		return;
 	}

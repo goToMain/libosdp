@@ -220,6 +220,8 @@ static bool validate_command(struct osdp_pd *pd, struct osdp_cmd *cmd)
 			result = false;
 		}
 		break;
+	default:
+		break;
 	}
 
 	if (!result) {

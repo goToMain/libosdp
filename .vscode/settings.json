@@ -3,13 +3,16 @@
         "python/vendor/**": true
     },
     "C_Cpp.default.includePath": [
-        "${workspaceFolder}/**",
-        "${workspaceFolder}/include/",
-        "${workspaceFolder}/utils/include/"
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/utils/include",
+        "${workspaceFolder}/utils/src",
+        "${workspaceFolder}/tests/unit-tests",
+        "${workspaceFolder}/build/include"
     ],
     "files.associations": {
         "**/*.h": "c",
-        "*.in": "c",
+        "*.in": "c"
     },
     "files.watcherExclude": {
         "python/vendor/**": true
@@ -66,6 +69,7 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
     "C_Cpp.intelliSenseEngine": "default",
     "C_Cpp.errorSquiggles": "enabled",
     "C_Cpp.autocomplete": "default",

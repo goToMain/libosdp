@@ -3,17 +3,21 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
                 "${workspaceFolder}/utils/include",
+                "${workspaceFolder}/utils/src",
+                "${workspaceFolder}/tests/unit-tests",
                 "${workspaceFolder}/build/include",
-                "/usr/include/python3.12"
+                "/usr/include/python3.13"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

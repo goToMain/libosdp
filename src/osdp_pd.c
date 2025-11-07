@@ -748,6 +748,8 @@ static inline void assert_buf_len(int need, int have)
 {
 	__ASSERT(need < have, "OOM at build command: need:%d have:%d",
 		 need, have);
+	(void)need;
+	(void)have;
 }
 
 /**

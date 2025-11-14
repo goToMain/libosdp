@@ -219,8 +219,8 @@ int osdp_trs_reply_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	reply = (struct osdp_trs_reply *)pd->ephemeral_data;
 
-	buf[len++] = reply->mode;
-	buf[len++] = reply->preply;
+	buf[len++] = BYTE_1(reply->mode_code);
+	buf[len++] = BYTE_0(reply->mode_code);
 
 	switch (reply->mode_code)
 	{

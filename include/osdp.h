@@ -789,8 +789,6 @@ struct osdp_trs_pin_entry_complete {
 };
 
 struct osdp_trs_reply {
-	uint8_t mode;
-	uint8_t preply;
 	uint16_t mode_code;
 	uint32_t data_len;
 	union {

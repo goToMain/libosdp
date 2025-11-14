@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "osdp.h"
 #include <stdlib.h>
 
 #include <utils/disjoint_set.h>
@@ -814,6 +815,7 @@ static int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	case OSDP_CMD_TEXT:   return CMD_TEXT;
 	case OSDP_CMD_COMSET: return CMD_COMSET;
 	case OSDP_CMD_MFG:    return CMD_MFG;
+	case OSDP_CMD_XWR:    return CMD_XWR;
 	case OSDP_CMD_STATUS:
 		switch (cmd->status.type) {
 		case OSDP_STATUS_REPORT_INPUT:  return CMD_ISTAT;

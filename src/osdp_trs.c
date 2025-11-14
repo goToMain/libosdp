@@ -13,8 +13,6 @@
 
 #include "osdp_trs.h"
 
-LOGGER_DECLARE(osdp, "TRS");
-
 #define TO_TRS(pd) (pd)->trs
 
 enum osdp_trs_state_e {
@@ -25,16 +23,16 @@ enum osdp_trs_state_e {
 	OSDP_TRS_STATE_TEARDOWN,
 };
 
-struct osdp_trs {
-	enum osdp_trs_state_e state;
-	uint8_t mode;
-	struct osdp_trs_apdu trs_apdu;
-};
-
 struct osdp_trs_apdu {
 	int reader;
 	int apdu_len;
 	uint8_t *apdu;
+};
+
+struct osdp_trs {
+	enum osdp_trs_state_e state;
+	uint8_t mode;
+	struct osdp_trs_apdu trs_apdu;
 };
 
 #define MODE_CODE(mode, pcmnd) (uint16_t)(((mode) & 0xff) << 8u | ((pcmnd) & 0xff))
@@ -62,10 +60,10 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	int len = 0, apdu_length, needed_space;
 	struct osdp_trs *trs = TO_TRS(pd);
-	struct osdp_trs_cmd *cmd = (struct osdp_trs_cmd *)pd->ephemeral_data;
+	struct osdp_cmd *cmd = (struct osdp_cmd *)pd->ephemeral_data;
 
-	uint8_t mode = BYTE_1(cmd->mode_code);
-	uint8_t code = BYTE_0(cmd->mode_code);
+	uint8_t mode = BYTE_1(cmd->trs_cmd.mode_code);
+	uint8_t code = BYTE_0(cmd->trs_cmd.mode_code);
 
 	/* mode <=> code validation */
 	if (code == 0 || (mode != 0 && mode != 1) ||
@@ -76,60 +74,60 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	buf[len++] = mode;
 	buf[len++] = code;
 
-	if (cmd->mode_code == CMD_MODE_GET) {
+	if (cmd->trs_cmd.mode_code == CMD_MODE_GET) {
 		goto out;
 	}
 
-	if (cmd->mode_code == CMD_MODE_SET) {
-		buf[len++] = cmd->mode_set.mode;
-		buf[len++] = cmd->mode_set.config;
+	if (cmd->trs_cmd.mode_code == CMD_MODE_SET) {
+		buf[len++] = cmd->trs_cmd.mode_set.mode;
+		buf[len++] = cmd->trs_cmd.mode_set.config;
 		goto out;
 	}
 
 	buf[len++] = 0;  /* reader -- always 0 */
 
-	switch(cmd->mode_code) {
+	switch(cmd->trs_cmd.mode_code) {
 	case CMD_SEND_APDU:
-		buf[len++] = cmd->send_apdu.apdu_length;
-		apdu_length = cmd->send_apdu.apdu_length;
-		if (apdu_length > sizeof(cmd->send_apdu.apdu) ||
+		buf[len++] = cmd->trs_cmd.send_apdu.apdu_length;
+		apdu_length = cmd->trs_cmd.send_apdu.apdu_length;
+		if (apdu_length > sizeof(cmd->trs_cmd.send_apdu.apdu) ||
 		    apdu_length > (max_len - len)) {
 			LOG_ERR("APDU length 2BIG or Invalid! need/have: %d/%d",
 				(max_len - len), apdu_length);
 			return -1;
 		}
-		memcpy(buf, cmd->send_apdu.apdu, apdu_length);
+		memcpy(buf, cmd->trs_cmd.send_apdu.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	case CMD_ENTER_PIN:
-		buf[len++] = cmd->pin_entry.timeout;
-		buf[len++] = cmd->pin_entry.timeout2;
-		buf[len++] = cmd->pin_entry.format_string;
-		buf[len++] = cmd->pin_entry.pin_block_string;
-		buf[len++] = cmd->pin_entry.ping_length_format;
-		buf[len++] = cmd->pin_entry.pin_max_extra_digit_msb;
-		buf[len++] = cmd->pin_entry.pin_max_extra_digit_lsb;
-		buf[len++] = cmd->pin_entry.pin_entry_valid_condition;
-		buf[len++] = cmd->pin_entry.pin_num_messages;
-		buf[len++] = cmd->pin_entry.language_id_msb;
-		buf[len++] = cmd->pin_entry.language_id_lsb;
-		buf[len++] = cmd->pin_entry.msg_index;
-		buf[len++] = cmd->pin_entry.teo_prologue[0];
-		buf[len++] = cmd->pin_entry.teo_prologue[1];
-		buf[len++] = cmd->pin_entry.teo_prologue[2];
-		buf[len++] = cmd->pin_entry.apdu_length_msb;
-		buf[len++] = cmd->pin_entry.apdu_length_lsb;
+		buf[len++] = cmd->trs_cmd.pin_entry.timeout;
+		buf[len++] = cmd->trs_cmd.pin_entry.timeout2;
+		buf[len++] = cmd->trs_cmd.pin_entry.format_string;
+		buf[len++] = cmd->trs_cmd.pin_entry.pin_block_string;
+		buf[len++] = cmd->trs_cmd.pin_entry.ping_length_format;
+		buf[len++] = cmd->trs_cmd.pin_entry.pin_max_extra_digit_msb;
+		buf[len++] = cmd->trs_cmd.pin_entry.pin_max_extra_digit_lsb;
+		buf[len++] = cmd->trs_cmd.pin_entry.pin_entry_valid_condition;
+		buf[len++] = cmd->trs_cmd.pin_entry.pin_num_messages;
+		buf[len++] = cmd->trs_cmd.pin_entry.language_id_msb;
+		buf[len++] = cmd->trs_cmd.pin_entry.language_id_lsb;
+		buf[len++] = cmd->trs_cmd.pin_entry.msg_index;
+		buf[len++] = cmd->trs_cmd.pin_entry.teo_prologue[0];
+		buf[len++] = cmd->trs_cmd.pin_entry.teo_prologue[1];
+		buf[len++] = cmd->trs_cmd.pin_entry.teo_prologue[2];
+		buf[len++] = cmd->trs_cmd.pin_entry.apdu_length_msb;
+		buf[len++] = cmd->trs_cmd.pin_entry.apdu_length_lsb;
 
-		apdu_length = cmd->pin_entry.apdu_length_msb << 8;
-		apdu_length |= cmd->pin_entry.apdu_length_lsb;
-		needed_space = max_len - len - sizeof(cmd->pin_entry.apdu);
-		if (apdu_length > sizeof(cmd->pin_entry.apdu) ||
+		apdu_length = cmd->trs_cmd.pin_entry.apdu_length_msb << 8;
+		apdu_length |= cmd->trs_cmd.pin_entry.apdu_length_lsb;
+		needed_space = max_len - len - sizeof(cmd->trs_cmd.pin_entry.apdu);
+		if (apdu_length > sizeof(cmd->trs_cmd.pin_entry.apdu) ||
 		    apdu_length > needed_space) {
 			LOG_ERR("APDU length 2BIG or Invalid! need/have: %d/%d",
 				needed_space, apdu_length);
 			return -1;
 		}
-		memcpy(buf, cmd->pin_entry.apdu, apdu_length);
+		memcpy(buf, cmd->trs_cmd.pin_entry.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	}

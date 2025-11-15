@@ -976,6 +976,7 @@ enum osdp_event_type {
 	OSDP_EVENT_MFGREP,        /**< Manufacturer specific reply event */
 	OSDP_EVENT_STATUS,        /**< Status event */
 	OSDP_EVENT_NOTIFICATION,  /**< LibOSDP notification event */
+	OSDP_EVENT_TRS,           /**< Transparent mode response event */
 	OSDP_EVENT_SENTINEL       /**< Max event value */
 };
 
@@ -992,6 +993,7 @@ struct osdp_event {
 		struct osdp_event_mfgrep mfgrep;     /**< Manufacturer specific response event struture */
 		struct osdp_status_report status;    /**< Status report event structure */
 		struct osdp_event_notification notif;/**< Notification event structure */
+		struct osdp_trs_reply trs_reply;     /**< Transparent mode reply event structure */
 	};
 };
 

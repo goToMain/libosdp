@@ -664,6 +664,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case REPLY_XRD:
 		ret = osdp_trs_reply_decode(pd, buf + pos, len);
+		make_request(pd, CP_REQ_EVENT_SEND);
 		break;
 	case REPLY_CCRYPT:
 		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {
@@ -1097,6 +1098,7 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 	case CMD_ISTAT:        return pd->reply_id == REPLY_ISTATR;
 	case CMD_OSTAT:        return pd->reply_id == REPLY_OSTATR;
 	case CMD_RSTAT:        return pd->reply_id == REPLY_RSTATR;
+	case CMD_XWR:          return pd->reply_id == REPLY_XRD;
 	default:
 		LOG_ERR("Unexpected respose: CMD: %s(%02x) REPLY: %s(%02x)",
 			osdp_cmd_name(pd->cmd_id), pd->cmd_id,

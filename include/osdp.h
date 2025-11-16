@@ -774,7 +774,6 @@ struct osdp_trs_card_info_report {
 };
 struct osdp_trs_card_present_status {
 	uint8_t reader;
-	uint8_t status;
 };
 struct osdp_trs_card_data {
 	uint8_t reader;

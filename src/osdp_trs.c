@@ -147,7 +147,7 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	reply->type = OSDP_EVENT_TRS;
 
 	// memcpy didn't work here, no idea why
-	mode_code = (buf[pos++] << 8) & 0xFF;
+	mode_code = ((uint16_t)buf[pos++] & 0xFF) << 8;
 	mode_code |= buf[pos++] & 0xFF;
 	
 	reply->trs_reply.mode_code = mode_code;
@@ -190,7 +190,6 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		case REPLY_CARD_PRSENT:
 			reply->trs_reply.card_status.reader = buf[pos++];
-			reply->trs_reply.card_status.status = buf[pos++]; // This may not exist
 			break;
 		case REPLY_CARD_DATA:
 			reply->trs_reply.card_data.reader = buf[pos++];
@@ -243,7 +242,6 @@ int osdp_trs_reply_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			break;
 		case REPLY_CARD_PRSENT:
 			buf[len++] = reply->card_status.reader;
-			buf[len++] = reply->card_status.status;
 			break;
 		case REPLY_CARD_DATA:
 			buf[len++] = reply->card_data.reader;

@@ -1083,7 +1083,8 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 		    pd->reply_id == REPLY_RSTATR ||
 		    pd->reply_id == REPLY_MFGREP ||
 		    pd->reply_id == REPLY_RAW ||
-		    pd->reply_id == REPLY_KEYPAD) {
+		    pd->reply_id == REPLY_KEYPAD ||
+		    pd->reply_id == REPLY_XRD) {
 			return true;
 		}
 		return is_ignore_unsolicited_messages(pd);

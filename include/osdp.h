@@ -778,6 +778,7 @@ struct osdp_trs_card_present_status {
 struct osdp_trs_card_data {
 	uint8_t reader;
 	uint8_t status;
+	uint8_t length;
 	uint8_t apdu[64];
 };
 struct osdp_trs_pin_entry_complete {

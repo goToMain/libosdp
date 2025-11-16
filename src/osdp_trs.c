@@ -88,7 +88,6 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	switch(cmd->trs_cmd.mode_code) {
 	case CMD_SEND_APDU:
-		buf[len++] = cmd->trs_cmd.send_apdu.apdu_length;
 		apdu_length = cmd->trs_cmd.send_apdu.apdu_length;
 		if (apdu_length > sizeof(cmd->trs_cmd.send_apdu.apdu) ||
 		    apdu_length > (max_len - len)) {
@@ -96,7 +95,7 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 				(max_len - len), apdu_length);
 			return -1;
 		}
-		memcpy(buf, cmd->trs_cmd.send_apdu.apdu, apdu_length);
+		memcpy(buf+len, cmd->trs_cmd.send_apdu.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	case CMD_ENTER_PIN:
@@ -194,7 +193,8 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		case REPLY_CARD_DATA:
 			reply->trs_reply.card_data.reader = buf[pos++];
 			reply->trs_reply.card_data.status = buf[pos++];
-			memcpy(reply->trs_reply.card_data.apdu, buf+pos, len-2);
+			reply->trs_reply.card_data.length = data_len;
+			memcpy(reply->trs_reply.card_data.apdu, buf+pos, data_len);
 			break;
 		case REPLY_PIN_ENTRY_COMPLETE:
 			reply->trs_reply.pin_entry_complete.reader = buf[pos++];
@@ -202,8 +202,8 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 			reply->trs_reply.pin_entry_complete.tries = buf[pos++];
 			break;
 		default:
-			break;
-
+			LOG_ERR("TRS_Reply_Decode: Unknown mode/code %02X for reply", mode_code);
+			return -1;
 	}
 
 	return 0;

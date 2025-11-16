@@ -141,23 +141,20 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	struct osdp_event *reply;
 	uint8_t card_protocol, csn_len, prot_data_len, pos = 0;
 	uint16_t mode_code = 0;
-	uint32_t data_len = 0;
+	uint32_t data_len = len - 2;
 
 	reply = (struct osdp_event *)pd->ephemeral_data;
 	reply->type = OSDP_EVENT_TRS;
 
-	memcpy(mode_code, buf, 2);
-	pos+=2;
-	memcpy(data_len, buf, 4);
-	pos+=4;
+	// memcpy didn't work here, no idea why
+	mode_code = (buf[pos++] << 8) & 0xFF;
+	mode_code |= buf[pos++] & 0xFF;
 	
 	reply->trs_reply.mode_code = mode_code;
-	reply->trs_reply.data_len = data_len;
 
 	switch(mode_code) {
 		case REPLY_CURRENT_MODE:
 			reply->trs_reply.mode_report.mode = buf[pos++];
-			reply->trs_reply.mode_report.mode_config = buf[pos++];
 			break;
 		case REPLY_CARD_INFO_REPORT:
 			reply->trs_reply.card_info_report.reader = buf[pos++];
@@ -230,7 +227,6 @@ int osdp_trs_reply_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	{
 		case REPLY_CURRENT_MODE:
 			buf[len++] = reply->mode_report.mode;
-			buf[len++] = reply->mode_report.mode_config;
 			break;
 		case REPLY_CARD_INFO_REPORT:
 			buf[len++] = reply->card_info_report.reader;

@@ -763,7 +763,6 @@ struct osdp_trs_cmd_reply_NAK {
 };
 struct osdp_trs_mode_setting_report {
 	uint8_t mode;
-	uint8_t mode_config;
 };
 struct osdp_trs_card_info_report {
 	uint8_t reader;
@@ -790,7 +789,6 @@ struct osdp_trs_pin_entry_complete {
 
 struct osdp_trs_reply {
 	uint16_t mode_code;
-	uint32_t data_len;
 	union {
 		struct osdp_trs_cmd_reply_NAK reply_nak;
 		struct osdp_trs_mode_setting_report mode_report;

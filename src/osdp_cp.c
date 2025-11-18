@@ -1558,7 +1558,6 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
 			memcpy(pd->sc.scbk, info->scbk, 16);
-			SET_FLAG(pd, PD_FLAG_HAS_SCBK);
 			CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);
 		} else if (is_enforce_secure(pd)) {
 			LOG_PRINT("SCBK must be passed for each PD when"

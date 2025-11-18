@@ -270,10 +270,9 @@ union osdp_ephemeral_data {
 #define PD_FLAG_CHN_SHARED     BIT(9)  /* PD's channel is shared */
 #define PD_FLAG_PKT_SKIP_MARK  BIT(10) /* OPT_OSDP_SKIP_MARK_BYTE */
 #define PD_FLAG_PKT_HAS_MARK   BIT(11) /* Packet has mark byte */
-#define PD_FLAG_HAS_SCBK       BIT(12) /* PD has a dedicated SCBK */
-#define PD_FLAG_SC_DISABLED    BIT(13) /* master_key=NULL && scbk=NULL */
-#define PD_FLAG_PKT_BROADCAST  BIT(14) /* this packet was addressed to 0x7F */
-#define PD_FLAG_CP_USE_CRC     BIT(15) /* CP uses CRC-16 instead of checksum */
+#define PD_FLAG_SC_DISABLED    BIT(12) /* master_key=NULL && scbk=NULL */
+#define PD_FLAG_PKT_BROADCAST  BIT(13) /* this packet was addressed to 0x7F */
+#define PD_FLAG_CP_USE_CRC     BIT(14) /* CP uses CRC-16 instead of checksum */
 
 /* PD Init flags */
 #define PD_FLAG_ENFORCE_SECURE  BIT(24) /* See: OSDP_FLAG_ENFORCE_SECURE */

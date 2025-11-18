@@ -219,17 +219,13 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 void osdp_sc_setup(struct osdp_pd *pd)
 {
 	uint8_t scbk[16];
-	bool preserve_scbk = is_pd_mode(pd) || ISSET_FLAG(pd, PD_FLAG_HAS_SCBK);
 
 	osdp_crypt_setup();
 
-	if (preserve_scbk) {
-		memcpy(scbk, pd->sc.scbk, 16);
-	}
+	memcpy(scbk, pd->sc.scbk, 16);
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
-	if (preserve_scbk) {
-		memcpy(pd->sc.scbk, scbk, 16);
-	}
+	memcpy(pd->sc.scbk, scbk, 16);
+
 	if (is_pd_mode(pd)) {
 		pd->sc.pd_client_uid[0] = BYTE_0(pd->id.vendor_code);
 		pd->sc.pd_client_uid[1] = BYTE_1(pd->id.vendor_code);

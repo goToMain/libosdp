@@ -107,7 +107,7 @@ if [[ ! -z "${DEBUG}" ]]; then
 fi
 
 if [[ ! -z "${ENABLE_TRS}" ]]; then
-	CCFLAGS+=" -DCONFIG_OSDP_TRS"
+	CCFLAGS+=" -DOPT_BUILD_OSDP_TRS"
 fi
 
 ## Repo meta data

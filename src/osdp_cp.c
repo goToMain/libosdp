@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "osdp.h"
 #include <stdlib.h>
 
 #include <utils/disjoint_set.h>
@@ -814,6 +815,7 @@ static int cp_translate_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	case OSDP_CMD_TEXT:   return CMD_TEXT;
 	case OSDP_CMD_COMSET: return CMD_COMSET;
 	case OSDP_CMD_MFG:    return CMD_MFG;
+	case OSDP_CMD_XWR:    return CMD_XWR;
 	case OSDP_CMD_STATUS:
 		switch (cmd->status.type) {
 		case OSDP_STATUS_REPORT_INPUT:  return CMD_ISTAT;
@@ -1080,7 +1082,8 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 		    pd->reply_id == REPLY_RSTATR ||
 		    pd->reply_id == REPLY_MFGREP ||
 		    pd->reply_id == REPLY_RAW ||
-		    pd->reply_id == REPLY_KEYPAD) {
+		    pd->reply_id == REPLY_KEYPAD ||
+		    pd->reply_id == REPLY_XRD) {
 			return true;
 		}
 		return is_ignore_unsolicited_messages(pd);
@@ -1095,6 +1098,7 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 	case CMD_ISTAT:        return pd->reply_id == REPLY_ISTATR;
 	case CMD_OSTAT:        return pd->reply_id == REPLY_OSTATR;
 	case CMD_RSTAT:        return pd->reply_id == REPLY_RSTATR;
+	case CMD_XWR:          return pd->reply_id == REPLY_XRD;
 	default:
 		LOG_ERR("Unexpected respose: CMD: %s(%02x) REPLY: %s(%02x)",
 			osdp_cmd_name(pd->cmd_id), pd->cmd_id,

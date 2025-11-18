@@ -13,8 +13,6 @@
 
 #include "osdp_trs.h"
 
-LOGGER_DECLARE(osdp, "TRS");
-
 #define TO_TRS(pd) (pd)->trs
 
 enum osdp_trs_state_e {
@@ -25,16 +23,16 @@ enum osdp_trs_state_e {
 	OSDP_TRS_STATE_TEARDOWN,
 };
 
-struct osdp_trs {
-	enum osdp_trs_state_e state;
-	uint8_t mode;
-	struct osdp_trs_apdu trs_apdu;
-};
-
 struct osdp_trs_apdu {
 	int reader;
 	int apdu_len;
 	uint8_t *apdu;
+};
+
+struct osdp_trs {
+	enum osdp_trs_state_e state;
+	uint8_t mode;
+	struct osdp_trs_apdu trs_apdu;
 };
 
 #define MODE_CODE(mode, pcmnd) (uint16_t)(((mode) & 0xff) << 8u | ((pcmnd) & 0xff))
@@ -62,10 +60,10 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	int len = 0, apdu_length, needed_space;
 	struct osdp_trs *trs = TO_TRS(pd);
-	struct osdp_trs_cmd *cmd = (struct osdp_trs_cmd *)pd->ephemeral_data;
+	struct osdp_cmd *cmd = (struct osdp_cmd *)pd->ephemeral_data;
 
-	uint8_t mode = BYTE_1(cmd->mode_code);
-	uint8_t code = BYTE_0(cmd->mode_code);
+	uint8_t mode = BYTE_1(cmd->trs.mode_code);
+	uint8_t code = BYTE_0(cmd->trs.mode_code);
 
 	/* mode <=> code validation */
 	if (code == 0 || (mode != 0 && mode != 1) ||
@@ -76,60 +74,59 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	buf[len++] = mode;
 	buf[len++] = code;
 
-	if (cmd->mode_code == CMD_MODE_GET) {
+	if (cmd->trs.mode_code == CMD_MODE_GET) {
 		goto out;
 	}
 
-	if (cmd->mode_code == CMD_MODE_SET) {
-		buf[len++] = cmd->mode_set.mode;
-		buf[len++] = cmd->mode_set.config;
+	if (cmd->trs.mode_code == CMD_MODE_SET) {
+		buf[len++] = cmd->trs.mode_set.mode;
+		buf[len++] = cmd->trs.mode_set.config;
 		goto out;
 	}
 
 	buf[len++] = 0;  /* reader -- always 0 */
 
-	switch(cmd->mode_code) {
+	switch(cmd->trs.mode_code) {
 	case CMD_SEND_APDU:
-		buf[len++] = cmd->send_apdu.apdu_length;
-		apdu_length = cmd->send_apdu.apdu_length;
-		if (apdu_length > sizeof(cmd->send_apdu.apdu) ||
+		apdu_length = cmd->trs.send_apdu.apdu_length;
+		if (apdu_length > sizeof(cmd->trs.send_apdu.apdu) ||
 		    apdu_length > (max_len - len)) {
 			LOG_ERR("APDU length 2BIG or Invalid! need/have: %d/%d",
 				(max_len - len), apdu_length);
 			return -1;
 		}
-		memcpy(buf, cmd->send_apdu.apdu, apdu_length);
+		memcpy(buf+len, cmd->trs.send_apdu.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	case CMD_ENTER_PIN:
-		buf[len++] = cmd->pin_entry.timeout;
-		buf[len++] = cmd->pin_entry.timeout2;
-		buf[len++] = cmd->pin_entry.format_string;
-		buf[len++] = cmd->pin_entry.pin_block_string;
-		buf[len++] = cmd->pin_entry.ping_length_format;
-		buf[len++] = cmd->pin_entry.pin_max_extra_digit_msb;
-		buf[len++] = cmd->pin_entry.pin_max_extra_digit_lsb;
-		buf[len++] = cmd->pin_entry.pin_entry_valid_condition;
-		buf[len++] = cmd->pin_entry.pin_num_messages;
-		buf[len++] = cmd->pin_entry.language_id_msb;
-		buf[len++] = cmd->pin_entry.language_id_lsb;
-		buf[len++] = cmd->pin_entry.msg_index;
-		buf[len++] = cmd->pin_entry.teo_prologue[0];
-		buf[len++] = cmd->pin_entry.teo_prologue[1];
-		buf[len++] = cmd->pin_entry.teo_prologue[2];
-		buf[len++] = cmd->pin_entry.apdu_length_msb;
-		buf[len++] = cmd->pin_entry.apdu_length_lsb;
+		buf[len++] = cmd->trs.pin_entry.timeout;
+		buf[len++] = cmd->trs.pin_entry.timeout2;
+		buf[len++] = cmd->trs.pin_entry.format_string;
+		buf[len++] = cmd->trs.pin_entry.pin_block_string;
+		buf[len++] = cmd->trs.pin_entry.ping_length_format;
+		buf[len++] = cmd->trs.pin_entry.pin_max_extra_digit_msb;
+		buf[len++] = cmd->trs.pin_entry.pin_max_extra_digit_lsb;
+		buf[len++] = cmd->trs.pin_entry.pin_entry_valid_condition;
+		buf[len++] = cmd->trs.pin_entry.pin_num_messages;
+		buf[len++] = cmd->trs.pin_entry.language_id_msb;
+		buf[len++] = cmd->trs.pin_entry.language_id_lsb;
+		buf[len++] = cmd->trs.pin_entry.msg_index;
+		buf[len++] = cmd->trs.pin_entry.teo_prologue[0];
+		buf[len++] = cmd->trs.pin_entry.teo_prologue[1];
+		buf[len++] = cmd->trs.pin_entry.teo_prologue[2];
+		buf[len++] = cmd->trs.pin_entry.apdu_length_msb;
+		buf[len++] = cmd->trs.pin_entry.apdu_length_lsb;
 
-		apdu_length = cmd->pin_entry.apdu_length_msb << 8;
-		apdu_length |= cmd->pin_entry.apdu_length_lsb;
-		needed_space = max_len - len - sizeof(cmd->pin_entry.apdu);
-		if (apdu_length > sizeof(cmd->pin_entry.apdu) ||
+		apdu_length = cmd->trs.pin_entry.apdu_length_msb << 8;
+		apdu_length |= cmd->trs.pin_entry.apdu_length_lsb;
+		needed_space = max_len - len - sizeof(cmd->trs.pin_entry.apdu);
+		if (apdu_length > sizeof(cmd->trs.pin_entry.apdu) ||
 		    apdu_length > needed_space) {
 			LOG_ERR("APDU length 2BIG or Invalid! need/have: %d/%d",
 				needed_space, apdu_length);
 			return -1;
 		}
-		memcpy(buf, cmd->pin_entry.apdu, apdu_length);
+		memcpy(buf, cmd->trs.pin_entry.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	}
@@ -140,27 +137,25 @@ out:
 int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	struct osdp_trs *trs = TO_TRS(pd);
-	struct osdp_trs_reply *reply;
+	struct osdp_event *reply;
 	uint8_t card_protocol, csn_len, prot_data_len, pos = 0;
 	uint16_t mode_code = 0;
-	uint32_t data_len = 0;
+	uint32_t data_len = len - 2;
 
-	reply = (struct osdp_trs_reply *)pd->ephemeral_data;
+	reply = (struct osdp_event *)pd->ephemeral_data;
+	reply->type = OSDP_EVENT_TRS;
 
-	memcpy(mode_code, buf, 2);
-	pos+=2;
-	memcpy(data_len, buf, 4);
-	pos+=4;
+	mode_code = (buf[pos++] << 8) | buf[pos++];	
+	reply->trs.mode_code = mode_code;
 
 	switch(mode_code) {
 		case REPLY_CURRENT_MODE:
-			reply->mode_report.mode = buf[pos++];
-			reply->mode_report.mode_config = buf[pos++];
+			reply->trs.mode_report.mode = buf[pos++];
 			break;
 		case REPLY_CARD_INFO_REPORT:
-			reply->card_info_report.reader = buf[pos++];
+			reply->trs.card_info_report.reader = buf[pos++];
 			card_protocol = buf[pos++];
-			reply->card_info_report.protocol = card_protocol;
+			reply->trs.card_info_report.protocol = card_protocol;
 
 			if(card_protocol == OSDP_TRS_CARD_PROTOCOL_CONTACT_T0T1 || card_protocol == OSDP_TRS_CARD_PROTOCOL_14443AB) {
 				LOG_ERR("unsupported card protocol");
@@ -177,36 +172,39 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 				LOG_ERR("protocol data length is larger than expected (>255)");
 				break;
 			}
-			reply->card_info_report.csn_len = csn_len;
-			reply->card_info_report.protocol_data_len = prot_data_len;
+			reply->trs.card_info_report.csn_len = csn_len;
+			reply->trs.card_info_report.protocol_data_len = prot_data_len;
 			if(data_len > 4+csn_len+prot_data_len) {
 				LOG_ERR("data length is larger than expected (>%d)", 4+csn_len+prot_data_len);
 				break;
 			}
-			memcpy(reply->card_info_report.csn, buf+pos, csn_len);
+			memcpy(reply->trs.card_info_report.csn, buf+pos, csn_len);
 			pos+=csn_len;
-			memcpy(reply->card_info_report.protocol_data, buf+pos, prot_data_len);
+			memcpy(reply->trs.card_info_report.protocol_data, buf+pos, prot_data_len);
 			pos+=prot_data_len;
 			pd->trs->state = OSDP_TRS_STATE_SET_MODE;
 			break;
 		case REPLY_CARD_PRSENT:
-			reply->card_status.reader = buf[pos++];
-			reply->card_status.status = buf[pos++];
+			reply->trs.card_status.reader = buf[pos++];
 			break;
 		case REPLY_CARD_DATA:
-			reply->card_data.reader = buf[pos++];
-			reply->card_data.status = buf[pos++];
-			memcpy(reply->card_data.apdu, buf+pos, len-2);
+			reply->trs.card_data.reader = buf[pos++];
+			reply->trs.card_data.status = buf[pos++];
+			reply->trs.card_data.length = data_len;
+			memcpy(reply->trs.card_data.apdu, buf+pos, data_len);
 			break;
 		case REPLY_PIN_ENTRY_COMPLETE:
-			reply->pin_entry_complete.reader = buf[pos++];
-			reply->pin_entry_complete.status = buf[pos++];
-			reply->pin_entry_complete.tries = buf[pos++];
+			reply->trs.pin_entry_complete.reader = buf[pos++];
+			reply->trs.pin_entry_complete.status = buf[pos++];
+			reply->trs.pin_entry_complete.tries = buf[pos++];
 			break;
 		default:
-			break;
-
+			LOG_ERR("TRS_Reply_Decode: Unknown mode/code %02X for reply", mode_code);
+			return -1;
 	}
+
+	// Send the event back to the application
+	make_request(pd, CP_REQ_EVENT_SEND);
 
 	return 0;
 }
@@ -221,14 +219,13 @@ int osdp_trs_reply_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	reply = (struct osdp_trs_reply *)pd->ephemeral_data;
 
-	buf[len++] = reply->mode;
-	buf[len++] = reply->preply;
+	buf[len++] = BYTE_1(reply->mode_code);
+	buf[len++] = BYTE_0(reply->mode_code);
 
 	switch (reply->mode_code)
 	{
 		case REPLY_CURRENT_MODE:
 			buf[len++] = reply->mode_report.mode;
-			buf[len++] = reply->mode_report.mode_config;
 			break;
 		case REPLY_CARD_INFO_REPORT:
 			buf[len++] = reply->card_info_report.reader;
@@ -245,7 +242,6 @@ int osdp_trs_reply_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			break;
 		case REPLY_CARD_PRSENT:
 			buf[len++] = reply->card_status.reader;
-			buf[len++] = reply->card_status.status;
 			break;
 		case REPLY_CARD_DATA:
 			buf[len++] = reply->card_data.reader;
@@ -360,9 +356,9 @@ static int trs_cmd_set_mode(struct osdp_pd *pd, int to_mode, int to_config)
 		return -1;
 	}
 	cmd->id = CMD_XWR;
-	cmd->trs_cmd.mode_code = CMD_MODE_SET;
-	cmd->trs_cmd.mode_set.mode = to_mode;
-	cmd->trs_cmd.mode_set.config = to_config;
+	cmd->trs.mode_code = CMD_MODE_SET;
+	cmd->trs.mode_set.mode = to_mode;
+	cmd->trs.mode_set.config = to_config;
 
 	cp_cmd_enqueue(pd, cmd);
 	return 0;

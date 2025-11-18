@@ -940,7 +940,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		len += 32;
 		smb[0] = 3;      /* length */
 		smb[1] = SCS_12; /* type */
-		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = sc_use_scbkd(pd) ? 0 : 1;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RMAC_I:
@@ -957,7 +957,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[2] = 1;       /* CP auth succeeded */
 		sc_activate(pd);
 		pd->sc_tstamp = osdp_millis_now();
-		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+		if (sc_use_scbkd(pd)) {
 			LOG_WRN("SC Active with SCBK-D");
 		} else {
 			LOG_INF("SC Active");

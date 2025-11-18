@@ -532,9 +532,12 @@ static inline bool is_cp_mode(struct osdp_pd *pd)
 	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 }
 
-static inline bool is_enforce_secure(struct osdp_pd *pd)
-{
-	return ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE);
+static inline bool is_channel_shared(struct osdp_pd *pd) {
+	return ISSET_FLAG(pd, PD_FLAG_CHN_SHARED);
+}
+
+static inline bool sc_use_scbkd(struct osdp_pd *pd) {
+	return ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 }
 
 static inline bool sc_is_capable(struct osdp_pd *pd)
@@ -595,6 +598,23 @@ static inline bool is_packet_trace_enabled(struct osdp_pd *pd) {
 
 static inline bool sc_allow_empty_encrypted_data_block(struct osdp_pd *pd) {
 	return ISSET_FLAG(pd, OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK);
+}
+
+static inline bool is_enforce_secure(struct osdp_pd *pd)
+{
+	return ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE);
+}
+
+static inline bool is_notifications_enabled(struct osdp_pd *pd) {
+	return ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION);
+}
+
+static inline bool is_ignore_unsolicited_messages(struct osdp_pd *pd) {
+	return ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED);
+}
+
+static inline bool is_install_mode(struct osdp_pd *pd) {
+	return ISSET_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
 }
 
 #endif	/* _OSDP_COMMON_H_ */

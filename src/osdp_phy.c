@@ -642,8 +642,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 			 * usage is limited to install mode (a provisioning time
 			 * mode) only.
 			 */
-			if (ISSET_FLAG(pd, OSDP_FLAG_INSTALL_MODE) &&
-			    pkt->data[2] == 0) {
+			if (is_install_mode(pd) && pkt->data[2] == 0) {
 				SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			}
 		}

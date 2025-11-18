@@ -359,7 +359,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_11;  /* type */
-		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = sc_use_scbkd(pd) ? 0 : 1;
 		buf[len++] = pd->cmd_id;
 		memcpy(buf + len, pd->sc.cp_random, 8);
 		len += 8;
@@ -373,7 +373,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		osdp_compute_cp_cryptogram(pd);
 		smb[0] = 3;       /* length */
 		smb[1] = SCS_13;  /* type */
-		smb[2] = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD) ? 0 : 1;
+		smb[2] = sc_use_scbkd(pd) ? 0 : 1;
 		buf[len++] = pd->cmd_id;
 		memcpy(buf + len, pd->sc.cp_cryptogram, 16);
 		len += 16;
@@ -903,7 +903,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		if (rc == OSDP_CP_ERR_NONE ||
 		    rc == OSDP_CP_ERR_SEQ_NUM ||
 		    (rc == OSDP_CP_ERR_UNKNOWN && pd->cmd_id == CMD_POLL &&
-		     ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED))) {
+		     is_ignore_unsolicited_messages(pd))) {
 			cp_phy_state_done(pd);
 			return OSDP_CP_ERR_NONE;
 		}
@@ -986,8 +986,7 @@ static void notify_pd_status(struct osdp_pd *pd, bool is_online)
 	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_event evt;
 
-	if (!ctx->event_callback ||
-	    !ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION)) {
+	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
 		return;
 	}
 
@@ -1002,15 +1001,14 @@ static void notify_sc_status(struct osdp_pd *pd)
 	struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_event evt;
 
-	if (!ctx->event_callback ||
-	    !ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION)) {
+	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
 		return;
 	}
 
 	evt.type = OSDP_EVENT_NOTIFICATION;
 	evt.notif.type = OSDP_EVENT_NOTIFICATION_SC_STATUS;
 	evt.notif.arg0 = sc_is_active(pd);
-	evt.notif.arg1 = ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
+	evt.notif.arg1 = sc_use_scbkd(pd);
 	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
 }
 
@@ -1018,7 +1016,7 @@ static void cp_keyset_complete(struct osdp_pd *pd)
 {
 	struct osdp_cmd *cmd;
 
-	if (!ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+	if (!sc_use_scbkd(pd)) {
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
 		memcpy(pd->sc.scbk, cmd->keyset.data, 16);
 	} else {
@@ -1064,7 +1062,7 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 		    pd->reply_id == REPLY_KEYPAD) {
 			return true;
 		}
-		return ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED);
+		return is_ignore_unsolicited_messages(pd);
 	}
 
 	/* Otherwise, we permit only expected responses */
@@ -1137,7 +1135,7 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 	case OSDP_CP_STATE_SC_SCRYPT:
 		sc_activate(pd);
 		notify_sc_status(pd);
-		if (ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+		if (sc_use_scbkd(pd)) {
 			LOG_WRN("SC active with SCBK-D. Set SCBK");
 			fill_local_keyset_cmd(pd);
 			return OSDP_CP_STATE_SET_SCBK;
@@ -1179,7 +1177,7 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 				"ENFORCE_SECURE");
 			return OSDP_CP_STATE_OFFLINE;
 		}
-		if (!ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+		if (!sc_use_scbkd(pd)) {
 			SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			LOG_WRN("SC Failed. Retry with SCBK-D");
 			return OSDP_CP_STATE_SC_CHLNG;
@@ -1201,8 +1199,7 @@ static enum osdp_cp_state_e get_next_err_state(struct osdp_pd *pd)
 	case OSDP_CP_STATE_SET_SCBK:
 		sc_deactivate(pd);
 		notify_sc_status(pd);
-		if (is_enforce_secure(pd) ||
-		    ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) {
+		if (is_enforce_secure(pd) || sc_use_scbkd(pd)) {
 			LOG_ERR("Failed to set SCBK; "
 				"Set PD offline due to ENFORCE_SECURE");
 			return OSDP_CP_STATE_OFFLINE;
@@ -1261,8 +1258,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		state_get_name(cur),
 		state_get_name(next),
 		sc_is_active(pd) ? "Active" : "Inactive",
-		(sc_is_active(pd) &&
-		 ISSET_FLAG(pd, PD_FLAG_SC_USE_SCBKD)) ? " with SCBK-D" : ""
+		(sc_is_active(pd) && sc_use_scbkd(pd)) ? " with SCBK-D" : ""
 	);
 
 	pd->state = next;
@@ -1274,8 +1270,7 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	struct osdp_event evt;
 	struct osdp *ctx = pd_to_osdp(pd);
 
-	if (!ctx->event_callback ||
-	    !ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION)) {
+	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
 		return;
 	}
 
@@ -1384,15 +1379,14 @@ static int cp_refresh(struct osdp_pd *pd)
 	int rc;
 	struct osdp *ctx = pd_to_osdp(pd);
 
-	if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED) &&
-	    cp_channel_acquire(pd, NULL)) {
+	if (is_channel_shared(pd) && cp_channel_acquire(pd, NULL)) {
 		/* Channel shared and failed to acquire lock */
 		return 0;
 	}
 
 	rc = state_update(pd);
 
-	if (ISSET_FLAG(pd, PD_FLAG_CHN_SHARED)) {
+	if (is_channel_shared(pd)) {
 		if (rc == OSDP_CP_ERR_CAN_YIELD) {
 			cp_channel_release(pd);
 		} else if (ctx->num_channels == 1) {

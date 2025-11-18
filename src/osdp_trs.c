@@ -145,10 +145,7 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	reply = (struct osdp_event *)pd->ephemeral_data;
 	reply->type = OSDP_EVENT_TRS;
 
-	// memcpy didn't work here, no idea why
-	mode_code = ((uint16_t)buf[pos++] & 0xFF) << 8;
-	mode_code |= buf[pos++] & 0xFF;
-	
+	mode_code = (buf[pos++] << 8) | buf[pos++];	
 	reply->trs.mode_code = mode_code;
 
 	switch(mode_code) {

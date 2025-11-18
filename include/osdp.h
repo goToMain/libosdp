@@ -827,7 +827,7 @@ struct osdp_cmd {
 		struct osdp_cmd_mfg mfg;          /**< Manufacturer specific command structure */
 		struct osdp_cmd_file_tx file_tx;  /**< File transfer command structure */
 		struct osdp_status_report status; /**< Status report command structure */
-		struct osdp_trs_cmd trs_cmd;      /**< Transparent mode command structure */
+		struct osdp_trs_cmd trs;          /**< Transparent mode command structure */
 	};
 };
 

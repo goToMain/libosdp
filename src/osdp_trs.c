@@ -62,8 +62,8 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	struct osdp_trs *trs = TO_TRS(pd);
 	struct osdp_cmd *cmd = (struct osdp_cmd *)pd->ephemeral_data;
 
-	uint8_t mode = BYTE_1(cmd->trs_cmd.mode_code);
-	uint8_t code = BYTE_0(cmd->trs_cmd.mode_code);
+	uint8_t mode = BYTE_1(cmd->trs.mode_code);
+	uint8_t code = BYTE_0(cmd->trs.mode_code);
 
 	/* mode <=> code validation */
 	if (code == 0 || (mode != 0 && mode != 1) ||
@@ -74,59 +74,59 @@ int osdp_trs_cmd_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	buf[len++] = mode;
 	buf[len++] = code;
 
-	if (cmd->trs_cmd.mode_code == CMD_MODE_GET) {
+	if (cmd->trs.mode_code == CMD_MODE_GET) {
 		goto out;
 	}
 
-	if (cmd->trs_cmd.mode_code == CMD_MODE_SET) {
-		buf[len++] = cmd->trs_cmd.mode_set.mode;
-		buf[len++] = cmd->trs_cmd.mode_set.config;
+	if (cmd->trs.mode_code == CMD_MODE_SET) {
+		buf[len++] = cmd->trs.mode_set.mode;
+		buf[len++] = cmd->trs.mode_set.config;
 		goto out;
 	}
 
 	buf[len++] = 0;  /* reader -- always 0 */
 
-	switch(cmd->trs_cmd.mode_code) {
+	switch(cmd->trs.mode_code) {
 	case CMD_SEND_APDU:
-		apdu_length = cmd->trs_cmd.send_apdu.apdu_length;
-		if (apdu_length > sizeof(cmd->trs_cmd.send_apdu.apdu) ||
+		apdu_length = cmd->trs.send_apdu.apdu_length;
+		if (apdu_length > sizeof(cmd->trs.send_apdu.apdu) ||
 		    apdu_length > (max_len - len)) {
 			LOG_ERR("APDU length 2BIG or Invalid! need/have: %d/%d",
 				(max_len - len), apdu_length);
 			return -1;
 		}
-		memcpy(buf+len, cmd->trs_cmd.send_apdu.apdu, apdu_length);
+		memcpy(buf+len, cmd->trs.send_apdu.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	case CMD_ENTER_PIN:
-		buf[len++] = cmd->trs_cmd.pin_entry.timeout;
-		buf[len++] = cmd->trs_cmd.pin_entry.timeout2;
-		buf[len++] = cmd->trs_cmd.pin_entry.format_string;
-		buf[len++] = cmd->trs_cmd.pin_entry.pin_block_string;
-		buf[len++] = cmd->trs_cmd.pin_entry.ping_length_format;
-		buf[len++] = cmd->trs_cmd.pin_entry.pin_max_extra_digit_msb;
-		buf[len++] = cmd->trs_cmd.pin_entry.pin_max_extra_digit_lsb;
-		buf[len++] = cmd->trs_cmd.pin_entry.pin_entry_valid_condition;
-		buf[len++] = cmd->trs_cmd.pin_entry.pin_num_messages;
-		buf[len++] = cmd->trs_cmd.pin_entry.language_id_msb;
-		buf[len++] = cmd->trs_cmd.pin_entry.language_id_lsb;
-		buf[len++] = cmd->trs_cmd.pin_entry.msg_index;
-		buf[len++] = cmd->trs_cmd.pin_entry.teo_prologue[0];
-		buf[len++] = cmd->trs_cmd.pin_entry.teo_prologue[1];
-		buf[len++] = cmd->trs_cmd.pin_entry.teo_prologue[2];
-		buf[len++] = cmd->trs_cmd.pin_entry.apdu_length_msb;
-		buf[len++] = cmd->trs_cmd.pin_entry.apdu_length_lsb;
+		buf[len++] = cmd->trs.pin_entry.timeout;
+		buf[len++] = cmd->trs.pin_entry.timeout2;
+		buf[len++] = cmd->trs.pin_entry.format_string;
+		buf[len++] = cmd->trs.pin_entry.pin_block_string;
+		buf[len++] = cmd->trs.pin_entry.ping_length_format;
+		buf[len++] = cmd->trs.pin_entry.pin_max_extra_digit_msb;
+		buf[len++] = cmd->trs.pin_entry.pin_max_extra_digit_lsb;
+		buf[len++] = cmd->trs.pin_entry.pin_entry_valid_condition;
+		buf[len++] = cmd->trs.pin_entry.pin_num_messages;
+		buf[len++] = cmd->trs.pin_entry.language_id_msb;
+		buf[len++] = cmd->trs.pin_entry.language_id_lsb;
+		buf[len++] = cmd->trs.pin_entry.msg_index;
+		buf[len++] = cmd->trs.pin_entry.teo_prologue[0];
+		buf[len++] = cmd->trs.pin_entry.teo_prologue[1];
+		buf[len++] = cmd->trs.pin_entry.teo_prologue[2];
+		buf[len++] = cmd->trs.pin_entry.apdu_length_msb;
+		buf[len++] = cmd->trs.pin_entry.apdu_length_lsb;
 
-		apdu_length = cmd->trs_cmd.pin_entry.apdu_length_msb << 8;
-		apdu_length |= cmd->trs_cmd.pin_entry.apdu_length_lsb;
-		needed_space = max_len - len - sizeof(cmd->trs_cmd.pin_entry.apdu);
-		if (apdu_length > sizeof(cmd->trs_cmd.pin_entry.apdu) ||
+		apdu_length = cmd->trs.pin_entry.apdu_length_msb << 8;
+		apdu_length |= cmd->trs.pin_entry.apdu_length_lsb;
+		needed_space = max_len - len - sizeof(cmd->trs.pin_entry.apdu);
+		if (apdu_length > sizeof(cmd->trs.pin_entry.apdu) ||
 		    apdu_length > needed_space) {
 			LOG_ERR("APDU length 2BIG or Invalid! need/have: %d/%d",
 				needed_space, apdu_length);
 			return -1;
 		}
-		memcpy(buf, cmd->trs_cmd.pin_entry.apdu, apdu_length);
+		memcpy(buf, cmd->trs.pin_entry.apdu, apdu_length);
 		len += apdu_length;
 		break;
 	}
@@ -359,9 +359,9 @@ static int trs_cmd_set_mode(struct osdp_pd *pd, int to_mode, int to_config)
 		return -1;
 	}
 	cmd->id = CMD_XWR;
-	cmd->trs_cmd.mode_code = CMD_MODE_SET;
-	cmd->trs_cmd.mode_set.mode = to_mode;
-	cmd->trs_cmd.mode_set.config = to_config;
+	cmd->trs.mode_code = CMD_MODE_SET;
+	cmd->trs.mode_set.mode = to_mode;
+	cmd->trs.mode_set.config = to_config;
 
 	cp_cmd_enqueue(pd, cmd);
 	return 0;

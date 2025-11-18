@@ -33,7 +33,7 @@ extern "C" {
  *
  * @note This flag is recommended in production use.
  */
-#define OSDP_FLAG_ENFORCE_SECURE 0x00040000
+#define OSDP_FLAG_ENFORCE_SECURE 0x00010000
 
 /**
  * @brief When set, the PD would allow one session of secure channel to be
@@ -43,7 +43,7 @@ extern "C" {
  * responsible for making sure that the device enters this mode only during
  * controlled/provisioning-time environments.
  */
-#define OSDP_FLAG_INSTALL_MODE 0x00080000
+#define OSDP_FLAG_INSTALL_MODE 0x00020000
 
 /**
  * @brief When set, CP will not error and fail when the PD sends an unknown,
@@ -51,7 +51,7 @@ extern "C" {
  *
  * @note In PD mode this flag has no use.
  */
-#define OSDP_FLAG_IGN_UNSOLICITED 0x00100000
+#define OSDP_FLAG_IGN_UNSOLICITED 0x00040000
 
 /**
  * @brief Enable LibOSDP notification events - @ref osdp_event_notification - to
@@ -61,7 +61,7 @@ extern "C" {
  *
  * @note This is a CP mode only flag; in PD mode this flag has no use.
  */
-#define OSDP_FLAG_ENABLE_NOTIFICATION 0x00200000
+#define OSDP_FLAG_ENABLE_NOTIFICATION 0x00080000
 
 /**
  * @brief Capture raw osdp packets as seen by this device to a pcap file.
@@ -71,7 +71,7 @@ extern "C" {
  * @note The app must call osdp_{cp,pd}_teardown() before existing for the
  * capture file to be finalized and written to the disk.
  */
-#define OSDP_FLAG_CAPTURE_PACKETS 0x00400000
+#define OSDP_FLAG_CAPTURE_PACKETS 0x00100000
 
 /**
  * @brief Allow an empty encrypted data block(SCS_17 and SCS_18 packets).
@@ -82,7 +82,7 @@ extern "C" {
  *
  * @note this is a PD mode only flag
  */
-#define OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK 0x00800000
+#define OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK 0x00200000
 
 /**
  * @brief Various PD capability function codes.

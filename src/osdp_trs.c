@@ -206,6 +206,9 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 			return -1;
 	}
 
+	// Send the event back to the application
+	make_request(pd, CP_REQ_EVENT_SEND);
+
 	return 0;
 }
 

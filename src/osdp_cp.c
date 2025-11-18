@@ -664,7 +664,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case REPLY_XRD:
 		ret = osdp_trs_reply_decode(pd, buf + pos, len);
-		make_request(pd, CP_REQ_EVENT_SEND);
 		break;
 	case REPLY_CCRYPT:
 		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {

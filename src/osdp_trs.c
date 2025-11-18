@@ -47,12 +47,12 @@ struct osdp_trs {
 /* if REPLY code is 0, it indicates and error */
 #define REPLY_CURRENT_MODE        MODE_CODE(0, 1)
 #define REPLY_CARD_INFO_REPORT    MODE_CODE(0, 2)
-#define REPLY_CARD_PRSENT	      MODE_CODE(1, 1)
-#define REPLY_CARD_DATA			  MODE_CODE(1, 2)
+#define REPLY_CARD_PRSENT         MODE_CODE(1, 1)
+#define REPLY_CARD_DATA           MODE_CODE(1, 2)
 #define REPLY_PIN_ENTRY_COMPLETE  MODE_CODE(1, 3)
 
-#define OSDP_TRS_CARD_PROTOCOL_CONTACT_T0T1 0x00
-#define OSDP_TRS_CARD_PROTOCOL_14443AB		0x01
+#define OSDP_TRS_CARD_PROTOCOL_CONTACT_T0T1     0x00
+#define OSDP_TRS_CARD_PROTOCOL_14443AB          0x01
 
 /* --- Sender CMD/RESP Handers --- */
 
@@ -149,58 +149,60 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	reply->trs.mode_code = mode_code;
 
 	switch(mode_code) {
-		case REPLY_CURRENT_MODE:
-			reply->trs.mode_report.mode = buf[pos++];
-			break;
-		case REPLY_CARD_INFO_REPORT:
-			reply->trs.card_info_report.reader = buf[pos++];
-			card_protocol = buf[pos++];
-			reply->trs.card_info_report.protocol = card_protocol;
+	case REPLY_CURRENT_MODE:
+		reply->trs.mode_report.mode = buf[pos++];
+		break;
+	case REPLY_CARD_INFO_REPORT:
+		reply->trs.card_info_report.reader = buf[pos++];
+		card_protocol = buf[pos++];
+		reply->trs.card_info_report.protocol = card_protocol;
 
-			if(card_protocol == OSDP_TRS_CARD_PROTOCOL_CONTACT_T0T1 || card_protocol == OSDP_TRS_CARD_PROTOCOL_14443AB) {
-				LOG_ERR("unsupported card protocol");
-				break;
-			}
+		if(card_protocol == OSDP_TRS_CARD_PROTOCOL_CONTACT_T0T1 ||
+		   card_protocol == OSDP_TRS_CARD_PROTOCOL_14443AB) {
+			LOG_ERR("unsupported card protocol");
+			break;
+		}
 
-			csn_len = buf[pos++];
-			if(csn_len > 255) {
-				LOG_ERR("CSN length is larger than expected (>255)");
-				break;
-			}
-			prot_data_len = buf[pos++];
-			if(prot_data_len > 255) {
-				LOG_ERR("protocol data length is larger than expected (>255)");
-				break;
-			}
-			reply->trs.card_info_report.csn_len = csn_len;
-			reply->trs.card_info_report.protocol_data_len = prot_data_len;
-			if(data_len > 4+csn_len+prot_data_len) {
-				LOG_ERR("data length is larger than expected (>%d)", 4+csn_len+prot_data_len);
-				break;
-			}
-			memcpy(reply->trs.card_info_report.csn, buf+pos, csn_len);
-			pos+=csn_len;
-			memcpy(reply->trs.card_info_report.protocol_data, buf+pos, prot_data_len);
-			pos+=prot_data_len;
-			pd->trs->state = OSDP_TRS_STATE_SET_MODE;
+		csn_len = buf[pos++];
+		if(csn_len > 255) {
+			LOG_ERR("CSN length is larger than expected (>255)");
 			break;
-		case REPLY_CARD_PRSENT:
-			reply->trs.card_status.reader = buf[pos++];
+		}
+		prot_data_len = buf[pos++];
+		if(prot_data_len > 255) {
+			LOG_ERR("protocol data length is larger than expected (>255)");
 			break;
-		case REPLY_CARD_DATA:
-			reply->trs.card_data.reader = buf[pos++];
-			reply->trs.card_data.status = buf[pos++];
-			reply->trs.card_data.length = data_len;
-			memcpy(reply->trs.card_data.apdu, buf+pos, data_len);
+		}
+		reply->trs.card_info_report.csn_len = csn_len;
+		reply->trs.card_info_report.protocol_data_len = prot_data_len;
+		if(data_len > 4 + csn_len + prot_data_len) {
+			LOG_ERR("data length is larger than expected (>%d)",
+				4 + csn_len + prot_data_len);
 			break;
-		case REPLY_PIN_ENTRY_COMPLETE:
-			reply->trs.pin_entry_complete.reader = buf[pos++];
-			reply->trs.pin_entry_complete.status = buf[pos++];
-			reply->trs.pin_entry_complete.tries = buf[pos++];
-			break;
-		default:
-			LOG_ERR("TRS_Reply_Decode: Unknown mode/code %02X for reply", mode_code);
-			return -1;
+		}
+		memcpy(reply->trs.card_info_report.csn, buf+pos, csn_len);
+		pos+=csn_len;
+		memcpy(reply->trs.card_info_report.protocol_data, buf+pos, prot_data_len);
+		pos+=prot_data_len;
+		pd->trs->state = OSDP_TRS_STATE_SET_MODE;
+		break;
+	case REPLY_CARD_PRSENT:
+		reply->trs.card_status.reader = buf[pos++];
+		break;
+	case REPLY_CARD_DATA:
+		reply->trs.card_data.reader = buf[pos++];
+		reply->trs.card_data.status = buf[pos++];
+		reply->trs.card_data.length = data_len;
+		memcpy(reply->trs.card_data.apdu, buf+pos, data_len);
+		break;
+	case REPLY_PIN_ENTRY_COMPLETE:
+		reply->trs.pin_entry_complete.reader = buf[pos++];
+		reply->trs.pin_entry_complete.status = buf[pos++];
+		reply->trs.pin_entry_complete.tries = buf[pos++];
+		break;
+	default:
+		LOG_ERR("TRS_Reply_Decode: Unknown mode/code %02X for reply", mode_code);
+		return -1;
 	}
 
 	// Send the event back to the application
@@ -222,39 +224,38 @@ int osdp_trs_reply_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	buf[len++] = BYTE_1(reply->mode_code);
 	buf[len++] = BYTE_0(reply->mode_code);
 
-	switch (reply->mode_code)
-	{
-		case REPLY_CURRENT_MODE:
-			buf[len++] = reply->mode_report.mode;
-			break;
-		case REPLY_CARD_INFO_REPORT:
-			buf[len++] = reply->card_info_report.reader;
-			buf[len++] = reply->card_info_report.protocol;
+	switch (reply->mode_code) {
+	case REPLY_CURRENT_MODE:
+		buf[len++] = reply->mode_report.mode;
+		break;
+	case REPLY_CARD_INFO_REPORT:
+		buf[len++] = reply->card_info_report.reader;
+		buf[len++] = reply->card_info_report.protocol;
 
-			csn_len = reply->card_info_report.csn_len;
-			prot_data_len = reply->card_info_report.protocol_data_len;
-			buf[len++] = reply->card_info_report.csn_len;
-			buf[len++] = reply->card_info_report.protocol_data_len;
-			memcpy(buf+len, reply->card_info_report.csn, csn_len);
-			len+=csn_len;
-			memcpy(buf+len, reply->card_info_report.protocol_data, prot_data_len);
-			len+=prot_data_len;
-			break;
-		case REPLY_CARD_PRSENT:
-			buf[len++] = reply->card_status.reader;
-			break;
-		case REPLY_CARD_DATA:
-			buf[len++] = reply->card_data.reader;
-			buf[len++] = reply->card_data.status;
-			memcpy(buf+len, reply->card_data.apdu, max_len-2);
-			break;
-		case REPLY_PIN_ENTRY_COMPLETE:
-			buf[len++] = reply->pin_entry_complete.reader;
-			buf[len++] = reply->pin_entry_complete.status;
-			buf[len++] = reply->pin_entry_complete.tries;
-			break;
-		default:
-			break;
+		csn_len = reply->card_info_report.csn_len;
+		prot_data_len = reply->card_info_report.protocol_data_len;
+		buf[len++] = reply->card_info_report.csn_len;
+		buf[len++] = reply->card_info_report.protocol_data_len;
+		memcpy(buf+len, reply->card_info_report.csn, csn_len);
+		len+=csn_len;
+		memcpy(buf+len, reply->card_info_report.protocol_data, prot_data_len);
+		len+=prot_data_len;
+		break;
+	case REPLY_CARD_PRSENT:
+		buf[len++] = reply->card_status.reader;
+		break;
+	case REPLY_CARD_DATA:
+		buf[len++] = reply->card_data.reader;
+		buf[len++] = reply->card_data.status;
+		memcpy(buf+len, reply->card_data.apdu, max_len-2);
+		break;
+	case REPLY_PIN_ENTRY_COMPLETE:
+		buf[len++] = reply->pin_entry_complete.reader;
+		buf[len++] = reply->pin_entry_complete.status;
+		buf[len++] = reply->pin_entry_complete.tries;
+		break;
+	default:
+		break;
 	}
 	return len;
 }
@@ -379,37 +380,37 @@ static int trs_state_update(struct osdp_pd *pd)
 	struct osdp_trs_cmd *cmd = (struct osdp_trs_cmd *)pd->ephemeral_data;
 
 	switch(pd->trs->state) {
-		case OSDP_TRS_STATE_INIT:
-			pd->state = OSDP_CP_STATE_ONLINE;
-			break;
-		case OSDP_TRS_STATE_SET_MODE:
-			if(trs_cmd_set_mode(pd, TRS_MODE_01, TRS_DISABLE_CARD_INFO_REPORT)) {
-				LOG_ERR("TRS Mode 01 set failed");
-				pd->trs->state = OSDP_TRS_STATE_INIT;
-			}
-			pd->trs->state = OSDP_TRS_STATE_CARD_CONNECTED;
-			break;
-		case  OSDP_TRS_STATE_CARD_CONNECTED:
-			if(trs_cmd_xmit_apdu(pd)) {
-				LOG_ERR("TRS failed to send apdu");
-				pd->trs->state = OSDP_TRS_STATE_DISCONNECT_CARD;
-			}
-			pd->state = OSDP_CP_STATE_ONLINE;
-			break;
-		case OSDP_TRS_STATE_DISCONNECT_CARD:
-			if(trs_cmd_terminate(pd)) {
-				LOG_ERR("TRS failed to terminate card connection");
-			}
-			pd->state = OSDP_CP_STATE_ONLINE;
-			break;
-		case OSDP_TRS_STATE_TEARDOWN:
-			if(trs_cmd_set_mode(pd, TRS_MODE_00, TRS_DISABLE_CARD_INFO_REPORT)) {
-				LOG_ERR("TRS teardown failed");
-				pd->trs->state = OSDP_TRS_STATE_INIT;
-			}
-			break;
-		default:
-			break;
+	case OSDP_TRS_STATE_INIT:
+		pd->state = OSDP_CP_STATE_ONLINE;
+		break;
+	case OSDP_TRS_STATE_SET_MODE:
+		if(trs_cmd_set_mode(pd, TRS_MODE_01, TRS_DISABLE_CARD_INFO_REPORT)) {
+			LOG_ERR("TRS Mode 01 set failed");
+			pd->trs->state = OSDP_TRS_STATE_INIT;
+		}
+		pd->trs->state = OSDP_TRS_STATE_CARD_CONNECTED;
+		break;
+	case  OSDP_TRS_STATE_CARD_CONNECTED:
+		if(trs_cmd_xmit_apdu(pd)) {
+			LOG_ERR("TRS failed to send apdu");
+			pd->trs->state = OSDP_TRS_STATE_DISCONNECT_CARD;
+		}
+		pd->state = OSDP_CP_STATE_ONLINE;
+		break;
+	case OSDP_TRS_STATE_DISCONNECT_CARD:
+		if(trs_cmd_terminate(pd)) {
+			LOG_ERR("TRS failed to terminate card connection");
+		}
+		pd->state = OSDP_CP_STATE_ONLINE;
+		break;
+	case OSDP_TRS_STATE_TEARDOWN:
+		if(trs_cmd_set_mode(pd, TRS_MODE_00, TRS_DISABLE_CARD_INFO_REPORT)) {
+			LOG_ERR("TRS teardown failed");
+			pd->trs->state = OSDP_TRS_STATE_INIT;
+		}
+		break;
+	default:
+		break;
 
 	};
 }

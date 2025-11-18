@@ -103,6 +103,7 @@ lib_sources = [
     "src/osdp_file.c",
     "src/osdp_pd.c",
     "src/osdp_cp.c",
+    "src/osdp_trs.c",
     "src/crypto/tinyaes_src.c",
     "src/crypto/tinyaes.c",
 ]
@@ -112,6 +113,7 @@ lib_includes = [
     "include/osdp_export.h",
     "src/osdp_common.h",
     "src/osdp_file.h",
+    "src/osdp_trs.h",
     "src/crypto/tinyaes_src.h",
 ]
 
@@ -148,6 +150,7 @@ try_vendor_sources(
 
 definitions = [
     "OPT_OSDP_PACKET_TRACE",
+    "OPT_BUILD_OSDP_TRS",
     # "OPT_OSDP_DATA_TRACE",
     # "OPT_OSDP_SKIP_MARK_BYTE",
 ]

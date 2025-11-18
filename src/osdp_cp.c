@@ -1493,6 +1493,28 @@ static int cp_detect_connection_topology(struct osdp *ctx)
 	return 0;
 }
 
+static void cp_collect_init_flags(struct osdp_pd *pd, int flags)
+{
+	if (flags & OSDP_FLAG_ENFORCE_SECURE) {
+		SET_FLAG(pd, PD_FLAG_ENFORCE_SECURE);
+	}
+	if (flags & OSDP_FLAG_INSTALL_MODE) {
+		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
+	}
+	if (flags & OSDP_FLAG_IGN_UNSOLICITED) {
+		SET_FLAG(pd, PD_FLAG_IGNORE_USR);
+	}
+	if (flags & OSDP_FLAG_ENABLE_NOTIFICATION) {
+		SET_FLAG(pd, PD_FLAG_ENABLE_NOTIF);
+	}
+	if (flags & OSDP_FLAG_CAPTURE_PACKETS) {
+		SET_FLAG(pd, PD_FLAG_CAPTURE_PKT);
+	}
+	if (flags & OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK) {
+		SET_FLAG(pd, PD_FLAG_ALLOW_EMPTY_EDB);
+	}
+}
+
 static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_list)
 {
 	int i, old_num_pd;
@@ -1527,8 +1549,9 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		}
 		pd->baud_rate = info->baud_rate;
 		pd->address = info->address;
-		pd->flags = info->flags;
+		pd->flags = 0;
 		pd->seq_number = -1;
+		cp_collect_init_flags(pd, info->flags);
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
 		/* Default to CRC-16 until we know PD capabilities */
 		SET_FLAG(pd, PD_FLAG_CP_USE_CRC);
@@ -1732,15 +1755,37 @@ int osdp_cp_modify_flag(osdp_t *ctx, int pd_idx, uint32_t flags, bool do_set)
 	const uint32_t all_flags = (
 		OSDP_FLAG_ENFORCE_SECURE |
 		OSDP_FLAG_INSTALL_MODE |
-		OSDP_FLAG_IGN_UNSOLICITED
+		OSDP_FLAG_IGN_UNSOLICITED |
+		OSDP_FLAG_ENABLE_NOTIFICATION |
+		OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK
 	);
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
+	uint32_t pd_flags = 0;
 
 	if (flags & ~all_flags) {
 		return -1;
 	}
 
-	do_set ? SET_FLAG(pd, flags) : CLEAR_FLAG(pd, flags);
+	if (flags & OSDP_FLAG_ENFORCE_SECURE) {
+		pd_flags |= PD_FLAG_ENFORCE_SECURE;
+	}
+	if (flags & OSDP_FLAG_INSTALL_MODE) {
+		pd_flags |= PD_FLAG_INSTALL_MODE;
+	}
+	if (flags & OSDP_FLAG_IGN_UNSOLICITED) {
+		pd_flags |= PD_FLAG_IGNORE_USR;
+	}
+	if (flags & OSDP_FLAG_ENABLE_NOTIFICATION) {
+		pd_flags |= PD_FLAG_ENABLE_NOTIF;
+	}
+	if (flags & OSDP_FLAG_CAPTURE_PACKETS) {
+		pd_flags |= PD_FLAG_CAPTURE_PKT;
+	}
+	if (flags & OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK) {
+		pd_flags |= PD_FLAG_ALLOW_EMPTY_EDB;
+	}
+
+	do_set ? SET_FLAG(pd, pd_flags) : CLEAR_FLAG(pd, pd_flags);
 	return 0;
 }
 

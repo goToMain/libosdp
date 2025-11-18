@@ -1096,7 +1096,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		if (pd->cmd_id == CMD_KEYSET && pd->reply_id == REPLY_ACK) {
 			memcpy(pd->sc.scbk, pd->ephemeral_data, 16);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
-			CLEAR_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
+			CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 			sc_deactivate(pd);
 		} else if (pd->cmd_id == CMD_COMSET &&
 			   pd->reply_id == REPLY_COM) {
@@ -1154,6 +1154,22 @@ static void osdp_pd_set_attributes(struct osdp_pd *pd,
 	}
 }
 
+static void pd_collect_init_flags(struct osdp_pd *pd, uint32_t flags)
+{
+	if (flags & OSDP_FLAG_ENFORCE_SECURE) {
+		SET_FLAG(pd, PD_FLAG_ENFORCE_SECURE);
+	}
+	if (flags & OSDP_FLAG_INSTALL_MODE) {
+		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
+	}
+	if (flags & OSDP_FLAG_CAPTURE_PACKETS) {
+		SET_FLAG(pd, PD_FLAG_CAPTURE_PKT);
+	}
+	if (flags & OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK) {
+		SET_FLAG(pd, PD_FLAG_ALLOW_EMPTY_EDB);
+	}
+}
+
 /* --- Exported Methods --- */
 
 osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
@@ -1199,10 +1215,11 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 	}
 	pd->baud_rate = info->baud_rate;
 	pd->address = info->address;
-	pd->flags = info->flags;
+	pd->flags = 0;
 	pd->seq_number = -1;
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 
+	pd_collect_init_flags(pd, info->flags);
 	logger_get_default(&pd->logger);
 	snprintf(name, sizeof(name), "OSDP: PD-%d", pd->address);
 	logger_set_name(&pd->logger, name);
@@ -1217,7 +1234,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 			goto error;
 		}
 		LOG_WRN("SCBK not provided. PD is in INSTALL_MODE");
-		SET_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
+		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
 	} else {
 		memcpy(pd->sc.scbk, info->scbk, 16);
 	}

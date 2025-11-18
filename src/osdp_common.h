@@ -275,6 +275,14 @@ union osdp_ephemeral_data {
 #define PD_FLAG_PKT_BROADCAST  BIT(14) /* this packet was addressed to 0x7F */
 #define PD_FLAG_CP_USE_CRC     BIT(15) /* CP uses CRC-16 instead of checksum */
 
+/* PD Init flags */
+#define PD_FLAG_ENFORCE_SECURE  BIT(24) /* See: OSDP_FLAG_ENFORCE_SECURE */
+#define PD_FLAG_INSTALL_MODE    BIT(25) /* See: OSDP_FLAG_INSTALL_MODE */
+#define PD_FLAG_IGNORE_USR      BIT(26) /* See: OSDP_FLAG_IGNORE_USR */
+#define PD_FLAG_ENABLE_NOTIF    BIT(27) /* See: OSDP_FLAG_ENABLE_NOTIFICATION */
+#define PD_FLAG_CAPTURE_PKT     BIT(28) /* See: OSDP_FLAG_CAPTURE_PACKETS */
+#define PD_FLAG_ALLOW_EMPTY_EDB BIT(29) /* See: OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK */
+
 /* CP event requests; used with make_request() and check_request() */
 #define CP_REQ_RESTART_SC              0x00000001
 #define CP_REQ_EVENT_SEND              0x00000002
@@ -581,40 +589,40 @@ static inline bool test_request(struct osdp_pd *pd, uint32_t req) {
 }
 
 static inline bool is_capture_enabled(struct osdp_pd *pd) {
-	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
+	return (ISSET_FLAG(pd, PD_FLAG_CAPTURE_PKT) &&
 	        (IS_ENABLED(OPT_OSDP_PACKET_TRACE) ||
 	         IS_ENABLED(OPT_OSDP_DATA_TRACE)));
 }
 
 static inline bool is_data_trace_enabled(struct osdp_pd *pd) {
-	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
+	return (ISSET_FLAG(pd, PD_FLAG_CAPTURE_PKT) &&
 	        IS_ENABLED(OPT_OSDP_DATA_TRACE));
 }
 
 static inline bool is_packet_trace_enabled(struct osdp_pd *pd) {
-	return (ISSET_FLAG(pd, OSDP_FLAG_CAPTURE_PACKETS) &&
+	return (ISSET_FLAG(pd, PD_FLAG_CAPTURE_PKT) &&
 	        IS_ENABLED(OPT_OSDP_PACKET_TRACE));
 }
 
 static inline bool sc_allow_empty_encrypted_data_block(struct osdp_pd *pd) {
-	return ISSET_FLAG(pd, OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK);
+	return ISSET_FLAG(pd, PD_FLAG_ALLOW_EMPTY_EDB);
 }
 
 static inline bool is_enforce_secure(struct osdp_pd *pd)
 {
-	return ISSET_FLAG(pd, OSDP_FLAG_ENFORCE_SECURE);
+	return ISSET_FLAG(pd, PD_FLAG_ENFORCE_SECURE);
 }
 
 static inline bool is_notifications_enabled(struct osdp_pd *pd) {
-	return ISSET_FLAG(pd, OSDP_FLAG_ENABLE_NOTIFICATION);
+	return ISSET_FLAG(pd, PD_FLAG_ENABLE_NOTIF);
 }
 
 static inline bool is_ignore_unsolicited_messages(struct osdp_pd *pd) {
-	return ISSET_FLAG(pd, OSDP_FLAG_IGN_UNSOLICITED);
+	return ISSET_FLAG(pd, PD_FLAG_IGNORE_USR);
 }
 
 static inline bool is_install_mode(struct osdp_pd *pd) {
-	return ISSET_FLAG(pd, OSDP_FLAG_INSTALL_MODE);
+	return ISSET_FLAG(pd, PD_FLAG_INSTALL_MODE);
 }
 
 #endif	/* _OSDP_COMMON_H_ */

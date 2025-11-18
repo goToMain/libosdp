@@ -718,7 +718,7 @@ enum osdp_cmd_e {
 	OSDP_CMD_FILE_TX,     /**< File transfer command */
 	OSDP_CMD_STATUS,      /**< Status report command */
 	OSDP_CMD_COMSET_DONE, /**< Comset completed; Alias for OSDP_CMD_COMSET */
-	OSDP_CMD_XWR,         /**< TODO: Doc TRS mode */
+	OSDP_CMD_XWR,         /**< Transparent mode command */
 	OSDP_CMD_SENTINEL     /**< Max command value */
 };
 
@@ -827,7 +827,7 @@ struct osdp_cmd {
 		struct osdp_cmd_mfg mfg;          /**< Manufacturer specific command structure */
 		struct osdp_cmd_file_tx file_tx;  /**< File transfer command structure */
 		struct osdp_status_report status; /**< Status report command structure */
-		struct osdp_trs_cmd trs_cmd;      /**< TODO: Doc TRS */
+		struct osdp_trs_cmd trs_cmd;      /**< Transparent mode command structure */
 	};
 };
 

@@ -991,7 +991,7 @@ struct osdp_event {
 		struct osdp_event_mfgrep mfgrep;     /**< Manufacturer specific response event struture */
 		struct osdp_status_report status;    /**< Status report event structure */
 		struct osdp_event_notification notif;/**< Notification event structure */
-		struct osdp_trs_reply trs_reply;     /**< Transparent mode reply event structure */
+		struct osdp_trs_reply trs;     /**< Transparent mode reply event structure */
 	};
 };
 

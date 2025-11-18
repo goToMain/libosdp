@@ -149,16 +149,16 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	mode_code = ((uint16_t)buf[pos++] & 0xFF) << 8;
 	mode_code |= buf[pos++] & 0xFF;
 	
-	reply->trs_reply.mode_code = mode_code;
+	reply->trs.mode_code = mode_code;
 
 	switch(mode_code) {
 		case REPLY_CURRENT_MODE:
-			reply->trs_reply.mode_report.mode = buf[pos++];
+			reply->trs.mode_report.mode = buf[pos++];
 			break;
 		case REPLY_CARD_INFO_REPORT:
-			reply->trs_reply.card_info_report.reader = buf[pos++];
+			reply->trs.card_info_report.reader = buf[pos++];
 			card_protocol = buf[pos++];
-			reply->trs_reply.card_info_report.protocol = card_protocol;
+			reply->trs.card_info_report.protocol = card_protocol;
 
 			if(card_protocol == OSDP_TRS_CARD_PROTOCOL_CONTACT_T0T1 || card_protocol == OSDP_TRS_CARD_PROTOCOL_14443AB) {
 				LOG_ERR("unsupported card protocol");
@@ -175,31 +175,31 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 				LOG_ERR("protocol data length is larger than expected (>255)");
 				break;
 			}
-			reply->trs_reply.card_info_report.csn_len = csn_len;
-			reply->trs_reply.card_info_report.protocol_data_len = prot_data_len;
+			reply->trs.card_info_report.csn_len = csn_len;
+			reply->trs.card_info_report.protocol_data_len = prot_data_len;
 			if(data_len > 4+csn_len+prot_data_len) {
 				LOG_ERR("data length is larger than expected (>%d)", 4+csn_len+prot_data_len);
 				break;
 			}
-			memcpy(reply->trs_reply.card_info_report.csn, buf+pos, csn_len);
+			memcpy(reply->trs.card_info_report.csn, buf+pos, csn_len);
 			pos+=csn_len;
-			memcpy(reply->trs_reply.card_info_report.protocol_data, buf+pos, prot_data_len);
+			memcpy(reply->trs.card_info_report.protocol_data, buf+pos, prot_data_len);
 			pos+=prot_data_len;
 			pd->trs->state = OSDP_TRS_STATE_SET_MODE;
 			break;
 		case REPLY_CARD_PRSENT:
-			reply->trs_reply.card_status.reader = buf[pos++];
+			reply->trs.card_status.reader = buf[pos++];
 			break;
 		case REPLY_CARD_DATA:
-			reply->trs_reply.card_data.reader = buf[pos++];
-			reply->trs_reply.card_data.status = buf[pos++];
-			reply->trs_reply.card_data.length = data_len;
-			memcpy(reply->trs_reply.card_data.apdu, buf+pos, data_len);
+			reply->trs.card_data.reader = buf[pos++];
+			reply->trs.card_data.status = buf[pos++];
+			reply->trs.card_data.length = data_len;
+			memcpy(reply->trs.card_data.apdu, buf+pos, data_len);
 			break;
 		case REPLY_PIN_ENTRY_COMPLETE:
-			reply->trs_reply.pin_entry_complete.reader = buf[pos++];
-			reply->trs_reply.pin_entry_complete.status = buf[pos++];
-			reply->trs_reply.pin_entry_complete.tries = buf[pos++];
+			reply->trs.pin_entry_complete.reader = buf[pos++];
+			reply->trs.pin_entry_complete.status = buf[pos++];
+			reply->trs.pin_entry_complete.tries = buf[pos++];
 			break;
 		default:
 			LOG_ERR("TRS_Reply_Decode: Unknown mode/code %02X for reply", mode_code);

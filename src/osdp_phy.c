@@ -310,9 +310,7 @@ static int phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			goto out_of_space_error;
 		}
 		crc16 = osdp_compute_crc16(buf, len);
-		buf[len + 0] = BYTE_0(crc16);
-		buf[len + 1] = BYTE_1(crc16);
-		len += 2;
+		bwrite_u16_le(crc16, buf, &len);
 	} else {
 		if (len + 1 > max_len) {
 			goto out_of_space_error;

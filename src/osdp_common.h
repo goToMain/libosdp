@@ -63,46 +63,6 @@ do {\
 #define BYTE_2(x) (uint8_t)(((x) >> 16) & 0xFF)
 #define BYTE_3(x) (uint8_t)(((x) >> 24) & 0xFF)
 
-/**
- * Shorthands for unsigned type (u8, u16, u24, u32) to little indian bytes and
- * vice-versa.
- *
- * Note: Use with caution. These are simple macros that are intended to improve
- * code maintainability by moving repeated patterns into one place. They do not
- * consider side effects.
- */
-#define U8_TO_BYTES_LE(val, buf, len) \
-	buf[len++] = BYTE_0(val)
-#define U16_TO_BYTES_LE(val, buf, len) \
-	buf[len++] = BYTE_0(val); \
-	buf[len++] = BYTE_1(val);
-#define U24_TO_BYTES_LE(val, buf, len) \
-	buf[len++] = BYTE_0(val); \
-	buf[len++] = BYTE_1(val); \
-	buf[len++] = BYTE_2(val);
-#define U32_TO_BYTES_LE(val, buf, len) \
-	buf[len++] = BYTE_0(val); \
-	buf[len++] = BYTE_1(val); \
-	buf[len++] = BYTE_2(val); \
-	buf[len++] = BYTE_3(val);
-#define BYTES_TO_U8_LE(buf, len, val) \
-	val = buf[len++];
-#define BYTES_TO_U16_LE(buf, len, val) \
-	val = ((buf[len + 1] << 8) | \
-	       (buf[len + 0] << 0)); \
-	len += 2;
-#define BYTES_TO_U24_LE(buf, len, val) \
-	val = ((buf[len + 2] << 16) | \
-	       (buf[len + 1] << 8) | \
-	       (buf[len + 0] << 0)); \
-	len += 3;
-#define BYTES_TO_U32_LE(buf, len, val) \
-	val = ((buf[len + 3] << 24) | \
-	       (buf[len + 2] << 16) | \
-	       (buf[len + 1] << 8) | \
-	       (buf[len + 0] << 0)); \
-	len += 4;
-
 /* casting helpers */
 #define TO_OSDP(ctx)  ((struct osdp *)ctx)
 
@@ -463,7 +423,7 @@ struct osdp {
 
 void osdp_keyset_complete(struct osdp_pd *pd);
 
-/* from osdp_phy.c */
+/* --- from osdp_phy.c --- */
 int osdp_phy_packet_init(struct osdp_pd *p, uint8_t *buf, int max_len);
 int osdp_phy_check_packet(struct osdp_pd *pd);
 int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t **pkt_start);
@@ -474,7 +434,7 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 			 int len, int max_len);
 void osdp_phy_progress_sequence(struct osdp_pd *pd);
 
-/* from osdp_common.c */
+/* --- from osdp_common.c --- */
 __weak int64_t osdp_millis_now(void);
 int64_t osdp_millis_since(int64_t last);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
@@ -493,7 +453,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);
 void osdp_crypt_teardown();
 
-/* from osdp_sc.c */
+/* --- from osdp_sc.c --- */
 void osdp_compute_scbk(struct osdp_pd *pd, uint8_t *master_key, uint8_t *scbk);
 void osdp_compute_session_keys(struct osdp_pd *pd);
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd);
@@ -507,6 +467,111 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len);
 void osdp_sc_setup(struct osdp_pd *pd);
 void osdp_sc_teardown(struct osdp_pd *pd);
+
+/* --- Little-endian readers --- */
+
+static inline uint16_t bread_u16_le(const uint8_t *buf, int *pos)
+{
+    uint16_t v = buf[(*pos)++];
+    v |= (uint16_t)buf[(*pos)++] << 8;
+    return v;
+}
+
+static inline uint32_t bread_u24_le(const uint8_t *buf, int *pos)
+{
+    uint32_t v = buf[(*pos)++];
+    v |= (uint32_t)buf[(*pos)++] << 8;
+    v |= (uint32_t)buf[(*pos)++] << 16;
+    return v;
+}
+
+static inline uint32_t bread_u32_le(const uint8_t *buf, int *pos)
+{
+    uint32_t v = buf[(*pos)++];
+    v |= (uint32_t)buf[(*pos)++] << 8;
+    v |= (uint32_t)buf[(*pos)++] << 16;
+    v |= (uint32_t)buf[(*pos)++] << 24;
+    return v;
+}
+
+/* --- Little-endian writers --- */
+
+static inline void bwrite_u8(uint8_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = val;
+}
+
+static inline void bwrite_u16_le(uint16_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = BYTE_0(val);
+    buf[(*len)++] = BYTE_1(val);
+}
+
+static inline void bwrite_u24_le(uint32_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = BYTE_0(val);
+    buf[(*len)++] = BYTE_1(val);
+    buf[(*len)++] = BYTE_2(val);
+}
+
+static inline void bwrite_u32_le(uint32_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = BYTE_0(val);
+    buf[(*len)++] = BYTE_1(val);
+    buf[(*len)++] = BYTE_2(val);
+    buf[(*len)++] = BYTE_3(val);
+}
+
+/* --- Big-endian readers --- */
+
+static inline uint16_t bread_u16_be(const uint8_t *buf, int *pos)
+{
+    uint16_t v = (uint16_t)buf[(*pos)++] << 8;
+    v |= buf[(*pos)++];
+    return v;
+}
+
+static inline uint32_t bread_u24_be(const uint8_t *buf, int *pos)
+{
+    uint32_t v = (uint32_t)buf[(*pos)++] << 16;
+    v |= (uint32_t)buf[(*pos)++] << 8;
+    v |= buf[(*pos)++];
+    return v;
+}
+
+static inline uint32_t bread_u32_be(const uint8_t *buf, int *pos)
+{
+    uint32_t v = (uint32_t)buf[(*pos)++] << 24;
+    v |= (uint32_t)buf[(*pos)++] << 16;
+    v |= (uint32_t)buf[(*pos)++] << 8;
+    v |= buf[(*pos)++];
+    return v;
+}
+
+/* --- Big-endian writers --- */
+
+static inline void bwrite_u16_be(uint16_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = BYTE_1(val);
+    buf[(*len)++] = BYTE_0(val);
+}
+
+static inline void bwrite_u24_be(uint32_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = BYTE_2(val);
+    buf[(*len)++] = BYTE_1(val);
+    buf[(*len)++] = BYTE_0(val);
+}
+
+static inline void bwrite_u32_be(uint32_t val, uint8_t *buf, int *len)
+{
+    buf[(*len)++] = BYTE_3(val);
+    buf[(*len)++] = BYTE_2(val);
+    buf[(*len)++] = BYTE_1(val);
+    buf[(*len)++] = BYTE_0(val);
+}
+
+/* --- Other Helpers --- */
 
 static inline int get_tx_buf_size(struct osdp_pd *pd)
 {

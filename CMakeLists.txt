@@ -35,6 +35,15 @@ option(OPT_OSDP_STATIC_PD "Setup PD single statically" OFF)
 option(OPT_OSDP_LIB_ONLY "Only build the library" OFF)
 option(OPT_BUILD_BARE_METAL "Build library for bare metal targets" OFF)
 
+## OSDP Protocol Configuration Constants
+set(OSDP_PD_SC_RETRY_MS "600000" CACHE STRING "PD Secure Channel retry timeout (ms)")
+set(OSDP_PD_SC_TIMEOUT_MS "8000" CACHE STRING "PD Secure Channel timeout (ms)")
+set(OSDP_PD_ONLINE_TOUT_MS "8000" CACHE STRING "PD online timeout (ms)")
+set(OSDP_CMD_MAX_RETRIES "8" CACHE STRING "Maximum command retries")
+set(OSDP_ONLINE_RETRY_WAIT_MAX_MS "300000" CACHE STRING "Maximum online retry wait (ms)")
+set(OSDP_CMD_RETRY_WAIT_MS "800" CACHE STRING "Command retry wait (ms)")
+set(OSDP_FILE_ERROR_RETRY_MAX "10" CACHE STRING "File transfer error retry max")
+
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(AddCCompilerFlag)

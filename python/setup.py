@@ -73,6 +73,14 @@ def try_vendor_sources(src_dir, src_files, vendor_dir):
         "GIT_TAG": git["tag"],
         "GIT_DIFF": git["diff"],
         "REPO_ROOT": git["root"],
+        # OSDP Configuration Constants (must match CMakeLists.txt defaults)
+        "OSDP_PD_SC_RETRY_MS": "600000",
+        "OSDP_PD_SC_TIMEOUT_MS": "8000",
+        "OSDP_PD_ONLINE_TOUT_MS": "8000",
+        "OSDP_CMD_MAX_RETRIES": "8",
+        "OSDP_ONLINE_RETRY_WAIT_MAX_MS": "300000",
+        "OSDP_CMD_RETRY_WAIT_MS": "800",
+        "OSDP_FILE_ERROR_RETRY_MAX": "10",
     })
 
 utils_sources = [

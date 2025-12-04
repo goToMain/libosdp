@@ -29,6 +29,15 @@ usage() {
 	  -d, --debug                  Enable debug builds
 	  -f, --force                  Use this flags to override some checks
 	  -h, --help                   Print this help
+
+	OSDP Protocol Configuration:
+	  --osdp-pd-sc-retry-ms MS             Set OSDP_PD_SC_RETRY_MS (default: 600000)
+	  --osdp-pd-sc-timeout-ms MS           Set OSDP_PD_SC_TIMEOUT_MS (default: 8000)
+	  --osdp-pd-online-tout-ms MS          Set OSDP_PD_ONLINE_TOUT_MS (default: 8000)
+	  --osdp-cmd-max-retries N             Set OSDP_CMD_MAX_RETRIES (default: 8)
+	  --osdp-online-retry-wait-max-ms MS   Set OSDP_ONLINE_RETRY_WAIT_MAX_MS (default: 300000)
+	  --osdp-cmd-retry-wait-ms MS          Set OSDP_CMD_RETRY_WAIT_MS (default: 800)
+	  --osdp-file-error-retry-max N        Set OSDP_FILE_ERROR_RETRY_MAX (default: 10)
 	---
 }
 
@@ -49,6 +58,13 @@ while [ $# -gt 0 ]; do
 	--static-pd)           STATIC_PD=1;;
 	--lib-only)            LIB_ONLY=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
+	--osdp-pd-sc-retry-ms)             OSDP_PD_SC_RETRY_MS=$2; shift;;
+	--osdp-pd-sc-timeout-ms)           OSDP_PD_SC_TIMEOUT_MS=$2; shift;;
+	--osdp-pd-online-tout-ms)          OSDP_PD_ONLINE_TOUT_MS=$2; shift;;
+	--osdp-cmd-max-retries)            OSDP_CMD_MAX_RETRIES=$2; shift;;
+	--osdp-online-retry-wait-max-ms)   OSDP_ONLINE_RETRY_WAIT_MAX_MS=$2; shift;;
+	--osdp-cmd-retry-wait-ms)          OSDP_CMD_RETRY_WAIT_MS=$2; shift;;
+	--osdp-file-error-retry-max)       OSDP_FILE_ERROR_RETRY_MAX=$2; shift;;
 	-d|--debug)            DEBUG=1;;
 	-f|--force)            FORCE=1;;
 	-h|--help)             usage; exit 0;;
@@ -193,6 +209,13 @@ sed -e "s|@PROJECT_VERSION@|${PROJECT_VERSION}|" \
     -e "s|@GIT_TAG@|${GIT_TAG}|" \
     -e "s|@GIT_DIFF@|${GIT_DIFF}|" \
     -e "s|@REPO_ROOT@|${SCRIPT_DIR}|" \
+    -e "s|@OSDP_PD_SC_RETRY_MS@|${OSDP_PD_SC_RETRY_MS:-600000}|" \
+    -e "s|@OSDP_PD_SC_TIMEOUT_MS@|${OSDP_PD_SC_TIMEOUT_MS:-8000}|" \
+    -e "s|@OSDP_PD_ONLINE_TOUT_MS@|${OSDP_PD_ONLINE_TOUT_MS:-8000}|" \
+    -e "s|@OSDP_CMD_MAX_RETRIES@|${OSDP_CMD_MAX_RETRIES:-8}|" \
+    -e "s|@OSDP_ONLINE_RETRY_WAIT_MAX_MS@|${OSDP_ONLINE_RETRY_WAIT_MAX_MS:-300000}|" \
+    -e "s|@OSDP_CMD_RETRY_WAIT_MS@|${OSDP_CMD_RETRY_WAIT_MS:-800}|" \
+    -e "s|@OSDP_FILE_ERROR_RETRY_MAX@|${OSDP_FILE_ERROR_RETRY_MAX:-10}|" \
 	src/osdp_config.h.in > ${BUILD_DIR}/include/osdp_config.h
 
 CCFLAGS+=" -I${BUILD_DIR}/include"

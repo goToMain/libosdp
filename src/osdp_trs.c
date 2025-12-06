@@ -192,8 +192,8 @@ int osdp_trs_reply_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	case REPLY_CARD_DATA:
 		reply->trs.card_data.reader = buf[pos++];
 		reply->trs.card_data.status = buf[pos++];
-		reply->trs.card_data.length = data_len;
-		memcpy(reply->trs.card_data.apdu, buf+pos, data_len);
+		reply->trs.card_data.length = data_len-2;
+		memcpy(reply->trs.card_data.apdu, buf+pos, data_len-2);
 		break;
 	case REPLY_PIN_ENTRY_COMPLETE:
 		reply->trs.pin_entry_complete.reader = buf[pos++];

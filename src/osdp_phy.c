@@ -310,9 +310,7 @@ static int phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 			goto out_of_space_error;
 		}
 		crc16 = osdp_compute_crc16(buf, len);
-		buf[len + 0] = BYTE_0(crc16);
-		buf[len + 1] = BYTE_1(crc16);
-		len += 2;
+		bwrite_u16_le(crc16, buf, &len);
 	} else {
 		if (len + 1 > max_len) {
 			goto out_of_space_error;
@@ -642,8 +640,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 			 * usage is limited to install mode (a provisioning time
 			 * mode) only.
 			 */
-			if (ISSET_FLAG(pd, OSDP_FLAG_INSTALL_MODE) &&
-			    pkt->data[2] == 0) {
+			if (is_install_mode(pd) && pkt->data[2] == 0) {
 				SET_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			}
 		}

@@ -11,7 +11,7 @@ import threading
 from typing import Callable, Tuple
 
 from .helpers import PDInfo, PDCapabilities
-from .constants import LogLevel
+from .constants import LogLevel, Event, CardFormat
 
 class PeripheralDevice():
     def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities,
@@ -32,9 +32,8 @@ class PeripheralDevice():
     @staticmethod
     def refresh(event, lock, ctx):
         while not event.is_set():
-            lock.acquire()
-            ctx.refresh()
-            lock.release()
+            with lock:
+                ctx.refresh()
             time.sleep(0.020) #sleep for 20ms
 
     def _internal_command_handler(self, command) -> Tuple[int, dict]:
@@ -65,10 +64,23 @@ class PeripheralDevice():
         return cmd
 
     def submit_event(self, event):
-        self.lock.acquire()
-        ret = self.ctx.submit_event(event)
-        self.lock.release()
-        return ret
+        # Do some sanity checks to make sure that the event has correct data
+        if not isinstance(event, dict):
+            raise TypeError("event must be of type dict")
+
+        if not 'event' in event:
+            raise TypeError("event does not contain 'event' key")
+
+        if event['event'] == Event.CardRead:
+            expected_keys = ["reader_no", "format", "direction", "data"]
+            if event['format'] != CardFormat.ASCII:
+                expected_keys.append("length")
+            if not all(key in event for key in expected_keys):
+                raise TypeError("cardread event missing expected key")
+
+        with self.lock:
+            ret = self.ctx.submit_event(event)
+            return ret
 
     def notify_event(self, event):
         from warnings import warn
@@ -76,10 +88,9 @@ class PeripheralDevice():
         return self.submit_event(event)
 
     def register_file_ops(self, fops):
-        self.lock.acquire()
-        ret = self.ctx.register_file_ops(0, fops)
-        self.lock.release()
-        return ret
+        with self.lock:
+            ret = self.ctx.register_file_ops(0, fops)
+            return ret
 
     def is_sc_active(self):
         return self.ctx.is_sc_active()
@@ -108,10 +119,9 @@ class PeripheralDevice():
         self.thread.start()
 
     def get_file_tx_status(self):
-        self.lock.acquire()
-        ret = self.ctx.get_file_tx_status(0)
-        self.lock.release()
-        return ret
+        with self.lock:
+            ret = self.ctx.get_file_tx_status(0)
+            return ret
 
     def stop(self):
         if not self.thread:

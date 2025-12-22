@@ -367,6 +367,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		cmd.id = OSDP_CMD_STATUS;
+		memset(&cmd.status, 0, sizeof(cmd.status));
 		cmd.status.type = OSDP_STATUS_REPORT_LOCAL;
 		if (!do_command_callback(pd, &cmd)) {
 			ret = OSDP_PD_ERR_REPLY;

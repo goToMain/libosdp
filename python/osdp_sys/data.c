@@ -352,29 +352,18 @@ static int pyosdp_make_dict_cmd_status(PyObject *obj, struct osdp_cmd *cmd)
 {
 	if (pyosdp_dict_add_int(obj, "type", cmd->status.type))
 		return -1;
-	if (pyosdp_dict_add_bytes(obj, "report", cmd->status.report, cmd->status.nr_entries))
-		return -1;
 	return 0;
 }
 
 static int pyosdp_make_struct_cmd_status(struct osdp_cmd *p, PyObject *dict)
 {
-	int type, nr_entries;
-	uint8_t *report;
+	int type;
 	struct osdp_status_report *cmd = &p->status;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;
 
-	if (pyosdp_dict_get_bytes_allow_empty(dict, "report", &report, &nr_entries))
-		return -1;
-
-	if (nr_entries > OSDP_STATUS_REPORT_MAX_LEN)
-		return -1;
-
 	cmd->type = type;
-	cmd->nr_entries = nr_entries;
-	memcpy(cmd->report, report, nr_entries);
 	return 0;
 }
 

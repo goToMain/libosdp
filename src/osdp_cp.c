@@ -394,6 +394,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, t, ret = OSDP_CP_ERR_GENERIC, pos = 0;
 	struct osdp_event event;
+	struct osdp_event event = {};
 
 	pd->reply_id = buf[pos++];
 	len--; /* consume reply id from the head */

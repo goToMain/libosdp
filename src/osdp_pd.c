@@ -324,7 +324,7 @@ static void pd_stage_event_mfgrep(struct osdp_pd *pd, struct osdp_cmd_mfg *cmd)
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0;
-	struct osdp_cmd cmd;
+	struct osdp_cmd cmd = {};
 	struct osdp_event *event;
 
 	pd->reply_id = REPLY_NAK;

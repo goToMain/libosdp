@@ -1046,6 +1046,7 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 	case CMD_LSTAT:        return pd->reply_id == REPLY_LSTATR;
 	case CMD_ISTAT:        return pd->reply_id == REPLY_ISTATR;
 	case CMD_OSTAT:        return pd->reply_id == REPLY_OSTATR;
+	case CMD_OUT:          return pd->reply_id == REPLY_OSTATR;
 	case CMD_RSTAT:        return pd->reply_id == REPLY_RSTATR;
 	default:
 		LOG_ERR("Unexpected respose: CMD: %s(%02x) REPLY: %s(%02x)",

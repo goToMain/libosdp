@@ -40,11 +40,17 @@ jobs:
             image: musllinux
             archs: aarch64
 
-          # macOS (multi-arch)
-          - os: macos-13
+          # macOS Intel (for x86_64 and universal2 builds)
+          - os: macos-15-intel
             platform: macos
             image: macosx
-            archs: "x86_64 arm64 universal2"
+            archs: "x86_64 universal2"
+
+          # macOS ARM64 (Apple Silicon)
+          - os: macos-latest
+            platform: macos
+            image: macosx
+            archs: "arm64"
 
           # Windows (multi-arch)
           - os: windows-2022

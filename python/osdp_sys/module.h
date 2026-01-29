@@ -74,6 +74,8 @@ int pyosdp_dict_add_bytes(PyObject *dict, const char *key, const uint8_t *data,
 			  int len);
 void pyosdp_get_channel(PyObject *channel, struct osdp_channel *ops);
 
+void pyosdp_add_error_context(PyObject *exc_type, const char *format, ...);
+
 /* from pyosdp_base.c */
 
 extern PyTypeObject OSDPBaseType;

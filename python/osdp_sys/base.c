@@ -153,30 +153,41 @@ static PyObject *pyosdp_file_register_ops(pyosdp_base_t *self, PyObject *args)
 	pyosdp_pd_t *pd = (pyosdp_pd_t *)self;
 
 	if (!PyArg_ParseTuple(args, "IO!", &pd_idx, &PyDict_Type, &fops_dict))
-		Py_RETURN_FALSE;
+		return NULL;
 
 	if (self->is_cp) {
 		if (pd_idx < 0 || pd_idx >= cp->num_pd) {
 			PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-			Py_RETURN_FALSE;
+			return NULL;
 		}
 		ctx = cp->ctx;
 	} else {
 		if (pd_idx != 0) {
 			PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-			Py_RETURN_FALSE;
+			return NULL;
 		}
 		ctx = pd->ctx;
 	}
 
-	rc = 0;
-	rc |= pyosdp_dict_get_object(fops_dict, "open", &self->fops.open_cb);
-	rc |= pyosdp_dict_get_object(fops_dict, "read", &self->fops.read_cb);
-	rc |= pyosdp_dict_get_object(fops_dict, "write", &self->fops.write_cb);
-	rc |= pyosdp_dict_get_object(fops_dict, "close", &self->fops.close_cb);
-	if (rc != 0) {
-		PyErr_SetString(PyExc_ValueError, "fops dict parse error");
-		Py_RETURN_FALSE;
+	if (pyosdp_dict_get_object(fops_dict, "open", &self->fops.open_cb)) {
+		pyosdp_add_error_context(PyExc_ValueError,
+			"Missing 'open' callback in fops dict");
+		return NULL;
+	}
+	if (pyosdp_dict_get_object(fops_dict, "read", &self->fops.read_cb)) {
+		pyosdp_add_error_context(PyExc_ValueError,
+			"Missing 'read' callback in fops dict");
+		return NULL;
+	}
+	if (pyosdp_dict_get_object(fops_dict, "write", &self->fops.write_cb)) {
+		pyosdp_add_error_context(PyExc_ValueError,
+			"Missing 'write' callback in fops dict");
+		return NULL;
+	}
+	if (pyosdp_dict_get_object(fops_dict, "close", &self->fops.close_cb)) {
+		pyosdp_add_error_context(PyExc_ValueError,
+			"Missing 'close' callback in fops dict");
+		return NULL;
 	}
 
 	Py_INCREF(self->fops.open_cb);
@@ -194,7 +205,7 @@ static PyObject *pyosdp_file_register_ops(pyosdp_base_t *self, PyObject *args)
 
 	if (osdp_file_register_ops(ctx, pd_idx, &pyosdp_fops)) {
 		PyErr_SetString(PyExc_ValueError, "fops registration failed");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	Py_RETURN_TRUE;

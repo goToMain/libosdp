@@ -102,12 +102,12 @@ static PyObject *pyosdp_cp_get_pd_id(pyosdp_cp_t *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "I", &pd)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	if (osdp_cp_get_pd_id(self->ctx, pd, &pd_id)) {
 		PyErr_SetString(PyExc_ValueError, "invalid PD offset");
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	return pyosdp_make_dict_pd_id(&pd_id);
@@ -127,13 +127,13 @@ static PyObject *pyosdp_cp_check_capability(pyosdp_cp_t *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "II", &pd, &function_code)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	cap.function_code = function_code;
 	if (osdp_cp_get_capability(self->ctx, pd, &cap)) {
 		PyErr_SetString(PyExc_ValueError, "invalid PD offset or function code");
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	return Py_BuildValue("(II)", cap.compliance_level, cap.num_items);
@@ -154,16 +154,19 @@ static PyObject *pyosdp_cp_submit_command(pyosdp_cp_t *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd_dict)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
-	if (pyosdp_make_struct_cmd(&cmd, cmd_dict))
+	if (pyosdp_make_struct_cmd(&cmd, cmd_dict)) {
+		pyosdp_add_error_context(PyExc_ValueError,
+			"Unable to convert command dict to OSDP command structure");
 		Py_RETURN_FALSE;
+	}
 
 	ret = osdp_cp_submit_command(self->ctx, pd, &cmd);
 
@@ -185,12 +188,12 @@ static PyObject *pyosdp_cp_disable_pd(pyosdp_cp_t *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "I", &pd)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (osdp_cp_disable_pd(self->ctx, pd))
@@ -211,12 +214,12 @@ static PyObject *pyosdp_cp_enable_pd(pyosdp_cp_t *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "I", &pd)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (osdp_cp_enable_pd(self->ctx, pd))
@@ -237,12 +240,12 @@ static PyObject *pyosdp_cp_is_pd_enabled(pyosdp_cp_t *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "I", &pd)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (osdp_cp_is_pd_enabled(self->ctx, pd))
@@ -260,7 +263,7 @@ static PyObject *pyosdp_cp_modify_flag(pyosdp_cp_t *self, PyObject *args, bool d
 
 	if (pd < 0 || pd >= self->num_pd) {
 		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
-		Py_RETURN_FALSE;
+		return NULL;
 	}
 
 	if (osdp_cp_modify_flag(self->ctx, pd, (uint32_t)flags, do_set))
@@ -381,33 +384,42 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 		else
 			info->name = NULL;
 
-		if (pyosdp_dict_get_int(py_info, "address", &info->address))
+		if (pyosdp_dict_get_int(py_info, "address", &info->address)) {
+			pyosdp_add_error_context(PyExc_ValueError,
+				"Invalid pd_info at index %d", i);
 			goto error;
+		}
 
-		if (pyosdp_dict_get_int(py_info, "flags", &info->flags))
+		if (pyosdp_dict_get_int(py_info, "flags", &info->flags)) {
+			pyosdp_add_error_context(PyExc_ValueError,
+				"Invalid pd_info at index %d", i);
 			goto error;
+		}
 
 		channel = PyDict_GetItemString(py_info, "channel");
 		if (channel == NULL) {
-			PyErr_Format(PyExc_KeyError, "channel object missing");
-			return -1;
+			PyErr_Format(PyExc_KeyError,
+				"channel object missing in pd_info at index %d", i);
+			goto error;
 		}
 		pyosdp_get_channel(channel, &info->channel);
 
 		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &len) == 0) {
 			if (scbk && len != 16) {
-				PyErr_SetString(PyExc_TypeError,
-						"scbk must be exactly 16 bytes");
+				PyErr_Format(PyExc_TypeError,
+					"scbk must be exactly 16 bytes in pd_info at index %d", i);
 				goto error;
 			}
 			info->scbk = scbk;
+		} else {
+			PyErr_Clear();
 		}
-		PyErr_Clear();
 	}
 
 	ctx = osdp_cp_setup(self->num_pd, info_list);
 	if (ctx == NULL) {
-		PyErr_SetString(PyExc_Exception, "failed to setup CP");
+		pyosdp_add_error_context(PyExc_Exception,
+			"Failed to setup CP (check pd_info configuration)");
 		goto error;
 	}
 

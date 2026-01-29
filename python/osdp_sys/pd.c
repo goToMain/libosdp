@@ -57,7 +57,8 @@ static PyObject *pyosdp_pd_submit_event(pyosdp_pd_t *self, PyObject *args)
 	}
 
 	if (pyosdp_make_struct_event(&event, event_dict)) {
-		PyErr_SetString(PyExc_TypeError, "Unable to get event struct!");
+		pyosdp_add_error_context(PyExc_TypeError,
+			"Unable to convert event dict to OSDP event structure");
 		return NULL;
 	}
 
@@ -201,15 +202,24 @@ static int pyosdp_add_pd_cap(PyObject *obj, osdp_pd_info_t *info)
 		py_pd_cap = PyList_GetItem(obj, i);
 
 		if (pyosdp_dict_get_int(py_pd_cap, "function_code",
-					&function_code))
+					&function_code)) {
+			pyosdp_add_error_context(PyExc_ValueError,
+				"Invalid capability at index %d", i);
 			goto error;
+		}
 
 		if (pyosdp_dict_get_int(py_pd_cap, "compliance_level",
-					&compliance_level))
+					&compliance_level)) {
+			pyosdp_add_error_context(PyExc_ValueError,
+				"Invalid capability at index %d", i);
 			goto error;
+		}
 
-		if (pyosdp_dict_get_int(py_pd_cap, "num_items", &num_items))
+		if (pyosdp_dict_get_int(py_pd_cap, "num_items", &num_items)) {
+			pyosdp_add_error_context(PyExc_ValueError,
+				"Invalid capability at index %d", i);
 			goto error;
+		}
 
 		cap[i].function_code = (uint8_t)function_code;
 		cap[i].compliance_level = (uint8_t)compliance_level;
@@ -293,12 +303,14 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 	if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &scbk_length) == 0) {
 		if (scbk && scbk_length == 16)
 			info.scbk = scbk;
+	} else {
+		PyErr_Clear();
 	}
-	PyErr_Clear();
 
 	ctx = osdp_pd_setup(&info);
 	if (ctx == NULL) {
-		PyErr_SetString(PyExc_Exception, "failed to setup pd");
+		pyosdp_add_error_context(PyExc_Exception,
+			"Failed to setup PD (check pd_info configuration)");
 		goto error;
 	}
 

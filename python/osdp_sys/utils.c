@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdarg.h>
 #include "module.h"
 
 int pyosdp_dict_add_bool(PyObject *dict, const char *key, bool val)
@@ -326,4 +327,27 @@ void pyosdp_get_channel(PyObject *channel, struct osdp_channel *ops)
 	ops->flush = channel_flush_callback;
 	ops->data = channel;
 	Py_INCREF(channel);
+}
+
+void pyosdp_add_error_context(PyObject *exc_type, const char *format, ...)
+{
+	PyObject *cause_exc, *new_exc;
+	va_list args;
+	char message[512];
+
+	va_start(args, format);
+	vsnprintf(message, sizeof(message), format, args);
+	va_end(args);
+
+	cause_exc = PyErr_GetRaisedException();
+	if (cause_exc != NULL) {
+		PyErr_SetString(exc_type, message);
+		new_exc = PyErr_GetRaisedException();
+		if (new_exc != NULL) {
+			PyException_SetCause(new_exc, cause_exc);
+			PyErr_SetRaisedException(new_exc);
+		}
+	} else {
+		PyErr_SetString(exc_type, message);
+	}
 }

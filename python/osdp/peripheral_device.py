@@ -32,9 +32,8 @@ class PeripheralDevice():
     @staticmethod
     def refresh(event, lock, ctx):
         while not event.is_set():
-            lock.acquire()
-            ctx.refresh()
-            lock.release()
+            with lock:
+                ctx.refresh()
             time.sleep(0.020) #sleep for 20ms
 
     def _internal_command_handler(self, command) -> Tuple[int, dict]:
@@ -65,10 +64,8 @@ class PeripheralDevice():
         return cmd
 
     def submit_event(self, event):
-        self.lock.acquire()
-        ret = self.ctx.submit_event(event)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.submit_event(event)
 
     def notify_event(self, event):
         from warnings import warn
@@ -76,10 +73,8 @@ class PeripheralDevice():
         return self.submit_event(event)
 
     def register_file_ops(self, fops):
-        self.lock.acquire()
-        ret = self.ctx.register_file_ops(0, fops)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.register_file_ops(0, fops)
 
     def is_sc_active(self):
         return self.ctx.is_sc_active()
@@ -108,10 +103,8 @@ class PeripheralDevice():
         self.thread.start()
 
     def get_file_tx_status(self):
-        self.lock.acquire()
-        ret = self.ctx.get_file_tx_status(0)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.get_file_tx_status(0)
 
     def stop(self):
         if not self.thread:

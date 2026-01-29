@@ -39,9 +39,8 @@ class ControlPanel():
     @staticmethod
     def refresh(event, lock, ctx):
         while not event.is_set():
-            lock.acquire()
-            ctx.refresh()
-            lock.release()
+            with lock:
+                ctx.refresh()
             time.sleep(0.020) #sleep for 20ms
 
     def set_event_handler(self, handler: Callable[[int, dict], int]):
@@ -73,10 +72,8 @@ class ControlPanel():
         return event
 
     def status(self):
-        self.lock.acquire()
-        bitmask = self.ctx.status()
-        self.lock.release()
-        return bitmask
+        with self.lock:
+            return self.ctx.status()
 
     def is_online(self, address):
         pd = self.pd_addr.index(address)
@@ -84,9 +81,8 @@ class ControlPanel():
 
     def get_pd_id(self, address: int) -> PdId:
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        pd_id_dict = self.ctx.get_pd_id(pd)
-        self.lock.release()
+        with self.lock:
+            pd_id_dict = self.ctx.get_pd_id(pd)
         if pd_id_dict:
             # version: int, model: int, vendor_code: int, serial_number: int, firmware_version: int
             pd_id = PdId(
@@ -100,9 +96,8 @@ class ControlPanel():
 
     def check_capability(self, address: int, cap: Capability) -> Tuple[int, int]:
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        compliance_level, num_items = self.ctx.check_capability(pd, cap)
-        self.lock.release()
+        with self.lock:
+            compliance_level, num_items = self.ctx.check_capability(pd, cap)
         return (compliance_level, num_items)
 
     def get_num_online(self):
@@ -114,10 +109,8 @@ class ControlPanel():
         return online
 
     def sc_status(self):
-        self.lock.acquire()
-        bitmask = self.ctx.sc_status()
-        self.lock.release()
-        return bitmask
+        with self.lock:
+            return self.ctx.sc_status()
 
     def is_sc_active(self, address):
         pd = self.pd_addr.index(address)
@@ -133,10 +126,8 @@ class ControlPanel():
 
     def submit_command(self, address, cmd):
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.submit_command(pd, cmd)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.submit_command(pd, cmd)
 
     def send_command(self, address, cmd):
         from warnings import warn
@@ -145,52 +136,38 @@ class ControlPanel():
 
     def set_flag(self, address, flag: LibFlag):
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.set_flag(pd, flag)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.set_flag(pd, flag)
 
     def clear_flag(self, address, flag: LibFlag):
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.clear_flag(pd, flag)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.clear_flag(pd, flag)
 
     def disable_pd(self, address: int) -> bool:
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.disable_pd(pd)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.disable_pd(pd)
 
     def enable_pd(self, address: int) -> bool:
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.enable_pd(pd)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.enable_pd(pd)
 
     def is_pd_enabled(self, address: int) -> bool:
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.is_pd_enabled(pd)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.is_pd_enabled(pd)
 
     def register_file_ops(self, address, fops):
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.register_file_ops(pd, fops)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.register_file_ops(pd, fops)
 
     def get_file_tx_status(self, address):
         pd = self.pd_addr.index(address)
-        self.lock.acquire()
-        ret = self.ctx.get_file_tx_status(pd)
-        self.lock.release()
-        return ret
+        with self.lock:
+            return self.ctx.get_file_tx_status(pd)
 
     def start(self):
         if self.thread:

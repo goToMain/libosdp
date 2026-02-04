@@ -6,8 +6,6 @@
 
 #include <stdlib.h>
 
-#include <utils/disjoint_set.h>
-
 #include "osdp_common.h"
 #include "osdp_file.h"
 #include "osdp_diag.h"
@@ -1428,31 +1426,42 @@ static int cp_submit_command(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 	cp_cmd_enqueue(pd, p);
 	return 0;
 }
-
 static int cp_detect_connection_topology(struct osdp *ctx)
 {
-	int i, j, num_channels;
+	int i, j;
+	int num_channels = 0;
 	int *channel_lock = NULL;
 	struct osdp_pd *pd;
-	struct disjoint_set set;
 	int channels[OSDP_PD_MAX] = { 0 };
-
-	if (disjoint_set_make(&set, NUM_PD(ctx)))
-		return -1;
 
 	for (i = 0; i < NUM_PD(ctx); i++) {
 		pd = osdp_to_pd(ctx, i);
-		for (j = 0; j < i; j++) {
+
+		/* Check if this channel.id was seen before */
+		for (j = 0; j < num_channels; j++) {
 			if (channels[j] == pd->channel.id) {
-				SET_FLAG(osdp_to_pd(ctx, j), PD_FLAG_CHN_SHARED);
-				SET_FLAG(pd, PD_FLAG_CHN_SHARED);
-				disjoint_set_union(&set, i, j);
+				break;
 			}
 		}
-		channels[i] = pd->channel.id;
+
+		if (j == num_channels) {
+			/* New unique channel */
+			channels[num_channels++] = pd->channel.id;
+
+		} else {
+			/* Channel already exists: mark current as shared */
+			SET_FLAG(pd, PD_FLAG_CHN_SHARED);
+
+			/* Also mark the first PD on same channel as shared */
+			for (j = 0; j < i; j++) {
+				if (osdp_to_pd(ctx, j)->channel.id == pd->channel.id) {
+					SET_FLAG(osdp_to_pd(ctx, j), PD_FLAG_CHN_SHARED);
+					break;
+				}
+			}
+		}
 	}
 
-	num_channels = disjoint_set_num_roots(&set);
 	if (num_channels != NUM_PD(ctx)) {
 		channel_lock = calloc(1, sizeof(int) * NUM_PD(ctx));
 		if (channel_lock == NULL) {

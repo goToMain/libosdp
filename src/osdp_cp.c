@@ -682,6 +682,8 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 
+	pd->packet_buf = pd->packet_buf_store;
+
 	/* init packet buf with header */
 	ret = osdp_phy_packet_init(pd, pd->packet_buf, packet_buf_size);
 	if (ret < 0) {
@@ -869,6 +871,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
+		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
+			osdp_phy_release_packet(pd);
+		}
 		if (rc == OSDP_CP_ERR_NONE || rc == OSDP_CP_ERR_APP) {
 			pd->tstamp = osdp_millis_now();
 			osdp_phy_progress_sequence(pd);
@@ -1516,6 +1521,7 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		pd = osdp_to_pd(ctx, i + old_num_pd);
 		pd->idx = i;
 		pd->osdp_ctx = ctx;
+		pd->packet_buf = pd->packet_buf_store;
 		if (info->name) {
 			strncpy(pd->name, info->name, OSDP_PD_NAME_MAXLEN - 1);
 		} else {
@@ -1529,6 +1535,25 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
 		/* Default to CRC-16 until we know PD capabilities */
 		SET_FLAG(pd, PD_FLAG_CP_USE_CRC);
+		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) &&
+			info->channel.recv_pkt && info->channel.release_pkt) {
+			pd->rx.pkt = calloc(1, sizeof(struct osdp_rx_pkt));
+			if (!pd->rx.pkt) {
+				LOG_ERR("Failed to allocate rx_pkt");
+				goto error;
+			}
+		} else {
+			/* Traditional mode: recv must be present */
+			if (!info->channel.recv) {
+				LOG_ERR("channel.recv() cannot be NULL");
+				goto error;
+			}
+			pd->rx.rb = calloc(1, sizeof(struct osdp_rb));
+			if (!pd->rx.rb) {
+				LOG_ERR("Failed to allocate rx_rb");
+				goto error;
+			}
+		}
 		memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
 			memcpy(pd->sc.scbk, info->scbk, 16);
@@ -1628,6 +1653,11 @@ void osdp_cp_teardown(osdp_t *ctx)
 			osdp_packet_capture_finish(pd);
 		}
 		safe_free(pd->file);
+		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
+			safe_free(pd->rx.pkt);
+		} else {
+			safe_free(pd->rx.rb);
+		}
 		if (pd->channel.close) {
 			pd->channel.close(pd->channel.data);
 		}

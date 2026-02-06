@@ -335,9 +335,15 @@ struct osdp_secure_channel {
 };
 
 struct osdp_rb {
-    size_t head;
-    size_t tail;
-    uint8_t buffer[OSDP_RX_RB_SIZE];
+	size_t head;
+	size_t tail;
+	uint8_t buffer[OSDP_RX_RB_SIZE];
+};
+
+struct osdp_rx_pkt {
+	const uint8_t *buf;
+	unsigned long len;
+	unsigned long max_len;
 };
 
 #define OSDP_APP_DATA_QUEUE_SIZE \
@@ -375,8 +381,13 @@ struct osdp_pd {
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
 
 	/* Raw bytes received from the serial line for this PD */
-	struct osdp_rb rx_rb;
-	uint8_t packet_buf[OSDP_PACKET_BUF_SIZE];
+	union {
+		struct osdp_rb *rb;
+		struct osdp_rx_pkt *pkt;
+	} rx;
+
+	uint8_t *packet_buf;
+	uint8_t packet_buf_store[OSDP_PACKET_BUF_SIZE];
 	unsigned long packet_len;
 	unsigned long packet_buf_len;
 	uint32_t packet_scan_skip;
@@ -431,8 +442,9 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
 int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
-			 int len, int max_len);
+                         int len, int max_len);
 void osdp_phy_progress_sequence(struct osdp_pd *pd);
+void osdp_phy_release_packet(struct osdp_pd *pd);
 
 /* --- from osdp_common.c --- */
 __weak int64_t osdp_millis_now(void);
@@ -575,7 +587,7 @@ static inline void bwrite_u32_be(uint32_t val, uint8_t *buf, int *len)
 
 static inline int get_tx_buf_size(struct osdp_pd *pd)
 {
-	int packet_buf_size = sizeof(pd->packet_buf);
+	int packet_buf_size = OSDP_PACKET_BUF_SIZE;
 
 	if (pd->peer_rx_size) {
 		if (packet_buf_size > (int)pd->peer_rx_size)

@@ -17,6 +17,7 @@ usage() {
 	  --packet-trace               Enable raw packet trace for diagnostics
 	  --data-trace                 Enable command/reply data buffer tracing
 	  --skip-mark                  Don't send the leading mark byte (0xFF)
+	  --zero-copy                  Enable zero-copy RX buffers (requires recv_pkt/release_pkt)
 	  --crypto LIB                 Use methods from LIB (openssl/mbedtls/*tinyaes)
 	  --crypto-include-dir DIR     Include directory for crypto LIB if not in system path
 	  --crypto-ld-flags            Args to pass to linker for the crypto LIB
@@ -40,6 +41,7 @@ while [ $# -gt 0 ]; do
 	--packet-trace)        PACKET_TRACE=1;;
 	--data-trace)          DATA_TRACE=1;;
 	--skip-mark)           SKIP_MARK_BYTE=1;;
+	--zero-copy)           ZERO_COPY=1;;
 	--cross-compile)       CROSS_COMPILE=$2; shift;;
 	--prefix)              PREFIX=$2; shift;;
 	--crypto)              CRYPTO=$2; shift;;
@@ -94,6 +96,10 @@ fi
 
 if [[ ! -z "${SKIP_MARK_BYTE}" ]]; then
 	CCFLAGS+=" -DOPT_OSDP_SKIP_MARK_BYTE"
+fi
+
+if [[ ! -z "${ZERO_COPY}" ]]; then
+	CCFLAGS+=" -DOPT_OSDP_RX_ZERO_COPY"
 fi
 
 if [[ ! -z "${STATIC_PD}" ]]; then

@@ -29,6 +29,18 @@ if (CONFIG_LIBOSDP)
 	zephyr_library_link_libraries(osdp)
 	target_include_directories(modules_osdp PRIVATE ${OSDP_ROOT}/utils/include)
 
+	if (CONFIG_LIBOSDP_SKIP_MARK_BYTE)
+		zephyr_library_compile_definitions(OPT_OSDP_SKIP_MARK_BYTE=1)
+	endif()
+
+	if (CONFIG_LIBOSDP_RX_ZERO_COPY)
+		zephyr_library_compile_definitions(OPT_OSDP_RX_ZERO_COPY=1)
+	endif()
+
+	if (CONFIG_LIBOSDP_DISABLE_PRETTY_LOGGING)
+		zephyr_library_compile_definitions(OPT_DISABLE_PRETTY_LOGGING=1)
+	endif()
+
 	zephyr_library_sources(
 		## LibOSDP
 		${OSDP_ROOT}/src/osdp_cp.c

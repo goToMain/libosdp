@@ -967,6 +967,8 @@ static int pd_send_reply(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 
+	pd->packet_buf = pd->packet_buf_store;
+
 	/* init packet buf with header */
 	ret = osdp_phy_packet_init(pd, pd->packet_buf, packet_buf_size);
 	if (ret < 0) {
@@ -1049,6 +1051,10 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	}
 
 	ret = pd_receive_and_process_command(pd);
+
+	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
+		osdp_phy_release_packet(pd);
+	}
 
 	if (ret == OSDP_PD_ERR_IGNORE || ret == OSDP_PD_ERR_NO_DATA) {
 		return;
@@ -1186,6 +1192,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	pd->osdp_ctx = ctx;
 	pd->idx = 0;
+	pd->packet_buf = pd->packet_buf_store;
 	if (info->name) {
 		strncpy(pd->name, info->name, OSDP_PD_NAME_MAXLEN - 1);
 	} else {
@@ -1195,7 +1202,28 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 	pd->address = info->address;
 	pd->flags = 0;
 	pd->seq_number = -1;
+
 	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
+
+	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) &&
+		pd->channel.recv_pkt && pd->channel.release_pkt) {
+		pd->rx.pkt = calloc(1, sizeof(struct osdp_rx_pkt));
+		if (!pd->rx.pkt) {
+			LOG_ERR("Failed to allocate rx packet store");
+			goto error;
+		}
+	} else {
+		/* Traditional mode: recv must be present */
+		if (!info->channel.recv) {
+			LOG_ERR("channel.recv() cannot be NULL");
+			goto error;
+		}
+		pd->rx.rb = calloc(1, sizeof(struct osdp_rb));
+		if (!pd->rx.rb) {
+			LOG_ERR("Failed to allocate rx ring buffer");
+			goto error;
+		}
+	}
 
 	pd_collect_init_flags(pd, info->flags);
 	logger_get_default(&pd->logger);
@@ -1249,6 +1277,12 @@ void osdp_pd_teardown(osdp_t *ctx)
 
 	if (pd->channel.close) {
 		pd->channel.close(pd->channel.data);
+	}
+
+	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
+		safe_free(pd->rx.pkt);
+	} else {
+		safe_free(pd->rx.rb);
 	}
 
 #ifndef OPT_OSDP_STATIC_PD

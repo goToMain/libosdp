@@ -49,16 +49,59 @@ static int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 	return total_sent;
 }
 
+static int osdp_channel_recv_pkt(struct osdp_pd *pd)
+{
+#ifdef OPT_OSDP_RX_ZERO_COPY
+	const uint8_t *buf = NULL;
+	int max_len = 0;
+
+	if (pd->rx.pkt->buf) {
+		LOG_WRN("Previous packet not released! Forcing release");
+		osdp_phy_release_packet(pd);
+	}
+
+	if (pd->channel.recv_pkt(pd->channel.data, &buf, &max_len) != 0 ||
+	    !buf || max_len <= 0) {
+		return 0;
+	}
+
+	pd->rx.pkt->buf = buf;
+	pd->rx.pkt->max_len = (unsigned long)max_len;
+	pd->rx.pkt->len = 0;
+	pd->packet_buf = (uint8_t *)buf;
+	return 1;
+#else
+	ARG_UNUSED(pd);
+	return 0;
+#endif
+}
+
+void osdp_phy_release_packet(struct osdp_pd *pd)
+{
+#ifdef OPT_OSDP_RX_ZERO_COPY
+	if (pd->rx.pkt && pd->rx.pkt->buf && pd->channel.release_pkt) {
+		pd->channel.release_pkt(pd->channel.data, pd->rx.pkt->buf);
+	}
+	if (pd->rx.pkt) {
+		pd->rx.pkt->buf = NULL;
+		pd->rx.pkt->len = 0;
+		pd->rx.pkt->max_len = 0;
+	}
+	pd->packet_len = 0;
+	pd->packet_buf_len = 0;
+	CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	pd->packet_buf = pd->packet_buf_store;
+#else
+	ARG_UNUSED(pd);
+#endif
+}
+
 static int osdp_channel_receive(struct osdp_pd *pd)
 {
 	uint8_t buf[64];
 	int recv, total_recv = 0;
 
 #ifdef UNIT_TESTING
-	/**
-	 * Some unit tests don't define pd->channel.recv and directly fill
-	 * pd->packet_buf to test if everything else work correctly.
-	 */
 	if (!pd->channel.recv) {
 		return 0;
 	}
@@ -69,7 +112,7 @@ static int osdp_channel_receive(struct osdp_pd *pd)
 		if (recv <= 0) {
 			break;
 		}
-		if (osdp_rb_push_buf(&pd->rx_rb, buf, recv) != recv) {
+		if (osdp_rb_push_buf(pd->rx.rb, buf, recv) != recv) {
 			LOG_EM("RX ring buffer overflow!");
 			return -1;
 		}
@@ -351,6 +394,44 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 	return OSDP_ERR_PKT_NONE;
 }
 
+static int phy_validate_header(struct osdp_pd *pd, uint8_t *buf,
+                               unsigned long buf_len, unsigned long max_len)
+{
+	struct osdp_packet_header *pkt;
+	unsigned long pkt_len;
+	int mark = 0;
+
+	if (buf_len < sizeof(struct osdp_packet_header)) {
+		return OSDP_ERR_PKT_WAIT;
+	}
+
+	/* Check for packet mark and SOM */
+	if (buf[0] == OSDP_PKT_MARK && buf_len > 1 && buf[1] == OSDP_PKT_SOM) {
+		mark = 1;
+		SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	} else if (buf[0] == OSDP_PKT_SOM) {
+		CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
+	} else {
+		return OSDP_ERR_PKT_FMT;
+	}
+
+	pkt = (struct osdp_packet_header *)(buf + mark);
+	if (pkt->som != OSDP_PKT_SOM) {
+		LOG_ERR("Invalid SOM 0x%02x", pkt->som);
+		return OSDP_ERR_PKT_FMT;
+	}
+
+	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
+	if (pkt_len > max_len ||
+	    pkt_len < sizeof(struct osdp_packet_header) + 1 ||
+	    (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
+	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+		return OSDP_ERR_PKT_FMT;
+	}
+
+	return (int)(pkt_len + mark);
+}
+
 static bool phy_rescan_packet_buf(struct osdp_pd *pd)
 {
 	unsigned long j = packet_has_mark(pd);
@@ -384,15 +465,13 @@ static bool phy_rescan_packet_buf(struct osdp_pd *pd)
 
 static int phy_check_header(struct osdp_pd *pd)
 {
-	unsigned long pkt_len;
-	int len;
-	struct osdp_packet_header *pkt;
+	int ret, len;
 	uint8_t cur_byte = 0, prev_byte = 0;
 	uint8_t *buf = pd->packet_buf;
 
 	/* Scan for packet start */
 	while (pd->packet_buf_len == 0) {
-		if (osdp_rb_pop(&pd->rx_rb, &cur_byte)) {
+		if (osdp_rb_pop(pd->rx.rb, &cur_byte)) {
 			return OSDP_ERR_PKT_NO_DATA;
 		}
 		if (cur_byte == OSDP_PKT_SOM) {
@@ -400,11 +479,9 @@ static int phy_check_header(struct osdp_pd *pd)
 				buf[0] = OSDP_PKT_MARK;
 				buf[1] = OSDP_PKT_SOM;
 				pd->packet_buf_len = 2;
-				SET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 			} else {
 				buf[0] = OSDP_PKT_SOM;
 				pd->packet_buf_len = 1;
-				CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 			}
 			break;
 		}
@@ -415,27 +492,13 @@ static int phy_check_header(struct osdp_pd *pd)
 	}
 
 	/* Found start of a new packet; wait until we have atleast the header */
-	len = osdp_rb_pop_buf(&pd->rx_rb, buf + pd->packet_buf_len,
+	len = osdp_rb_pop_buf(pd->rx.rb, buf + pd->packet_buf_len,
 			      sizeof(struct osdp_packet_header) - 1);
 	pd->packet_buf_len += len;
-	if (pd->packet_buf_len < sizeof(struct osdp_packet_header)) {
-		return OSDP_ERR_PKT_WAIT;
-	}
 
-	pkt = (struct osdp_packet_header *)(buf + packet_has_mark(pd));
-
-	/* validate packet header */
-	if (pkt->som != OSDP_PKT_SOM) {
-		LOG_ERR("Invalid SOM 0x%02x", pkt->som);
-		return OSDP_ERR_PKT_FMT;
-	}
-
-	/* validate packet */
-	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
-	if (pkt_len > OSDP_PACKET_BUF_SIZE ||
-	    pkt_len < sizeof(struct osdp_packet_header) + 1 ||
-	    (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
-	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+	/* Validate header using shared function */
+	ret = phy_validate_header(pd, buf, pd->packet_buf_len, OSDP_PACKET_BUF_SIZE);
+	if (ret == OSDP_ERR_PKT_FMT) {
 		/*
 		 * Since SoM byte was encountered and the packet structure is
 		 * invalid, we cannot just discard all bytes extracted so far
@@ -449,7 +512,7 @@ static int phy_check_header(struct osdp_pd *pd)
 		return OSDP_ERR_PKT_WAIT;
 	}
 
-	return pkt_len + packet_has_mark(pd);
+	return ret;
 }
 
 static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
@@ -556,9 +619,15 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 
 int osdp_phy_check_packet(struct osdp_pd *pd)
 {
-	int ret = OSDP_ERR_PKT_FMT;
+	int ret;
+	bool zero_copy = pd->channel.recv_pkt != NULL;
 
-	ret = osdp_channel_receive(pd); /* always pull new bytes first */
+	/* Acquire new data: either full packet or stream bytes */
+	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) && zero_copy) {
+		ret = osdp_channel_recv_pkt(pd);
+	} else {
+		ret = osdp_channel_receive(pd);
+	}
 
 	/**
 	 * PD mode does not maintain state. When we receive the anything
@@ -569,32 +638,63 @@ int osdp_phy_check_packet(struct osdp_pd *pd)
 		pd->tstamp = osdp_millis_now();
 	}
 
+	/* Parse and validate packet header */
 	if (pd->packet_len == 0) {
-		ret = phy_check_header(pd);
-		if (ret < 0) {
-			return ret;
-		}
-		pd->packet_len = ret;
-		if (pd->packet_scan_skip) {
-			LOG_DBG("Packet scan skipped:%u mark:%d",
-				pd->packet_scan_skip,
-				ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK));
-			pd->packet_scan_skip = 0;
+		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) && zero_copy) {
+			if (!pd->rx.pkt->buf) {
+				return OSDP_ERR_PKT_NO_DATA;
+			}
+			ret = phy_validate_header(pd, pd->packet_buf,
+						  pd->rx.pkt->max_len,
+						  pd->rx.pkt->max_len);
+			if (ret < 0) {
+				if (ret == OSDP_ERR_PKT_FMT) {
+					osdp_phy_release_packet(pd);
+				}
+				return ret;
+			}
+			pd->packet_len = ret;
+			pd->packet_buf_len = ret;
+			pd->rx.pkt->len = ret;
+		} else {
+			ret = phy_check_header(pd);
+			if (ret < 0) {
+				return ret;
+			}
+			pd->packet_len = ret;
+			if (pd->packet_scan_skip) {
+				LOG_DBG("Packet scan skipped:%u mark:%d",
+					pd->packet_scan_skip,
+					ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK));
+				pd->packet_scan_skip = 0;
+			}
 		}
 	}
 
-	/* We have a valid header, collect one full packet */
-	ret = osdp_rb_pop_buf(&pd->rx_rb, pd->packet_buf + pd->packet_buf_len,
-				pd->packet_len - pd->packet_buf_len);
-	pd->packet_buf_len += ret;
-	if (pd->packet_buf_len != pd->packet_len)
-		return OSDP_ERR_PKT_WAIT;
+	if (!zero_copy) {
+		/* Traditional: collect remaining packet bytes from ring buffer */
+		ret = osdp_rb_pop_buf(pd->rx.rb,
+				      pd->packet_buf + pd->packet_buf_len,
+				      pd->packet_len - pd->packet_buf_len);
+		pd->packet_buf_len += ret;
+		if (pd->packet_buf_len != pd->packet_len) {
+			return OSDP_ERR_PKT_WAIT;
+		}
+	}
 
+	/* Packet complete: trace and validate */
 	if (is_packet_trace_enabled(pd)) {
 		osdp_capture_packet(pd, pd->packet_buf, pd->packet_buf_len);
 	}
 
-	return phy_check_packet(pd, pd->packet_buf, pd->packet_len);
+	ret = phy_check_packet(pd, pd->packet_buf, pd->packet_len);
+
+	/* Relase packet buffers on errors */
+	if (zero_copy && ret != OSDP_ERR_PKT_NONE) {
+		osdp_phy_release_packet(pd);
+	}
+
+	return ret;
 }
 
 int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
@@ -768,9 +868,13 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 
 void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 {
+	if (pd->rx.pkt && pd->rx.pkt->buf) {
+		osdp_phy_release_packet(pd);
+	}
 	pd->packet_buf_len = 0;
 	pd->packet_len = 0;
 	pd->phy_state = 0;
+	pd->packet_buf = pd->packet_buf_store;
 	if (is_error) {
 		pd->phy_retry_count = 0;
 		phy_reset_seq_number(pd);

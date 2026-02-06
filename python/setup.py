@@ -148,6 +148,7 @@ try_vendor_sources(
 
 definitions = [
     "OPT_OSDP_PACKET_TRACE",
+    "OPT_OSDP_RX_ZERO_COPY",
     # "OPT_OSDP_DATA_TRACE",
     # "OPT_OSDP_SKIP_MARK_BYTE",
 ]
@@ -171,7 +172,7 @@ include_dirs = [
 
 compile_args = (
     [ "-I" + path for path in include_dirs ] +
-    [ "-D" + define for define in definitions ]
+    [ "-D" + define + "=1" for define in definitions ]
 )
 
 if os.path.exists("README.md"):

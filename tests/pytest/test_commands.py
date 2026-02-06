@@ -82,7 +82,7 @@ def test_command_output():
         'command': Command.Output,
         'output_no': 0,
         'control_code': 1,
-        'timer_count': 10
+        'timer_count': 0
     }
     assert cp.is_online(secure_pd_addr)
     assert cp.submit_command(secure_pd_addr, test_cmd)

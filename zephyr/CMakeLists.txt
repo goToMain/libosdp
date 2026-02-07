@@ -5,7 +5,6 @@ if (CONFIG_LIBOSDP)
 	list(APPEND CMAKE_MODULE_PATH "${OSDP_ROOT}/cmake")
 	include(GitInfo)
 
-	## TODO: Convert these to Kconfig entries
 	configure_file(${OSDP_ROOT}/src/osdp_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/osdp_config.h @ONLY)
 
 	file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/include/osdp_export.h "
@@ -22,10 +21,31 @@ if (CONFIG_LIBOSDP)
 	zephyr_interface_library_named(osdp)
 	target_link_libraries(zephyr_interface INTERFACE osdp)
 	target_include_directories(osdp INTERFACE ${OSDP_ROOT}/include)
+	target_include_directories(osdp INTERFACE ${OSDP_ROOT}/zephyr/include)
 	target_include_directories(osdp INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 	zephyr_library_named(modules_osdp)
 	zephyr_library_compile_definitions(__BARE_METAL__)
+
+	# Pass all OSDP Kconfig values as compile definitions
+	zephyr_library_compile_definitions(OSDP_PACKET_BUF_SIZE=${CONFIG_OSDP_PACKET_BUF_SIZE})
+	zephyr_library_compile_definitions(OSDP_MINIMUM_PACKET_SIZE=${CONFIG_OSDP_MINIMUM_PACKET_SIZE})
+	zephyr_library_compile_definitions(OSDP_RX_RB_SIZE=${CONFIG_OSDP_RX_RB_SIZE})
+	zephyr_library_compile_definitions(OSDP_CP_CMD_POOL_SIZE=${CONFIG_OSDP_CP_CMD_POOL_SIZE})
+	zephyr_library_compile_definitions(OSDP_PD_SC_RETRY_MS=${CONFIG_OSDP_PD_SC_RETRY_MS})
+	zephyr_library_compile_definitions(OSDP_PD_POLL_TIMEOUT_MS=${CONFIG_OSDP_PD_POLL_TIMEOUT_MS})
+	zephyr_library_compile_definitions(OSDP_PD_SC_TIMEOUT_MS=${CONFIG_OSDP_PD_SC_TIMEOUT_MS})
+	zephyr_library_compile_definitions(OSDP_PD_ONLINE_TOUT_MS=${CONFIG_OSDP_PD_ONLINE_TOUT_MS})
+	zephyr_library_compile_definitions(OSDP_RESP_TOUT_MS=${CONFIG_OSDP_RESP_TOUT_MS})
+	zephyr_library_compile_definitions(OSDP_CMD_MAX_RETRIES=${CONFIG_OSDP_CMD_MAX_RETRIES})
+	zephyr_library_compile_definitions(OSDP_ONLINE_RETRY_WAIT_MAX_MS=${CONFIG_OSDP_ONLINE_RETRY_WAIT_MAX_MS})
+	zephyr_library_compile_definitions(OSDP_CMD_RETRY_WAIT_MS=${CONFIG_OSDP_CMD_RETRY_WAIT_MS})
+	zephyr_library_compile_definitions(OSDP_FILE_ERROR_RETRY_MAX=${CONFIG_OSDP_FILE_ERROR_RETRY_MAX})
+	zephyr_library_compile_definitions(OSDP_PD_MAX=${CONFIG_OSDP_PD_MAX})
+	zephyr_library_compile_definitions(OSDP_CMD_ID_OFFSET=${CONFIG_OSDP_CMD_ID_OFFSET})
+	zephyr_library_compile_definitions(OSDP_PCAP_LINK_TYPE=${CONFIG_OSDP_PCAP_LINK_TYPE})
+	zephyr_library_compile_definitions(OSDP_PD_NAME_MAXLEN=${CONFIG_OSDP_PD_NAME_MAXLEN})
+
 	zephyr_library_link_libraries(osdp)
 	target_include_directories(modules_osdp PRIVATE ${OSDP_ROOT}/utils/include)
 
@@ -49,7 +69,6 @@ if (CONFIG_LIBOSDP)
 		${OSDP_ROOT}/src/osdp_phy.c
 		${OSDP_ROOT}/src/osdp_sc.c
 		${OSDP_ROOT}/src/osdp_file.c
-		${OSDP_ROOT}/src/crypto/mbedtls.c
 
 		## Utils
 		## TODO: Migrate these to use (or wrap around) zephyr API
@@ -64,6 +83,15 @@ if (CONFIG_LIBOSDP)
 		src/osdp.c
 	)
 
-	target_include_directories(modules_osdp PRIVATE ${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
-	zephyr_link_libraries(mbedTLS)
+	if (CONFIG_LIBOSDP_CRYPTO_MBEDTLS)
+		zephyr_library_compile_definitions(OPT_OSDP_USE_MBEDTLS)
+		zephyr_library_sources(${OSDP_ROOT}/src/crypto/mbedtls.c)
+		target_include_directories(modules_osdp PRIVATE ${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
+		zephyr_link_libraries(mbedTLS)
+	elseif(CONFIG_LIBOSDP_CRYPTO_TINYAES)
+		zephyr_library_sources(
+			${OSDP_ROOT}/src/crypto/tinyaes.c
+			${OSDP_ROOT}/src/crypto/tinyaes_src.c
+		)
+	endif()
 endif()

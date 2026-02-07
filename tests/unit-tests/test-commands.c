@@ -479,6 +479,8 @@ void run_command_tests(struct test *t)
 	overall_result &= test_led_permanent_command();
 	overall_result &= test_output_command();
 	overall_result &= test_text_command();
+	overall_result &= test_comset_command();
+	overall_result &= test_status_command();
 	overall_result &= test_keyset_command();
 	overall_result &= test_mfg_command_simple();
 	overall_result &= test_mfg_command_with_reply();

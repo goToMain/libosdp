@@ -294,9 +294,9 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 	struct osdp_pd_cap cap[] = {
 		{ OSDP_PD_CAP_READER_AUDIBLE_OUTPUT, 1, 1 },
 		{ OSDP_PD_CAP_READER_LED_CONTROL, 1, 1 },
-		{ OSDP_PD_CAP_OUTPUT_CONTROL, 4, 1 },
+		{ OSDP_PD_CAP_OUTPUT_CONTROL, 1, 4 },
 		{ OSDP_PD_CAP_READER_TEXT_OUTPUT, 1, 1 },
-		{ OSDP_PD_CAP_CONTACT_STATUS_MONITORING, 8, 1 },
+		{ OSDP_PD_CAP_CONTACT_STATUS_MONITORING, 1, 8 },
 		{ -1, -1, -1 }
 	};
 

@@ -95,6 +95,6 @@ while True:
 
 see [examples/pd_app.py][3] for more details.
 
-[1]: https://libosdp.sidcha.dev/api/
+[1]: https://doc.osdp.dev/api/
 [2]: https://github.com/goToMain/libosdp/blob/master/examples/python/cp_app.py
 [3]: https://github.com/goToMain/libosdp/blob/master/examples/python/pd_app.py

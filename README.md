@@ -174,7 +174,7 @@ To add new tests for the feature you are working one, see the other tests in
 
 This sections is for those who want to build the HTML documentation for this
 project locally. The latest version of the doc can always be found at
-[libosdp.sidcha.dev][6].
+[doc.osdp.dev][6].
 
 Build the docs by doing the following (build directory has the html files).
 
@@ -218,7 +218,7 @@ Your support will ensure sustained development of LibOSDP.
 [3]: https://github.com/goTomain/libosdp/workflows/Build%20CI/badge.svg
 [4]: https://github.com/goTomain/libosdp/actions?query=workflow%3A%22Build+CI%22
 [5]: https://docs.pytest.org/en/latest/
-[6]: https://libosdp.sidcha.dev/
+[6]: https://doc.osdp.dev/
 [7]: https://github.com/ARMmbed/mbedtls
 [8]: https://www.openssl.org/
 [9]: https://www.doxygen.nl/index.html
@@ -226,20 +226,20 @@ Your support will ensure sustained development of LibOSDP.
 [11]: https://github.com/goToMain/libosdp-rs/tree/master/libosdp
 [12]: https://pypi.org/project/libosdp/
 [13]: https://github.com/goToMain/libosdp/tree/master/python
-[14]: https://libosdp.sidcha.dev/libosdp/debugging
+[14]: https://doc.osdp.dev/libosdp/debugging
 [15]: https://github.com/sponsors/sidcha
 [16]: https://img.shields.io/pypi/v/libosdp?logo=python&link=https%3A%2F%2Fpypi.org%2Fproject%2Flibosdp%2F
 [17]: https://badges.registry.platformio.org/packages/sidcha/library/LibOSDP.svg
 [18]: https://registry.platformio.org/libraries/sidcha/LibOSDP
 [19]: https://crates.io/search?q=libosdp
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
-[21]: https://libosdp.sidcha.dev/protocol/
-[22]: https://libosdp.sidcha.dev/protocol/commands-and-replies.html
-[23]: https://libosdp.sidcha.dev/libosdp/build-and-install.html
+[21]: https://doc.osdp.dev/protocol/
+[22]: https://doc.osdp.dev/protocol/commands-and-replies.html
+[23]: https://doc.osdp.dev/libosdp/build-and-install.html
 [24]: https://github.com/goTomain/libosdp
 [25]: https://github.com/goTomain/c-utils
-[26]: https://libosdp.sidcha.dev/api/
-[27]: https://libosdp.sidcha.dev/protocol/faq.html
+[26]: https://doc.osdp.dev/api/
+[27]: https://doc.osdp.dev/protocol/faq.html
 [28]: https://github.com/goToMain/libosdp/issues/new/choose
 [29]: https://github.com/goToMain/libosdp/blob/master/python
 [30]: https://github.com/goToMain/libosdp/tree/master/tests/pytest/testlib

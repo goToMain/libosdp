@@ -17,7 +17,7 @@ set(PROJECT_AUTHOR_EMAIL "sidcha.dev@gmail.com")
 set(PROJECT_YEAR         "2019")
 set(PROJECT_ORG          "goToMain")
 set(PROJECT_URL          "https://github.com/goToMain/libosdp/")
-set(PROJECT_HOMEPAGE     "https://libosdp.sidcha.dev/")
+set(PROJECT_HOMEPAGE     "https://doc.osdp.dev/")
 set(PROJECT_DESCRIPTION  "Open Supervised Device Protocol (OSDP) Library")
 set(PROJECT_LICENSE      "Apache License, Version 2.0 (Apache-2.0)")
 

@@ -78,7 +78,6 @@ def try_vendor_sources(src_dir, src_files, vendor_dir):
 utils_sources = [
     "utils/src/list.c",
     "utils/src/queue.c",
-    "utils/src/slab.c",
     "utils/src/utils.c",
     "utils/src/logger.c",
     "utils/src/disjoint_set.c",
@@ -138,6 +137,18 @@ other_files = [
     "utils/src/pcap_gen.c",
 ]
 
+definitions = [
+    "OPT_OSDP_PACKET_TRACE",
+    "OPT_OSDP_RX_ZERO_COPY",
+    # "OPT_OSDP_DATA_TRACE",
+    # "OPT_OSDP_SKIP_MARK_BYTE",
+]
+
+if os.getenv("OPT_OSDP_APP_OWNED_QUEUE_DATA", "").lower() in ("1", "true", "yes", "on"):
+    definitions.append("OPT_OSDP_APP_OWNED_QUEUE_DATA")
+else:
+    utils_sources.append("utils/src/slab.c")
+
 source_files = utils_sources + lib_sources + osdp_sys_sources
 
 try_vendor_sources(
@@ -145,13 +156,6 @@ try_vendor_sources(
     source_files + utils_includes + lib_includes + osdp_sys_include + other_files,
     "vendor"
 )
-
-definitions = [
-    "OPT_OSDP_PACKET_TRACE",
-    "OPT_OSDP_RX_ZERO_COPY",
-    # "OPT_OSDP_DATA_TRACE",
-    # "OPT_OSDP_SKIP_MARK_BYTE",
-]
 
 if ("OPT_OSDP_PACKET_TRACE" in definitions or
     "OPT_OSDP_DATA_TRACE" in definitions):

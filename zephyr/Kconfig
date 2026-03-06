@@ -34,6 +34,14 @@ config LIBOSDP_RX_ZERO_COPY
 		ring-buffering inside LibOSDP. Requires channel.recv_pkt().
 		When disabled, uses ring buffer for byte-by-byte reception.
 
+config LIBOSDP_APP_OWNED_QUEUE_DATA
+	bool "Enable app-owned command/event payload queues"
+	default n
+	help
+		When enabled, LibOSDP queues only references to submitted
+		commands/events. Applications must keep submitted objects
+		valid until completion callbacks are invoked.
+
 config LIBOSDP_RING_BUFFER
 	bool
 	default y if !LIBOSDP_RX_ZERO_COPY

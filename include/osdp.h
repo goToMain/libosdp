@@ -760,10 +760,22 @@ enum osdp_cmd_e {
 #define OSDP_CMD_FLAG_BROADCAST 0x000000001
 
 /**
+ * @brief Queue linkage node; layout-compatible with node_t from list.h.
+ * Embedded as @c _node in osdp_cmd and osdp_event. Do not read or write this
+ * field — it is reserved for internal use by the library.
+ */
+typedef struct osdp_queue_node_s osdp_queue_node_t;
+struct osdp_queue_node_s {
+	osdp_queue_node_t *next;
+	osdp_queue_node_t *prev;
+};
+
+/**
  * @brief OSDP Command Structure. This is a wrapper for all individual OSDP
  * commands.
  */
 struct osdp_cmd {
+	osdp_queue_node_t _node; /**< Reserved: internal queue linkage */
 	enum osdp_cmd_e id;    /**< Command ID. Used to select specific commands in union */
 	uint32_t flags;        /**< Flags; see OSDP_CMD_FLAG_* flags for possibilities */
 	/** Command */
@@ -930,6 +942,7 @@ enum osdp_event_type {
  * @brief OSDP Event structure.
  */
 struct osdp_event {
+	osdp_queue_node_t _node; /**< Reserved: internal queue linkage */
 	enum osdp_event_type type;  /**< Event type. Used to select specific event in union */
 	uint32_t flags;             /**< Flags; reserved, set to zero */
 	/** Event */
@@ -974,6 +987,30 @@ typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
  * @retval -ve on errors.
  */
 typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
+
+/**
+ * @brief Terminal status of a submitted command/event object.
+ */
+enum osdp_completion_status {
+	OSDP_COMPLETION_OK = 0,  /**< Successfully completed */
+	OSDP_COMPLETION_FAILED,  /**< Transport/protocol failure */
+	OSDP_COMPLETION_FLUSHED, /**< Removed by flush API */
+	OSDP_COMPLETION_ABORTED, /**< Removed during teardown */
+};
+
+/**
+ * @brief Callback for CP command completion notifications.
+ */
+typedef void (*cp_command_completion_callback_t)(void *arg, int pd,
+						 const struct osdp_cmd *cmd,
+						 enum osdp_completion_status status);
+
+/**
+ * @brief Callback for PD event completion notifications.
+ */
+typedef void (*pd_event_completion_callback_t)(void *arg,
+					       const struct osdp_event *ev,
+					       enum osdp_completion_status status);
 
 /* ------------------------------- */
 /*            PD Methods           */
@@ -1031,6 +1068,20 @@ void osdp_pd_set_capabilities(osdp_t *ctx, const struct osdp_pd_cap *cap);
 OSDP_EXPORT
 void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 				  void *arg);
+
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+/**
+ * @brief Set callback method for PD event completion.
+ *
+ * @param ctx OSDP context
+ * @param cb Callback function pointer
+ * @param arg Opaque pointer passed as first callback argument
+ */
+OSDP_EXPORT
+void osdp_pd_set_event_completion_callback(osdp_t *ctx,
+					   pd_event_completion_callback_t cb,
+					   void *arg);
+#endif
 
 /**
  * @brief API to notify PD events to CP. These events are sent to the CP as an
@@ -1210,6 +1261,20 @@ int osdp_cp_get_capability(const osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
  */
 OSDP_EXPORT
 void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
+
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+/**
+ * @brief Set callback method for CP command completion.
+ *
+ * @param ctx OSDP context
+ * @param cb Callback function pointer
+ * @param arg Opaque pointer passed as first callback argument
+ */
+OSDP_EXPORT
+void osdp_cp_set_command_completion_callback(osdp_t *ctx,
+					     cp_command_completion_callback_t cb,
+					     void *arg);
+#endif
 
 /**
  * @brief Set or clear OSDP public flags

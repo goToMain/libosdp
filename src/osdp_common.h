@@ -347,13 +347,13 @@ struct osdp_rx_pkt {
 };
 
 #define OSDP_APP_DATA_QUEUE_SIZE \
-	(OSDP_CP_CMD_POOL_SIZE * \
-	 (sizeof(union osdp_ephemeral_data) + sizeof(queue_node_t)))
+	(OSDP_CP_CMD_POOL_SIZE * sizeof(union osdp_ephemeral_data))
 
 struct osdp_app_data_pool {
 	slab_t slab;
 	uint8_t slab_blob[OSDP_APP_DATA_QUEUE_SIZE];
 };
+
 
 struct osdp_pd {
 	char name[OSDP_PD_NAME_MAXLEN];
@@ -402,7 +402,11 @@ struct osdp_pd {
 		queue_t cmd_queue;
 		queue_t event_queue;
 	};
-	struct osdp_app_data_pool app_data; /* alloc osdp_event / osdp_cmd */
+	const struct osdp_cmd *active_cmd;      /* in-flight cmd (app-owned mode) */
+	const struct osdp_event *active_event;  /* in-flight event (app-owned mode) */
+#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	struct osdp_app_data_pool app_data;  /* alloc osdp_event / osdp_cmd */
+#endif
 
 	struct osdp_channel channel;     /* PD's serial channel */
 	struct osdp_secure_channel sc;   /* Secure Channel session context */
@@ -411,6 +415,8 @@ struct osdp_pd {
 	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;
 	pd_command_callback_t command_callback;
+	void *event_completion_callback_arg;
+	pd_event_completion_callback_t event_completion_callback;
 
 	/* logger context (from utils/logger.h) */
 	logger_t logger;
@@ -430,6 +436,8 @@ struct osdp {
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
+	void *command_completion_callback_arg;
+	cp_command_completion_callback_t command_completion_callback;
 };
 
 void osdp_keyset_complete(struct osdp_pd *pd);

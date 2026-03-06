@@ -26,3 +26,9 @@ individual flag documentation below.
 .. doxygendefine:: OSDP_FLAG_CAPTURE_PACKETS
 
 .. doxygendefine:: OSDP_FLAG_ALLOW_EMPTY_ENCRYPTED_DATA_BLOCK
+
+.. doxygendefine:: OSDP_FLAG_APP_OWNED_CMD_EVENT_DATA
+
+.. note::
+   ``OSDP_FLAG_APP_OWNED_CMD_EVENT_DATA`` is effective only when LibOSDP is
+   built with ``OPT_OSDP_APP_OWNED_QUEUE_DATA``.

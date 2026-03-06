@@ -80,65 +80,83 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 	{ -1, 0, 0 } /* Sentinel */
 };
 
-struct pd_event_node {
-	queue_node_t node;
-	struct osdp_event object;
-};
-
 static int pd_event_queue_init(struct osdp_pd *pd)
 {
-	if (slab_init(&pd->app_data.slab, sizeof(struct pd_event_node),
+	queue_init(&pd->event_queue);
+
+#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	if (slab_init(&pd->app_data.slab, sizeof(struct osdp_event),
 		      pd->app_data.slab_blob,
 		      sizeof(pd->app_data.slab_blob)) < 0) {
-		LOG_ERR("Failed to initialize command slab");
+		LOG_ERR("Failed to initialize event slab");
 		return -1;
 	}
-	queue_init(&pd->event_queue);
+#endif
 	return 0;
 }
 
+#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
+
 static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 {
-	struct pd_event_node *event = NULL;
+	struct osdp_event *event = NULL;
 
 	if (slab_alloc(&pd->app_data.slab, (void **)&event)) {
 		LOG_ERR("Event slab allocation failed");
 		return NULL;
 	}
-	memset(&event->object, 0, sizeof(event->object));
-	return &event->object;
+	memset(event, 0, sizeof(*event));
+	return event;
 }
 
-static void pd_event_free(struct osdp_pd *pd, struct osdp_event *event)
+static void pd_event_free(struct osdp_pd *pd, const struct osdp_event *event)
 {
-	struct pd_event_node *n;
-
-	n = CONTAINER_OF(event, struct pd_event_node, object);
-	slab_free(&pd->app_data.slab, n);
+	slab_free(&pd->app_data.slab, (void *)event);
 }
 
-static void pd_event_enqueue(struct osdp_pd *pd, struct osdp_event *event)
-{
-	struct pd_event_node *n;
+#else /* OPT_OSDP_APP_OWNED_QUEUE_DATA */
 
-	n = CONTAINER_OF(event, struct pd_event_node, object);
-	queue_enqueue(&pd->event_queue, &n->node);
+static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
+{
+	ARG_UNUSED(pd);
+	return NULL;
 }
 
-static int pd_event_dequeue(struct osdp_pd *pd, struct osdp_event **event)
+static inline void pd_event_free(struct osdp_pd *pd, const struct osdp_event *event)
 {
-	struct pd_event_node *n;
-	queue_node_t *node;
+	ARG_UNUSED(pd);
+	ARG_UNUSED(event);
+}
 
-	if (queue_dequeue(&pd->event_queue, &node)) {
-		return -1;
-	}
-	n = CONTAINER_OF(node, struct pd_event_node, node);
-	*event = &n->object;
+#endif /* OPT_OSDP_APP_OWNED_QUEUE_DATA */
+
+static int pd_event_enqueue(struct osdp_pd *pd, const struct osdp_event *event)
+{
+	queue_enqueue(&pd->event_queue, (queue_node_t *)&event->_node);
 	return 0;
 }
 
-static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
+static int pd_event_dequeue(struct osdp_pd *pd, const struct osdp_event **event)
+{
+	queue_node_t *node;
+
+	if (queue_dequeue(&pd->event_queue, &node))
+		return -1;
+	*event = CONTAINER_OF(node, struct osdp_event, _node);
+	return 0;
+}
+
+static inline void pd_complete_event(struct osdp_pd *pd,
+				     const struct osdp_event *event,
+				     enum osdp_completion_status status)
+{
+	if (!event || !pd->event_completion_callback)
+		return;
+	pd->event_completion_callback(pd->event_completion_callback_arg,
+				      event, status);
+}
+
+static int pd_translate_event(struct osdp_pd *pd, const struct osdp_event *event)
 {
 	int reply_code = 0;
 
@@ -349,19 +367,25 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 
 	switch (pd->cmd_id) {
 	case CMD_POLL:
+	{
+		const struct osdp_event *queued_event;
+
 		if (len != CMD_POLL_DATA_LEN) {
 			break;
 		}
 		/* Check if we have external events in the queue */
-		if (pd_event_dequeue(pd, &event) == 0) {
-			ret = pd_translate_event(pd, event);
+		if (pd_event_dequeue(pd, &queued_event) == 0) {
+			ret = pd_translate_event(pd, queued_event);
 			pd->reply_id = ret;
-			pd_event_free(pd, event);
+			if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
+				pd->active_event = queued_event;
+			pd_event_free(pd, queued_event);
 		} else {
 			pd->reply_id = REPLY_ACK;
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
+	}
 	case CMD_LSTAT:
 		if (len != CMD_LSTAT_DATA_LEN) {
 			break;
@@ -1077,6 +1101,10 @@ static void osdp_pd_update(struct osdp_pd *pd)
 
 	ret = pd_send_reply(pd);
 	if (ret == OSDP_PD_ERR_NONE) {
+		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA) && pd->active_event) {
+			pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_OK);
+			pd->active_event = NULL;
+		}
 		if (pd->cmd_id == CMD_KEYSET && pd->reply_id == REPLY_ACK) {
 			memcpy(pd->sc.scbk, pd->ephemeral_data, 16);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
@@ -1107,6 +1135,10 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		}
 		osdp_phy_progress_sequence(pd);
 	} else {
+		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA) && pd->active_event) {
+			pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_FAILED);
+			pd->active_event = NULL;
+		}
 		/**
 		 * PD received and decoded a valid command from CP but failed to
 		 * send the intended response?? This should not happen; but if
@@ -1270,6 +1302,17 @@ void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
+	const struct osdp_event *ev;
+
+	while (pd_event_dequeue(pd, &ev) == 0) {
+		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
+			pd_complete_event(pd, ev, OSDP_COMPLETION_ABORTED);
+		pd_event_free(pd, ev);
+	}
+	if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA)) {
+		pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_ABORTED);
+		pd->active_event = NULL;
+	}
 
 	if (is_capture_enabled(pd)) {
 		osdp_packet_capture_finish(pd);
@@ -1318,24 +1361,41 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 	pd->command_callback = cb;
 }
 
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+void osdp_pd_set_event_completion_callback(osdp_t *ctx,
+					   pd_event_completion_callback_t cb,
+					   void *arg)
+{
+	input_check(ctx);
+	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+
+	pd->event_completion_callback = cb;
+	pd->event_completion_callback_arg = arg;
+}
+#endif
+
 int osdp_pd_submit_event(osdp_t *ctx, const struct osdp_event *event)
 {
 	input_check(ctx);
-	struct osdp_event *ev;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
+	struct osdp_event *ev;
 
 	if (event->type <= 0 ||
 	    event->type >= OSDP_EVENT_SENTINEL) {
 		return -1;
 	}
 
+	if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
+		return pd_event_enqueue(pd, event);
 	ev = pd_event_alloc(pd);
 	if (ev == NULL) {
 		return -1;
 	}
-
 	memcpy(ev, event, sizeof(struct osdp_event));
-	pd_event_enqueue(pd, ev);
+	if (pd_event_enqueue(pd, ev)) {
+		pd_event_free(pd, ev);
+		return -1;
+	}
 	return 0;
 }
 
@@ -1348,10 +1408,12 @@ int osdp_pd_flush_events(osdp_t *ctx)
 {
 	input_check(ctx);
 	int count = 0;
-	struct osdp_event *ev;
+	const struct osdp_event *ev;
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	while (pd_event_dequeue(pd, &ev) == 0) {
+		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
+			pd_complete_event(pd, ev, OSDP_COMPLETION_FLUSHED);
 		pd_event_free(pd, ev);
 		count++;
 	}

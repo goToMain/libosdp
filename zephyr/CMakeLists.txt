@@ -57,6 +57,10 @@ if (CONFIG_LIBOSDP)
 		zephyr_library_compile_definitions(OPT_OSDP_RX_ZERO_COPY=1)
 	endif()
 
+	if (CONFIG_LIBOSDP_APP_OWNED_QUEUE_DATA)
+		zephyr_library_compile_definitions(OPT_OSDP_APP_OWNED_QUEUE_DATA=1)
+	endif()
+
 	if (CONFIG_LIBOSDP_DISABLE_PRETTY_LOGGING)
 		zephyr_library_compile_definitions(OPT_DISABLE_PRETTY_LOGGING=1)
 	endif()
@@ -74,7 +78,6 @@ if (CONFIG_LIBOSDP)
 		## TODO: Migrate these to use (or wrap around) zephyr API
 		${OSDP_ROOT}/utils/src/list.c
 		${OSDP_ROOT}/utils/src/queue.c
-		${OSDP_ROOT}/utils/src/slab.c
 		${OSDP_ROOT}/utils/src/utils.c
 		${OSDP_ROOT}/utils/src/logger.c
 		${OSDP_ROOT}/utils/src/disjoint_set.c
@@ -82,6 +85,10 @@ if (CONFIG_LIBOSDP)
 		## Zephyr glue code
 		src/osdp.c
 	)
+
+	if (NOT CONFIG_LIBOSDP_APP_OWNED_QUEUE_DATA)
+		zephyr_library_sources(${OSDP_ROOT}/utils/src/slab.c)
+	endif()
 
 	if (CONFIG_LIBOSDP_CRYPTO_MBEDTLS)
 		zephyr_library_compile_definitions(OPT_OSDP_USE_MBEDTLS)

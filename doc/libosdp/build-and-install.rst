@@ -76,6 +76,9 @@ the flag ``-DOPT_OSDP_BUILD_STATIC=ON`` to cmake.
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | --skip-mark         | OPT_OSDP_SKIP_MARK_BYTE       | OFF       | Don't send the leading mark byte (0xFF)   |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
+| --app-owned-queue-  | OPT_OSDP_APP_OWNED_QUEUE_DATA | OFF       | Queue app-owned cmd/event payload refs    |
+| data                |                               |           |                                           |
++---------------------+-------------------------------+-----------+-------------------------------------------+
 | --no-colours        | OPT_DISABLE_PRETTY_LOGGING    | OFF       | Don't colourize log outputs               |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | --static-pd         | OPT_OSDP_STATIC_PD            | OFF       | Setup PD single statically                |
@@ -90,6 +93,11 @@ the flag ``-DOPT_OSDP_BUILD_STATIC=ON`` to cmake.
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | N/A                 | OPT_BUILD_BARE_METAL          | OFF       | Build library for bare metal targets      |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
+
+When ``OPT_OSDP_APP_OWNED_QUEUE_DATA`` is enabled, LibOSDP keeps only
+references to submitted command/event payloads in internal queues. In this mode
+internal slab-based command/event payload storage is not built/used, and the
+application must keep submitted objects valid until completion callbacks.
 
 Add LibOSDP to your cmake project
 ---------------------------------

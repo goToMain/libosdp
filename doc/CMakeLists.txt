@@ -8,6 +8,7 @@ get_target_property(LIBOSDP_PUBLIC_HEADER_DIR osdp INTERFACE_INCLUDE_DIRECTORIES
 file(GLOB_RECURSE LIBOSDP_PUBLIC_HEADERS ${LIBOSDP_PUBLIC_HEADER_DIR}/*.h)
 
 # Copy public header and patch it for doxygen run
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
 configure_file(
 	${PROJECT_SOURCE_DIR}/include/osdp.h
 	${CMAKE_CURRENT_BINARY_DIR}/include/osdp.h
@@ -23,12 +24,13 @@ set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/html/index.html)
 
 # Generate Doxyfile in build dir.
-configure_file(Doxyfile.in Doxyfile @ONLY)
+set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+configure_file(Doxyfile.in ${DOXYFILE_OUT} @ONLY)
 
 add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
                    DEPENDS ${LIBOSDP_PUBLIC_HEADERS}
                    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
-                   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+                   MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
                    COMMENT "Generating doxygen docs")
 
 add_custom_target(Doxygen DEPENDS ${DOXYGEN_INDEX_FILE})

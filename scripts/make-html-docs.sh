@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 SCRIPTS_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ROOT_DIR="${SCRIPTS_DIR}/../"
@@ -10,7 +11,8 @@ source ./.venv/bin/activate
 pip install -r requirements.txt
 
 cmake -B build ..
-cmake --build build -t html_docs
-mv build/doc/sphinx/ .
+cmake --build build --target html_docs
+mv build/doc/sphinx .
 rm -rf build
 mv sphinx build
+popd

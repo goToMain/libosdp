@@ -16,15 +16,22 @@ from .constants import LogLevel
 class PeripheralDevice():
     def __init__(self, pd_info: PDInfo, pd_cap: PDCapabilities,
                  log_level: LogLevel=LogLevel.Info,
-                 command_handler: Callable[[dict], Tuple[int, dict]]=None):
+                 command_handler: Callable[[dict], Tuple[int, dict]]=None,
+                 event_completion_handler: Callable[[dict, int], None]=None):
         self.command_queue = queue.Queue()
         self.address = pd_info.address
         self.user_command_handler = None
+        self.user_event_completion_handler = None
         osdp_sys.set_loglevel(log_level)
         self.ctx = osdp_sys.PeripheralDevice(pd_info.get(), capabilities=pd_cap.get())
         # Always use our internal handler to ensure queue functionality
         self.ctx.set_command_callback(self._internal_command_handler)
+        if hasattr(self.ctx, "set_event_completion_callback"):
+            self.ctx.set_event_completion_callback(
+                self._internal_event_completion_handler
+            )
         self.set_command_handler(command_handler)
+        self.set_event_completion_handler(event_completion_handler)
         self.event = None
         self.lock = None
         self.thread = None
@@ -54,6 +61,16 @@ class PeripheralDevice():
     def set_command_handler(self, handler: Callable[[dict], Tuple[int, dict]]):
         """Set user command handler while maintaining queue functionality"""
         self.user_command_handler = handler
+
+    def set_event_completion_handler(self, handler: Callable[[dict, int], None]):
+        self.user_event_completion_handler = handler
+
+    def _internal_event_completion_handler(self, event, status) -> None:
+        if self.user_event_completion_handler:
+            try:
+                self.user_event_completion_handler(event, status)
+            except Exception as e:
+                print(f"Error in user event completion handler: {e}")
 
     def get_command(self, timeout: int=5):
         block = timeout >= 0

@@ -144,10 +144,11 @@ definitions = [
     # "OPT_OSDP_SKIP_MARK_BYTE",
 ]
 
-if os.getenv("OPT_OSDP_APP_OWNED_QUEUE_DATA", "").lower() in ("1", "true", "yes", "on"):
-    definitions.append("OPT_OSDP_APP_OWNED_QUEUE_DATA")
-else:
+app_owned_queue_data = os.getenv("OPT_OSDP_APP_OWNED_QUEUE_DATA", "").lower()
+if app_owned_queue_data in ("0", "false", "no", "off"):
     utils_sources.append("utils/src/slab.c")
+else:
+    definitions.append("OPT_OSDP_APP_OWNED_QUEUE_DATA")
 
 source_files = utils_sources + lib_sources + osdp_sys_sources
 

@@ -64,6 +64,18 @@ while True:
 
 see [examples/cp_app.py][2] for more details.
 
+Optional command completion callback:
+
+```python
+from osdp import CompletionStatus
+
+def on_command_complete(address, command, status):
+    if status == CompletionStatus.Ok:
+        print("command completed")
+
+cp.set_command_completion_handler(on_command_complete)
+```
+
 ### Peripheral Device mode:
 
 ```python
@@ -94,6 +106,18 @@ while True:
 ```
 
 see [examples/pd_app.py][3] for more details.
+
+Optional event completion callback:
+
+```python
+from osdp import CompletionStatus
+
+def on_event_complete(event, status):
+    if status == CompletionStatus.Flushed:
+        print("event removed by flush")
+
+pd.set_event_completion_handler(on_event_complete)
+```
 
 [1]: https://doc.osdp.dev/api/
 [2]: https://github.com/goToMain/libosdp/blob/master/examples/python/cp_app.py

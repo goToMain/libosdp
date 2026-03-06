@@ -8,6 +8,43 @@
 
 #define TAG "pyosdp_cp"
 
+static void pyosdp_cp_free_pending_commands(pyosdp_cp_t *self)
+{
+	struct pyosdp_pending_cmd *node, *next;
+
+	node = self->pending_cmd_head;
+	while (node) {
+		next = node->next;
+		free(node);
+		node = next;
+	}
+	self->pending_cmd_head = NULL;
+}
+
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+static struct pyosdp_pending_cmd *
+pyosdp_cp_take_pending_command(pyosdp_cp_t *self, int pd, const struct osdp_cmd *cmd)
+{
+	struct pyosdp_pending_cmd *cur, *prev = NULL;
+
+	cur = self->pending_cmd_head;
+	while (cur) {
+		if (cur->pd == pd && &cur->cmd == cmd) {
+			if (prev) {
+				prev->next = cur->next;
+			} else {
+				self->pending_cmd_head = cur->next;
+			}
+			cur->next = NULL;
+			return cur;
+		}
+		prev = cur;
+		cur = cur->next;
+	}
+	return NULL;
+}
+#endif
+
 #define pyosdp_cp_pd_status_doc                                                \
 	"Get PD status, (online/offline) as a bitmask for all connected PDs\n" \
 	"\n"                                                                   \
@@ -53,6 +90,64 @@ int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
 	Py_DECREF(arglist);
 	return 0;
 }
+
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+static void pyosdp_cp_command_completion_cb(void *data, int pd,
+					    const struct osdp_cmd *cmd,
+					    enum osdp_completion_status status)
+{
+	pyosdp_cp_t *self = data;
+	PyObject *arglist = NULL, *result = NULL, *cmd_dict = NULL;
+	struct pyosdp_pending_cmd *pending;
+
+	pending = pyosdp_cp_take_pending_command(self, pd, cmd);
+	if (pending == NULL) {
+		return;
+	}
+
+	if (self->command_completion_cb &&
+	    pyosdp_make_dict_cmd(&cmd_dict, &pending->cmd) == 0) {
+		arglist = Py_BuildValue("(IOI)", pd, cmd_dict, status);
+		if (arglist) {
+			result = PyObject_CallObject(self->command_completion_cb,
+						     arglist);
+		}
+		if (result == NULL) {
+			PyErr_Print();
+		}
+	}
+
+	Py_XDECREF(result);
+	Py_XDECREF(arglist);
+	Py_XDECREF(cmd_dict);
+	free(pending);
+}
+
+#define pyosdp_cp_set_command_completion_callback_doc                           \
+	"Set OSDP command completion callback handler\n"                        \
+	"\n"                                                                   \
+	"@param callback Function called with (pd, command, status)\n"         \
+	"\n"                                                                   \
+	"@return None"
+static PyObject *pyosdp_cp_set_command_completion_callback(pyosdp_cp_t *self,
+							    PyObject *args)
+{
+	PyObject *callback = NULL;
+
+	if (!PyArg_ParseTuple(args, "O", &callback))
+		return NULL;
+
+	if (callback == NULL || !PyCallable_Check(callback)) {
+		PyErr_SetString(PyExc_TypeError, "Need a callable object!");
+		return NULL;
+	}
+
+	Py_XDECREF(self->command_completion_cb);
+	self->command_completion_cb = callback;
+	Py_INCREF(self->command_completion_cb);
+	Py_RETURN_NONE;
+}
+#endif
 
 #define pyosdp_cp_set_event_callback_doc                                       \
 	"Set OSDP event callback handler\n"                                    \
@@ -150,7 +245,11 @@ static PyObject *pyosdp_cp_submit_command(pyosdp_cp_t *self, PyObject *args)
 {
 	int pd, ret;
 	PyObject *cmd_dict;
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	struct pyosdp_pending_cmd *pending = NULL;
+#else
 	struct osdp_cmd cmd = {};
+#endif
 
 	if (!PyArg_ParseTuple(args, "IO!", &pd, &PyDict_Type, &cmd_dict)) {
 		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
@@ -162,6 +261,30 @@ static PyObject *pyosdp_cp_submit_command(pyosdp_cp_t *self, PyObject *args)
 		return NULL;
 	}
 
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	pending = calloc(1, sizeof(*pending));
+	if (pending == NULL) {
+		PyErr_SetString(PyExc_MemoryError, "command allocation failed");
+		return NULL;
+	}
+	pending->pd = pd;
+
+	if (pyosdp_make_struct_cmd(&pending->cmd, cmd_dict)) {
+		free(pending);
+		pyosdp_add_error_context(PyExc_ValueError,
+			"Unable to convert command dict to OSDP command structure");
+		Py_RETURN_FALSE;
+	}
+
+	ret = osdp_cp_submit_command(self->ctx, pd, &pending->cmd);
+	if (ret == 0) {
+		pending->next = self->pending_cmd_head;
+		self->pending_cmd_head = pending;
+		Py_RETURN_TRUE;
+	}
+
+	free(pending);
+#else
 	if (pyosdp_make_struct_cmd(&cmd, cmd_dict)) {
 		pyosdp_add_error_context(PyExc_ValueError,
 			"Unable to convert command dict to OSDP command structure");
@@ -169,11 +292,35 @@ static PyObject *pyosdp_cp_submit_command(pyosdp_cp_t *self, PyObject *args)
 	}
 
 	ret = osdp_cp_submit_command(self->ctx, pd, &cmd);
-
-	if (ret == 0)
+	if (ret == 0) {
 		Py_RETURN_TRUE;
+	}
+#endif
 
 	Py_RETURN_FALSE;
+}
+
+#define pyosdp_cp_flush_commands_doc                                            \
+	"Deletes all queued commands for a given PD.\n"                         \
+	"\n"                                                                   \
+	"@param pd PD offset number\n"                                          \
+	"\n"                                                                   \
+	"@return int Count of commands dequeued.\n"
+static PyObject *pyosdp_cp_flush_commands(pyosdp_cp_t *self, PyObject *args)
+{
+	int pd, ret;
+
+	if (!PyArg_ParseTuple(args, "I", &pd)) {
+		PyErr_SetString(PyExc_ValueError, "Invalid arguments");
+		return NULL;
+	}
+	if (pd < 0 || pd >= self->num_pd) {
+		PyErr_SetString(PyExc_ValueError, "Invalid PD offset");
+		return NULL;
+	}
+
+	ret = osdp_cp_flush_commands(self->ctx, pd);
+	return Py_BuildValue("I", ret);
 }
 
 #define pyosdp_cp_disable_pd_doc                                             \
@@ -299,6 +446,10 @@ static PyObject *pyosdp_cp_clear_flag(pyosdp_cp_t *self, PyObject *args)
 static int pyosdp_cp_tp_clear(pyosdp_cp_t *self)
 {
 	Py_XDECREF(self->event_cb);
+	self->event_cb = NULL;
+	Py_XDECREF(self->command_completion_cb);
+	self->command_completion_cb = NULL;
+	pyosdp_cp_free_pending_commands(self);
 	return 0;
 }
 
@@ -313,6 +464,8 @@ static PyObject *pyosdp_cp_tp_new(PyTypeObject *type, PyObject *args,
 	}
 	self->ctx = NULL;
 	self->event_cb = NULL;
+	self->command_completion_cb = NULL;
+	self->pending_cmd_head = NULL;
 	self->num_pd = 0;
 	return (PyObject *)self;
 }
@@ -424,6 +577,11 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 	}
 
 	osdp_cp_set_event_callback(ctx, pyosdp_cp_event_cb, self);
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	osdp_cp_set_command_completion_callback(ctx,
+						pyosdp_cp_command_completion_cb,
+						self);
+#endif
 
 	self->ctx = ctx;
 	return 0;
@@ -444,6 +602,7 @@ PyObject *pyosdp_cp_tp_repr(PyObject *self)
 static int pyosdp_cp_tp_traverse(pyosdp_cp_t *self, visitproc visit, void *arg)
 {
 	Py_VISIT(self->event_cb);
+	Py_VISIT(self->command_completion_cb);
 	return 0;
 }
 
@@ -461,8 +620,15 @@ static PyMethodDef pyosdp_cp_tp_methods[] = {
 	  METH_NOARGS, pyosdp_cp_refresh_doc },
 	{ "set_event_callback", (PyCFunction)pyosdp_cp_set_event_callback,
 	  METH_VARARGS, pyosdp_cp_set_event_callback_doc },
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	{ "set_command_completion_callback",
+	  (PyCFunction)pyosdp_cp_set_command_completion_callback,
+	  METH_VARARGS, pyosdp_cp_set_command_completion_callback_doc },
+#endif
 	{ "submit_command", (PyCFunction)pyosdp_cp_submit_command,
 	  METH_VARARGS, pyosdp_cp_submit_command_doc },
+	{ "flush_commands", (PyCFunction)pyosdp_cp_flush_commands,
+	  METH_VARARGS, pyosdp_cp_flush_commands_doc },
 	{ "status", (PyCFunction)pyosdp_cp_pd_status,
 	  METH_NOARGS, pyosdp_cp_pd_status_doc },
 	{ "sc_status", (PyCFunction)pyosdp_cp_sc_status,

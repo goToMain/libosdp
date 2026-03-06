@@ -8,6 +8,43 @@
 
 #define TAG "pyosdp_pd"
 
+static void pyosdp_pd_free_pending_events(pyosdp_pd_t *self)
+{
+	struct pyosdp_pending_event *node, *next;
+
+	node = self->pending_event_head;
+	while (node) {
+		next = node->next;
+		free(node);
+		node = next;
+	}
+	self->pending_event_head = NULL;
+}
+
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+static struct pyosdp_pending_event *
+pyosdp_pd_take_pending_event(pyosdp_pd_t *self, const struct osdp_event *event)
+{
+	struct pyosdp_pending_event *cur, *prev = NULL;
+
+	cur = self->pending_event_head;
+	while (cur) {
+		if (&cur->event == event) {
+			if (prev) {
+				prev->next = cur->next;
+			} else {
+				self->pending_event_head = cur->next;
+			}
+			cur->next = NULL;
+			return cur;
+		}
+		prev = cur;
+		cur = cur->next;
+	}
+	return NULL;
+}
+#endif
+
 #define pyosdp_pd_is_online_doc                                                \
 	"Get PD status, (online/offline)\n"                                    \
 	"\n"                                                                   \
@@ -49,13 +86,37 @@ static PyObject *pyosdp_pd_is_sc_active(pyosdp_pd_t *self, PyObject *args)
 static PyObject *pyosdp_pd_submit_event(pyosdp_pd_t *self, PyObject *args)
 {
 	PyObject *event_dict;
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	struct pyosdp_pending_event *pending = NULL;
+#else
 	struct osdp_event event = {};
+#endif
 
 	if (!PyArg_ParseTuple(args, "O", &event_dict)) {
 		PyErr_SetString(PyExc_TypeError, "Failed to parse event dict!");
 		return NULL;
 	}
 
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	pending = calloc(1, sizeof(*pending));
+	if (pending == NULL) {
+		PyErr_SetString(PyExc_MemoryError, "event allocation failed");
+		return NULL;
+	}
+	if (pyosdp_make_struct_event(&pending->event, event_dict)) {
+		free(pending);
+		pyosdp_add_error_context(PyExc_TypeError,
+			"Unable to convert event dict to OSDP event structure");
+		return NULL;
+	}
+	if (osdp_pd_submit_event(self->ctx, &pending->event)) {
+		free(pending);
+		Py_RETURN_FALSE;
+	}
+	pending->next = self->pending_event_head;
+	self->pending_event_head = pending;
+	Py_RETURN_TRUE;
+#else
 	if (pyosdp_make_struct_event(&event, event_dict)) {
 		pyosdp_add_error_context(PyExc_TypeError,
 			"Unable to convert event dict to OSDP event structure");
@@ -67,6 +128,7 @@ static PyObject *pyosdp_pd_submit_event(pyosdp_pd_t *self, PyObject *args)
 	}
 
 	Py_RETURN_TRUE;
+#endif
 }
 
 #define pyosdp_pd_flush_events_doc                                               \
@@ -107,6 +169,63 @@ static int pd_command_cb(void *arg, struct osdp_cmd *cmd)
 	return ret_val;
 }
 
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+static void pyosdp_pd_event_completion_cb(void *arg, const struct osdp_event *event,
+					  enum osdp_completion_status status)
+{
+	pyosdp_pd_t *self = arg;
+	PyObject *arglist = NULL, *result = NULL, *event_dict = NULL;
+	struct pyosdp_pending_event *pending;
+
+	pending = pyosdp_pd_take_pending_event(self, event);
+	if (pending == NULL) {
+		return;
+	}
+
+	if (self->event_completion_cb &&
+	    pyosdp_make_dict_event(&event_dict, &pending->event) == 0) {
+		arglist = Py_BuildValue("(OI)", event_dict, status);
+		if (arglist) {
+			result = PyObject_CallObject(self->event_completion_cb,
+						     arglist);
+		}
+		if (result == NULL) {
+			PyErr_Print();
+		}
+	}
+
+	Py_XDECREF(result);
+	Py_XDECREF(arglist);
+	Py_XDECREF(event_dict);
+	free(pending);
+}
+
+#define pyosdp_pd_set_event_completion_callback_doc                             \
+	"Set OSDP event completion callback handler\n"                          \
+	"\n"                                                                   \
+	"@param callback Function called with (event, status)\n"               \
+	"\n"                                                                   \
+	"@return None"
+static PyObject *pyosdp_pd_set_event_completion_callback(pyosdp_pd_t *self,
+							  PyObject *args)
+{
+	PyObject *callable = NULL;
+
+	if (!PyArg_ParseTuple(args, "O", &callable))
+		return NULL;
+
+	if (callable == NULL || !PyCallable_Check(callable)) {
+		PyErr_SetString(PyExc_TypeError, "Need a callable object!");
+		return NULL;
+	}
+
+	Py_XDECREF(self->event_completion_cb);
+	self->event_completion_cb = callable;
+	Py_INCREF(self->event_completion_cb);
+	Py_RETURN_NONE;
+}
+#endif
+
 #define pyosdp_pd_set_command_callback_doc                                     \
 	"Set OSDP command callback handler\n"                                  \
 	"\n"                                                                   \
@@ -146,6 +265,10 @@ static PyObject *pyosdp_pd_refresh(pyosdp_pd_t *self, PyObject *args)
 static int pyosdp_pd_tp_clear(pyosdp_pd_t *self)
 {
 	Py_XDECREF(self->command_cb);
+	self->command_cb = NULL;
+	Py_XDECREF(self->event_completion_cb);
+	self->event_completion_cb = NULL;
+	pyosdp_pd_free_pending_events(self);
 	return 0;
 }
 
@@ -160,6 +283,8 @@ static PyObject *pyosdp_pd_tp_new(PyTypeObject *type, PyObject *args,
 	}
 	self->ctx = NULL;
 	self->command_cb = NULL;
+	self->event_completion_cb = NULL;
+	self->pending_event_head = NULL;
 	return (PyObject *)self;
 }
 
@@ -314,6 +439,10 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 		goto error;
 	}
 
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	osdp_pd_set_event_completion_callback(ctx, pyosdp_pd_event_completion_cb,
+					      (void *)self);
+#endif
 	self->ctx = ctx;
 	free((void *)info.cap);
 	return 0;
@@ -334,6 +463,7 @@ PyObject *pyosdp_pd_tp_repr(PyObject *self)
 static int pyosdp_pd_tp_traverse(pyosdp_pd_t *self, visitproc visit, void *arg)
 {
 	Py_VISIT(self->command_cb);
+	Py_VISIT(self->event_completion_cb);
 	return 0;
 }
 
@@ -351,6 +481,11 @@ static PyMethodDef pyosdp_pd_tp_methods[] = {
 	  METH_NOARGS, pyosdp_pd_refresh_doc },
 	{ "set_command_callback", (PyCFunction)pyosdp_pd_set_command_callback,
 	  METH_VARARGS, pyosdp_pd_set_command_callback_doc },
+#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
+	{ "set_event_completion_callback",
+	  (PyCFunction)pyosdp_pd_set_event_completion_callback,
+	  METH_VARARGS, pyosdp_pd_set_event_completion_callback_doc },
+#endif
 	{ "submit_event", (PyCFunction)pyosdp_pd_submit_event,
 	  METH_VARARGS, pyosdp_pd_submit_event_doc },
 	{ "is_sc_active", (PyCFunction)pyosdp_pd_is_sc_active,

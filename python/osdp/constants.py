@@ -60,6 +60,12 @@ class EventNotification:
     SecureChannelStatus = osdp_sys.EVENT_NOTIFICATION_SC_STATUS
     PeripheralDeviceStatus = osdp_sys.EVENT_NOTIFICATION_PD_STATUS
 
+class CompletionStatus:
+    Ok = getattr(osdp_sys, "COMPLETION_OK", 0)
+    Failed = getattr(osdp_sys, "COMPLETION_FAILED", 1)
+    Flushed = getattr(osdp_sys, "COMPLETION_FLUSHED", 2)
+    Aborted = getattr(osdp_sys, "COMPLETION_ABORTED", 3)
+
 class Event:
     CardRead = osdp_sys.EVENT_CARDREAD
     KeyPress = osdp_sys.EVENT_KEYPRESS

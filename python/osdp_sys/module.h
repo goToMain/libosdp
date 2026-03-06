@@ -18,6 +18,17 @@
 #include <utils/utils.h>
 #include <osdp.h>
 
+struct pyosdp_pending_cmd {
+	struct pyosdp_pending_cmd *next;
+	int pd;
+	struct osdp_cmd cmd;
+};
+
+struct pyosdp_pending_event {
+	struct pyosdp_pending_event *next;
+	struct osdp_event event;
+};
+
 typedef struct {
 	PyObject_HEAD
 	bool is_cp;
@@ -34,6 +45,8 @@ typedef struct {
 typedef struct {
 	pyosdp_base_t base;
 	PyObject *event_cb;
+	PyObject *command_completion_cb;
+	struct pyosdp_pending_cmd *pending_cmd_head;
 	int num_pd;
 	osdp_t *ctx;
 	char *name;
@@ -42,6 +55,8 @@ typedef struct {
 typedef struct {
 	pyosdp_base_t base;
 	PyObject *command_cb;
+	PyObject *event_completion_cb;
+	struct pyosdp_pending_event *pending_event_head;
 	osdp_t *ctx;
 	char *name;
 } pyosdp_pd_t;

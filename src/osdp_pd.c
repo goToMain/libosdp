@@ -991,7 +991,7 @@ static int pd_send_reply(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 
-	pd->packet_buf = pd->packet_buf_store;
+	pd->packet_buf = osdp_tx_staging_buf(pd);
 
 	/* init packet buf with header */
 	ret = osdp_phy_packet_init(pd, pd->packet_buf, packet_buf_size);
@@ -1188,13 +1188,14 @@ static void pd_collect_init_flags(struct osdp_pd *pd, uint32_t flags)
 
 /* --- Exported Methods --- */
 
-osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
+osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 {
 	struct osdp_pd *pd;
 	struct osdp *ctx;
 	char name[16] = {0};
 
 	assert(info);
+	assert(channel);
 
 #ifndef OPT_OSDP_STATIC_PD
 	ctx = calloc(1, sizeof(struct osdp));
@@ -1218,13 +1219,14 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 
 	input_check_init(ctx);
 	ctx->_num_pd = 1;
+	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
 
 	SET_CURRENT_PD(ctx, 0);
 	pd = osdp_to_pd(ctx, 0);
 
 	pd->osdp_ctx = ctx;
 	pd->idx = 0;
-	pd->packet_buf = pd->packet_buf_store;
+	pd->packet_buf = osdp_tx_staging_buf(pd);
 	if (info->name) {
 		strncpy(pd->name, info->name, OSDP_PD_NAME_MAXLEN - 1);
 	} else {
@@ -1235,10 +1237,11 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 	pd->flags = 0;
 	pd->seq_number = -1;
 
-	memcpy(&pd->channel, &info->channel, sizeof(struct osdp_channel));
+	memcpy(&ctx->channel, channel, sizeof(struct osdp_channel));
+	memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 
 	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) &&
-		pd->channel.recv_pkt && pd->channel.release_pkt) {
+	    channel->recv_pkt && channel->release_pkt) {
 		pd->rx.pkt = calloc(1, sizeof(struct osdp_rx_pkt));
 		if (!pd->rx.pkt) {
 			LOG_ERR("Failed to allocate rx packet store");
@@ -1246,7 +1249,7 @@ osdp_t *osdp_pd_setup(const osdp_pd_info_t *info)
 		}
 	} else {
 		/* Traditional mode: recv must be present */
-		if (!info->channel.recv) {
+		if (!channel->recv) {
 			LOG_ERR("channel.recv() cannot be NULL");
 			goto error;
 		}
@@ -1301,6 +1304,7 @@ error:
 void osdp_pd_teardown(osdp_t *ctx)
 {
 	assert(ctx);
+	struct osdp *pd_ctx = TO_OSDP(ctx);
 	struct osdp_pd *pd = osdp_to_pd(ctx, 0);
 	const struct osdp_event *ev;
 
@@ -1318,8 +1322,8 @@ void osdp_pd_teardown(osdp_t *ctx)
 		osdp_packet_capture_finish(pd);
 	}
 
-	if (pd->channel.close) {
-		pd->channel.close(pd->channel.data);
+	if (pd_ctx->channel.close) {
+		pd_ctx->channel.close(pd_ctx->channel.data);
 	}
 
 	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {

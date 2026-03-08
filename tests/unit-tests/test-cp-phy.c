@@ -804,18 +804,20 @@ int test_phy_state_reset_functionality(struct osdp *ctx)
 int test_cp_phy_setup(struct test *t)
 {
 	/* mock application data */
+	struct osdp_channel channel = {
+		.data = NULL,
+		.send = NULL,
+		.recv = NULL,
+		.flush = NULL,
+	};
 	osdp_pd_info_t info = {
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.channel.data = NULL,
-		.channel.send = NULL,
-		.channel.recv = NULL,
-		.channel.flush = NULL,
 		.scbk = NULL,
 	};
 	osdp_logger_init("osdp::cp", t->loglevel, NULL);
-	struct osdp *ctx = (struct osdp *)osdp_cp_setup(1, &info);
+	struct osdp *ctx = (struct osdp *)osdp_cp_setup(&channel, 1, &info);
 	if (ctx == NULL) {
 		printf(SUB_1 "init failed!\n");
 		return -1;

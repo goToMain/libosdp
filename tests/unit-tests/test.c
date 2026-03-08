@@ -274,18 +274,20 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 	};
 	/* mock application data */
+	struct osdp_channel cp_channel = {
+		.data = NULL,
+		.send = test_mock_cp_send,
+		.recv = test_mock_cp_receive,
+		.flush = test_mock_cp_flush,
+	};
 	osdp_pd_info_t info_cp = {
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0, //OSDP_FLAG_ENFORCE_SECURE,
-		.channel.data = NULL,
-		.channel.send = test_mock_cp_send,
-		.channel.recv = test_mock_cp_receive,
-		.channel.flush = test_mock_cp_flush,
 		.scbk = scbk,
 	};
 
-	*cp = osdp_cp_setup(1, &info_cp);
+	*cp = osdp_cp_setup(&cp_channel, 1, &info_cp);
 	if (*cp == NULL) {
 		printf(SUB_1 "cp init failed!\n");
 		return -1;
@@ -300,6 +302,12 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 		{ -1, -1, -1 }
 	};
 
+	struct osdp_channel pd_channel = {
+		.data = NULL,
+		.send = test_mock_pd_send,
+		.recv = test_mock_pd_receive,
+		.flush = test_mock_pd_flush,
+	};
 	osdp_pd_info_t info_pd = {
 		.address = 101,
 		.baud_rate = 9600,
@@ -312,14 +320,10 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 			.firmware_version = 0x0A0B0C0D,
 		},
 		.cap = cap,
-		.channel.data = NULL,
-		.channel.send = test_mock_pd_send,
-		.channel.recv = test_mock_pd_receive,
-		.channel.flush = test_mock_pd_flush,
 		.scbk = scbk,
 	};
 
-	*pd = (struct osdp *)osdp_pd_setup(&info_pd);
+	*pd = (struct osdp *)osdp_pd_setup(&pd_channel, &info_pd);
 	if (*pd == NULL) {
 		printf(SUB_1 "pd init failed!\n");
 		osdp_cp_teardown(*cp);

@@ -335,13 +335,6 @@ struct osdp_channel {
 	 */
 	void *data;
 	/**
-	 * channel_id; On multi-drop networks, more than one PD can share the
-	 * same channel (read/write/flush pointers). On such networks, the
-	 * channel_id is used to lock a PD to a channel. On multi-drop
-	 * networks, this `id` must non-zero and be unique for each bus.
-	 */
-	int id;
-	/**
 	 * Pointer to function used to receive osdp packet data
 	 */
 	osdp_read_fn_t recv;
@@ -401,11 +394,6 @@ typedef struct {
 	 * only PD mode of operation
 	 */
 	const struct osdp_pd_cap *cap;
-	/**
-	 * Communication channel ops structure, containing send/recv function
-	 * pointers
-	 */
-	struct osdp_channel channel;
 	/**
 	 * Pointer to 16 bytes of Secure Channel Base Key for the PD. If
 	 * non-null, this is used to set-up the secure channel.
@@ -1021,13 +1009,14 @@ typedef void (*pd_event_completion_callback_t)(void *arg,
  * store the returned context pointer and pass it back to all OSDP functions
  * intact.
  *
+ * @param channel Pointer to channel ops used for this PD context.
  * @param info Pointer to info struct populated by application.
  *
  * @retval OSDP Context on success
  * @retval NULL on errors
  */
 OSDP_EXPORT
-osdp_t *osdp_pd_setup(const osdp_pd_info_t *info);
+osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info);
 
 /**
  * @brief Periodic refresh method. Must be called by the application at least
@@ -1128,6 +1117,7 @@ int osdp_pd_flush_events(osdp_t *ctx);
  * store the returned context pointer and pass it back to all OSDP functions
  * intact.
  *
+ * @param channel Pointer to shared channel ops used for this CP context.
  * @param num_pd Number of PDs connected to this CP. The `osdp_pd_info_t *` is
  * treated as an array of length num_pd.
  * @param info Pointer to info struct populated by application.
@@ -1136,7 +1126,8 @@ int osdp_pd_flush_events(osdp_t *ctx);
  * @retval NULL on errors
  */
 OSDP_EXPORT
-osdp_t *osdp_cp_setup(int num_pd, const osdp_pd_info_t *info);
+osdp_t *osdp_cp_setup(const struct osdp_channel *channel, int num_pd,
+		      const osdp_pd_info_t *info);
 
 /**
  * @brief Adds more PD devices in the CP control list.

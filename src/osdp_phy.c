@@ -31,15 +31,15 @@ static inline bool packet_has_mark(struct osdp_pd *pd)
 static int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int sent, total_sent = 0;
+	struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
 
 	/* flush rx to remove any invalid data. */
-	if (pd->channel.flush) {
-		pd->channel.flush(pd->channel.data);
+	if (channel->flush) {
+		channel->flush(channel->data);
 	}
 
 	do { /* send can block; so be greedy */
-		sent = pd->channel.send(pd->channel.data,
-					buf + total_sent, len - total_sent);
+		sent = channel->send(channel->data, buf + total_sent, len - total_sent);
 		if (sent <= 0) {
 			break;
 		}
@@ -54,13 +54,14 @@ static int osdp_channel_recv_pkt(struct osdp_pd *pd)
 #ifdef OPT_OSDP_RX_ZERO_COPY
 	const uint8_t *buf = NULL;
 	int max_len = 0;
+	struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
 
 	if (pd->rx.pkt->buf) {
 		LOG_WRN("Previous packet not released! Forcing release");
 		osdp_phy_release_packet(pd);
 	}
 
-	if (pd->channel.recv_pkt(pd->channel.data, &buf, &max_len) != 0 ||
+	if (channel->recv_pkt(channel->data, &buf, &max_len) != 0 ||
 	    !buf || max_len <= 0) {
 		return 0;
 	}
@@ -79,8 +80,10 @@ static int osdp_channel_recv_pkt(struct osdp_pd *pd)
 void osdp_phy_release_packet(struct osdp_pd *pd)
 {
 #ifdef OPT_OSDP_RX_ZERO_COPY
-	if (pd->rx.pkt && pd->rx.pkt->buf && pd->channel.release_pkt) {
-		pd->channel.release_pkt(pd->channel.data, pd->rx.pkt->buf);
+	struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
+
+	if (pd->rx.pkt && pd->rx.pkt->buf && channel->release_pkt) {
+		channel->release_pkt(channel->data, pd->rx.pkt->buf);
 	}
 	if (pd->rx.pkt) {
 		pd->rx.pkt->buf = NULL;
@@ -90,7 +93,7 @@ void osdp_phy_release_packet(struct osdp_pd *pd)
 	pd->packet_len = 0;
 	pd->packet_buf_len = 0;
 	CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
-	pd->packet_buf = pd->packet_buf_store;
+	pd->packet_buf = osdp_tx_staging_buf(pd);
 #else
 	ARG_UNUSED(pd);
 #endif
@@ -100,15 +103,16 @@ static int osdp_channel_receive(struct osdp_pd *pd)
 {
 	uint8_t buf[64];
 	int recv, total_recv = 0;
+	struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
 
 #ifdef UNIT_TESTING
-	if (!pd->channel.recv) {
+	if (!channel->recv) {
 		return 0;
 	}
 #endif
 
 	do {
-		recv = pd->channel.recv(pd->channel.data, buf, sizeof(buf));
+		recv = channel->recv(channel->data, buf, sizeof(buf));
 		if (recv <= 0) {
 			break;
 		}
@@ -620,7 +624,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 int osdp_phy_check_packet(struct osdp_pd *pd)
 {
 	int ret;
-	bool zero_copy = pd->channel.recv_pkt != NULL;
+	bool zero_copy = pd_to_osdp(pd)->channel.recv_pkt != NULL;
 
 	/* Acquire new data: either full packet or stream bytes */
 	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) && zero_copy) {
@@ -868,18 +872,20 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 
 void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 {
+	struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
+
 	if (pd->rx.pkt && pd->rx.pkt->buf) {
 		osdp_phy_release_packet(pd);
 	}
 	pd->packet_buf_len = 0;
 	pd->packet_len = 0;
 	pd->phy_state = 0;
-	pd->packet_buf = pd->packet_buf_store;
+	pd->packet_buf = osdp_tx_staging_buf(pd);
 	if (is_error) {
 		pd->phy_retry_count = 0;
 		phy_reset_seq_number(pd);
-		if (pd->channel.flush) {
-			pd->channel.flush(pd->channel.data);
+		if (channel->flush) {
+			channel->flush(channel->data);
 		}
 	}
 }

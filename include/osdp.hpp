@@ -70,15 +70,15 @@ public:
 		}
 	}
 
-	bool setup(int num_pd, osdp_pd_info_t *info)
+	bool setup(const struct osdp_channel *channel, int num_pd, osdp_pd_info_t *info)
 	{
-		_ctx = osdp_cp_setup(num_pd, info);
+		_ctx = osdp_cp_setup(channel, num_pd, info);
 		return _ctx != nullptr;
 	}
 
 	bool setup()
 	{
-		return setup(0, nullptr);
+		return false;
 	}
 
 	int add_pd(int num_pd, osdp_pd_info_t *info)
@@ -138,9 +138,9 @@ public:
 		}
 	}
 
-	bool setup(osdp_pd_info_t *info)
+	bool setup(struct osdp_channel *channel, osdp_pd_info_t *info)
 	{
-		_ctx = osdp_pd_setup(info);
+		_ctx = osdp_pd_setup(channel, info);
 		return _ctx != nullptr;
 	}
 

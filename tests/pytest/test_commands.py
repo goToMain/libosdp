@@ -8,13 +8,18 @@ import time
 import pytest
 
 from osdp import *
-from conftest import make_fifo_pair, cleanup_fifo_pair, assert_command_received, wait_for_notification_event, wait_for_non_notification_event
+from conftest import (
+    MultidropBus,
+    assert_command_received,
+    wait_for_notification_event,
+    wait_for_non_notification_event,
+)
 
 secure_pd_addr = 101
 insecure_pd_addr = 102
 
-f1_1, f1_2 = make_fifo_pair("secure_pd")
-f2_1, f2_2 = make_fifo_pair("insecure_pd")
+bus = MultidropBus(2)
+chn = bus.multidrop_channel()
 
 key = KeyStore.gen_key()
 
@@ -26,19 +31,18 @@ pd_cap = PDCapabilities([
 ])
 
 pd_info_list = [
-    PDInfo(secure_pd_addr, f1_1, scbk=key, flags=[ LibFlag.EnforceSecure, LibFlag.EnableNotification ]),
-    PDInfo(insecure_pd_addr, f2_1, flags=[ LibFlag.EnableNotification ])
+    PDInfo(secure_pd_addr, chn, scbk=key, flags=[ LibFlag.EnforceSecure, LibFlag.EnableNotification ]),
+    PDInfo(insecure_pd_addr, chn, flags=[ LibFlag.EnableNotification ])
 ]
 
-# TODO remove this.
 secure_pd = PeripheralDevice(
-    PDInfo(secure_pd_addr, f1_2, scbk=key, flags=[ LibFlag.EnforceSecure ]),
+    PDInfo(secure_pd_addr, bus.pd_channel(0), scbk=key, flags=[ LibFlag.EnforceSecure ]),
     pd_cap,
     log_level=LogLevel.Debug
 )
 
 insecure_pd = PeripheralDevice(
-    PDInfo(insecure_pd_addr, f2_2),
+    PDInfo(insecure_pd_addr, bus.pd_channel(1)),
     pd_cap,
     log_level=LogLevel.Debug
 )
@@ -74,8 +78,6 @@ def teardown_test():
     cp.teardown()
     for pd in pd_list:
         pd.teardown()
-    cleanup_fifo_pair("secure_pd")
-    cleanup_fifo_pair("insecure_pd")
 
 def test_command_output():
     test_cmd = {

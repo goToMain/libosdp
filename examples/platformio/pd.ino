@@ -14,6 +14,7 @@ static const struct osdp_pd_cap pd_cap[] = {
     { OSDP_PD_CAP_READER_AUDIBLE_OUTPUT, 1, 1 },
     { static_cast<uint8_t>(-1), 0, 0 } /* Sentinel */
 };
+static struct osdp_channel pd_channel = {};
 
 int serial1_send_func(void *data, uint8_t *buf, int len)
 {
@@ -54,15 +55,10 @@ void init_pd_info()
     info_pd.id.serial_number = 0x01020304;
     info_pd.id.firmware_version = 0x0A0B0C0D;
     info_pd.cap = pd_cap;
-    info_pd.channel.data = nullptr;
-    info_pd.channel.id = 0;
-    info_pd.channel.recv = serial1_recv_func;
-    info_pd.channel.recv_pkt = nullptr;
-    info_pd.channel.send = serial1_send_func;
-    info_pd.channel.flush = nullptr;
-    info_pd.channel.release_pkt = nullptr;
-    info_pd.channel.close = nullptr;
     info_pd.scbk = nullptr;
+
+    pd_channel.recv = serial1_recv_func;
+    pd_channel.send = serial1_send_func;
 }
 
 int pd_command_handler(void *data, struct osdp_cmd *cmd)
@@ -81,7 +77,7 @@ void setup()
     pd.logger_init("osdp::pd", OSDP_LOG_DEBUG, NULL);
 
     init_pd_info();
-    pd.setup(&info_pd);
+    pd.setup(&pd_channel, &info_pd);
 
     pd.set_command_callback(pd_command_handler, nullptr);
 }

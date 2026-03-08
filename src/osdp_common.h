@@ -32,7 +32,7 @@
 #define NULL ((void *)0)
 #endif
 
-#define OSDP_CTX_MAGIC 0xDEADBEAF
+#define OSDP_CTX_MAGIC 0xDEADBEEF
 
 #define ARG_UNUSED(x) (void)(x)
 
@@ -227,7 +227,6 @@ union osdp_ephemeral_data {
 #define PD_FLAG_SC_USE_SCBKD   BIT(6)  /* in this SC attempt, use SCBKD */
 #define PD_FLAG_SC_ACTIVE      BIT(7)  /* secure channel is active */
 #define PD_FLAG_PD_MODE        BIT(8)  /* device is setup as PD */
-#define PD_FLAG_CHN_SHARED     BIT(9)  /* PD's channel is shared */
 #define PD_FLAG_PKT_SKIP_MARK  BIT(10) /* OPT_OSDP_SKIP_MARK_BYTE */
 #define PD_FLAG_PKT_HAS_MARK   BIT(11) /* Packet has mark byte */
 #define PD_FLAG_SC_DISABLED    BIT(12) /* master_key=NULL && scbk=NULL */
@@ -387,7 +386,6 @@ struct osdp_pd {
 	} rx;
 
 	uint8_t *packet_buf;
-	uint8_t packet_buf_store[OSDP_PACKET_BUF_SIZE];
 	unsigned long packet_len;
 	unsigned long packet_buf_len;
 	uint32_t packet_scan_skip;
@@ -430,8 +428,11 @@ struct osdp {
 	int _num_pd;           /* Number of PDs attached to this context */
 	struct osdp_pd *_current_pd; /* current operational pd's pointer */
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
-	int num_channels;      /* Number of distinct channels */
-	int *channel_lock;     /* array of length NUM_PD() to lock a channel */
+	struct osdp_channel channel; /* Shared CP channel in CP mode */
+	uint8_t tx_packet_buf_store[OSDP_PACKET_BUF_SIZE];
+	uint8_t *tx_packet_buf;
+	unsigned long tx_packet_len;
+	unsigned long tx_packet_buf_len;
 
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
@@ -624,8 +625,9 @@ static inline bool is_cp_mode(struct osdp_pd *pd)
 	return !ISSET_FLAG(pd, PD_FLAG_PD_MODE);
 }
 
-static inline bool is_channel_shared(struct osdp_pd *pd) {
-	return ISSET_FLAG(pd, PD_FLAG_CHN_SHARED);
+static inline uint8_t *osdp_tx_staging_buf(struct osdp_pd *pd)
+{
+	return pd_to_osdp(pd)->tx_packet_buf_store;
 }
 
 static inline bool sc_use_scbkd(struct osdp_pd *pd) {

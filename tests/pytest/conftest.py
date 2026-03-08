@@ -9,10 +9,9 @@ import socket
 import pytest
 from osdp import *
 
-import os
-import abc
 import fcntl
 import errno
+import threading
 
 class FIFOChannel(Channel):
     def __init__(self, fifo_read_path: str, fifo_write_path: str) -> None:
@@ -96,6 +95,129 @@ class FIFOChannel(Channel):
             os.remove(self.fifo_read_path)
         if os.path.exists(self.fifo_write_path):
             os.remove(self.fifo_write_path)
+
+class _MultidropCPChannel(Channel):
+    def __init__(self, bus: 'MultidropBus') -> None:
+        super().__init__()
+        self._bus = bus
+        self._idx = 0
+
+    def read(self, max_bytes: int) -> bytes:
+        return self._bus._read(self._idx, max_bytes)
+
+    def write(self, buf: bytes) -> int:
+        return self._bus._write(self._idx, buf)
+
+    def flush(self) -> None:
+        self._bus._flush(self._idx)
+
+
+class _MultidropPDChannel(Channel):
+    def __init__(self, bus: 'MultidropBus', pd_idx: int) -> None:
+        super().__init__()
+        self._bus = bus
+        self._idx = pd_idx + 1
+
+    def read(self, max_bytes: int) -> bytes:
+        return self._bus._read(self._idx, max_bytes)
+
+    def write(self, buf: bytes) -> int:
+        return self._bus._write(self._idx, buf)
+
+    def flush(self) -> None:
+        self._bus._flush(self._idx)
+
+
+class MultidropBus:
+    """
+    Two-stream RS-485 bus simulation:
+
+    Stream A (CP → PDs): CP's writes land here; each PD has its own read
+    position and advances independently.  PDs see CP's commands in temporal
+    order, including commands addressed to other PDs (which they discard by
+    address — exactly as on a real RS-485 wire).
+
+    Stream B (PDs → CP): every PD reply is appended here in write order; CP
+    reads through them sequentially.  Because the stream is ordered, CP
+    processes PD-101's reply and then PD-102's reply without either starving
+    the other.
+
+    Echo suppression is built-in: CP never reads stream A (its own writes)
+    and PDs never read stream B (other PDs' writes).
+    """
+
+    def __init__(self, num_pds: int) -> None:
+        self._lock = threading.Lock()
+        self._num_pds = num_pds
+
+        # Stream A: CP writes, each PD reads independently
+        self._a_buf = bytearray()
+        self._a_pos = [0] * num_pds   # _a_pos[i] = bytes consumed by PD (i+1)
+
+        # Stream B: PDs write in temporal order, CP reads
+        self._b_segs = []             # [(pd_writer_idx, bytearray), ...]
+        self._b_base = 0              # absolute index of _b_segs[0]
+        self._b_cursor = [0, 0]       # [abs_seg_idx, byte_offset]
+
+    def multidrop_channel(self) -> _MultidropCPChannel:
+        return _MultidropCPChannel(self)
+
+    def pd_channel(self, idx: int) -> _MultidropPDChannel:
+        return _MultidropPDChannel(self, idx)
+
+    def _write(self, writer_idx: int, data: bytes) -> int:
+        with self._lock:
+            if writer_idx == 0:           # CP → stream A
+                self._a_buf.extend(data)
+            else:                         # PD → stream B
+                self._b_segs.append((writer_idx, bytearray(data)))
+        return len(data)
+
+    def _read(self, reader_idx: int, max_bytes: int) -> bytes:
+        with self._lock:
+            if reader_idx == 0:           # CP reads from stream B
+                result = bytearray()
+                ci, off = self._b_cursor
+                while len(result) < max_bytes:
+                    rel = ci - self._b_base
+                    if rel >= len(self._b_segs):
+                        break
+                    _, data = self._b_segs[rel]
+                    chunk = data[off:off + (max_bytes - len(result))]
+                    if not chunk:
+                        ci += 1
+                        off = 0
+                        continue
+                    result.extend(chunk)
+                    off += len(chunk)
+                    if off >= len(data):
+                        ci += 1
+                        off = 0
+                self._b_cursor = [ci, off]
+                if ci > self._b_base:
+                    del self._b_segs[:ci - self._b_base]
+                    self._b_base = ci
+                return bytes(result)
+            else:                         # PD reads from stream A
+                i = reader_idx - 1
+                pos = self._a_pos[i]
+                chunk = bytes(self._a_buf[pos:pos + max_bytes])
+                self._a_pos[i] += len(chunk)
+                min_pos = min(self._a_pos)
+                if min_pos > 0:
+                    del self._a_buf[:min_pos]
+                    for j in range(self._num_pds):
+                        self._a_pos[j] -= min_pos
+                return chunk
+
+    def _flush(self, reader_idx: int) -> None:
+        with self._lock:
+            if reader_idx == 0:           # CP
+                abs_end = self._b_base + len(self._b_segs)
+                self._b_cursor = [abs_end, 0]
+            else:                         # PD
+                i = reader_idx - 1
+                self._a_pos[i] = len(self._a_buf)
 
 # ============================================================================
 # Test Helper Functions for OSDP Communication Assertions

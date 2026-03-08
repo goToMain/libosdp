@@ -387,15 +387,6 @@ static void channel_release_packet_callback(void *data, const uint8_t *buf)
 
 void pyosdp_get_channel(PyObject *channel, struct osdp_channel *ops)
 {
-	int id = 0;
-	PyObject *id_obj;
-
-	id_obj = PyObject_GetAttrString(channel, "id");
-	if (id_obj && PyLong_Check(id_obj)) {
-		id = (int)PyLong_AsLong(id_obj);
-	}
-
-	ops->id = id;
 	ops->send = channel_write_callback;
 	ops->flush = channel_flush_callback;
 	ops->data = channel;

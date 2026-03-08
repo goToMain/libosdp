@@ -9,7 +9,6 @@ A cahnnel is defined as:
 
     struct osdp_channel {
         void *data;
-        int id;
         read_fn_t recv;
         write_fn_t send;
         flush_fn_t flush;

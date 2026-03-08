@@ -84,18 +84,20 @@ int test_cp_fsm_receive(void *data, uint8_t *buf, int len)
 int test_cp_fsm_setup(struct test *t)
 {
 	/* mock application data */
+	struct osdp_channel channel = {
+		.data = NULL,
+		.send = test_cp_fsm_send,
+		.recv = test_cp_fsm_receive,
+		.flush = NULL,
+	};
 	osdp_pd_info_t info = {
 		.address = 101,
 		.baud_rate = 9600,
 		.flags = 0,
-		.channel.data = NULL,
-		.channel.send = test_cp_fsm_send,
-		.channel.recv = test_cp_fsm_receive,
-		.channel.flush = NULL,
 		.scbk = NULL,
 	};
 	osdp_logger_init("osdp::cp", t->loglevel, NULL);
-	struct osdp *ctx = (struct osdp *)osdp_cp_setup(1, &info);
+	struct osdp *ctx = (struct osdp *)osdp_cp_setup(&channel, 1, &info);
 	if (ctx == NULL) {
 		printf("   init failed!\n");
 		return -1;

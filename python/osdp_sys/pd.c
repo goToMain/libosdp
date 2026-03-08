@@ -370,6 +370,7 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 	int scbk_length;
 	osdp_t *ctx;
 	osdp_pd_info_t info = { 0 };
+	struct osdp_channel osdp_channel = { 0 };
 	static char *kwlist[] = { "", "capabilities", NULL };
 	PyObject *py_info, *py_pd_cap_list, *channel;
 	uint8_t *scbk = NULL;
@@ -405,7 +406,7 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 		PyErr_Format(PyExc_KeyError, "channel object missing");
 		return -1;
 	}
-	pyosdp_get_channel(channel, &info.channel);
+	pyosdp_get_channel(channel, &osdp_channel);
 
 	if (pyosdp_dict_get_int(py_info, "version", &info.id.version))
 		goto error;
@@ -432,7 +433,7 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 		PyErr_Clear();
 	}
 
-	ctx = osdp_pd_setup(&info);
+	ctx = osdp_pd_setup(&osdp_channel, &info);
 	if (ctx == NULL) {
 		pyosdp_add_error_context(PyExc_Exception,
 			"Failed to setup PD (check pd_info configuration)");

@@ -499,6 +499,7 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 	static char *kwlist[] = { "", NULL };
 	osdp_t *ctx;
 	osdp_pd_info_t *info, *info_list = NULL;
+	struct osdp_channel cp_channel = { 0 };
 
 	/* call base class constructor */
 	if (OSDPBaseType.tp_init((PyObject *)self, args, kwargs) < 0)
@@ -549,13 +550,15 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 			goto error;
 		}
 
-		channel = PyDict_GetItemString(py_info, "channel");
-		if (channel == NULL) {
-			PyErr_Format(PyExc_KeyError,
-				"channel object missing in pd_info at index %d", i);
-			goto error;
-		}
-		pyosdp_get_channel(channel, &info->channel);
+			if (i == 0) {
+				channel = PyDict_GetItemString(py_info, "channel");
+				if (channel == NULL) {
+					PyErr_SetString(PyExc_KeyError,
+							"channel object missing in pd_info[0]");
+					goto error;
+				}
+				pyosdp_get_channel(channel, &cp_channel);
+			}
 
 		if (pyosdp_dict_get_bytes(py_info, "scbk", &scbk, &len) == 0) {
 			if (scbk && len != 16) {
@@ -569,7 +572,7 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 		}
 	}
 
-	ctx = osdp_cp_setup(self->num_pd, info_list);
+	ctx = osdp_cp_setup(&cp_channel, self->num_pd, info_list);
 	if (ctx == NULL) {
 		pyosdp_add_error_context(PyExc_Exception,
 			"Failed to setup CP (check pd_info configuration)");

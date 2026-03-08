@@ -69,15 +69,25 @@ int test_commands_command_callback(void *arg, struct osdp_cmd *cmd)
 		}
 	}
 
-	/* Handle status commands - provide mock response */
+	/* Handle status commands - fill in nr_entries to match PD capabilities */
 	if (cmd->id == OSDP_CMD_STATUS) {
-		/* We don't actually do anything with the status command in this test,
-		 * just acknowledge it was received */
+		switch (cmd->status.type) {
+		case OSDP_STATUS_REPORT_INPUT:
+			cmd->status.nr_entries = 8; /* matches OSDP_PD_CAP_CONTACT_STATUS_MONITORING.num_items */
+			memset(cmd->status.report, 0, 8);
+			break;
+		case OSDP_STATUS_REPORT_OUTPUT:
+			cmd->status.nr_entries = 4; /* matches OSDP_PD_CAP_OUTPUT_CONTROL.num_items */
+			memset(cmd->status.report, 0, 4);
+			break;
+		default:
+			break;
+		}
 		return 0;
 	}
 
-	/* Handle comset commands - acknowledge and wait for comset done */
-	if (cmd->id == OSDP_CMD_COMSET) {
+	/* Handle COMSET command lifecycle notifications */
+	if (cmd->id == OSDP_CMD_COMSET || cmd->id == OSDP_CMD_COMSET_DONE) {
 		/* COMSET requires special handling - we need to acknowledge it */
 		return 0;
 	}
@@ -409,7 +419,12 @@ static bool test_comset_command()
 		return false;
 	}
 
-	return wait_for_command(OSDP_CMD_COMSET, 5);
+	if (!wait_for_command(OSDP_CMD_COMSET_DONE, 5)) {
+		printf(SUB_2 "COMSET_DONE callback not received\n");
+		return false;
+	}
+
+	return true;
 }
 
 static bool test_keyset_command()

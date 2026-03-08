@@ -23,17 +23,47 @@ def add_prefix_to_path(src_list, path, check_files=True):
                 raise RuntimeError(f"Path '{path}' does not exist")
     return paths
 
-def exec_cmd(cmd):
-    r = subprocess.run(cmd, capture_output = True, text = True)
-    return r.stdout.strip()
+def exec_cmd(cmd, cwd=None):
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    return r.returncode, r.stdout.strip()
 
 def get_git_info():
-    d = {}
-    d["branch"] = exec_cmd(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-    d["tag"] = exec_cmd([ "git", "describe", "--exact-match", "--tags" ])
-    d["diff"] = exec_cmd([ "git", "diff", "--quiet", "--exit-code" ])
-    d["rev"] = exec_cmd(["git", "log", "--pretty=format:%h", "-n", "1"])
-    d["root"] = exec_cmd(["git", "rev-parse", "--show-toplevel"])
+    d = {
+        "branch": "None",
+        "tag": "",
+        "diff": "",
+        "rev": "",
+        "root": repo_root,
+    }
+
+    rc, _ = exec_cmd(["git", "rev-parse", "--is-inside-work-tree"], cwd=repo_root)
+    if rc != 0:
+        return d
+
+    rc, root = exec_cmd(["git", "rev-parse", "--show-toplevel"], cwd=repo_root)
+    if rc == 0 and root:
+        d["root"] = root
+
+    rc, branch = exec_cmd(["git", "symbolic-ref", "--short", "-q", "HEAD"], cwd=repo_root)
+    if rc == 0 and branch:
+        d["branch"] = branch
+    else:
+        d["branch"] = "detached"
+
+    rc, rev = exec_cmd(["git", "describe", "--tags", "--long", "--always", "--abbrev=7"], cwd=repo_root)
+    if rc == 0:
+        d["rev"] = rev
+
+    rc, tag = exec_cmd(["git", "describe", "--exact-match", "--tags", "HEAD"], cwd=repo_root)
+    if rc == 0 and tag:
+        d["tag"] = tag
+
+    rc, status = exec_cmd(["git", "status", "--porcelain", "--untracked-files=normal"], cwd=repo_root)
+    if rc == 0 and status:
+        d["diff"] = "+"
+        if d["tag"]:
+            d["tag"] = d["tag"] + "+"
+
     return d
 
 def configure_file(file, replacements):

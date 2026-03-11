@@ -31,4 +31,4 @@ individual flag documentation below.
 
 .. note::
    ``OSDP_FLAG_APP_OWNED_CMD_EVENT_DATA`` is effective only when LibOSDP is
-   built with ``OPT_OSDP_APP_OWNED_QUEUE_DATA``.
+   used with app-owned queue payload semantics (the default behavior).

@@ -83,43 +83,7 @@ static struct osdp_pd_cap osdp_pd_cap[] = {
 static int pd_event_queue_init(struct osdp_pd *pd)
 {
 	queue_init(&pd->event_queue);
-
-#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
-	if (slab_init(&pd->app_data.slab, sizeof(struct osdp_event),
-		      pd->app_data.slab_blob,
-		      sizeof(pd->app_data.slab_blob)) < 0) {
-		LOG_ERR("Failed to initialize event slab");
-		return -1;
-	}
-#endif
 	return 0;
-}
-
-#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
-
-static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
-{
-	struct osdp_event *event = NULL;
-
-	if (slab_alloc(&pd->app_data.slab, (void **)&event)) {
-		LOG_ERR("Event slab allocation failed");
-		return NULL;
-	}
-	memset(event, 0, sizeof(*event));
-	return event;
-}
-
-static void pd_event_free(struct osdp_pd *pd, const struct osdp_event *event)
-{
-	slab_free(&pd->app_data.slab, (void *)event);
-}
-
-#else /* OPT_OSDP_APP_OWNED_QUEUE_DATA */
-
-static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
-{
-	ARG_UNUSED(pd);
-	return NULL;
 }
 
 static inline void pd_event_free(struct osdp_pd *pd, const struct osdp_event *event)
@@ -127,8 +91,6 @@ static inline void pd_event_free(struct osdp_pd *pd, const struct osdp_event *ev
 	ARG_UNUSED(pd);
 	ARG_UNUSED(event);
 }
-
-#endif /* OPT_OSDP_APP_OWNED_QUEUE_DATA */
 
 static int pd_event_enqueue(struct osdp_pd *pd, const struct osdp_event *event)
 {
@@ -377,8 +339,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (pd_event_dequeue(pd, &queued_event) == 0) {
 			ret = pd_translate_event(pd, queued_event);
 			pd->reply_id = ret;
-			if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-				pd->active_event = queued_event;
+			pd->active_event = queued_event;
 			pd_event_free(pd, queued_event);
 		} else {
 			pd->reply_id = REPLY_ACK;
@@ -1101,7 +1062,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 
 	ret = pd_send_reply(pd);
 	if (ret == OSDP_PD_ERR_NONE) {
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA) && pd->active_event) {
+		if (pd->active_event) {
 			pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_OK);
 			pd->active_event = NULL;
 		}
@@ -1135,7 +1096,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		}
 		osdp_phy_progress_sequence(pd);
 	} else {
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA) && pd->active_event) {
+		if (pd->active_event) {
 			pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_FAILED);
 			pd->active_event = NULL;
 		}
@@ -1323,14 +1284,11 @@ void osdp_pd_teardown(osdp_t *ctx)
 	const struct osdp_event *ev;
 
 	while (pd_event_dequeue(pd, &ev) == 0) {
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-			pd_complete_event(pd, ev, OSDP_COMPLETION_ABORTED);
+		pd_complete_event(pd, ev, OSDP_COMPLETION_ABORTED);
 		pd_event_free(pd, ev);
 	}
-	if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA)) {
-		pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_ABORTED);
-		pd->active_event = NULL;
-	}
+	pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_ABORTED);
+	pd->active_event = NULL;
 
 	if (is_capture_enabled(pd)) {
 		osdp_packet_capture_finish(pd);
@@ -1378,7 +1336,6 @@ void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 	pd->command_callback = cb;
 }
 
-#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
 void osdp_pd_set_event_completion_callback(osdp_t *ctx,
 					   pd_event_completion_callback_t cb,
 					   void *arg)
@@ -1389,31 +1346,18 @@ void osdp_pd_set_event_completion_callback(osdp_t *ctx,
 	pd->event_completion_callback = cb;
 	pd->event_completion_callback_arg = arg;
 }
-#endif
 
 int osdp_pd_submit_event(osdp_t *ctx, const struct osdp_event *event)
 {
 	input_check(ctx);
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
-	struct osdp_event *ev;
 
 	if (event->type <= 0 ||
 	    event->type >= OSDP_EVENT_SENTINEL) {
 		return -1;
 	}
 
-	if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-		return pd_event_enqueue(pd, event);
-	ev = pd_event_alloc(pd);
-	if (ev == NULL) {
-		return -1;
-	}
-	memcpy(ev, event, sizeof(struct osdp_event));
-	if (pd_event_enqueue(pd, ev)) {
-		pd_event_free(pd, ev);
-		return -1;
-	}
-	return 0;
+	return pd_event_enqueue(pd, event);
 }
 
 int osdp_pd_notify_event(osdp_t *ctx, const struct osdp_event *event)
@@ -1429,8 +1373,7 @@ int osdp_pd_flush_events(osdp_t *ctx)
 	struct osdp_pd *pd = GET_CURRENT_PD(ctx);
 
 	while (pd_event_dequeue(pd, &ev) == 0) {
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-			pd_complete_event(pd, ev, OSDP_COMPLETION_FLUSHED);
+		pd_complete_event(pd, ev, OSDP_COMPLETION_FLUSHED);
 		pd_event_free(pd, ev);
 		count++;
 	}

@@ -18,7 +18,6 @@ usage() {
 	  --data-trace                 Enable command/reply data buffer tracing
 	  --skip-mark                  Don't send the leading mark byte (0xFF)
 	  --zero-copy                  Enable zero-copy RX buffers (requires recv_pkt/release_pkt)
-	  --app-owned-queue-data       Keep only app-owned command/event references in queues
 	  --crypto LIB                 Use methods from LIB (openssl/mbedtls/*tinyaes)
 	  --crypto-include-dir DIR     Include directory for crypto LIB if not in system path
 	  --crypto-ld-flags            Args to pass to linker for the crypto LIB
@@ -44,7 +43,6 @@ while [ $# -gt 0 ]; do
 	--data-trace)          DATA_TRACE=1;;
 	--skip-mark)           SKIP_MARK_BYTE=1;;
 	--zero-copy)           ZERO_COPY=1;;
-	--app-owned-queue-data) APP_OWNED_QUEUE_DATA=1;;
 	--cross-compile)       CROSS_COMPILE=$2; shift;;
 	--prefix)              PREFIX=$2; shift;;
 	--crypto)              CRYPTO=$2; shift;;
@@ -105,10 +103,6 @@ if [[ ! -z "${ZERO_COPY}" ]]; then
 	CCFLAGS+=" -DOPT_OSDP_RX_ZERO_COPY"
 fi
 
-if [[ ! -z "${APP_OWNED_QUEUE_DATA}" ]]; then
-	CCFLAGS+=" -DOPT_OSDP_APP_OWNED_QUEUE_DATA"
-fi
-
 if [[ ! -z "${STATIC}" ]]; then
 	CCFLAGS+=" -DOPT_OSDP_STATIC"
 fi
@@ -156,9 +150,6 @@ fi
 LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_file.c src/osdp_pd.c"
 LIBOSDP_SOURCES+=" src/osdp_cp.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/utils.c"
-if [[ -z "${APP_OWNED_QUEUE_DATA}" ]]; then
-	LIBOSDP_SOURCES+=" utils/src/slab.c"
-fi
 LIBOSDP_SOURCES+=" utils/src/disjoint_set.c utils/src/logger.c utils/src/crc16.c"
 
 UTILS_SOURCES+=" utils/src/workqueue.c utils/src/circbuf.c utils/src/event.c utils/src/fdutils.c"

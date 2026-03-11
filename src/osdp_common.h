@@ -345,15 +345,6 @@ struct osdp_rx_pkt {
 	unsigned long max_len;
 };
 
-#define OSDP_APP_DATA_QUEUE_SIZE \
-	(OSDP_CP_CMD_POOL_SIZE * sizeof(union osdp_ephemeral_data))
-
-struct osdp_app_data_pool {
-	slab_t slab;
-	uint8_t slab_blob[OSDP_APP_DATA_QUEUE_SIZE];
-};
-
-
 struct osdp_pd {
 	char name[OSDP_PD_NAME_MAXLEN];
 	struct osdp *osdp_ctx; /* Ref to osdp * to access shared resources */
@@ -402,9 +393,6 @@ struct osdp_pd {
 	};
 	const struct osdp_cmd *active_cmd;      /* in-flight cmd (app-owned mode) */
 	const struct osdp_event *active_event;  /* in-flight event (app-owned mode) */
-#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
-	struct osdp_app_data_pool app_data;  /* alloc osdp_event / osdp_cmd */
-#endif
 
 	struct osdp_channel channel;     /* PD's serial channel */
 	struct osdp_secure_channel sc;   /* Secure Channel session context */

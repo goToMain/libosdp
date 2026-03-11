@@ -64,43 +64,7 @@ enum osdp_cp_error_e {
 static int cp_cmd_queue_init(struct osdp_pd *pd)
 {
 	queue_init(&pd->cmd_queue);
-
-#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
-	if (slab_init(&pd->app_data.slab, sizeof(struct osdp_cmd),
-		      pd->app_data.slab_blob,
-		      sizeof(pd->app_data.slab_blob)) < 0) {
-		LOG_ERR("Failed to initialize command slab");
-		return -1;
-	}
-#endif
 	return 0;
-}
-
-#ifndef OPT_OSDP_APP_OWNED_QUEUE_DATA
-
-static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
-{
-	struct osdp_cmd *cmd = NULL;
-
-	if (slab_alloc(&pd->app_data.slab, (void **)&cmd)) {
-		LOG_ERR("Command slab allocation failed");
-		return NULL;
-	}
-	memset(cmd, 0, sizeof(*cmd));
-	return cmd;
-}
-
-static void cp_cmd_free(struct osdp_pd *pd, const struct osdp_cmd *cmd)
-{
-	slab_free(&pd->app_data.slab, (void *)cmd);
-}
-
-#else /* OPT_OSDP_APP_OWNED_QUEUE_DATA */
-
-static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
-{
-	ARG_UNUSED(pd);
-	return NULL;
 }
 
 static inline void cp_cmd_free(struct osdp_pd *pd, const struct osdp_cmd *cmd)
@@ -108,8 +72,6 @@ static inline void cp_cmd_free(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 	ARG_UNUSED(pd);
 	ARG_UNUSED(cmd);
 }
-
-#endif /* OPT_OSDP_APP_OWNED_QUEUE_DATA */
 
 static int cp_cmd_enqueue(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 {
@@ -932,13 +894,11 @@ static int cp_get_online_command(struct osdp_pd *pd)
 		if (cmd->flags & OSDP_CMD_FLAG_BROADCAST) {
 			SET_FLAG(pd, PD_FLAG_PKT_BROADCAST);
 		}
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA)) {
-			if (ret < 0) {
-				cp_complete_cmd(pd, cmd, OSDP_COMPLETION_FAILED);
-				pd->active_cmd = NULL;
-			} else {
-				pd->active_cmd = cmd;
-			}
+		if (ret < 0) {
+			cp_complete_cmd(pd, cmd, OSDP_COMPLETION_FAILED);
+			pd->active_cmd = NULL;
+		} else {
+			pd->active_cmd = cmd;
 		}
 		cp_cmd_free(pd, cmd);
 		return ret;
@@ -1312,12 +1272,10 @@ static int state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_DONE:
 		status = state_check_reply(pd);
 		notify_command_status(pd, status);
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA)) {
-			cp_complete_cmd(pd, pd->active_cmd,
-					status ? OSDP_COMPLETION_OK
-					       : OSDP_COMPLETION_FAILED);
-			pd->active_cmd = NULL;
-		}
+		cp_complete_cmd(pd, pd->active_cmd,
+				status ? OSDP_COMPLETION_OK
+				       : OSDP_COMPLETION_FAILED);
+		pd->active_cmd = NULL;
 		if (!status) {
 			err = OSDP_CP_ERR_GENERIC;
 		}
@@ -1359,7 +1317,6 @@ static int state_update(struct osdp_pd *pd)
 
 static int cp_submit_command(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 {
-	struct osdp_cmd *p;
 	const uint32_t all_flags = (
 		OSDP_CMD_FLAG_BROADCAST
 	);
@@ -1401,19 +1358,7 @@ static int cp_submit_command(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 		return -1;
 	}
 
-	if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-		return cp_cmd_enqueue(pd, cmd);
-	p = cp_cmd_alloc(pd);
-	if (p == NULL) {
-		LOG_ERR("Failed to allocate command");
-		return -1;
-	}
-	memcpy(p, cmd, sizeof(struct osdp_cmd));
-	if (cp_cmd_enqueue(pd, p)) {
-		cp_cmd_free(pd, p);
-		return -1;
-	}
-	return 0;
+	return cp_cmd_enqueue(pd, cmd);
 }
 
 static void cp_collect_init_flags(struct osdp_pd *pd, int flags)
@@ -1626,15 +1571,11 @@ void osdp_cp_teardown(osdp_t *ctx)
 	for (i = 0; i < cp_ctx->_num_pd; i++) {
 		pd = osdp_to_pd(cp_ctx, i);
 		while (cp_cmd_dequeue(pd, &cmd) == 0) {
-			if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-				cp_complete_cmd(pd, cmd, OSDP_COMPLETION_ABORTED);
-			else
-				cp_cmd_free(pd, cmd);
+			cp_complete_cmd(pd, cmd, OSDP_COMPLETION_ABORTED);
+			cp_cmd_free(pd, cmd);
 		}
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA)) {
-			cp_complete_cmd(pd, pd->active_cmd, OSDP_COMPLETION_ABORTED);
-			pd->active_cmd = NULL;
-		}
+		cp_complete_cmd(pd, pd->active_cmd, OSDP_COMPLETION_ABORTED);
+		pd->active_cmd = NULL;
 		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_finish(pd);
 		}
@@ -1690,7 +1631,6 @@ void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg)
 	TO_OSDP(ctx)->event_callback_arg = arg;
 }
 
-#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
 void osdp_cp_set_command_completion_callback(osdp_t *ctx,
 					     cp_command_completion_callback_t cb,
 					     void *arg)
@@ -1699,7 +1639,6 @@ void osdp_cp_set_command_completion_callback(osdp_t *ctx,
 	TO_OSDP(ctx)->command_completion_callback = cb;
 	TO_OSDP(ctx)->command_completion_callback_arg = arg;
 }
-#endif
 
 int osdp_cp_send_command(osdp_t *ctx, int pd_idx, const struct osdp_cmd *cmd)
 {
@@ -1725,8 +1664,7 @@ int osdp_cp_flush_commands(osdp_t *ctx, int pd_idx)
 	int count = 0;
 
 	while (cp_cmd_dequeue(pd, &cmd) == 0) {
-		if (IS_ENABLED(OPT_OSDP_APP_OWNED_QUEUE_DATA))
-			cp_complete_cmd(pd, cmd, OSDP_COMPLETION_FLUSHED);
+		cp_complete_cmd(pd, cmd, OSDP_COMPLETION_FLUSHED);
 		cp_cmd_free(pd, cmd);
 		count++;
 	}
@@ -1850,7 +1788,6 @@ bool osdp_cp_is_pd_enabled(const osdp_t *ctx, int pd_idx)
  */
 int (*test_cp_cmd_enqueue)(struct osdp_pd *,
                            const struct osdp_cmd *) = cp_cmd_enqueue;
-struct osdp_cmd *(*test_cp_cmd_alloc)(struct osdp_pd *) = cp_cmd_alloc;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
 int (*test_cp_build_and_send_packet)(struct osdp_pd *pd) = cp_build_and_send_packet;

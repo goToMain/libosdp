@@ -14,12 +14,6 @@ from osdp import *
 from conftest import make_fifo_pair, cleanup_fifo_pair
 
 
-pytestmark = pytest.mark.skipif(
-    not hasattr(osdp_sys, "COMPLETION_OK"),
-    reason="Completion callbacks require app-owned queue data mode",
-)
-
-
 def _bring_online(cp, pd, timeout=5.0):
     deadline = time.time() + timeout
     while time.time() < deadline:

@@ -107,13 +107,11 @@ public:
 		osdp_cp_set_event_callback(_ctx, cb, arg);
 	}
 
-#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
 	void set_command_completion_callback(cp_command_completion_callback_t cb,
 					     void *arg)
 	{
 		osdp_cp_set_command_completion_callback(_ctx, cb, arg);
 	}
-#endif
 
 	int get_pd_id(int pd, struct osdp_pd_id *id)
 	{
@@ -154,13 +152,11 @@ public:
 		osdp_pd_set_command_callback(_ctx, cb, args);
 	}
 
-#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
 	void set_event_completion_callback(pd_event_completion_callback_t cb,
 					   void *arg)
 	{
 		osdp_pd_set_event_completion_callback(_ctx, cb, arg);
 	}
-#endif
 
 	[[deprecated]]
 	int notify_event(struct osdp_event *event)

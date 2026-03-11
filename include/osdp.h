@@ -1058,7 +1058,6 @@ OSDP_EXPORT
 void osdp_pd_set_command_callback(osdp_t *ctx, pd_command_callback_t cb,
 				  void *arg);
 
-#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
 /**
  * @brief Set callback method for PD event completion.
  *
@@ -1070,7 +1069,6 @@ OSDP_EXPORT
 void osdp_pd_set_event_completion_callback(osdp_t *ctx,
 					   pd_event_completion_callback_t cb,
 					   void *arg);
-#endif
 
 /**
  * @brief API to notify PD events to CP. These events are sent to the CP as an
@@ -1253,7 +1251,6 @@ int osdp_cp_get_capability(const osdp_t *ctx, int pd, struct osdp_pd_cap *cap);
 OSDP_EXPORT
 void osdp_cp_set_event_callback(osdp_t *ctx, cp_event_callback_t cb, void *arg);
 
-#ifdef OPT_OSDP_APP_OWNED_QUEUE_DATA
 /**
  * @brief Set callback method for CP command completion.
  *
@@ -1265,7 +1262,6 @@ OSDP_EXPORT
 void osdp_cp_set_command_completion_callback(osdp_t *ctx,
 					     cp_command_completion_callback_t cb,
 					     void *arg);
-#endif
 
 /**
  * @brief Set or clear OSDP public flags

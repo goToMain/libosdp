@@ -57,10 +57,6 @@ if (CONFIG_LIBOSDP)
 		zephyr_library_compile_definitions(OPT_OSDP_RX_ZERO_COPY=1)
 	endif()
 
-	if (CONFIG_LIBOSDP_APP_OWNED_QUEUE_DATA)
-		zephyr_library_compile_definitions(OPT_OSDP_APP_OWNED_QUEUE_DATA=1)
-	endif()
-
 	if (CONFIG_LIBOSDP_DISABLE_PRETTY_LOGGING)
 		zephyr_library_compile_definitions(OPT_DISABLE_PRETTY_LOGGING=1)
 	endif()
@@ -85,10 +81,6 @@ if (CONFIG_LIBOSDP)
 		## Zephyr glue code
 		src/osdp.c
 	)
-
-	if (NOT CONFIG_LIBOSDP_APP_OWNED_QUEUE_DATA)
-		zephyr_library_sources(${OSDP_ROOT}/utils/src/slab.c)
-	endif()
 
 	if (CONFIG_LIBOSDP_CRYPTO_MBEDTLS)
 		zephyr_library_compile_definitions(OPT_OSDP_USE_MBEDTLS)

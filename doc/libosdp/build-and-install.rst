@@ -81,7 +81,7 @@ the flag ``-DOPT_OSDP_BUILD_STATIC=ON`` to cmake.
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | --no-colours        | OPT_DISABLE_PRETTY_LOGGING    | OFF       | Don't colourize log outputs               |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| --static-pd         | OPT_OSDP_STATIC_PD            | OFF       | Setup PD single statically                |
+| --static            | OPT_OSDP_STATIC               | OFF       | Build without dynamic memory allocation   |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | --lib-only          | OPT_OSDP_LIB_ONLY             | OFF       | Only build the library                    |
 +---------------------+-------------------------------+-----------+-------------------------------------------+

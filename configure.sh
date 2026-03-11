@@ -23,7 +23,8 @@ usage() {
 	  --crypto-include-dir DIR     Include directory for crypto LIB if not in system path
 	  --crypto-ld-flags            Args to pass to linker for the crypto LIB
 	  --no-colours                 Don't colourize log ouputs
-	  --static-pd                  Setup PD single statically
+	  --static                     Build without dynamic memory allocation
+	  --static-pd                  Deprecated alias for --static
 	  --lib-only                   Only build the library
 	  --cross-compile PREFIX       Use to pass a compiler prefix
 	  --prefix PATH                Install path prefix (default: /usr)
@@ -50,7 +51,7 @@ while [ $# -gt 0 ]; do
 	--crypto-include-dir)  CRYPTO_INCLUDE_DIR=$2; shift;;
 	--crypto-ld-flags)     CRYPTO_LD_FLAGS=$2; shift;;
 	--no-colours)          NO_COLOURS=1;;
-	--static-pd)           STATIC_PD=1;;
+	--static|--static-pd)  STATIC=1;;
 	--lib-only)            LIB_ONLY=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
 	-d|--debug)            DEBUG=1;;
@@ -108,8 +109,8 @@ if [[ ! -z "${APP_OWNED_QUEUE_DATA}" ]]; then
 	CCFLAGS+=" -DOPT_OSDP_APP_OWNED_QUEUE_DATA"
 fi
 
-if [[ ! -z "${STATIC_PD}" ]]; then
-	CCFLAGS+=" -DOPT_OSDP_STATIC_PD"
+if [[ ! -z "${STATIC}" ]]; then
+	CCFLAGS+=" -DOPT_OSDP_STATIC"
 fi
 
 if [[ ! -z "${DEBUG}" ]]; then
@@ -153,6 +154,7 @@ fi
 
 ## Declare sources
 LIBOSDP_SOURCES+=" src/osdp_common.c src/osdp_phy.c src/osdp_sc.c src/osdp_file.c src/osdp_pd.c"
+LIBOSDP_SOURCES+=" src/osdp_cp.c"
 LIBOSDP_SOURCES+=" utils/src/list.c utils/src/queue.c utils/src/utils.c"
 if [[ -z "${APP_OWNED_QUEUE_DATA}" ]]; then
 	LIBOSDP_SOURCES+=" utils/src/slab.c"
@@ -165,12 +167,7 @@ if [[ ! -z "${PACKET_TRACE}" ]] || [[ ! -z "${DATA_TRACE}" ]]; then
 	LIBOSDP_SOURCES+=" src/osdp_diag.c utils/src/pcap_gen.c"
 fi
 
-if [[ -z "${STATIC_PD}" ]]; then
-	LIBOSDP_SOURCES+=" src/osdp_cp.c"
-	TARGETS="cp_app pd_app"
-else
-	TARGETS="pd_app"
-fi
+TARGETS="cp_app pd_app"
 
 TEST_SOURCES="tests/unit-tests/test.c"
 TEST_SOURCES+=" tests/unit-tests/test-cp-phy.c"

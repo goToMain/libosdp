@@ -8,7 +8,7 @@
 #include "osdp_file.h"
 #include "osdp_diag.h"
 
-#ifndef OPT_OSDP_STATIC_PD
+#ifndef OPT_OSDP_STATIC
 #include <stdlib.h>
 #endif
 
@@ -1197,7 +1197,7 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 	assert(info);
 	assert(channel);
 
-#ifndef OPT_OSDP_STATIC_PD
+#ifndef OPT_OSDP_STATIC
 	ctx = calloc(1, sizeof(struct osdp));
 	if (ctx == NULL) {
 		LOG_PRINT("Failed to allocate osdp context");
@@ -1213,6 +1213,8 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 	static struct osdp g_osdp_ctx;
 	static struct osdp_pd g_osdp_pd_ctx;
 
+	memset(&g_osdp_ctx, 0, sizeof(g_osdp_ctx));
+	memset(&g_osdp_pd_ctx, 0, sizeof(g_osdp_pd_ctx));
 	ctx = &g_osdp_ctx;
 	ctx->pd = &g_osdp_pd_ctx;
 #endif
@@ -1242,22 +1244,34 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 
 	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) &&
 	    channel->recv_pkt && channel->release_pkt) {
+#ifndef OPT_OSDP_STATIC
 		pd->rx.pkt = calloc(1, sizeof(struct osdp_rx_pkt));
 		if (!pd->rx.pkt) {
 			LOG_ERR("Failed to allocate rx packet store");
 			goto error;
 		}
+#else
+		static struct osdp_rx_pkt g_osdp_rx_pkt;
+		memset(&g_osdp_rx_pkt, 0, sizeof(g_osdp_rx_pkt));
+		pd->rx.pkt = &g_osdp_rx_pkt;
+#endif
 	} else {
 		/* Traditional mode: recv must be present */
 		if (!channel->recv) {
 			LOG_ERR("channel.recv() cannot be NULL");
 			goto error;
 		}
+#ifndef OPT_OSDP_STATIC
 		pd->rx.rb = calloc(1, sizeof(struct osdp_rb));
 		if (!pd->rx.rb) {
 			LOG_ERR("Failed to allocate rx ring buffer");
 			goto error;
 		}
+#else
+		static struct osdp_rb g_osdp_rb;
+		memset(&g_osdp_rb, 0, sizeof(g_osdp_rb));
+		pd->rx.rb = &g_osdp_rb;
+#endif
 	}
 
 	pd_collect_init_flags(pd, info->flags);
@@ -1326,13 +1340,12 @@ void osdp_pd_teardown(osdp_t *ctx)
 		pd_ctx->channel.close(pd_ctx->channel.data);
 	}
 
+#ifndef OPT_OSDP_STATIC
 	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
 		safe_free(pd->rx.pkt);
 	} else {
 		safe_free(pd->rx.rb);
 	}
-
-#ifndef OPT_OSDP_STATIC_PD
 	safe_free(pd->file);
 	safe_free(pd);
 	safe_free(ctx);

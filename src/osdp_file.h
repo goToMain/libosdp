@@ -81,7 +81,7 @@ struct osdp_file {
 	uint32_t offset;
 	int errors;
 	bool cancel_req;
-	int64_t tstamp;
+	tick_t tstamp;
 	uint32_t wait_time_ms;
 	struct osdp_file_ops ops;
 };

@@ -35,6 +35,7 @@ option(OPT_BUILD_SHARED "Build shared library" ON)
 option(OPT_OSDP_STATIC "Build without dynamic memory allocation" OFF)
 option(OPT_OSDP_LIB_ONLY "Only build the library" OFF)
 option(OPT_BUILD_BARE_METAL "Build library for bare metal targets" OFF)
+option(OPT_USE_32BIT_TICK_T "Use uint32_t tick_t on bare-metal targets" OFF)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -48,7 +49,13 @@ if(NOT MSVC)
 endif()
 
 if (OPT_BUILD_BARE_METAL)
+	# __BARE_METAL__ enables bare-metal paths. To use uint32_t tick_t,
+	# also enable OPT_USE_32BIT_TICK_T. Verify your tick source and counter width
+	# can safely represent the longest delay/timeout in your target project.
 	add_compile_options(-D__BARE_METAL__)
+	if (OPT_USE_32BIT_TICK_T)
+		add_compile_options(-DUSE_32BIT_TICK_T)
+	endif()
 else()
 	include(GNUInstallDirs)
 endif()

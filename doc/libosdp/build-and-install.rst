@@ -88,7 +88,9 @@ the flag ``-DOPT_OSDP_BUILD_STATIC=ON`` to cmake.
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 | N/A                 | OPT_BUILD_STATIC              | ON        | Build static library                      |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
-| N/A                 | OPT_BUILD_BARE_METAL          | OFF       | Build library for bare metal targets      |
+| --bare-metal        | OPT_BUILD_BARE_METAL          | OFF       | Build library for bare metal targets      |
++---------------------+-------------------------------+-----------+-------------------------------------------+
+| --use-32bit-tick-t  | OPT_USE_32BIT_TICK_T          | OFF       | Use uint32_t tick_t; requires bare-metal  |
 +---------------------+-------------------------------+-----------+-------------------------------------------+
 
 Add LibOSDP to your cmake project

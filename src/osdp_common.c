@@ -22,12 +22,12 @@ uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len)
 	return crc16_itu_t(0x1D0F, buf, len);
 }
 
-__weak int64_t osdp_millis_now(void)
+__weak tick_t osdp_millis_now(void)
 {
 	return millis_now();
 }
 
-int64_t osdp_millis_since(int64_t last)
+tick_t osdp_millis_since(tick_t last)
 {
 	return osdp_millis_now() - last;
 }

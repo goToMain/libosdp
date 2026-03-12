@@ -5,8 +5,9 @@
  */
 
 #include <Arduino.h>
+#include <utils/utils.h>
 
-int64_t osdp_millis_now()
+extern "C" tick_t osdp_millis_now()
 {
-  return (int64_t)millis();
+  return (tick_t)millis();
 }

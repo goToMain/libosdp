@@ -356,9 +356,9 @@ struct osdp_pd {
 	int phy_state;         /* phy layer FSM state (CP mode only) */
 	int phy_retry_count;   /* command retry counter */
 	uint32_t wait_ms;      /* wait time in MS to retry communication */
-	int64_t tstamp;        /* Last POLL command issued time in ticks */
-	int64_t sc_tstamp;     /* Last received secure reply time in ticks */
-	int64_t phy_tstamp;    /* Time in ticks since command was sent */
+	tick_t tstamp;         /* Last POLL command issued time in ticks */
+	tick_t sc_tstamp;      /* Last received secure reply time in ticks */
+	tick_t phy_tstamp;     /* Time in ticks since command was sent */
 	uint32_t request;      /* Event loop requests */
 
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
@@ -443,8 +443,8 @@ void osdp_phy_progress_sequence(struct osdp_pd *pd);
 void osdp_phy_release_packet(struct osdp_pd *pd);
 
 /* --- from osdp_common.c --- */
-__weak int64_t osdp_millis_now(void);
-int64_t osdp_millis_since(int64_t last);
+__weak tick_t osdp_millis_now(void);
+tick_t osdp_millis_since(tick_t last);
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len);
 
 const char *osdp_cmd_name(int cmd_id);

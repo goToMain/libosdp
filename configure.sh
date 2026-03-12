@@ -25,6 +25,8 @@ usage() {
 	  --static                     Build without dynamic memory allocation
 	  --static-pd                  Deprecated alias for --static
 	  --lib-only                   Only build the library
+	  --bare-metal                 Enable bare-metal build paths
+	  --use-32bit-tick-t           Use uint32_t tick_t (requires --bare-metal)
 	  --cross-compile PREFIX       Use to pass a compiler prefix
 	  --prefix PATH                Install path prefix (default: /usr)
 	  --build-dir                  Build output directory (default: ./build)
@@ -51,6 +53,8 @@ while [ $# -gt 0 ]; do
 	--no-colours)          NO_COLOURS=1;;
 	--static|--static-pd)  STATIC=1;;
 	--lib-only)            LIB_ONLY=1;;
+	--bare-metal)          BARE_METAL=1;;
+	--use-32bit-tick-t)    USE_32BIT_TICK_T=1;;
 	--build-dir)           BUILD_DIR=$2; shift;;
 	-d|--debug)            DEBUG=1;;
 	-f|--force)            FORCE=1;;
@@ -109,6 +113,18 @@ fi
 
 if [[ ! -z "${DEBUG}" ]]; then
 	CCFLAGS+=" -g"
+fi
+
+if [[ ! -z "${BARE_METAL}" ]]; then
+	CCFLAGS+=" -D__BARE_METAL__"
+fi
+
+if [[ ! -z "${USE_32BIT_TICK_T}" ]]; then
+	if [[ -z "${BARE_METAL}" ]]; then
+		echo "--use-32bit-tick-t requires --bare-metal"
+		exit 1
+	fi
+	CCFLAGS+=" -DUSE_32BIT_TICK_T"
 fi
 
 ## Repo meta data

@@ -384,6 +384,7 @@ struct osdp_pd {
 	int cmd_id;            /* Currently processing command ID */
 	int reply_id;          /* Currently processing reply ID */
 	uint8_t nak_code;
+	uint8_t keyset_pending[16];
 
 	/* Data bytes of the current command/reply ID */
 	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];

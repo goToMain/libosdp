@@ -656,7 +656,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		ret = OSDP_PD_ERR_NONE;
 		pd->reply_id = REPLY_ACK;
-		memcpy(pd->ephemeral_data, cmd.keyset.data, 16);
+			memcpy(pd->keyset_pending, cmd.keyset.data, 16);
 		break;
 	case CMD_CHLNG:
 		if (len != CMD_CHLNG_DATA_LEN) {
@@ -1067,7 +1067,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			pd->active_event = NULL;
 		}
 		if (pd->cmd_id == CMD_KEYSET && pd->reply_id == REPLY_ACK) {
-			memcpy(pd->sc.scbk, pd->ephemeral_data, 16);
+			memcpy(pd->sc.scbk, pd->keyset_pending, 16);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 			sc_deactivate(pd);

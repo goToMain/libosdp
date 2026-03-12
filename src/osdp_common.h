@@ -373,6 +373,7 @@ struct osdp_pd {
 	unsigned long packet_len;
 	unsigned long packet_buf_len;
 	uint32_t packet_scan_skip;
+	bool reply_prebuilt;
 
 	int cmd_id;            /* Currently processing command ID */
 	int reply_id;          /* Currently processing reply ID */
@@ -383,7 +384,6 @@ struct osdp_pd {
 			uint8_t address;
 			uint32_t baud_rate;
 		} comset_pending;
-		struct osdp_status_report status_reply;
 	};
 
 	union {

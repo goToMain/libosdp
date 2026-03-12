@@ -280,6 +280,69 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	return 0;
 }
 
+static int pd_prebuild_status_reply(struct osdp_pd *pd, int reply_id,
+				    const struct osdp_status_report *status)
+{
+	int i, len = 0, n, hdr_len, data_off;
+	int packet_buf_size = get_tx_buf_size(pd);
+	uint8_t *pkt = osdp_tx_staging_buf(pd);
+	uint8_t *buf;
+	int max_len;
+
+	hdr_len = osdp_phy_packet_init(pd, pkt, packet_buf_size);
+	if (hdr_len < 0) {
+		return -1;
+	}
+	data_off = osdp_phy_packet_get_data_offset(pd, pkt);
+	buf = pkt + data_off;
+	max_len = packet_buf_size - data_off;
+
+	switch (reply_id) {
+	case REPLY_OSTATR:
+		n = pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL].num_items;
+		if (status->nr_entries != n || max_len < n + 1) {
+			return -1;
+		}
+		buf[len++] = REPLY_OSTATR;
+		for (i = 0; i < n; i++) {
+			buf[len++] = status->report[i];
+		}
+		break;
+	case REPLY_ISTATR:
+		n = pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING].num_items;
+		if (status->nr_entries != n || max_len < n + 1) {
+			return -1;
+		}
+		buf[len++] = REPLY_ISTATR;
+		for (i = 0; i < n; i++) {
+			buf[len++] = status->report[i];
+		}
+		break;
+	case REPLY_LSTATR:
+		if (status->nr_entries < 2 || max_len < REPLY_LSTATR_LEN) {
+			return -1;
+		}
+		buf[len++] = REPLY_LSTATR;
+		buf[len++] = status->report[0];
+		buf[len++] = status->report[1];
+		break;
+	case REPLY_RSTATR:
+		if (status->nr_entries < 1 || max_len < REPLY_RSTATR_LEN) {
+			return -1;
+		}
+		buf[len++] = REPLY_RSTATR;
+		buf[len++] = status->report[0];
+		break;
+	default:
+		return -1;
+	}
+
+	pd->packet_buf = pkt;
+	pd->packet_buf_len = hdr_len + len;
+	pd->reply_prebuilt = true;
+	return 0;
+}
+
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0;
@@ -334,7 +397,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
+		if (pd_prebuild_status_reply(pd, REPLY_LSTATR, &cmd.status)) {
+			break;
+		}
 		pd->reply_id = REPLY_LSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -352,7 +417,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
+		if (pd_prebuild_status_reply(pd, REPLY_ISTATR, &cmd.status)) {
+			break;
+		}
 		pd->reply_id = REPLY_ISTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -370,7 +437,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
+		if (pd_prebuild_status_reply(pd, REPLY_OSTATR, &cmd.status)) {
+			break;
+		}
 		pd->reply_id = REPLY_OSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -384,7 +453,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
+		if (pd_prebuild_status_reply(pd, REPLY_RSTATR, &cmd.status)) {
+			break;
+		}
 		pd->reply_id = REPLY_RSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -704,7 +775,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	int ret = OSDP_PD_ERR_GENERIC;
 	int i, len = 0;
 	const struct osdp_event *event = pd->active_event;
-	const struct osdp_status_report *status = &pd->status_reply;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
 
@@ -747,65 +817,55 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case REPLY_OSTATR: {
 		int n = pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL].num_items;
-		if (pd->cmd_id == CMD_POLL) {
-			if (!event || event->type != OSDP_EVENT_STATUS) {
-				break;
-			}
-			status = &event->status;
+		if (!event || event->type != OSDP_EVENT_STATUS) {
+			break;
 		}
-		if (status->nr_entries != n) {
+		if (event->status.nr_entries != n) {
 			break;
 		}
 		assert_buf_len(n + 1, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = status->report[i];
+			buf[len++] = event->status.report[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
 	case REPLY_ISTATR: {
 		int n = pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING].num_items;
-		if (pd->cmd_id == CMD_POLL) {
-			if (!event || event->type != OSDP_EVENT_STATUS) {
-				break;
-			}
-			status = &event->status;
+		if (!event || event->type != OSDP_EVENT_STATUS) {
+			break;
 		}
-		if (status->nr_entries != n) {
+		if (event->status.nr_entries != n) {
 			break;
 		}
 		assert_buf_len(n + 1, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = status->report[i];
+			buf[len++] = event->status.report[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
 	case REPLY_LSTATR:
 		assert_buf_len(REPLY_LSTATR_LEN, max_len);
-		if (pd->cmd_id == CMD_POLL) {
-			if (!event || event->type != OSDP_EVENT_STATUS) {
-				break;
-			}
-			status = &event->status;
+		if (!event || event->type != OSDP_EVENT_STATUS ||
+		    event->status.nr_entries < 2) {
+			break;
 		}
 		buf[len++] = pd->reply_id;
-		buf[len++] = status->report[0]; // tamper
-		buf[len++] = status->report[1]; // power
+		buf[len++] = event->status.report[0]; // tamper
+		buf[len++] = event->status.report[1]; // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
 		assert_buf_len(REPLY_RSTATR_LEN, max_len);
-		if (pd->cmd_id == CMD_POLL) {
-			if (!event || event->type != OSDP_EVENT_STATUS) {
-				break;
-			}
-			status = &event->status;
+		if (!event || event->type != OSDP_EVENT_STATUS ||
+		    event->status.nr_entries < 1) {
+			break;
 		}
 		buf[len++] = pd->reply_id;
-		buf[len++] = status->report[0]; // power
+		buf[len++] = event->status.report[0]; // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_KEYPAD:
@@ -941,6 +1001,16 @@ static int pd_send_reply(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 
+	if (pd->reply_prebuilt) {
+		ret = osdp_phy_send_packet(pd, pd->packet_buf, pd->packet_buf_len,
+					   packet_buf_size);
+		pd->reply_prebuilt = false;
+		if (ret < 0) {
+			return OSDP_PD_ERR_GENERIC;
+		}
+		return OSDP_PD_ERR_NONE;
+	}
+
 	pd->packet_buf = osdp_tx_staging_buf(pd);
 
 	/* init packet buf with header */
@@ -970,6 +1040,8 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 {
 	int err, len;
 	uint8_t *buf;
+
+	pd->reply_prebuilt = false;
 
 	err = osdp_phy_check_packet(pd);
 

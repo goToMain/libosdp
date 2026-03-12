@@ -26,8 +26,8 @@ struct test_command_ctx {
 	int last_event_type;
 	void *last_event_data;
 
-	/* Manufacturer command specific */
-	bool mfg_reply_expected;
+	/* Manufacturer command payload capture */
+	bool mfg_nak_requested;
 	uint32_t mfg_vendor_code;
 	uint8_t mfg_data[64];
 	int mfg_data_len;
@@ -58,15 +58,15 @@ int test_commands_command_callback(void *arg, struct osdp_cmd *cmd)
 	ctx->cmd_seen = true;
 	ctx->last_cmd_id = cmd->id;
 
-	/* Handle manufacturer commands specially */
+	/* Capture manufacturer command payload for async event test */
 	if (cmd->id == OSDP_CMD_MFG) {
-		if (ctx->mfg_reply_expected &&
-		    cmd->mfg.vendor_code == ctx->mfg_vendor_code &&
-		    cmd->mfg.length == ctx->mfg_data_len &&
-		    memcmp(cmd->mfg.data, ctx->mfg_data, ctx->mfg_data_len) == 0) {
-			/* Return positive value to trigger MFGREP */
-			return 1;
+		if (ctx->mfg_nak_requested) {
+			return -1;
 		}
+		ctx->mfg_vendor_code = cmd->mfg.vendor_code;
+		ctx->mfg_data_len = cmd->mfg.length;
+		memcpy(ctx->mfg_data, cmd->mfg.data, cmd->mfg.length);
+		return 0;
 	}
 
 	/* Handle status commands - fill in nr_entries to match PD capabilities */
@@ -160,7 +160,10 @@ static void reset_test_state()
 	g_test_ctx.last_cmd_id = 0;
 	g_test_ctx.event_seen = false;
 	g_test_ctx.last_event_type = 0;
-	g_test_ctx.mfg_reply_expected = false;
+	g_test_ctx.mfg_nak_requested = false;
+	g_test_ctx.mfg_vendor_code = 0;
+	g_test_ctx.mfg_data_len = 0;
+	memset(g_test_ctx.mfg_data, 0, sizeof(g_test_ctx.mfg_data));
 
 	if (g_test_ctx.last_event_data) {
 		free(g_test_ctx.last_event_data);
@@ -192,6 +195,14 @@ static bool wait_for_event(int expected_event_type, int timeout_sec)
 		rc++;
 	}
 	return false;
+}
+
+static bool is_pd_online(void)
+{
+	uint8_t status = 0;
+
+	osdp_get_status_mask(g_test_ctx.cp_ctx, &status);
+	return (status & 1U) != 0;
 }
 
 static bool test_buzzer_command()
@@ -320,24 +331,19 @@ static bool test_mfg_command_simple()
 
 static bool test_mfg_command_with_reply()
 {
-	printf(SUB_2 "testing manufacturer command with reply\n");
+	printf(SUB_2 "testing manufacturer command with async event\n");
 	reset_test_state();
 
-	/* Set up expected manufacturer reply parameters */
-	g_test_ctx.mfg_reply_expected = true;
-	g_test_ctx.mfg_vendor_code = 0x00030201;
-	g_test_ctx.mfg_data_len = 10;
 	uint8_t test_data[] = {9,1,9,2,6,3,1,7,7,0};
-	memcpy(g_test_ctx.mfg_data, test_data, sizeof(test_data));
 
 	struct osdp_cmd cmd = {
 		.id = OSDP_CMD_MFG,
 		.mfg = {
-			.vendor_code = g_test_ctx.mfg_vendor_code,
-			.length = g_test_ctx.mfg_data_len,
+			.vendor_code = 0x00030201,
+			.length = sizeof(test_data),
 		},
 	};
-	memcpy(cmd.mfg.data, g_test_ctx.mfg_data, g_test_ctx.mfg_data_len);
+	memcpy(cmd.mfg.data, test_data, sizeof(test_data));
 
 	if (osdp_cp_submit_command(g_test_ctx.cp_ctx, 0, &cmd)) {
 		printf(SUB_2 "Failed to send mfg command with reply\n");
@@ -350,6 +356,19 @@ static bool test_mfg_command_with_reply()
 		return false;
 	}
 
+	/* Submit async MFG reply event from PD app */
+	struct osdp_event ev = {
+		.type = OSDP_EVENT_MFGREP,
+		.flags = 0,
+	};
+	ev.mfgrep.vendor_code = g_test_ctx.mfg_vendor_code;
+	ev.mfgrep.length = g_test_ctx.mfg_data_len;
+	memcpy(ev.mfgrep.data, g_test_ctx.mfg_data, g_test_ctx.mfg_data_len);
+	if (osdp_pd_submit_event(g_test_ctx.pd_ctx, &ev)) {
+		printf(SUB_2 "Failed to submit async MFGREP event\n");
+		return false;
+	}
+
 	/* Wait for manufacturer reply event */
 	if (!wait_for_event(OSDP_EVENT_MFGREP, 5)) {
 		printf(SUB_2 "MFGREP event not received by CP\n");
@@ -359,14 +378,50 @@ static bool test_mfg_command_with_reply()
 	/* Verify the manufacturer reply event data */
 	if (g_test_ctx.last_event_data) {
 		struct osdp_event *ev = (struct osdp_event *)g_test_ctx.last_event_data;
-		if (ev->mfgrep.vendor_code != g_test_ctx.mfg_vendor_code ||
-		    ev->mfgrep.length != g_test_ctx.mfg_data_len ||
-		    memcmp(ev->mfgrep.data, g_test_ctx.mfg_data, g_test_ctx.mfg_data_len) != 0) {
+		if (ev->mfgrep.vendor_code != 0x00030201 ||
+		    ev->mfgrep.length != (int)sizeof(test_data) ||
+		    memcmp(ev->mfgrep.data, test_data, sizeof(test_data)) != 0) {
 			printf(SUB_2 "MFGREP event data mismatch\n");
 			return false;
 		}
 	} else {
 		printf(SUB_2 "MFGREP event data not captured\n");
+		return false;
+	}
+
+	return true;
+}
+
+static bool test_mfg_command_nack_soft_fail()
+{
+	printf(SUB_2 "testing manufacturer command NAK soft-fail\n");
+	reset_test_state();
+	g_test_ctx.mfg_nak_requested = true;
+
+	struct osdp_cmd cmd = {
+		.id = OSDP_CMD_MFG,
+		.mfg = {
+			.vendor_code = 0x00030201,
+			.length = 4,
+		},
+	};
+	uint8_t test_data[] = {1, 2, 3, 4};
+	memcpy(cmd.mfg.data, test_data, sizeof(test_data));
+
+	if (osdp_cp_submit_command(g_test_ctx.cp_ctx, 0, &cmd)) {
+		printf(SUB_2 "Failed to send mfg command (NAK path)\n");
+		return false;
+	}
+
+	if (!wait_for_command(OSDP_CMD_MFG, 5)) {
+		printf(SUB_2 "MFG command not received by PD (NAK path)\n");
+		return false;
+	}
+
+	/* NAK on CMD_MFG is a soft failure; PD remains online. */
+	usleep(200 * 1000);
+	if (!is_pd_online()) {
+		printf(SUB_2 "PD went offline after MFG NAK\n");
 		return false;
 	}
 
@@ -499,6 +554,7 @@ void run_command_tests(struct test *t)
 	overall_result &= test_keyset_command();
 	overall_result &= test_mfg_command_simple();
 	overall_result &= test_mfg_command_with_reply();
+	overall_result &= test_mfg_command_nack_soft_fail();
 
 	/* Teardown test environment */
 	teardown_test_environment();

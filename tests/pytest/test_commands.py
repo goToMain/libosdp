@@ -173,7 +173,7 @@ def test_command_mfg():
     cp_check_command_status(Command.Manufacturer)
 
 def test_command_mfg_with_reply():
-    """Test manufacturer command that triggers automatic manufacturer reply"""
+    """Test manufacturer command with asynchronous manufacturer reply event"""
     def evt_handler(pd, event):
         print(f"DEBUG: Received event: {event}")
         assert event['event'] == Event.ManufacturerReply
@@ -186,10 +186,7 @@ def test_command_mfg_with_reply():
         assert command['command'] == Command.Manufacturer
         assert command['vendor_code'] == 0x00030201
         assert command['data'] == bytes([9,1,9,2,6,3,1,7,7,0])
-        # Return positive value to trigger automatic manufacturer reply
-        # The reply data is echoed back from the command data
-        print("DEBUG: Command callback returning 1")
-        return 1, None
+        return 0, None
 
     assert cp.is_online(secure_pd_addr)
 
@@ -217,6 +214,15 @@ def test_command_mfg_with_reply():
         }
         assert_command_received(secure_pd, expected_cmd_received)
 
+        cp_check_command_status(Command.Manufacturer)
+
+        # Emit manufacturer reply event asynchronously from the PD app
+        secure_pd.submit_event({
+            'event': Event.ManufacturerReply,
+            'vendor_code': 0x00030201,
+            'data': bytes([9,1,9,2,6,3,1,7,7,0]),
+        })
+
         # The manufacturer reply event should be received by the CP
         expected_event = {
             'event': Event.ManufacturerReply,
@@ -232,6 +238,35 @@ def test_command_mfg_with_reply():
         else:
             cp.set_event_handler(None)
 
+        if original_command_handler is not None:
+            secure_pd.set_command_handler(original_command_handler)
+        else:
+            secure_pd.set_command_handler(None)
+
+def test_command_mfg_nack_soft_fail():
+    def cmd_handler(command):
+        assert command['command'] == Command.Manufacturer
+        return -1, None
+
+    assert cp.is_online(secure_pd_addr)
+
+    original_command_handler = getattr(secure_pd, 'user_command_handler', None)
+    try:
+        secure_pd.set_command_handler(cmd_handler)
+
+        test_cmd = {
+            'command': Command.Manufacturer,
+            'vendor_code': 0x00030201,
+            'data': bytes([1, 2, 3, 4]),
+        }
+        assert cp.submit_command(secure_pd_addr, test_cmd)
+        assert_command_received(secure_pd, test_cmd)
+        cp_check_command_status(Command.Manufacturer, expected_outcome=False)
+
+        # MFG NAK is a soft failure and does not drop PD online state.
+        time.sleep(0.2)
+        assert cp.is_online(secure_pd_addr)
+    finally:
         if original_command_handler is not None:
             secure_pd.set_command_handler(original_command_handler)
         else:

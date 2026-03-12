@@ -384,7 +384,6 @@ struct osdp_pd {
 			uint32_t baud_rate;
 		} comset_pending;
 		struct osdp_status_report status_reply;
-		struct osdp_event_mfgrep mfgrep_reply;
 	};
 
 	union {

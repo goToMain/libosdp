@@ -280,13 +280,6 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	return 0;
 }
 
-static void pd_stage_event_mfgrep(struct osdp_pd *pd, struct osdp_cmd_mfg *cmd)
-{
-	pd->mfgrep_reply.length = cmd->length;
-	pd->mfgrep_reply.vendor_code = cmd->vendor_code;
-	memcpy(pd->mfgrep_reply.data, cmd->data, cmd->length);
-}
-
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0;
@@ -549,21 +542,15 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd.mfg.data[i] = buf[pos++];
 		}
 
-		ret = 0;
 		if (pd->command_callback) {
 			ret = pd->command_callback(pd->command_callback_arg, &cmd);
+			if (ret < 0) {
+				pd->nak_code = OSDP_PD_NAK_RECORD;
+				ret = OSDP_PD_ERR_REPLY;
+				break;
+			}
 		}
-		if (ret < 0) { /* Callback failed */
-			pd->nak_code = OSDP_PD_NAK_RECORD;
-			ret = OSDP_PD_ERR_REPLY;
-			break;
-		}
-		if (ret > 0) { /* App wants to send a REPLY_MFGREP to the CP */
-			pd_stage_event_mfgrep(pd, &cmd.mfg);
-			pd->reply_id = REPLY_MFGREP;
-		} else {
-			pd->reply_id = REPLY_ACK;
-		}
+		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case CMD_ACURXSIZE:
@@ -718,7 +705,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	int i, len = 0;
 	const struct osdp_event *event = pd->active_event;
 	const struct osdp_status_report *status = &pd->status_reply;
-	const struct osdp_event_mfgrep *mfgrep = &pd->mfgrep_reply;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
 
@@ -872,17 +858,14 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_MFGREP:
-		if (pd->cmd_id == CMD_POLL) {
-			if (!event || event->type != OSDP_EVENT_MFGREP) {
-				break;
-			}
-			mfgrep = &event->mfgrep;
+		if (!event || event->type != OSDP_EVENT_MFGREP) {
+			break;
 		}
-		assert_buf_len(REPLY_MFGREP_LEN + mfgrep->length, max_len);
+		assert_buf_len(REPLY_MFGREP_LEN + event->mfgrep.length, max_len);
 		buf[len++] = pd->reply_id;
-		bwrite_u24_le(mfgrep->vendor_code, buf, &len);
-		memcpy(buf + len, mfgrep->data, mfgrep->length);
-		len += mfgrep->length;
+		bwrite_u24_le(event->mfgrep.vendor_code, buf, &len);
+		memcpy(buf + len, event->mfgrep.data, event->mfgrep.length);
+		len += event->mfgrep.length;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:

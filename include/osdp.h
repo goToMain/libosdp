@@ -952,11 +952,14 @@ struct osdp_event {
  * `osdp_pd_set_command_callback`.
  * @param cmd pointer to the received command.
  *
- * @retval 0 if LibOSDP must send a `osdp_ACK` response
- * @retval -ve if LibOSDP must send a `osdp_NAK` response
- * @retval +ve and modify the passed `struct osdp_cmd *cmd` if LibOSDP must
- * send a specific response. This is useful for sending manufacturer specific
- * reply `osdp_MFGREP`.
+ * @retval 0 if LibOSDP must send an `osdp_ACK` response.
+ * @retval -ve if LibOSDP must send an `osdp_NAK` response.
+ * @retval +ve is reserved.
+ *
+ * @note For `OSDP_CMD_MFG`, callback return values follow normal ACK/NAK
+ * handling (`-ve` => `osdp_NAK`, `0`/`+ve` => `osdp_ACK`). To send
+ * manufacturer data back to CP, apps must submit `OSDP_EVENT_MFGREP`
+ * asynchronously via `osdp_pd_submit_event()`.
  */
 typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
 

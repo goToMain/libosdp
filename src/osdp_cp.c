@@ -1021,7 +1021,9 @@ static bool cp_check_online_response(struct osdp_pd *pd)
 	switch (pd->cmd_id) {
 	case CMD_FILETRANSFER: return pd->reply_id == REPLY_FTSTAT;
 	case CMD_COMSET:       return pd->reply_id == REPLY_COM;
-	case CMD_MFG:          return pd->reply_id == REPLY_MFGREP;
+	case CMD_MFG:
+		return pd->reply_id == REPLY_ACK ||
+		       pd->reply_id == REPLY_MFGREP;
 	case CMD_LSTAT:        return pd->reply_id == REPLY_LSTATR;
 	case CMD_ISTAT:        return pd->reply_id == REPLY_ISTATR;
 	case CMD_OSTAT:        return pd->reply_id == REPLY_OSTATR;
@@ -1288,11 +1290,16 @@ static int state_update(struct osdp_pd *pd)
 		status = state_check_reply(pd);
 		notify_command_status(pd, status);
 		cp_complete_cmd(pd, pd->active_cmd,
-				status ? OSDP_COMPLETION_OK
-				       : OSDP_COMPLETION_FAILED);
+				status ? OSDP_COMPLETION_OK : OSDP_COMPLETION_FAILED);
 		pd->active_cmd = NULL;
 		if (!status) {
-			err = OSDP_CP_ERR_GENERIC;
+			/* CMD_MFG NAK is a soft failure; keep PD online. */
+			if (pd->cmd_id == CMD_MFG &&
+				pd->reply_id == REPLY_NAK) {
+				err = OSDP_CP_ERR_NONE;
+			} else {
+				err = OSDP_CP_ERR_GENERIC;
+			}
 		}
 		osdp_phy_state_reset(pd, false);
 		break;

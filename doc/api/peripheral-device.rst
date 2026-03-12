@@ -38,6 +38,13 @@ Refer to the `command structure`_ document for more information on how the
 
 .. _command structure: command-structure.html
 
+.. note::
+
+   For ``CMD_MFG``, callback return values use normal ACK/NAK behavior
+   (negative return -> NAK, non-negative return -> ACK). Any
+   manufacturer-specific reply payload must be sent asynchronously by
+   submitting an ``OSDP_EVENT_MFGREP`` event with ``osdp_pd_submit_event``.
+
 Events
 ------
 

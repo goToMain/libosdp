@@ -126,3 +126,12 @@ Responses
 +--------------------+---------+----------------------------------------------------------+---------+
 | REPLY_XRD          | 0xB1    | Extended read response                                   |   ❌    |
 +--------------------+---------+----------------------------------------------------------+---------+
+
+LibOSDP behavior note
+---------------------
+
+For ``CMD_MFG``, immediate command response follows normal callback ACK/NAK
+rules: callback return ``< 0`` yields ``REPLY_NAK``, callback return ``>= 0``
+yields ``REPLY_ACK``. If the application wants to send ``REPLY_MFGREP``, it
+must do so asynchronously by submitting an ``OSDP_EVENT_MFGREP`` event, which
+is then delivered on a subsequent ``CMD_POLL`` cycle.

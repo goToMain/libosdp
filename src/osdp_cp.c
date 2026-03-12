@@ -135,9 +135,12 @@ static inline void assert_buf_len(int need, int have)
 	(void)have;
 }
 
-static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
+static void fill_local_keyset_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd);
+
+static int cp_build_command(struct osdp_pd *pd, const struct osdp_cmd *active_cmd,
+			    uint8_t *buf, int max_len)
 {
-	struct osdp_cmd *cmd = NULL;
+	const struct osdp_cmd *cmd = active_cmd;
 	int ret, len = 0;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
@@ -181,7 +184,9 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case CMD_OUT:
 		assert_buf_len(CMD_OUT_LEN, max_len);
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->output.output_no;
 		buf[len++] = cmd->output.control_code;
@@ -189,7 +194,9 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case CMD_LED:
 		assert_buf_len(CMD_LED_LEN, max_len);
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->led.reader;
 		buf[len++] = cmd->led.led_number;
@@ -209,7 +216,9 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case CMD_BUZ:
 		assert_buf_len(CMD_BUZ_LEN, max_len);
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->buzzer.reader;
 		buf[len++] = cmd->buzzer.control_code;
@@ -218,7 +227,9 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[len++] = cmd->buzzer.rep_count;
 		break;
 	case CMD_TEXT:
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		assert_buf_len(CMD_TEXT_LEN + cmd->text.length, max_len);
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->text.reader;
@@ -232,13 +243,17 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	case CMD_COMSET:
 		assert_buf_len(CMD_COMSET_LEN, max_len);
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		buf[len++] = pd->cmd_id;
 		buf[len++] = cmd->comset.address;
 		bwrite_u32_le(cmd->comset.baud_rate, buf, &len);
 		break;
 	case CMD_MFG:
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		assert_buf_len(CMD_MFG_LEN + cmd->mfg.length, max_len);
 		if (cmd->mfg.length > OSDP_CMD_MFG_MAX_DATALEN) {
 			LOG_ERR("Invalid MFG data length (%d)", cmd->mfg.length);
@@ -275,7 +290,9 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			LOG_ERR("Cannot perform KEYSET without SC!");
 			return OSDP_CP_ERR_GENERIC;
 		}
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
+		if (!cmd) {
+			return OSDP_CP_ERR_GENERIC;
+		}
 		assert_buf_len(CMD_KEYSET_LEN, max_len);
 		if (cmd->keyset.length != 16) {
 			LOG_ERR("Invalid key length");
@@ -287,7 +304,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		if (cmd->keyset.type == 1) { /* SCBK */
 			memcpy(buf + len, cmd->keyset.data, 16);
 		} else if (cmd->keyset.type == 0) {  /* master_key */
-			osdp_compute_scbk(pd, cmd->keyset.data, buf + len);
+			osdp_compute_scbk(pd, (uint8_t *)cmd->keyset.data, buf + len);
 		} else {
 			LOG_ERR("Unknown key type (%d)", cmd->keyset.type);
 			return -1;
@@ -631,6 +648,8 @@ static void do_event_callback(struct osdp_pd *pd)
 static int cp_build_and_send_packet(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
+	struct osdp_cmd local_keyset_cmd;
+	const struct osdp_cmd *cmd = pd->active_cmd;
 	struct osdp *ctx = pd_to_osdp(pd);
 	uint8_t *buf;
 
@@ -643,8 +662,14 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 	}
 	ctx->tx_packet_buf_len = ret;
 
+	if (pd->state == OSDP_CP_STATE_SET_SCBK && pd->cmd_id == CMD_KEYSET) {
+		memset(&local_keyset_cmd, 0, sizeof(local_keyset_cmd));
+		fill_local_keyset_cmd(pd, &local_keyset_cmd);
+		cmd = &local_keyset_cmd;
+	}
+
 	/* fill command data */
-	ret = cp_build_command(pd, buf, packet_buf_size);
+	ret = cp_build_command(pd, cmd, buf, packet_buf_size);
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
@@ -709,10 +734,6 @@ static inline bool cp_sc_should_retry(struct osdp_pd *pd)
 
 static int cp_translate_cmd(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 {
-	/* Make a local copy of osdp_cmd command to be used later */
-	memcpy(pd->ephemeral_data, cmd, sizeof(struct osdp_cmd));
-	cmd = (const struct osdp_cmd *)pd->ephemeral_data;
-
 	switch (cmd->id) {
 	case OSDP_CMD_OUTPUT: return CMD_OUT;
 	case OSDP_CMD_LED:    return CMD_LED;
@@ -747,10 +768,8 @@ static int cp_translate_cmd(struct osdp_pd *pd, const struct osdp_cmd *cmd)
 	return -1;
 }
 
-static void fill_local_keyset_cmd(struct osdp_pd *pd)
+static void fill_local_keyset_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 {
-	struct osdp_cmd *cmd = (struct osdp_cmd *)pd->ephemeral_data;
-
 	cmd->id = OSDP_CMD_KEYSET;
 	cmd->keyset.type = 1;
 	cmd->keyset.length = sizeof(pd->sc.scbk);
@@ -950,11 +969,14 @@ static void notify_sc_status(struct osdp_pd *pd)
 
 static void cp_keyset_complete(struct osdp_pd *pd)
 {
-	struct osdp_cmd *cmd;
+	const struct osdp_cmd *cmd = pd->active_cmd;
 
 	if (!sc_use_scbkd(pd)) {
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
-		memcpy(pd->sc.scbk, cmd->keyset.data, 16);
+		if (!cmd || cmd->id != OSDP_CMD_KEYSET) {
+			LOG_ERR("Missing active keyset command");
+		} else {
+			memcpy(pd->sc.scbk, cmd->keyset.data, 16);
+		}
 	} else {
 		CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 	}
@@ -1074,7 +1096,6 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 		notify_sc_status(pd);
 		if (sc_use_scbkd(pd)) {
 			LOG_WRN("SC active with SCBK-D. Set SCBK");
-			fill_local_keyset_cmd(pd);
 			return OSDP_CP_STATE_SET_SCBK;
 		}
 		return OSDP_CP_STATE_ONLINE;

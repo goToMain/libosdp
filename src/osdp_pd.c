@@ -219,7 +219,7 @@ static bool do_command_callback(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	}
 	if (ret != 0) {
 		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+		pd->nak_code = OSDP_PD_NAK_RECORD;
 		return false;
 	}
 	return true;
@@ -275,14 +275,14 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		cap = &pd->cap[OSDP_PD_CAP_COMMUNICATION_SECURITY];
 		if (cap->compliance_level == 0) {
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			pd->nak_code = OSDP_PD_NAK_SC_UNSUP;
 			return 0;
 		}
 		return 1;
 	}
 
 	pd->reply_id = REPLY_NAK;
-	pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
+	pd->nak_code = OSDP_PD_NAK_CMD_UNKNOWN;
 	LOG_ERR("PD is not capable of handling CMD(%02x); ", pd->cmd_id);
 	return 0;
 }
@@ -308,7 +308,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	struct osdp_event *event;
 
 	pd->reply_id = REPLY_NAK;
-	pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+	pd->nak_code = OSDP_PD_NAK_RECORD;
 	pd->cmd_id = cmd.id = buf[pos++];
 	len--;
 
@@ -322,7 +322,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		    pd->cmd_id != CMD_CHLNG && pd->cmd_id != CMD_SCRYPT) {
 			LOG_ERR("CMD: %s(%02x) not allowed due to ENFORCE_SECURE",
 				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			return OSDP_PD_ERR_REPLY;
 		}
 	}
@@ -577,7 +577,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = pd->command_callback(pd->command_callback_arg, &cmd);
 		}
 		if (ret < 0) { /* Callback failed */
-			pd->ephemeral_data[0] = OSDP_PD_NAK_RECORD;
+			pd->nak_code = OSDP_PD_NAK_RECORD;
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
@@ -632,7 +632,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		ret = OSDP_PD_ERR_REPLY;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+		pd->nak_code = OSDP_PD_NAK_SC_COND;
 		if (!pd_cmd_cap_ok(pd, NULL)) {
 			break;
 		}
@@ -650,7 +650,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.keyset.length = buf[pos++];
 		memcpy(cmd.keyset.data, buf + pos, 16);
 		if (!do_command_callback(pd, &cmd)) {
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			LOG_ERR("Keyset with SC inactive");
 			break;
 		}
@@ -681,7 +681,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		if (sc_is_active(pd)) {
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			LOG_EM("Out of order CMD_SCRYPT; has CP gone rogue?");
 			break;
 		}
@@ -691,7 +691,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			 * The PD can respond with NAK(5) when it fails to
 			 * verify the CP_crypt.
 			 */
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			pd->nak_code = OSDP_PD_NAK_SC_UNSUP;
 			LOG_WRN("failed to verify CP_crypt");
 			break;
 		}
@@ -701,7 +701,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 	default:
 		LOG_ERR("Unknown CMD(%02x)", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
+		pd->nak_code = OSDP_PD_NAK_CMD_UNKNOWN;
 		return OSDP_PD_ERR_REPLY;
 	}
 
@@ -709,7 +709,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		LOG_ERR("Failed to decode command: CMD(%02x) Len:%d ret:%d",
 			pd->cmd_id, len, ret);
 		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
+		pd->nak_code = OSDP_PD_NAK_CMD_LEN;
 		ret = OSDP_PD_ERR_REPLY;
 	}
 
@@ -867,7 +867,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	case REPLY_NAK:
 		assert_buf_len(REPLY_NAK_LEN, max_len);
 		buf[len++] = pd->reply_id;
-		buf[len++] = pd->ephemeral_data[0];
+		buf[len++] = pd->nak_code;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_MFGREP:

@@ -676,7 +676,7 @@ static int cp_process_reply(struct osdp_pd *pd)
 	case OSDP_ERR_PKT_BUSY:
 		return OSDP_CP_ERR_RETRY_CMD;
 	case OSDP_ERR_PKT_NACK:
-		if (pd->ephemeral_data[0] == OSDP_PD_NAK_SEQ_NUM) {
+		if (pd->nak_code == OSDP_PD_NAK_SEQ_NUM) {
 			LOG_WRN("NAK(SEQ_NUM); restarting communication");
 			osdp_phy_state_reset(pd, true);
 			sc_deactivate(pd);

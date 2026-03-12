@@ -614,7 +614,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 		LOG_ERR("Packet sequence mismatch (expected: %d, got: %d)",
 			cur, comp);
 		pd->reply_id = REPLY_NAK;
-		pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
+		pd->nak_code = OSDP_PD_NAK_SEQ_NUM;
 		return OSDP_ERR_PKT_NACK;
 	}
 
@@ -722,19 +722,19 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		if (is_pd_mode(pd) && !sc_is_capable(pd)) {
 			LOG_ERR("PD is not SC capable");
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_UNSUP;
+			pd->nak_code = OSDP_PD_NAK_SC_UNSUP;
 			return OSDP_ERR_PKT_NACK;
 		}
 		if (pkt->data[1] < SCS_11 || pkt->data[1] > SCS_18) {
 			LOG_ERR("Invalid SB Type");
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_NACK;
 		}
 		if (!is_sc_active && pkt->data[1] > SCS_14) {
 			LOG_ERR("Invalid SCS type (%x)", pkt->data[1]);
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_NACK;
 		}
 		if (pkt->data[1] == SCS_11 || pkt->data[1] == SCS_13) {
@@ -779,7 +779,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 		if (is_sc_active) {
 			LOG_ERR("Received plain-text message in SC");
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_NACK;
 		}
 	}
@@ -794,7 +794,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 			LOG_ERR("Invalid MAC; discarding SC");
 			sc_deactivate(pd);
 			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+			pd->nak_code = OSDP_PD_NAK_SC_COND;
 			return OSDP_ERR_PKT_NACK;
 		}
 		len -= 4; /* consume MAC */
@@ -816,7 +816,7 @@ int osdp_phy_decode_packet(struct osdp_pd *pd, uint8_t **pkt_start)
 				LOG_ERR("Failed at decrypt; discarding SC");
 				sc_deactivate(pd);
 				pd->reply_id = REPLY_NAK;
-				pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
+				pd->nak_code = OSDP_PD_NAK_SC_COND;
 				return OSDP_ERR_PKT_NACK;
 			}
 			if (len == 0) {

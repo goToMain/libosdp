@@ -61,6 +61,17 @@ enum osdp_cp_error_e {
 	OSDP_CP_ERR_APP = -8, /* Application layer error */
 };
 
+static void cp_dispatch_event(struct osdp_pd *pd,
+			      const struct osdp_event *event)
+{
+	struct osdp *ctx = pd_to_osdp(pd);
+
+	if (ctx->event_callback) {
+		ctx->event_callback(ctx->event_callback_arg, pd->idx,
+				    (struct osdp_event *)event);
+	}
+}
+
 static int cp_cmd_queue_init(struct osdp_pd *pd)
 {
 	queue_init(&pd->cmd_queue);
@@ -457,8 +468,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < len; i++) {
 			event.status.report[i] = buf[pos++];
 		}
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_ISTATR:
@@ -475,8 +485,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		for (i = 0; i < len; i++) {
 			event.status.report[i] = buf[pos++];
 		}
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_LSTATR:
@@ -488,8 +497,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.status.nr_entries = 2;
 		event.status.report[0] = buf[pos++];
 		event.status.report[1] = buf[pos++];
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
@@ -500,8 +508,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		event.status.type = OSDP_STATUS_REPORT_REMOTE;
 		event.status.nr_entries = 1;
 		event.status.report[0] = buf[pos++];
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_COM:
@@ -525,8 +532,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.keypress.data, buf + pos, event.keypress.length);
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RAW:
@@ -543,8 +549,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.cardread.data, buf + pos, t);
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FMT:
@@ -576,8 +581,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 			break;
 		}
 		memcpy(event.mfgrep.data, buf + pos, event.mfgrep.length);
-		memcpy(pd->ephemeral_data, &event, sizeof(event));
-		make_request(pd, CP_REQ_EVENT_SEND);
+		cp_dispatch_event(pd, &event);
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:
@@ -633,16 +637,6 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	return ret;
-}
-
-static void do_event_callback(struct osdp_pd *pd)
-{
-	struct osdp *ctx = pd_to_osdp(pd);
-
-	if (ctx->event_callback) {
-		ctx->event_callback(ctx->event_callback_arg, pd->idx,
-				    (struct osdp_event *)pd->ephemeral_data);
-	}
 }
 
 static int cp_build_and_send_packet(struct osdp_pd *pd)
@@ -1316,9 +1310,6 @@ static int state_update(struct osdp_pd *pd)
 		if (check_request(pd, CP_REQ_OFFLINE)) {
 			LOG_INF("Going offline due to request");
 			next = OSDP_CP_STATE_OFFLINE;
-		}
-		if (check_request(pd, CP_REQ_EVENT_SEND)) {
-			do_event_callback(pd);
 		}
 	}
 

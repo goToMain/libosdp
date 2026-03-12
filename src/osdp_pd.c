@@ -112,7 +112,7 @@ static inline void pd_complete_event(struct osdp_pd *pd,
 				      event, status);
 }
 
-static int pd_translate_event(const struct osdp_event *event)
+static int pd_translate_event(struct osdp_pd *pd, const struct osdp_event *event)
 {
 	int reply_code = 0;
 
@@ -322,7 +322,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		/* Check if we have external events in the queue */
 		if (pd_event_dequeue(pd, &queued_event) == 0) {
-			ret = pd_translate_event(queued_event);
+			ret = pd_translate_event(pd, queued_event);
 			pd->reply_id = ret;
 			pd->active_event = queued_event;
 		} else {

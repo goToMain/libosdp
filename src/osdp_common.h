@@ -101,13 +101,6 @@ static inline __noreturn void die()
 		} \
 	} while (0)
 
-/* Unused type only to estimate ephemeral_data size */
-union osdp_ephemeral_data {
-	struct osdp_cmd cmd;
-	struct osdp_event event;
-};
-#define OSDP_EPHEMERAL_DATA_MAX_LEN sizeof(union osdp_ephemeral_data)
-
 /**
  * OSDP application exposed method arg checker.
  *
@@ -383,17 +376,16 @@ struct osdp_pd {
 
 	int cmd_id;            /* Currently processing command ID */
 	int reply_id;          /* Currently processing reply ID */
-	uint8_t nak_code;
-	uint8_t keyset_pending[16];
-	struct {
-		uint8_t address;
-		uint32_t baud_rate;
-	} comset_pending;
-	struct osdp_status_report status_reply;
-	struct osdp_event_mfgrep mfgrep_reply;
-
-	/* Data bytes of the current command/reply ID */
-	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];
+	union {
+		uint8_t nak_code;
+		uint8_t keyset_pending[16];
+		struct {
+			uint8_t address;
+			uint32_t baud_rate;
+		} comset_pending;
+		struct osdp_status_report status_reply;
+		struct osdp_event_mfgrep mfgrep_reply;
+	};
 
 	union {
 		queue_t cmd_queue;

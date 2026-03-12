@@ -389,6 +389,8 @@ struct osdp_pd {
 		uint8_t address;
 		uint32_t baud_rate;
 	} comset_pending;
+	struct osdp_status_report status_reply;
+	struct osdp_event_mfgrep mfgrep_reply;
 
 	/* Data bytes of the current command/reply ID */
 	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];

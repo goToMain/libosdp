@@ -86,12 +86,6 @@ static int pd_event_queue_init(struct osdp_pd *pd)
 	return 0;
 }
 
-static inline void pd_event_free(struct osdp_pd *pd, const struct osdp_event *event)
-{
-	ARG_UNUSED(pd);
-	ARG_UNUSED(event);
-}
-
 static int pd_event_enqueue(struct osdp_pd *pd, const struct osdp_event *event)
 {
 	queue_enqueue(&pd->event_queue, (queue_node_t *)&event->_node);
@@ -118,7 +112,7 @@ static inline void pd_complete_event(struct osdp_pd *pd,
 				      event, status);
 }
 
-static int pd_translate_event(struct osdp_pd *pd, const struct osdp_event *event)
+static int pd_translate_event(const struct osdp_event *event)
 {
 	int reply_code = 0;
 
@@ -171,7 +165,6 @@ static int pd_translate_event(struct osdp_pd *pd, const struct osdp_event *event
 		/* POLL command cannot fail even when there are errors here */
 		return REPLY_ACK;
 	}
-	memcpy(pd->ephemeral_data, event, sizeof(struct osdp_event));
 	return reply_code;
 }
 
@@ -289,23 +282,15 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 
 static void pd_stage_event_mfgrep(struct osdp_pd *pd, struct osdp_cmd_mfg *cmd)
 {
-	struct osdp_event ev;
-
-	ev.type = OSDP_EVENT_MFGREP;
-	ev.flags = 0;
-
-	ev.mfgrep.length = cmd->length;
-	ev.mfgrep.vendor_code = cmd->vendor_code;
-	memcpy(ev.mfgrep.data, cmd->data, cmd->length);
-
-	memcpy(pd->ephemeral_data, &ev, sizeof(ev));
+	pd->mfgrep_reply.length = cmd->length;
+	pd->mfgrep_reply.vendor_code = cmd->vendor_code;
+	memcpy(pd->mfgrep_reply.data, cmd->data, cmd->length);
 }
 
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0;
 	struct osdp_cmd cmd = {};
-	struct osdp_event *event;
 
 	pd->reply_id = REPLY_NAK;
 	pd->nak_code = OSDP_PD_NAK_RECORD;
@@ -337,10 +322,9 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		/* Check if we have external events in the queue */
 		if (pd_event_dequeue(pd, &queued_event) == 0) {
-			ret = pd_translate_event(pd, queued_event);
+			ret = pd_translate_event(queued_event);
 			pd->reply_id = ret;
 			pd->active_event = queued_event;
-			pd_event_free(pd, queued_event);
 		} else {
 			pd->reply_id = REPLY_ACK;
 		}
@@ -357,9 +341,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		event = (struct osdp_event *)pd->ephemeral_data;
-		event->type = OSDP_EVENT_STATUS;
-		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
+		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_LSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -377,9 +359,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		event = (struct osdp_event *)pd->ephemeral_data;
-		event->type = OSDP_EVENT_STATUS;
-		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
+		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_ISTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -397,9 +377,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		event = (struct osdp_event *)pd->ephemeral_data;
-		event->type = OSDP_EVENT_STATUS;
-		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
+		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_OSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -413,9 +391,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			ret = OSDP_PD_ERR_REPLY;
 			break;
 		}
-		event = (struct osdp_event *)pd->ephemeral_data;
-		event->type = OSDP_EVENT_STATUS;
-		memcpy(&event->status, &cmd.status, sizeof(cmd.status));
+		memcpy(&pd->status_reply, &cmd.status, sizeof(cmd.status));
 		pd->reply_id = REPLY_RSTATR;
 		ret = OSDP_PD_ERR_NONE;
 		break;
@@ -740,7 +716,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	int ret = OSDP_PD_ERR_GENERIC;
 	int i, len = 0;
-	struct osdp_event *event;
+	const struct osdp_event *event = pd->active_event;
+	const struct osdp_status_report *status = &pd->status_reply;
+	const struct osdp_event_mfgrep *mfgrep = &pd->mfgrep_reply;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
 
@@ -782,50 +760,72 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_OSTATR: {
-		event = (struct osdp_event *)pd->ephemeral_data;
 		int n = pd->cap[OSDP_PD_CAP_OUTPUT_CONTROL].num_items;
-		if (event->status.nr_entries != n) {
+		if (pd->cmd_id == CMD_POLL) {
+			if (!event || event->type != OSDP_EVENT_STATUS) {
+				break;
+			}
+			status = &event->status;
+		}
+		if (status->nr_entries != n) {
 			break;
 		}
 		assert_buf_len(n + 1, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = event->status.report[i];
+			buf[len++] = status->report[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
 	case REPLY_ISTATR: {
-		event = (struct osdp_event *)pd->ephemeral_data;
 		int n = pd->cap[OSDP_PD_CAP_CONTACT_STATUS_MONITORING].num_items;
-		if (event->status.nr_entries != n) {
+		if (pd->cmd_id == CMD_POLL) {
+			if (!event || event->type != OSDP_EVENT_STATUS) {
+				break;
+			}
+			status = &event->status;
+		}
+		if (status->nr_entries != n) {
 			break;
 		}
 		assert_buf_len(n + 1, max_len);
 		buf[len++] = pd->reply_id;
 		for (i = 0; i < n; i++) {
-			buf[len++] = event->status.report[i];
+			buf[len++] = status->report[i];
 		}
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
 	case REPLY_LSTATR:
 		assert_buf_len(REPLY_LSTATR_LEN, max_len);
-		event = (struct osdp_event *)pd->ephemeral_data;
+		if (pd->cmd_id == CMD_POLL) {
+			if (!event || event->type != OSDP_EVENT_STATUS) {
+				break;
+			}
+			status = &event->status;
+		}
 		buf[len++] = pd->reply_id;
-		buf[len++] = event->status.report[0]; // tamper
-		buf[len++] = event->status.report[1]; // power
+		buf[len++] = status->report[0]; // tamper
+		buf[len++] = status->report[1]; // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_RSTATR:
 		assert_buf_len(REPLY_RSTATR_LEN, max_len);
-		event = (struct osdp_event *)pd->ephemeral_data;
+		if (pd->cmd_id == CMD_POLL) {
+			if (!event || event->type != OSDP_EVENT_STATUS) {
+				break;
+			}
+			status = &event->status;
+		}
 		buf[len++] = pd->reply_id;
-		buf[len++] = event->status.report[0]; // power
+		buf[len++] = status->report[0]; // power
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_KEYPAD:
-		event = (struct osdp_event *)pd->ephemeral_data;
+		if (!event || event->type != OSDP_EVENT_KEYPRESS) {
+			break;
+		}
 		assert_buf_len(REPLY_KEYPAD_LEN + event->keypress.length, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = (uint8_t)event->keypress.reader_no;
@@ -837,7 +837,9 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	case REPLY_RAW: {
 		int len_bytes;
 
-		event = (struct osdp_event *)pd->ephemeral_data;
+		if (!event || event->type != OSDP_EVENT_CARDREAD) {
+			break;
+		}
 		len_bytes = (event->cardread.length + 7) / 8;
 		assert_buf_len(REPLY_RAW_LEN + len_bytes, max_len);
 		buf[len++] = pd->reply_id;
@@ -870,12 +872,17 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_MFGREP:
-		event = (struct osdp_event *)pd->ephemeral_data;
-		assert_buf_len(REPLY_MFGREP_LEN + event->mfgrep.length, max_len);
+		if (pd->cmd_id == CMD_POLL) {
+			if (!event || event->type != OSDP_EVENT_MFGREP) {
+				break;
+			}
+			mfgrep = &event->mfgrep;
+		}
+		assert_buf_len(REPLY_MFGREP_LEN + mfgrep->length, max_len);
 		buf[len++] = pd->reply_id;
-		bwrite_u24_le(event->mfgrep.vendor_code, buf, &len);
-		memcpy(buf + len, event->mfgrep.data, event->mfgrep.length);
-		len += event->mfgrep.length;
+		bwrite_u24_le(mfgrep->vendor_code, buf, &len);
+		memcpy(buf + len, mfgrep->data, mfgrep->length);
+		len += mfgrep->length;
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_FTSTAT:
@@ -1285,7 +1292,6 @@ void osdp_pd_teardown(osdp_t *ctx)
 
 	while (pd_event_dequeue(pd, &ev) == 0) {
 		pd_complete_event(pd, ev, OSDP_COMPLETION_ABORTED);
-		pd_event_free(pd, ev);
 	}
 	pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_ABORTED);
 	pd->active_event = NULL;
@@ -1374,7 +1380,6 @@ int osdp_pd_flush_events(osdp_t *ctx)
 
 	while (pd_event_dequeue(pd, &ev) == 0) {
 		pd_complete_event(pd, ev, OSDP_COMPLETION_FLUSHED);
-		pd_event_free(pd, ev);
 		count++;
 	}
 

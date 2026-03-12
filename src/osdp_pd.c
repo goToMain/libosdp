@@ -536,7 +536,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
-	case CMD_COMSET:
+		case CMD_COMSET:
 		if (len != CMD_COMSET_DATA_LEN) {
 			break;
 		}
@@ -549,14 +549,15 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd.comset.baud_rate = pd->baud_rate;
 			break;
 		}
-		if (!do_command_callback(pd, &cmd)) {
-			ret = OSDP_PD_ERR_REPLY;
+			if (!do_command_callback(pd, &cmd)) {
+				ret = OSDP_PD_ERR_REPLY;
+				break;
+			}
+			pd->comset_pending.address = cmd.comset.address;
+			pd->comset_pending.baud_rate = cmd.comset.baud_rate;
+			pd->reply_id = REPLY_COM;
+			ret = OSDP_PD_ERR_NONE;
 			break;
-		}
-		memcpy(pd->ephemeral_data, &cmd, sizeof(struct osdp_cmd));
-		pd->reply_id = REPLY_COM;
-		ret = OSDP_PD_ERR_NONE;
-		break;
 	case CMD_MFG:
 		if (len < CMD_MFG_DATA_LEN) {
 			break;
@@ -739,7 +740,6 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 {
 	int ret = OSDP_PD_ERR_GENERIC;
 	int i, len = 0;
-	struct osdp_cmd *cmd;
 	struct osdp_event *event;
 	int data_off = osdp_phy_packet_get_data_offset(pd, buf);
 	uint8_t *smb = osdp_phy_packet_get_smb(pd, buf);
@@ -849,7 +849,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	}
-	case REPLY_COM:
+		case REPLY_COM:
 		assert_buf_len(REPLY_COM_LEN, max_len);
 		/**
 		 * If COMSET succeeds, the PD must reply with the old params and
@@ -858,12 +858,11 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		 * we can peek at tail of command queue and set that to
 		 * pd->addr/pd->baud_rate.
 		 */
-		cmd = (struct osdp_cmd *)pd->ephemeral_data;
-		buf[len++] = pd->reply_id;
-		buf[len++] = cmd->comset.address;
-		bwrite_u32_le(cmd->comset.baud_rate, buf, &len);
-		ret = OSDP_PD_ERR_NONE;
-		break;
+			buf[len++] = pd->reply_id;
+			buf[len++] = pd->comset_pending.address;
+			bwrite_u32_le(pd->comset_pending.baud_rate, buf, &len);
+			ret = OSDP_PD_ERR_NONE;
+			break;
 	case REPLY_NAK:
 		assert_buf_len(REPLY_NAK_LEN, max_len);
 		buf[len++] = pd->reply_id;
@@ -1023,7 +1022,6 @@ static inline void pd_error_reset(struct osdp_pd *pd)
 static void osdp_pd_update(struct osdp_pd *pd)
 {
 	int ret;
-	struct osdp_cmd *cmd;
 
 	/**
 	 * If secure channel is established, we need to make sure that
@@ -1073,6 +1071,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			sc_deactivate(pd);
 		} else if (pd->cmd_id == CMD_COMSET &&
 			   pd->reply_id == REPLY_COM) {
+			struct osdp_cmd comset_done_cmd = { 0 };
 			/* COMSET command succeeded all the way:
 			 *
 			 * - CP requested the change (with OSDP_CMD_COMSET)
@@ -1086,11 +1085,12 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			 *  it held and commit this change to non-volatile
 			 *  storage.
 			 */
-			cmd = (struct osdp_cmd *)pd->ephemeral_data;
-			cmd->id = OSDP_CMD_COMSET_DONE;
-			do_command_callback(pd, cmd);
-			pd->address = (int)cmd->comset.address;
-			pd->baud_rate = (int)cmd->comset.baud_rate;
+			comset_done_cmd.id = OSDP_CMD_COMSET_DONE;
+			comset_done_cmd.comset.address = pd->comset_pending.address;
+			comset_done_cmd.comset.baud_rate = pd->comset_pending.baud_rate;
+			do_command_callback(pd, &comset_done_cmd);
+			pd->address = (int)pd->comset_pending.address;
+			pd->baud_rate = (int)pd->comset_pending.baud_rate;
 			LOG_INF("COMSET Succeeded! New PD-Addr: %d; Baud: %d",
 				pd->address, pd->baud_rate);
 		}

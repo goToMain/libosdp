@@ -385,6 +385,10 @@ struct osdp_pd {
 	int reply_id;          /* Currently processing reply ID */
 	uint8_t nak_code;
 	uint8_t keyset_pending[16];
+	struct {
+		uint8_t address;
+		uint32_t baud_rate;
+	} comset_pending;
 
 	/* Data bytes of the current command/reply ID */
 	uint8_t ephemeral_data[OSDP_EPHEMERAL_DATA_MAX_LEN];

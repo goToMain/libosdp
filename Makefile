@@ -12,7 +12,12 @@ include config.make
 
 O ?= $(BUILD_DIR)
 OBJ_LIBOSDP := $(SRC_LIBOSDP:%.c=$(O)/%.o)
-OBJ_TEST := $(SRC_TEST:%.c=$(O)/%.o)
+OBJ_TEST := $(SRC_TEST:%.c=$(O)/check/%.o)
+OBJ_CP_APP := $(O)/examples/c/cp_app.o
+OBJ_PD_APP := $(O)/examples/c/pd_app.o
+DEP_LIBOSDP := $(OBJ_LIBOSDP:.o=.d)
+DEP_TEST := $(OBJ_TEST:.o=.d)
+DEP_APP := $(OBJ_CP_APP:.o=.d) $(OBJ_PD_APP:.o=.d)
 CCFLAGS += -Wall -Wextra -O3
 
 ifeq ($(V),)
@@ -38,7 +43,12 @@ cp_app: $(O)/cp_app.elf
 $(O)/%.o: %.c
 	@echo "  CC $<"
 	@mkdir -p $(@D)
-	$(Q)$(CC) -c $< $(CCFLAGS) $(CCFLAGS_EXTRA) -o $@
+	$(Q)$(CC) -c $< $(CCFLAGS) $(CCFLAGS_EXTRA) -MMD -MP -o $@
+
+$(O)/check/%.o: %.c
+	@echo "  CC $<"
+	@mkdir -p $(@D)
+	$(Q)$(CC) -c $< $(CCFLAGS) $(CCFLAGS_EXTRA) -MMD -MP -o $@
 
 $(O)/libosdp.a: CCFLAGS_EXTRA=-Iutils/include -Iinclude -Isrc -I$(O)
 $(O)/libosdp.a: $(OBJ_LIBOSDP)
@@ -47,34 +57,44 @@ $(O)/libosdp.a: $(OBJ_LIBOSDP)
 
 ## Samples
 
-$(O)/cp_app.elf: $(O)/libosdp.a
-	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) examples/c/cp_app.c -o $@ -Iinclude -L$(O) -losdp
+$(O)/examples/c/%.o: CCFLAGS_EXTRA=-Iinclude
 
-$(O)/pd_app.elf: $(O)/libosdp.a
+$(O)/cp_app.elf: $(O)/libosdp.a $(OBJ_CP_APP)
 	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) examples/c/pd_app.c -o $@ -Iinclude -L$(O) -losdp
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_CP_APP) -o $@ -L$(O) -losdp
+
+$(O)/pd_app.elf: $(O)/libosdp.a $(OBJ_PD_APP)
+	@echo "LINK $(@F)"
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_PD_APP) -o $@ -L$(O) -losdp
 
 ## Tests
 
+.PHONY: unit-test
+unit-test: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I$(O)
+unit-test: $(O)/unit-test
+
+$(O)/unit-test: $(OBJ_TEST)
+	@echo "LINK $(@F)"
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $@
+
 .PHONY: check
-check: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I$(O)
-check: clean $(OBJ_TEST)
-	@echo "LINK $@"
-	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $(O)/unit-test
+check: unit-test
 	$(Q)$(O)/unit-test
 
 ## Clean
 
 .PHONY: clean
 clean:
-	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_TEST)
+	$(Q)rm -f $(O)/src/*.o $(O)/src/crypto/*.o $(OBJ_TEST) $(OBJ_CP_APP) $(OBJ_PD_APP)
+	$(Q)rm -rf $(O)/check
 	$(Q)rm -f $(O)/*.a $(O)/*.elf
 
 .PHONY: distclean
 distclean: clean
 	$(Q)rm config.make
 	$(Q)rm -rf $(O)
+
+-include $(DEP_LIBOSDP) $(DEP_TEST) $(DEP_APP)
 
 ## Install
 
@@ -88,4 +108,3 @@ install: libosdp
 	install -m 644 include/osdp.h $(DESTDIR)$(PREFIX)/include/
 	install -m 644 include/osdp.hpp $(DESTDIR)$(PREFIX)/include/
 	install -m 644 $(O)/include/osdp_export.h $(DESTDIR)$(PREFIX)/include/
-

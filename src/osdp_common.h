@@ -36,6 +36,36 @@
 
 #define ARG_UNUSED(x) (void)(x)
 
+#ifdef OPT_OSDP_LOG_MINIMAL
+
+__format_printf(4, 5)
+int osdp_log_emit_sys(int log_level, const char *file, unsigned long line,
+		      const char *fmt, ...);
+__format_printf(6, 7)
+int osdp_log_emit(bool is_cp, int pd_address, int log_level,
+		  const char *file, unsigned long line,
+		  const char *fmt, ...);
+
+#define OSDP_PD_LOG(_level, ...)                                               \
+	do {                                                                   \
+		osdp_log_emit(is_cp_mode(pd), pd->address, _level,             \
+			      __FILE__, __LINE__, __VA_ARGS__);                \
+	} while (0)
+
+#undef LOG_PRINT
+#define LOG_PRINT(...)                                                         \
+	do {                                                                   \
+		osdp_log_emit(false, -1, LOG_INFO, __FILE__,                   \
+			      __LINE__, __VA_ARGS__);                          \
+	} while (0)
+
+#else
+
+__format_printf(6, 7)
+int osdp_log_cb_emit_pd(bool is_cp, int pd_address, int log_level,
+			const char *file, unsigned long line,
+			const char *fmt, ...);
+
 #define OSDP_PD_LOG(_level, ...)                                              \
 	do {                                                                   \
 		struct osdp *__ctx = pd_to_osdp(pd);                           \
@@ -52,9 +82,17 @@
 		} else {                                                         \
 			snprintf(__name, sizeof(__name), "OSDP: PD-%d", pd->address);\
 		}                                                                \
-		logger_set_name(&__log_ctx, __name);                            \
-		__logger_log(&__log_ctx, _level, __FILE__, __LINE__, __VA_ARGS__);\
+			logger_set_name(&__log_ctx, __name);                            \
+			if (__ctx->logger.cb) {                                     \
+				osdp_log_cb_emit_pd(is_cp_mode(pd), pd->address,     \
+						 _level, __FILE__, __LINE__, \
+						 __VA_ARGS__);                 \
+				break;                                             \
+			}                                                          \
+			__logger_log(&__log_ctx, _level, __FILE__, __LINE__, __VA_ARGS__);\
 	} while (0)
+
+#endif /* OPT_OSDP_LOG_MINIMAL */
 
 #define LOG_EM(...)    OSDP_PD_LOG(LOG_EMERG, __VA_ARGS__)
 #define LOG_ALERT(...) OSDP_PD_LOG(LOG_ALERT, __VA_ARGS__)
@@ -436,14 +474,16 @@ struct osdp {
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
 	struct osdp_channel channel; /* OSDP channel */
 	uint8_t tx_buf[OSDP_PACKET_BUF_SIZE];
-	/* logger context (from utils/logger.h) */
-	logger_t logger;
 
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
 	cp_event_callback_t event_callback;
 	void *command_completion_callback_arg;
 	cp_command_completion_callback_t command_completion_callback;
+
+#ifndef OPT_OSDP_LOG_MINIMAL
+	logger_t logger;      /* logger context (from utils/logger.h) */
+#endif
 };
 
 void osdp_keyset_complete(struct osdp_pd *pd);

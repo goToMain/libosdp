@@ -1163,7 +1163,9 @@ int test_cp_phy_setup(struct test *t)
 		.flags = 0,
 		.scbk = NULL,
 	};
+#ifndef OPT_OSDP_LOG_MINIMAL
 	osdp_logger_init("osdp::cp", t->loglevel, NULL);
+#endif /* OPT_OSDP_LOG_MINIMAL */
 	struct osdp *ctx = (struct osdp *)osdp_cp_setup(&channel, 1, &info);
 	if (ctx == NULL) {
 		printf(SUB_1 "init failed!\n");

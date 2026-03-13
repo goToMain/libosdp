@@ -1372,14 +1372,17 @@ typedef int (*osdp_log_puts_fn_t)(const char *msg);
 /**
  * @brief A callback function to be used with external loggers
  *
+ * @param pd Address of PD associated with this message; -1 for non-PD/system logs
  * @param log_level A syslog style log level. See `enum osdp_log_level_e`
+ * @param msg The log message
  * @param file Relative path to file which produced the log message
  * @param line Line number in `file` which produced the log message
- * @param msg The log message
  */
-typedef void (*osdp_log_callback_fn_t)(int log_level, const char *file,
-				       unsigned long line, const char *msg);
+typedef void (*osdp_log_callback_fn_t)(int pd, int log_level,
+				       const char *msg, const char *file,
+				       unsigned long line);
 
+#ifndef OPT_OSDP_LOG_MINIMAL
 /**
  * @brief Configure OSDP Logging.
  *
@@ -1399,11 +1402,10 @@ OSDP_EXPORT
 void osdp_logger_init(const char *name, int log_level,
 		      osdp_log_puts_fn_t puts_fn);
 
+#endif /* OPT_OSDP_LOG_MINIMAL */
+
 /**
- * @brief A callback function that gets called when LibOSDP wants to emit a log
- * line. All messages (of all log levels) are passed on to this callback
- * without any log formatting. This API is for users who may already have a
- * logger configured in their application.
+ * @brief Set logging callback for LibOSDP.
  *
  * @param cb The callback function. See `osdp_log_callback_fn_t` for more
  * details.

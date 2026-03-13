@@ -1258,7 +1258,10 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 
 	input_check_init(ctx);
 	ctx->_num_pd = 1;
+
+#ifndef OPT_OSDP_LOG_MINIMAL
 	logger_get_default(&ctx->logger);
+#endif
 
 	SET_CURRENT_PD(ctx, 0);
 	pd = osdp_to_pd(ctx, 0);

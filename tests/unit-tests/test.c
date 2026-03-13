@@ -610,7 +610,11 @@ void test_mock_pd_flush(void *data)
 
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 {
+#ifndef OPT_OSDP_LOG_MINIMAL
 	osdp_logger_init("osdp", t->loglevel, NULL);
+#else
+	ARG_UNUSED(t);
+#endif /* OPT_OSDP_LOG_MINIMAL */
 
 	uint8_t scbk[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,

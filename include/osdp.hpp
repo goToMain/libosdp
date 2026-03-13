@@ -19,10 +19,17 @@ class OSDP_EXPORT Common {
 public:
 	Common() : _ctx(nullptr) {}
 
+#ifndef OPT_OSDP_LOG_MINIMAL
 	void logger_init(const char *name, int log_level,
 			 osdp_log_puts_fn_t puts_fn)
 	{
 		osdp_logger_init(name, log_level, puts_fn);
+	}
+#endif
+
+	void set_log_callback(osdp_log_callback_fn_t cb)
+	{
+		osdp_set_log_callback(cb);
 	}
 
 	const char *get_version()

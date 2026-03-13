@@ -10,12 +10,123 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#ifndef OPT_DISABLE_PRETTY_LOGGING
-#endif
+#include <string.h>
 
 #include "osdp_common.h"
 
 #include <utils/crc16.h>
+
+#ifdef OPT_OSDP_LOG_MINIMAL
+#define OSDP_MIN_LOG_BUF_LEN 160
+
+static struct {
+	osdp_log_callback_fn_t cb;
+} g_osdp_log_cfg = {
+	.cb = NULL,
+};
+
+static char g_osdp_log_buf[OSDP_MIN_LOG_BUF_LEN + 2];
+
+static const char *osdp_basename(const char *file)
+{
+	const char *base = strrchr(file, PATH_SEPARATOR);
+
+	return base ? base + 1 : file;
+}
+
+static int osdp_log_emit_v(int log_level, int pd_address,
+			   const char *file, unsigned long line,
+			   const char *fmt, va_list ap)
+{
+	int n;
+	const char *base = osdp_basename(file);
+
+	if (log_level < LOG_EMERG || log_level >= LOG_MAX_LEVEL) {
+		return 0;
+	}
+	if (!g_osdp_log_cfg.cb) {
+		return 0;
+	}
+
+	n = vsnprintf(g_osdp_log_buf, sizeof(g_osdp_log_buf), fmt, ap);
+	if (n < 0) {
+		return n;
+	}
+	if (n >= (int)sizeof(g_osdp_log_buf)) {
+		n = sizeof(g_osdp_log_buf) - 1;
+	}
+
+	g_osdp_log_cfg.cb(pd_address, log_level, g_osdp_log_buf, base, line);
+	return n;
+}
+
+__format_printf(6, 7)
+int osdp_log_emit(bool is_cp, int pd_address, int log_level,
+		     const char *file, unsigned long line,
+		     const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = osdp_log_emit_v(log_level, pd_address, file, line, fmt, ap);
+	va_end(ap);
+
+	ARG_UNUSED(is_cp);
+	return ret;
+}
+
+#else /* OPT_OSDP_LOG_MINIMAL */
+
+static osdp_log_callback_fn_t g_osdp_log_callback;
+
+static void osdp_log_callback_trampoline(int log_level, const char *file,
+					 unsigned long line, const char *msg)
+{
+	if (!g_osdp_log_callback) {
+		return;
+	}
+	g_osdp_log_callback(-1, log_level, msg, file, line);
+}
+
+__format_printf(6, 7)
+int osdp_log_cb_emit(bool is_cp, int pd_address, int log_level,
+		     const char *file, unsigned long line,
+		     const char *fmt, ...)
+{
+	char msg[192];
+	va_list args;
+	int len;
+	const char *base;
+	const char *prefix = is_cp ? "CP: PD[%d]: " : "PD[%d]: ";
+
+	if (!g_osdp_log_callback) {
+		return 0;
+	}
+
+	len = snprintf(msg, sizeof(msg), prefix, pd_address);
+	if (len < 0) {
+		return len;
+	}
+	if (len >= (int)sizeof(msg)) {
+		len = sizeof(msg) - 1;
+	}
+
+	va_start(args, fmt);
+	len += vsnprintf(msg + len, sizeof(msg) - len, fmt, args);
+	va_end(args);
+	if (len >= (int)sizeof(msg)) {
+		len = sizeof(msg) - 1;
+	}
+
+	base = strrchr(file, PATH_SEPARATOR);
+	base = base ? base + 1 : file;
+
+	g_osdp_log_callback(pd_address, log_level, msg, base, line);
+	return len;
+}
+
+#endif /* OPT_OSDP_LOG_MINIMAL */
 
 uint16_t osdp_compute_crc16(const uint8_t *buf, size_t len)
 {
@@ -176,6 +287,8 @@ int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len)
 
 /* --- Exported Methods --- */
 
+#ifndef OPT_OSDP_LOG_MINIMAL
+
 void osdp_logger_init(const char *name, int log_level,
 		      osdp_log_puts_fn_t log_fn)
 {
@@ -193,13 +306,21 @@ void osdp_logger_init(const char *name, int log_level,
 	logger_set_default(&ctx); /* Mark this config as logging default */
 }
 
+#endif /* OPT_OSDP_LOG_MINIMAL */
+
 void osdp_set_log_callback(osdp_log_callback_fn_t cb)
 {
+#ifdef OPT_OSDP_LOG_MINIMAL
+	g_osdp_log_cfg.cb = cb;
+#else
 	logger_t ctx;
 	int flags = LOGGER_FLAG_NONE;
+	g_osdp_log_callback = cb;
 
-	logger_init(&ctx, 0, NULL, REPO_ROOT, NULL, NULL, cb, flags);
+	logger_init(&ctx, 0, NULL, REPO_ROOT, NULL, NULL,
+		    osdp_log_callback_trampoline, flags);
 	logger_set_default(&ctx); /* Mark this config as logging default */
+#endif
 }
 
 const char *osdp_get_version()

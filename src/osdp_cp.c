@@ -1532,7 +1532,10 @@ osdp_t *osdp_cp_setup(const struct osdp_channel *channel, int num_pd,
 	}
 
 	input_check_init(ctx);
+
+#ifndef OPT_OSDP_LOG_MINIMAL
 	logger_get_default(&ctx->logger);
+#endif
 	memcpy(&ctx->channel, channel, sizeof(ctx->channel));
 
 	if (num_pd && cp_add_pd(ctx, num_pd, info)) {

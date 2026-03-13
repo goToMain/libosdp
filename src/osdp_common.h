@@ -406,8 +406,10 @@ struct osdp_pd {
 	/* logger context (from utils/logger.h) */
 	logger_t logger;
 
+#ifndef __BARE_METAL__
 	/* Opaque packet capture pointer (see osdp_pcap.c) */
 	void *packet_capture_ctx;
+#endif
 };
 
 struct osdp {

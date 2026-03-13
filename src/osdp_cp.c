@@ -10,13 +10,6 @@
 #include "osdp_file.h"
 #include "osdp_diag.h"
 
-#ifdef OPT_OSDP_STATIC
-static struct osdp g_osdp_ctx;
-static struct osdp_pd g_cp_pd_ctx[OSDP_CP_MAX_PDS];
-static struct osdp_rx_pkt g_cp_rx_pkt[OSDP_CP_MAX_PDS];
-static struct osdp_rb g_cp_rb[OSDP_CP_MAX_PDS];
-#endif /* OPT_OSDP_STATIC */
-
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
 #define CMD_ISTAT_LEN                  1
@@ -1402,6 +1395,54 @@ static void cp_collect_init_flags(struct osdp_pd *pd, int flags)
 	}
 }
 
+static int cp_expand_pd_array(struct osdp *ctx, int num_pd,
+			      struct osdp_pd **old_pd_array,
+			      struct osdp_pd **new_pd_array,
+			      int *old_num_pd)
+{
+	*old_num_pd = ctx->_num_pd;
+	*old_pd_array = ctx->pd;
+	*new_pd_array = cp_pd_array_alloc(*old_num_pd, num_pd);
+	if (*new_pd_array == NULL) {
+		LOG_PRINT("Failed to allocate new osdp_pd[] context");
+		return -1;
+	}
+
+	ctx->pd = *new_pd_array;
+	ctx->_num_pd = *old_num_pd + num_pd;
+#ifndef OPT_OSDP_STATIC
+	memcpy(*new_pd_array, *old_pd_array, sizeof(struct osdp_pd) * *old_num_pd);
+#endif /* OPT_OSDP_STATIC */
+	return 0;
+}
+
+static int cp_setup_pd_rx_storage(struct osdp *ctx, struct osdp_pd *pd, int pd_idx)
+{
+#ifdef OPT_OSDP_RX_ZERO_COPY
+	if (!ctx->channel.recv_pkt || !ctx->channel.release_pkt) {
+		LOG_ERR("recv_pkt/release_pkt cannot be NULL in OPT_OSDP_RX_ZERO_COPY");
+		return -1;
+	}
+
+	pd->rx_pkt = cp_rx_pkt_alloc(pd_idx);
+	if (!pd->rx_pkt) {
+		LOG_ERR("Failed to allocate rx_pkt");
+		return -1;
+	}
+
+#else /* OPT_OSDP_RX_ZERO_COPY */
+	ARG_UNUSED(ctx);
+
+	pd->rx_rb = cp_rx_rb_alloc(pd_idx);
+	if (!pd->rx_rb) {
+		LOG_ERR("Failed to allocate rx_rb");
+		return -1;
+	}
+
+#endif /* OPT_OSDP_RX_ZERO_COPY */
+	return 0;
+}
+
 static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_list)
 {
 	int i, old_num_pd;
@@ -1411,30 +1452,11 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 
 	assert(num_pd);
 	assert(info_list);
-	old_num_pd = ctx->_num_pd;
-	old_pd_array = ctx->pd;
 
-#ifdef OPT_OSDP_STATIC
-	if (old_num_pd + num_pd > OSDP_CP_MAX_PDS) {
-		LOG_PRINT("Static CP: exceeds max PD count (%d)",
-			  OSDP_CP_MAX_PDS);
+	if (cp_expand_pd_array(ctx, num_pd, &old_pd_array,
+			       &new_pd_array, &old_num_pd)) {
 		return -1;
 	}
-	new_pd_array = g_cp_pd_ctx;
-	memset(new_pd_array + old_num_pd, 0, sizeof(struct osdp_pd) * num_pd);
-#else
-	new_pd_array = calloc(old_num_pd + num_pd, sizeof(struct osdp_pd));
-	if (new_pd_array == NULL) {
-		LOG_PRINT("Failed to allocate new osdp_pd[] context");
-		return -1;
-	}
-#endif
-
-	ctx->pd = new_pd_array;
-	ctx->_num_pd = old_num_pd + num_pd;
-#ifndef OPT_OSDP_STATIC
-	memcpy(new_pd_array, old_pd_array, sizeof(struct osdp_pd) * old_num_pd);
-#endif
 
 	for (i = 0; i < num_pd; i++) {
 		info = info_list + i;
@@ -1455,35 +1477,8 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		SET_FLAG(pd, PD_FLAG_SC_DISABLED);
 		/* Default to CRC-16 until we know PD capabilities */
 		SET_FLAG(pd, PD_FLAG_CP_USE_CRC);
-		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY) &&
-		    ctx->channel.recv_pkt && ctx->channel.release_pkt) {
-#ifdef OPT_OSDP_STATIC
-			memset(&g_cp_rx_pkt[i + old_num_pd], 0,
-			       sizeof(struct osdp_rx_pkt));
-			pd->rx.pkt = &g_cp_rx_pkt[i + old_num_pd];
-#else
-			pd->rx.pkt = calloc(1, sizeof(struct osdp_rx_pkt));
-			if (!pd->rx.pkt) {
-				LOG_ERR("Failed to allocate rx_pkt");
-				goto error;
-			}
-#endif
-		} else {
-			/* Traditional mode: recv must be present */
-			if (!ctx->channel.recv) {
-				LOG_ERR("channel.recv() cannot be NULL");
-				goto error;
-			}
-#ifdef OPT_OSDP_STATIC
-			memset(&g_cp_rb[i + old_num_pd], 0, sizeof(struct osdp_rb));
-			pd->rx.rb = &g_cp_rb[i + old_num_pd];
-#else
-			pd->rx.rb = calloc(1, sizeof(struct osdp_rb));
-			if (!pd->rx.rb) {
-				LOG_ERR("Failed to allocate rx_rb");
-				goto error;
-			}
-#endif
+		if (cp_setup_pd_rx_storage(ctx, pd, i + old_num_pd)) {
+			goto error;
 		}
 		memcpy(&pd->channel, &ctx->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
@@ -1511,6 +1506,7 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 	}
 	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
 	SET_CURRENT_PD(ctx, 0);
+
 #ifndef OPT_OSDP_STATIC
 	if (old_num_pd) {
 		free(old_pd_array);
@@ -1521,6 +1517,7 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 error:
 	ctx->pd = old_pd_array;
 	ctx->_num_pd = old_num_pd;
+
 #ifndef OPT_OSDP_STATIC
 	free(new_pd_array);
 #else
@@ -1534,24 +1531,20 @@ error:
 osdp_t *osdp_cp_setup(const struct osdp_channel *channel, int num_pd,
 		      const osdp_pd_info_t *info)
 {
-	struct osdp *ctx;
 	assert(channel);
 
-#ifdef OPT_OSDP_STATIC
-	ctx = &g_osdp_ctx;
-#else
-	ctx = calloc(1, sizeof(struct osdp));
+	struct osdp *ctx = cp_ctx_alloc();
 	if (ctx == NULL) {
 		LOG_PRINT("Failed to allocate osdp context");
 		return NULL;
 	}
-#endif
 
 	input_check_init(ctx);
 	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
 	memcpy(&ctx->channel, channel, sizeof(ctx->channel));
 
-	if (num_pd && osdp_cp_add_pd((osdp_t *)ctx, num_pd, info)) {
+	if (num_pd && cp_add_pd(ctx, num_pd, info)) {
+		LOG_PRINT("Failed to add PDs");
 		goto error;
 	}
 
@@ -1567,9 +1560,13 @@ error:
 int osdp_cp_add_pd(osdp_t *ctx, int num_pd, const osdp_pd_info_t *info)
 {
 	input_check(ctx);
-	assert(num_pd);
-	assert(info);
 	struct osdp *cp_ctx = TO_OSDP(ctx);
+
+	if (!num_pd || !info) {
+		LOG_PRINT("num_pd must be > 0 and info cannot be NULL");
+		return -1;
+	}
+
 	if (cp_add_pd(cp_ctx, num_pd, info)) {
 		LOG_PRINT("Failed to add PDs");
 		return -1;
@@ -1598,18 +1595,22 @@ void osdp_cp_teardown(osdp_t *ctx)
 		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_finish(pd);
 		}
+
 #ifndef OPT_OSDP_STATIC
 		safe_free(pd->file);
-		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
-			safe_free(pd->rx.pkt);
-		} else {
-			safe_free(pd->rx.rb);
-		}
+#ifdef OPT_OSDP_RX_ZERO_COPY
+		safe_free(pd->rx_pkt);
+#else
+		safe_free(pd->rx_rb);
 #endif
+#endif /* OPT_OSDP_STATIC */
+
 	}
+
 	if (cp_ctx->channel.close) {
 		cp_ctx->channel.close(cp_ctx->channel.data);
 	}
+
 #ifndef OPT_OSDP_STATIC
 	safe_free(cp_ctx->pd);
 	safe_free(cp_ctx);

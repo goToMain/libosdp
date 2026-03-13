@@ -256,6 +256,7 @@ struct osdp_pd_id {
 	uint32_t firmware_version; /**< 3-byte version (major, minor, build) */
 };
 
+#ifndef OPT_OSDP_RX_ZERO_COPY
 /**
  * @brief pointer to function that copies received bytes into buffer. This
  * function should be non-blocking.
@@ -269,6 +270,8 @@ struct osdp_pd_id {
  */
 typedef int (*osdp_read_fn_t)(void *data, uint8_t *buf, int maxlen);
 
+#else /* OPT_OSDP_RX_ZERO_COPY */
+
 /**
  * @brief Pointer to function used to receive a full packet buffer.
  * The callee returns a pointer and a max_len up to which LibOSDP may
@@ -280,6 +283,16 @@ typedef int (*osdp_read_fn_t)(void *data, uint8_t *buf, int maxlen);
  * @return 0 when a complete packet is available; non-zero otherwise
  */
 typedef int (*osdp_read_pkt_fn_t)(void *data, const uint8_t **buf, int *max_len);
+
+/**
+ * @brief Pointer to function used to release a buffer returned by recv_pkt().
+ *
+ * @param data for use by underlying layers. osdp_channel::data is passed
+ * @param buf pointer that was returned by recv_pkt()
+ */
+typedef void (*osdp_release_pkt_fn_t)(void *data, const uint8_t *buf);
+
+#endif /* OPT_OSDP_RX_ZERO_COPY */
 
 /**
  * @brief pointer to function that sends byte array into some channel. This
@@ -317,14 +330,6 @@ typedef void (*osdp_flush_fn_t)(void *data);
 typedef void (*osdp_close_fn_t)(void *data);
 
 /**
- * @brief Pointer to function used to release a buffer returned by recv_pkt().
- *
- * @param data for use by underlying layers. osdp_channel::data is passed
- * @param buf pointer that was returned by recv_pkt()
- */
-typedef void (*osdp_release_pkt_fn_t)(void *data, const uint8_t *buf);
-
-/**
  * @brief User defined communication channel abstraction for OSDP devices.
  * The methods for read/write/flush are expected to be non-blocking.
  */
@@ -334,14 +339,27 @@ struct osdp_channel {
 	 * send/receive/flush method. This is optional (can be set to NULL)
 	 */
 	void *data;
+
+#ifndef OPT_OSDP_RX_ZERO_COPY
+
 	/**
 	 * Pointer to function used to receive osdp packet data
 	 */
 	osdp_read_fn_t recv;
+
+#else /* OPT_OSDP_RX_ZERO_COPY */
+
 	/**
-	 * Pointer to function used to receive a full packet buffer (optional)
+	 * Pointer to function used to receive a full packet buffer.
 	 */
 	osdp_read_pkt_fn_t recv_pkt;
+	/**
+	 * Pointer to function used to release recv_pkt() data.
+	 */
+	osdp_release_pkt_fn_t release_pkt;
+
+#endif /* OPT_OSDP_RX_ZERO_COPY */
+
 	/**
 	 * Pointer to function used to send osdp packet data
 	 */
@@ -350,10 +368,6 @@ struct osdp_channel {
 	 * Pointer to function used to flush the channel (optional)
 	 */
 	osdp_flush_fn_t flush;
-	/**
-	 * Pointer to function used to release recv_pkt() data (optional)
-	 */
-	osdp_release_pkt_fn_t release_pkt;
 	/**
 	 * Pointer to function used to close the channel (optional)
 	 */

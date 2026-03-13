@@ -169,7 +169,6 @@ other_files = [
 
 definitions = [
     "OPT_OSDP_PACKET_TRACE",
-    "OPT_OSDP_RX_ZERO_COPY",
     # "OPT_OSDP_DATA_TRACE",
     # "OPT_OSDP_SKIP_MARK_BYTE",
 ]

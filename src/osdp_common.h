@@ -364,10 +364,11 @@ struct osdp_pd {
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */
 
 	/* Raw bytes received from the serial line for this PD */
-	union {
-		struct osdp_rb *rb;
-		struct osdp_rx_pkt *pkt;
-	} rx;
+#ifdef OPT_OSDP_RX_ZERO_COPY
+	struct osdp_rx_pkt *rx_pkt;
+#else /* OPT_OSDP_RX_ZERO_COPY */
+	struct osdp_rb *rx_rb;
+#endif /* OPT_OSDP_RX_ZERO_COPY */
 
 	uint8_t *packet_buf;
 	unsigned long packet_len;
@@ -697,5 +698,173 @@ static inline bool is_ignore_unsolicited_messages(struct osdp_pd *pd) {
 static inline bool is_install_mode(struct osdp_pd *pd) {
 	return ISSET_FLAG(pd, PD_FLAG_INSTALL_MODE);
 }
+
+/* --- CP Alloc Helpers --- */
+
+#ifdef OPT_OSDP_STATIC
+static inline struct osdp *cp_static_ctx_get(void)
+{
+	static struct osdp g_osdp_ctx;
+	return &g_osdp_ctx;
+}
+
+static inline struct osdp_pd *cp_static_pd_array_get(void)
+{
+	static struct osdp_pd g_cp_pd_ctx[OSDP_CP_MAX_PDS];
+	return g_cp_pd_ctx;
+}
+
+#ifdef OPT_OSDP_RX_ZERO_COPY
+static inline struct osdp_rx_pkt *cp_static_rx_pkt_array_get(void)
+{
+	static struct osdp_rx_pkt g_cp_rx_pkt[OSDP_CP_MAX_PDS];
+	return g_cp_rx_pkt;
+}
+#else /* OPT_OSDP_RX_ZERO_COPY */
+static inline struct osdp_rb *cp_static_rx_rb_array_get(void)
+{
+	static struct osdp_rb g_cp_rb[OSDP_CP_MAX_PDS];
+	return g_cp_rb;
+}
+#endif /* OPT_OSDP_RX_ZERO_COPY */
+#endif /* OPT_OSDP_STATIC */
+
+static inline struct osdp *cp_ctx_alloc(void)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp *ctx = cp_static_ctx_get();
+	memset(ctx, 0, sizeof(struct osdp));
+	return ctx;
+#else
+	return calloc(1, sizeof(struct osdp));
+#endif /* OPT_OSDP_STATIC */
+}
+
+static inline struct osdp_pd *cp_pd_array_alloc(int old_num_pd, int num_pd)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp_pd *pd = cp_static_pd_array_get();
+
+	if (old_num_pd + num_pd > OSDP_CP_MAX_PDS) {
+		return NULL;
+	}
+	memset(pd + old_num_pd, 0, sizeof(struct osdp_pd) * num_pd);
+	return pd;
+#else
+	return calloc(old_num_pd + num_pd, sizeof(struct osdp_pd));
+#endif
+}
+
+#ifdef OPT_OSDP_RX_ZERO_COPY
+
+static inline struct osdp_rx_pkt *cp_rx_pkt_alloc(int pd_idx)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp_rx_pkt *rx_pkt = cp_static_rx_pkt_array_get();
+	memset(&rx_pkt[pd_idx], 0, sizeof(struct osdp_rx_pkt));
+	return &rx_pkt[pd_idx];
+#else
+	ARG_UNUSED(pd_idx);
+	return calloc(1, sizeof(struct osdp_rx_pkt));
+#endif
+}
+
+#else /* OPT_OSDP_RX_ZERO_COPY */
+
+static inline struct osdp_rb *cp_rx_rb_alloc(int pd_idx)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp_rb *rx_rb = cp_static_rx_rb_array_get();
+	memset(&rx_rb[pd_idx], 0, sizeof(struct osdp_rb));
+	return &rx_rb[pd_idx];
+#else
+	ARG_UNUSED(pd_idx);
+	return calloc(1, sizeof(struct osdp_rb));
+#endif
+}
+
+#endif /* OPT_OSDP_RX_ZERO_COPY */
+
+/* --- PD Alloc Helpers --- */
+
+#ifdef OPT_OSDP_STATIC
+
+static inline struct osdp *pd_static_ctx_get(void)
+{
+	static struct osdp g_osdp_ctx;
+	return &g_osdp_ctx;
+}
+
+static inline struct osdp_pd *pd_static_ctx_pd_get(void)
+{
+	static struct osdp_pd g_osdp_pd_ctx;
+	return &g_osdp_pd_ctx;
+}
+
+#ifdef OPT_OSDP_RX_ZERO_COPY
+
+static inline struct osdp_rx_pkt *pd_static_rx_pkt_get(void)
+{
+	static struct osdp_rx_pkt g_osdp_rx_pkt;
+	return &g_osdp_rx_pkt;
+}
+
+#else /* OPT_OSDP_RX_ZERO_COPY */
+
+static inline struct osdp_rb *pd_static_rx_rb_get(void)
+{
+	static struct osdp_rb g_osdp_rb;
+	return &g_osdp_rb;
+}
+
+#endif /* OPT_OSDP_RX_ZERO_COPY */
+
+#endif /* OPT_OSDP_STATIC */
+
+static inline struct osdp *pd_ctx_alloc(void)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp *ctx = pd_static_ctx_get();
+	memset(ctx, 0, sizeof(struct osdp));
+	return ctx;
+#else
+	return calloc(1, sizeof(struct osdp));
+#endif /* OPT_OSDP_STATIC */
+}
+
+static inline struct osdp_pd *pd_instance_alloc(void)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp_pd *pd = pd_static_ctx_pd_get();
+	memset(pd, 0, sizeof(struct osdp_pd));
+	return pd;
+#else
+	return calloc(1, sizeof(struct osdp_pd));
+#endif /* OPT_OSDP_STATIC */
+}
+
+#ifdef OPT_OSDP_RX_ZERO_COPY
+static inline struct osdp_rx_pkt *pd_rx_pkt_alloc(void)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp_rx_pkt *rx_pkt = pd_static_rx_pkt_get();
+	memset(rx_pkt, 0, sizeof(struct osdp_rx_pkt));
+	return rx_pkt;
+#else
+	return calloc(1, sizeof(struct osdp_rx_pkt));
+#endif /* OPT_OSDP_STATIC */
+}
+#else /* OPT_OSDP_RX_ZERO_COPY */
+static inline struct osdp_rb *pd_rx_rb_alloc(void)
+{
+#ifdef OPT_OSDP_STATIC
+	struct osdp_rb *rx_rb = pd_static_rx_rb_get();
+	memset(rx_rb, 0, sizeof(struct osdp_rb));
+	return rx_rb;
+#else
+	return calloc(1, sizeof(struct osdp_rb));
+#endif /* OPT_OSDP_STATIC */
+}
+#endif /* OPT_OSDP_RX_ZERO_COPY */
 
 #endif	/* _OSDP_COMMON_H_ */

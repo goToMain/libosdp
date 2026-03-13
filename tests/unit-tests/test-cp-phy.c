@@ -169,7 +169,7 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 		return -1;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, pkt_len);
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 	if (err) {
 		printf("check failed with error %d!\n", err);
@@ -220,7 +220,7 @@ int test_phy_decode_packet_ignore_leading_mark_bytes(struct osdp *ctx)
 		packet[i] = 0xff;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, 8 + pkt_len + 8);
+	osdp_rb_push_buf(p->rx_rb, packet, 8 + pkt_len + 8);
 	err = osdp_phy_check_packet(p);
 	if (err) {
 		printf("check failed with error %d!\n", err);
@@ -323,7 +323,7 @@ int test_phy_decode_packet_nak(struct osdp *ctx)
 		return -1;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, pkt_len);
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 	if (err) {
 		printf("check failed with error %d!\n", err);
@@ -358,7 +358,7 @@ int test_phy_decode_packet_busy(struct osdp *ctx)
 		return -1;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, pkt_len);
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_BUSY) {
 		printf("failed! Expected BUSY error\n");
@@ -381,7 +381,7 @@ int test_phy_decode_packet_invalid_checksum(struct osdp *ctx)
 	};
 
 	printf(SUB_1 "Testing phy_decode_packet with invalid checksum -- ");
-	osdp_rb_push_buf(p->rx.rb, packet, sizeof(packet));
+	osdp_rb_push_buf(p->rx_rb, packet, sizeof(packet));
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_FMT) {
 		printf("failed! Expected format error\n");
@@ -404,7 +404,7 @@ int test_phy_decode_packet_invalid_crc(struct osdp *ctx)
 	};
 
 	printf(SUB_1 "Testing phy_decode_packet with invalid CRC -- ");
-	osdp_rb_push_buf(p->rx.rb, packet, sizeof(packet));
+	osdp_rb_push_buf(p->rx_rb, packet, sizeof(packet));
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_FMT) {
 		printf("failed! Expected format error\n");
@@ -431,7 +431,7 @@ int test_phy_decode_packet_wrong_address(struct osdp *ctx)
 		return -1;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, pkt_len);
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_CHECK) {
 		printf("failed! Expected address check error\n");
@@ -462,7 +462,7 @@ int test_phy_decode_packet_sequence_mismatch(struct osdp *ctx)
 		return -1;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, pkt_len);
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_NACK) {
 		printf("failed! Expected OSDP_ERR_PKT_NACK, got %d\n", err);
@@ -485,7 +485,7 @@ int test_phy_decode_packet_invalid_som(struct osdp *ctx)
 	};
 
 	printf(SUB_1 "Testing phy_decode_packet with invalid SOM -- ");
-	osdp_rb_push_buf(p->rx.rb, packet, sizeof(packet));
+	osdp_rb_push_buf(p->rx_rb, packet, sizeof(packet));
 	err = osdp_phy_check_packet(p);
 	/* Invalid SOM can trigger various errors: format, wait, or no_data */
 	if (err != OSDP_ERR_PKT_FMT && err != OSDP_ERR_PKT_WAIT && err != OSDP_ERR_PKT_NO_DATA) {
@@ -519,7 +519,7 @@ int test_phy_decode_packet_broadcast(struct osdp *ctx)
 		return -1;
 	}
 
-	osdp_rb_push_buf(p->rx.rb, packet, pkt_len);
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
 
 	/* For broadcast packets, OSDP_ERR_PKT_WAIT might be expected behavior */
@@ -572,7 +572,7 @@ int test_phy_packet_too_large(struct osdp *ctx)
 	};
 
 	printf(SUB_1 "Testing phy_decode_packet with oversized length -- ");
-	osdp_rb_push_buf(p->rx.rb, packet, sizeof(packet));
+	osdp_rb_push_buf(p->rx_rb, packet, sizeof(packet));
 	err = osdp_phy_check_packet(p);
 	if (err != OSDP_ERR_PKT_WAIT) {
 		printf("failed! Expected wait for re-scan\n");
@@ -595,7 +595,7 @@ int test_phy_packet_too_small(struct osdp *ctx)
 	};
 
 	printf(SUB_1 "Testing phy_decode_packet with undersized length -- ");
-	osdp_rb_push_buf(p->rx.rb, packet, sizeof(packet));
+	osdp_rb_push_buf(p->rx_rb, packet, sizeof(packet));
 	err = osdp_phy_check_packet(p);
 	/* Undersized packets might trigger wait for re-scan or format error */
 	if (err != OSDP_ERR_PKT_WAIT && err != OSDP_ERR_PKT_FMT) {

@@ -185,15 +185,11 @@ int osdp_encrypt_data(struct osdp_pd *pd, int is_cmd, uint8_t *data, int length)
 int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 		     const uint8_t *data, int len)
 {
-	int pad_len;
-	uint8_t buf[OSDP_PACKET_BUF_SIZE] = { 0 };
+	int i, j, n, full_blocks, rem;
+	const uint8_t *p;
+	uint8_t block[16] = { 0 };
 	uint8_t iv[16];
 
-	memcpy(buf, data, len);
-	pad_len = (len % 16 == 0) ? len : AES_PAD_LEN(len);
-	if (len % 16 != 0) {
-		buf[len] = 0x80; /* end marker */
-	}
 	/**
 	 * MAC for data blocks B[1] .. B[N] (post padding) is computed as:
 	 * IV1 = R_MAC (or) C_MAC  -- depending on is_cmd
@@ -202,16 +198,40 @@ int osdp_compute_mac(struct osdp_pd *pd, int is_cmd,
 	 */
 
 	memcpy(iv, is_cmd ? pd->sc.r_mac : pd->sc.c_mac, 16);
-	if (pad_len > 16) {
-		/* N-1 blocks -- encrypted with SMAC-1 */
-		osdp_encrypt(pd->sc.s_mac1, iv, buf, pad_len - 16);
-		/* N-1 th block is the IV for N th block */
-		memcpy(iv, buf + pad_len - 32, 16);
+	p = data;
+	full_blocks = len / 16;
+	rem = len % 16;
+	n = (rem == 0) ? full_blocks : (full_blocks + 1);
+	if (n == 0) {
+		/* Empty message still contributes a padded terminal block. */
+		n = 1;
 	}
 
-	/* N-th Block encrypted with SMAC-2 == MAC */
-	osdp_encrypt(pd->sc.s_mac2, iv, buf + pad_len - 16, 16);
-	memcpy(is_cmd ? pd->sc.c_mac : pd->sc.r_mac, buf + pad_len - 16, 16);
+	/* Process B[1]..B[N-1] with SMAC-1 in CBC fashion. */
+	for (i = 0; i < n - 1; i++, p += 16) {
+		memcpy(block, p, 16);
+		for (j = 0; j < 16; j++) {
+			block[j] ^= iv[j];
+		}
+		osdp_encrypt(pd->sc.s_mac1, NULL, block, 16);
+		memcpy(iv, block, 16);
+	}
+
+	/* Build B[N], using 0x80 + zero padding when len is not block aligned. */
+	memset(block, 0, sizeof(block));
+	if (rem == 0 && full_blocks > 0) {
+			memcpy(block, p, 16);
+	} else {
+		memcpy(block, p, rem);
+		block[rem] = 0x80; /* end marker */
+	}
+	for (i = 0; i < 16; i++) {
+		block[i] ^= iv[i];
+	}
+
+	/* B[N] encrypted with SMAC-2 == MAC */
+	osdp_encrypt(pd->sc.s_mac2, NULL, block, 16);
+	memcpy(is_cmd ? pd->sc.c_mac : pd->sc.r_mac, block, 16);
 
 	return 0;
 }

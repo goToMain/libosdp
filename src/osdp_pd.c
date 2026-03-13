@@ -1258,7 +1258,6 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 
 	input_check_init(ctx);
 	ctx->_num_pd = 1;
-	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
 	logger_get_default(&ctx->logger);
 
 	SET_CURRENT_PD(ctx, 0);

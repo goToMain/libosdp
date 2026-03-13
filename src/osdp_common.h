@@ -435,10 +435,7 @@ struct osdp {
 	struct osdp_pd *_current_pd; /* current operational pd's pointer */
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
 	struct osdp_channel channel; /* OSDP channel */
-	uint8_t tx_packet_buf_store[OSDP_PACKET_BUF_SIZE];
-	uint8_t *tx_packet_buf;
-	unsigned long tx_packet_len;
-	unsigned long tx_packet_buf_len;
+	uint8_t tx_buf[OSDP_PACKET_BUF_SIZE];
 	/* logger context (from utils/logger.h) */
 	logger_t logger;
 
@@ -635,7 +632,7 @@ static inline bool is_cp_mode(struct osdp_pd *pd)
 
 static inline uint8_t *osdp_tx_staging_buf(struct osdp_pd *pd)
 {
-	return pd_to_osdp(pd)->tx_packet_buf_store;
+	return pd_to_osdp(pd)->tx_buf;
 }
 
 static inline bool sc_use_scbkd(struct osdp_pd *pd) {

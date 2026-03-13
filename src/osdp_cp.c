@@ -637,17 +637,16 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 	struct osdp_cmd local_keyset_cmd;
 	const struct osdp_cmd *cmd = pd->active_cmd;
-	struct osdp *ctx = pd_to_osdp(pd);
-	uint8_t *buf;
+	uint8_t *buf = osdp_tx_staging_buf(pd);
 
-	buf = osdp_tx_staging_buf(pd);
+	pd->packet_buf = buf;
 
 	/* init packet buf with header */
 	ret = osdp_phy_packet_init(pd, buf, packet_buf_size);
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
-	ctx->tx_packet_buf_len = ret;
+	pd->packet_buf_len = ret;
 
 	if (pd->state == OSDP_CP_STATE_SET_SCBK && pd->cmd_id == CMD_KEYSET) {
 		memset(&local_keyset_cmd, 0, sizeof(local_keyset_cmd));
@@ -660,9 +659,9 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
-	ctx->tx_packet_buf_len += ret;
+	pd->packet_buf_len += ret;
 
-	ret = osdp_phy_send_packet(pd, buf, ctx->tx_packet_buf_len,
+	ret = osdp_phy_send_packet(pd, buf, pd->packet_buf_len,
 				   packet_buf_size);
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
@@ -1498,7 +1497,6 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 			osdp_packet_capture_init(pd);
 		}
 	}
-	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
 	SET_CURRENT_PD(ctx, 0);
 
 #ifndef OPT_OSDP_STATIC
@@ -1534,7 +1532,6 @@ osdp_t *osdp_cp_setup(const struct osdp_channel *channel, int num_pd,
 	}
 
 	input_check_init(ctx);
-	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
 	logger_get_default(&ctx->logger);
 	memcpy(&ctx->channel, channel, sizeof(ctx->channel));
 

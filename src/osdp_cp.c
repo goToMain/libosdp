@@ -47,7 +47,7 @@ enum osdp_cp_error_e {
 	OSDP_CP_ERR_GENERIC = -1,
 	OSDP_CP_ERR_NO_DATA = -2,
 	OSDP_CP_ERR_RETRY_CMD = -3,
-	OSDP_CP_ERR_CAN_YIELD = -4,
+	OSDP_CP_ERR_DEFER = -4,
 	OSDP_CP_ERR_INPROG = -5,
 	OSDP_CP_ERR_UNKNOWN = -6,
 	OSDP_CP_ERR_SEQ_NUM = -7,
@@ -798,7 +798,7 @@ static void cp_phy_state_wait(struct osdp_pd *pd, uint32_t wait_ms)
 
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
-	int rc, ret = OSDP_CP_ERR_CAN_YIELD;
+	int rc, ret = OSDP_CP_ERR_DEFER;
 
 	switch (pd->phy_state) {
 	case OSDP_CP_PHY_STATE_DONE:
@@ -810,7 +810,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		break;
 	case OSDP_CP_PHY_STATE_WAIT:
 		if (osdp_millis_since(pd->phy_tstamp) < pd->wait_ms) {
-			return OSDP_CP_ERR_CAN_YIELD;
+			return OSDP_CP_ERR_DEFER;
 		}
 		pd->phy_state = OSDP_CP_PHY_STATE_SEND_CMD;
 		__fallthrough;
@@ -850,7 +850,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		}
 		if (rc == OSDP_CP_ERR_RETRY_CMD) {
 			cp_phy_state_wait(pd, OSDP_CMD_RETRY_WAIT_MS);
-			return OSDP_CP_ERR_CAN_YIELD;
+			return OSDP_CP_ERR_DEFER;
 		}
 		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
@@ -858,7 +858,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 				LOG_WRN("No response in 200ms; probing (%d)",
 					pd->phy_retry_count);
 				cp_phy_state_wait(pd, OSDP_CMD_RETRY_WAIT_MS);
-				return OSDP_CP_ERR_CAN_YIELD;
+				return OSDP_CP_ERR_DEFER;
 			}
 			LOG_ERR("Response timeout for CMD: %s(%02x)",
 				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
@@ -1263,7 +1263,7 @@ static int state_update(struct osdp_pd *pd)
 
 	if (cp_phy_running(pd)) {
 		err = cp_phy_state_update(pd);
-		if (err == OSDP_CP_ERR_INPROG || err == OSDP_CP_ERR_CAN_YIELD) {
+		if (err == OSDP_CP_ERR_INPROG || err == OSDP_CP_ERR_DEFER) {
 			return err;
 		}
 	}
@@ -1273,7 +1273,7 @@ static int state_update(struct osdp_pd *pd)
 	case OSDP_CP_PHY_STATE_IDLE:
 		pd->cmd_id = state_get_cmd(pd);
 		if (pd->cmd_id > 0 && cp_phy_kick(pd)) {
-			return OSDP_CP_ERR_CAN_YIELD;
+			return OSDP_CP_ERR_DEFER;
 		}
 		break;
 	case OSDP_CP_PHY_STATE_ERR:
@@ -1324,7 +1324,7 @@ static int state_update(struct osdp_pd *pd)
 	if (cur != next) {
 		cp_state_change(pd, next);
 	}
-	return OSDP_CP_ERR_CAN_YIELD;
+	return OSDP_CP_ERR_DEFER;
 }
 
 static int cp_submit_command(struct osdp_pd *pd, const struct osdp_cmd *cmd)
@@ -1806,7 +1806,8 @@ int (*test_cp_cmd_enqueue)(struct osdp_pd *,
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
 int (*test_cp_build_and_send_packet)(struct osdp_pd *pd) = cp_build_and_send_packet;
-const int CP_ERR_CAN_YIELD = OSDP_CP_ERR_CAN_YIELD;
+const int CP_ERR_DEFER = OSDP_CP_ERR_DEFER;
+const int CP_ERR_CAN_YIELD = OSDP_CP_ERR_DEFER;
 const int CP_ERR_INPROG = OSDP_CP_ERR_INPROG;
 
 #endif /* UNIT_TESTING */

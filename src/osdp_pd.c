@@ -576,7 +576,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->reply_id = REPLY_ACK;
 		ret = OSDP_PD_ERR_NONE;
 		break;
-		case CMD_COMSET:
+	case CMD_COMSET:
 		if (len != CMD_COMSET_DATA_LEN) {
 			break;
 		}
@@ -589,15 +589,15 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			cmd.comset.baud_rate = pd->baud_rate;
 			break;
 		}
-			if (!do_command_callback(pd, &cmd)) {
-				ret = OSDP_PD_ERR_REPLY;
-				break;
-			}
-			pd->comset_pending.address = cmd.comset.address;
-			pd->comset_pending.baud_rate = cmd.comset.baud_rate;
-			pd->reply_id = REPLY_COM;
-			ret = OSDP_PD_ERR_NONE;
+		if (!do_command_callback(pd, &cmd)) {
+			ret = OSDP_PD_ERR_REPLY;
 			break;
+		}
+		pd->comset_pending.address = cmd.comset.address;
+		pd->comset_pending.baud_rate = cmd.comset.baud_rate;
+		pd->reply_id = REPLY_COM;
+		ret = OSDP_PD_ERR_NONE;
+		break;
 	case CMD_MFG:
 		if (len < CMD_MFG_DATA_LEN) {
 			break;
@@ -898,19 +898,18 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 	}
 		case REPLY_COM:
-		assert_buf_len(REPLY_COM_LEN, max_len);
-		/**
-		 * If COMSET succeeds, the PD must reply with the old params and
-		 * then switch to the new params from then then on. We have the
-		 * new params in the commands struct that we just enqueued so
-		 * we can peek at tail of command queue and set that to
-		 * pd->addr/pd->baud_rate.
-		 */
-			buf[len++] = pd->reply_id;
-			buf[len++] = pd->comset_pending.address;
-			bwrite_u32_le(pd->comset_pending.baud_rate, buf, &len);
-			ret = OSDP_PD_ERR_NONE;
-			break;
+			assert_buf_len(REPLY_COM_LEN, max_len);
+			/**
+			 * If COMSET succeeds, the PD must reply with the old params and
+			 * then switch to the new params from then then on. We cache
+			 * the pending values in pd->comset_pending while decoding CMD_COMSET
+			 * and use them here in REPLY_COM.
+			 */
+				buf[len++] = pd->reply_id;
+				buf[len++] = pd->comset_pending.address;
+		bwrite_u32_le(pd->comset_pending.baud_rate, buf, &len);
+		ret = OSDP_PD_ERR_NONE;
+		break;
 	case REPLY_NAK:
 		assert_buf_len(REPLY_NAK_LEN, max_len);
 		buf[len++] = pd->reply_id;
@@ -1131,8 +1130,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 			sc_deactivate(pd);
-		} else if (pd->cmd_id == CMD_COMSET &&
-			   pd->reply_id == REPLY_COM) {
+		} else if (pd->cmd_id == CMD_COMSET && pd->reply_id == REPLY_COM) {
 			struct osdp_cmd comset_done_cmd = { 0 };
 			/* COMSET command succeeded all the way:
 			 *

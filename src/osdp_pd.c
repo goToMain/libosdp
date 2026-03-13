@@ -1280,7 +1280,6 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 	pd->seq_number = -1;
 
 	memcpy(&ctx->channel, channel, sizeof(struct osdp_channel));
-	memcpy(&pd->channel, channel, sizeof(struct osdp_channel));
 
 	if (pd_setup_rx_storage(channel, pd)) {
 		goto error;

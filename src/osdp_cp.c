@@ -1480,7 +1480,6 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 		if (cp_setup_pd_rx_storage(ctx, pd, i + old_num_pd)) {
 			goto error;
 		}
-		memcpy(&pd->channel, &ctx->channel, sizeof(struct osdp_channel));
 		if (info->scbk != NULL) {
 			memcpy(pd->sc.scbk, info->scbk, 16);
 			CLEAR_FLAG(pd, PD_FLAG_SC_DISABLED);

@@ -394,7 +394,6 @@ struct osdp_pd {
 	const struct osdp_cmd *active_cmd;      /* in-flight cmd (app-owned mode) */
 	const struct osdp_event *active_event;  /* in-flight event (app-owned mode) */
 
-	struct osdp_channel channel;     /* PD's serial channel */
 	struct osdp_secure_channel sc;   /* Secure Channel session context */
 	struct osdp_file *file;          /* File transfer context */
 
@@ -416,7 +415,7 @@ struct osdp {
 	int _num_pd;           /* Number of PDs attached to this context */
 	struct osdp_pd *_current_pd; /* current operational pd's pointer */
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
-	struct osdp_channel channel; /* Shared CP channel in CP mode */
+	struct osdp_channel channel; /* OSDP channel */
 	uint8_t tx_packet_buf_store[OSDP_PACKET_BUF_SIZE];
 	uint8_t *tx_packet_buf;
 	unsigned long tx_packet_len;

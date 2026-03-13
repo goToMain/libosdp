@@ -25,6 +25,8 @@ list(APPEND OSDP_UNIT_TEST_SRC
 	test-events.c
 	test-hotplug.c
 	test-async-fuzz.c
+	test-sc.c
+	test-sc-sia-vectors.c
 )
 
 add_executable(${OSDP_UNIT_TEST} EXCLUDE_FROM_ALL ${OSDP_UNIT_TEST_SRC})
@@ -45,8 +47,13 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/utils/include
 )
 
-add_custom_target(check-ut
+add_custom_target(check
 	COMMAND ${CMAKE_BINARY_DIR}/bin/${OSDP_UNIT_TEST}
 	COMMAND rm ${CMAKE_BINARY_DIR}/bin/${OSDP_UNIT_TEST}
 	DEPENDS ${OSDP_UNIT_TEST}
+)
+
+# Backward-compatible alias; prefer `check`.
+add_custom_target(check-ut
+	DEPENDS check
 )

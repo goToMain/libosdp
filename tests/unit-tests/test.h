@@ -11,29 +11,44 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include "osdp_common.h"
 
 #define SUB_1 "    -- "
 #define SUB_2 "        -- "
 
-#define DO_TEST(t, m)                                                          \
-	do {                                                                   \
-		t->tests++;                                                    \
-		if (m(t->mock_data)) {                                         \
-			t->failure++;                                          \
-		} else {                                                       \
-			t->success++;                                          \
-		}                                                              \
-	} while (0)
+#define TEST_MAX_CASES 512
+#define TEST_MAX_SUITES 64
+#define TEST_MAX_NAME_LEN 96
+#define TEST_MAX_MSG_LEN 160
+#define TEST_SKIP_RC 77
 
-#define TEST_REPORT(t, s)                                                      \
-	do {                                                                   \
-		t->tests++;                                                    \
-		if (s == true)                                                 \
-			t->success++;                                          \
-		else                                                           \
-			t->failure++;                                          \
-	} while (0)
+enum test_status {
+	TEST_STATUS_PASS = 0,
+	TEST_STATUS_FAIL,
+	TEST_STATUS_SKIP,
+	TEST_STATUS_ERROR,
+};
+
+struct test_case_record {
+	char suite[TEST_MAX_NAME_LEN];
+	char name[TEST_MAX_NAME_LEN];
+	char message[TEST_MAX_MSG_LEN];
+	enum test_status status;
+	double duration_ms;
+	int warn_count;
+	int error_count;
+};
+
+struct test_suite_record {
+	char name[TEST_MAX_NAME_LEN];
+	int tests;
+	int pass;
+	int fail;
+	int skip;
+	int error;
+	double duration_ms;
+};
 
 #define CHECK_ARRAY(a, l, e)                                                   \
 	do {                                                                   \
@@ -49,11 +64,55 @@
 
 struct test {
 	int loglevel;
+	int tests;
 	int success;
 	int failure;
-	int tests;
+	int skipped;
+	int errors;
+	int warnings;
 	void *mock_data;
+	const char *current_suite;
+	int current_case_idx;
+	double run_start_ms;
+	double suite_start_ms;
+	double case_start_ms;
+	double report_last_ms;
+	int suite_count;
+	struct test_case_record cases[TEST_MAX_CASES];
+	struct test_suite_record suites[TEST_MAX_SUITES];
 };
+
+#define DO_TEST(t, m)                                                          \
+	do {                                                                   \
+		test_case_begin((t), #m);                                      \
+		test_case_end((t), (m((t)->mock_data)));                       \
+	} while (0)
+
+#define TEST_REPORT(t, s)                                                      \
+	do {                                                                   \
+		test_report((t), __func__, __LINE__, (s));                     \
+	} while (0)
+
+#define TEST_SKIP(msg)                                                         \
+	do {                                                                   \
+		test_skip((msg));                                              \
+		return TEST_SKIP_RC;                                           \
+	} while (0)
+
+#define TEST_LOG_INFO(...) test_log_info(__VA_ARGS__)
+#define TEST_LOG_WARN(...) test_log_warn(__VA_ARGS__)
+#define TEST_LOG_ERROR(...) test_log_error(__VA_ARGS__)
+
+int test_printf(const char *fmt, ...);
+void test_log_info(const char *fmt, ...);
+void test_log_warn(const char *fmt, ...);
+void test_log_error(const char *fmt, ...);
+void test_skip(const char *reason);
+void test_case_begin(struct test *t, const char *name);
+void test_case_end(struct test *t, int rc);
+void test_report(struct test *t, const char *func, int line, bool status);
+void test_suite_begin(struct test *t, const char *name);
+void test_suite_end(struct test *t);
 
 /* Helpers */
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd);
@@ -75,5 +134,9 @@ void run_command_tests(struct test *t);
 void run_event_tests(struct test *t);
 void run_hotplug_tests(struct test *t);
 void run_async_fuzz_tests(struct test *t);
+void run_sc_tests(struct test *t);
+void run_vector_tests(struct test *t);
+
+#define printf(...) test_printf(__VA_ARGS__)
 
 #endif

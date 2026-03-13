@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdarg.h>
 #include <pthread.h>
 
 #include <osdp.h>
@@ -22,6 +23,348 @@
 
 CIRCBUF_DEF(uint8_t, cp_to_pd_buf, MOCK_BUF_LEN);
 CIRCBUF_DEF(uint8_t, pd_to_cp_buf, MOCK_BUF_LEN);
+
+struct test_suite_entry {
+	const char *name;
+	void (*run)(struct test *t);
+};
+
+static struct test *g_active_test;
+static bool g_color_enabled;
+
+#define C_RST "\x1b[0m"
+#define C_DIM "\x1b[90m"
+#define C_RED "\x1b[31m"
+#define C_GRN "\x1b[32m"
+#define C_YEL "\x1b[33m"
+#define C_CYN "\x1b[36m"
+
+static double test_now_ms(void)
+{
+	struct timespec ts;
+
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return ts.tv_sec * 1000.0 + ts.tv_nsec / 1000000.0;
+}
+
+static const char *status_str(enum test_status status)
+{
+	switch (status) {
+	case TEST_STATUS_PASS:
+		return "PASS";
+	case TEST_STATUS_FAIL:
+		return "FAIL";
+	case TEST_STATUS_SKIP:
+		return "SKIP";
+	case TEST_STATUS_ERROR:
+	default:
+		return "ERROR";
+	}
+}
+
+static const char *status_color(enum test_status status)
+{
+	switch (status) {
+	case TEST_STATUS_PASS:
+		return C_GRN;
+	case TEST_STATUS_SKIP:
+		return C_YEL;
+	case TEST_STATUS_FAIL:
+	case TEST_STATUS_ERROR:
+	default:
+		return C_RED;
+	}
+}
+
+static bool text_has(const char *s, const char *needle)
+{
+	return strstr(s, needle) != NULL;
+}
+
+static void format_duration(double ms, char *buf, size_t buf_len)
+{
+	if (ms >= 1000.0) {
+		snprintf(buf, buf_len, "%.2fs", ms / 1000.0);
+	} else {
+		snprintf(buf, buf_len, "%.2fms", ms);
+	}
+}
+
+static int test_vprintf_colored(const char *prefix_color, const char *fmt,
+				va_list ap)
+{
+	int ret;
+
+	if (g_color_enabled && prefix_color != NULL) {
+		fputs(prefix_color, stdout);
+		ret = vfprintf(stdout, fmt, ap);
+		fputs(C_RST, stdout);
+		return ret;
+	}
+	return vfprintf(stdout, fmt, ap);
+}
+
+int test_printf(const char *fmt, ...)
+{
+	va_list ap;
+	const char *color = NULL;
+	bool warn = false;
+	bool err = false;
+	int ret;
+
+	if (fmt && (text_has(fmt, "Warning") || text_has(fmt, "WARN") ||
+		    text_has(fmt, "skip"))) {
+		warn = true;
+	} else if (fmt && (text_has(fmt, "error") || text_has(fmt, "Error") ||
+			   text_has(fmt, "failed") || text_has(fmt, "FAIL"))) {
+		err = true;
+	}
+
+	if (warn) {
+		color = C_YEL;
+		if (g_active_test && g_active_test->current_case_idx >= 0) {
+			g_active_test->warnings++;
+			g_active_test->cases[g_active_test->current_case_idx].warn_count++;
+		}
+	} else if (err) {
+		color = C_RED;
+		if (g_active_test && g_active_test->current_case_idx >= 0) {
+			g_active_test->errors++;
+			g_active_test->cases[g_active_test->current_case_idx].error_count++;
+		}
+	} else {
+		color = C_DIM;
+	}
+
+	va_start(ap, fmt);
+	ret = test_vprintf_colored(color, fmt, ap);
+	va_end(ap);
+	return ret;
+}
+
+void test_log_info(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	test_vprintf_colored(C_DIM, fmt, ap);
+	va_end(ap);
+}
+
+void test_log_warn(const char *fmt, ...)
+{
+	va_list ap;
+	if (g_active_test && g_active_test->current_case_idx >= 0) {
+		g_active_test->warnings++;
+		g_active_test->cases[g_active_test->current_case_idx].warn_count++;
+	}
+	va_start(ap, fmt);
+	test_vprintf_colored(C_YEL, fmt, ap);
+	va_end(ap);
+}
+
+void test_log_error(const char *fmt, ...)
+{
+	va_list ap;
+	if (g_active_test && g_active_test->current_case_idx >= 0) {
+		g_active_test->errors++;
+		g_active_test->cases[g_active_test->current_case_idx].error_count++;
+	}
+	va_start(ap, fmt);
+	test_vprintf_colored(C_RED, fmt, ap);
+	va_end(ap);
+}
+
+void test_skip(const char *reason)
+{
+	if (reason) {
+		test_log_warn("%s\n", reason);
+	}
+}
+
+static void test_mark_result(struct test *t, struct test_case_record *rec,
+			     enum test_status status)
+{
+	t->tests++;
+	rec->status = status;
+
+	switch (status) {
+	case TEST_STATUS_PASS:
+		t->success++;
+		break;
+	case TEST_STATUS_SKIP:
+		t->skipped++;
+		break;
+	case TEST_STATUS_FAIL:
+		t->failure++;
+		break;
+	case TEST_STATUS_ERROR:
+	default:
+		t->failure++;
+		t->errors++;
+		break;
+	}
+}
+
+void test_case_begin(struct test *t, const char *name)
+{
+	struct test_case_record *rec;
+	int idx;
+
+	if (t->tests >= TEST_MAX_CASES) {
+		return;
+	}
+
+	idx = t->tests;
+	t->current_case_idx = idx;
+	rec = &t->cases[idx];
+	memset(rec, 0, sizeof(*rec));
+	snprintf(rec->suite, sizeof(rec->suite), "%s",
+		 t->current_suite ? t->current_suite : "default");
+	snprintf(rec->name, sizeof(rec->name), "%s", name ? name : "unnamed");
+
+	t->case_start_ms = test_now_ms();
+	if (g_color_enabled) {
+		fprintf(stdout, C_CYN "[ RUN    ]" C_RST " %s.%s\n",
+			rec->suite, rec->name);
+	} else {
+		fprintf(stdout, "[ RUN    ] %s.%s\n", rec->suite, rec->name);
+	}
+}
+
+void test_case_end(struct test *t, int rc)
+{
+	struct test_case_record *rec;
+	enum test_status status;
+	const char *prefix;
+	const char *color;
+	char dur[24];
+
+	if (t->current_case_idx < 0 || t->current_case_idx >= TEST_MAX_CASES) {
+		return;
+	}
+
+	rec = &t->cases[t->current_case_idx];
+	rec->duration_ms = test_now_ms() - t->case_start_ms;
+
+	if (rc == 0) {
+		status = TEST_STATUS_PASS;
+	} else if (rc == TEST_SKIP_RC) {
+		status = TEST_STATUS_SKIP;
+		snprintf(rec->message, sizeof(rec->message), "skipped");
+	} else {
+		status = TEST_STATUS_FAIL;
+		snprintf(rec->message, sizeof(rec->message), "rc=%d", rc);
+	}
+
+	test_mark_result(t, rec, status);
+	prefix = status_str(status);
+	color = status_color(status);
+	format_duration(rec->duration_ms, dur, sizeof(dur));
+	if (g_color_enabled) {
+		fprintf(stdout, "%s[ %-6s ]%s %s.%s (%s)\n",
+			color, prefix, C_RST, rec->suite, rec->name, dur);
+	} else {
+		fprintf(stdout, "[ %-6s ] %s.%s (%s)\n",
+			prefix, rec->suite, rec->name, dur);
+	}
+
+	t->current_case_idx = -1;
+}
+
+void test_report(struct test *t, const char *func, int line, bool status)
+{
+	struct test_case_record *rec;
+	enum test_status st;
+	const char *prefix;
+	const char *color;
+	double now_ms;
+	int idx;
+	char dur[24];
+
+	if (t->tests >= TEST_MAX_CASES) {
+		return;
+	}
+
+	idx = t->tests;
+	rec = &t->cases[idx];
+	memset(rec, 0, sizeof(*rec));
+	snprintf(rec->suite, sizeof(rec->suite), "%s",
+		 t->current_suite ? t->current_suite : "default");
+	snprintf(rec->name, sizeof(rec->name), "%s:%d", func, line);
+
+	now_ms = test_now_ms();
+	rec->duration_ms = now_ms - t->report_last_ms;
+	t->report_last_ms = now_ms;
+
+	st = status ? TEST_STATUS_PASS : TEST_STATUS_FAIL;
+	if (!status) {
+		snprintf(rec->message, sizeof(rec->message), "assertion failed");
+	}
+	test_mark_result(t, rec, st);
+
+	prefix = status_str(st);
+	color = status_color(st);
+	format_duration(rec->duration_ms, dur, sizeof(dur));
+	if (g_color_enabled) {
+		fprintf(stdout, "%s[ %-6s ]%s %s.%s (%s)\n",
+			color, prefix, C_RST, rec->suite, rec->name, dur);
+	} else {
+		fprintf(stdout, "[ %-6s ] %s.%s (%s)\n",
+			prefix, rec->suite, rec->name, dur);
+	}
+}
+
+void test_suite_begin(struct test *t, const char *name)
+{
+	int idx = t->suite_count;
+	struct test_suite_record *suite;
+
+	if (idx >= TEST_MAX_SUITES) {
+		return;
+	}
+
+	suite = &t->suites[idx];
+	memset(suite, 0, sizeof(*suite));
+	snprintf(suite->name, sizeof(suite->name), "%s", name);
+	t->current_suite = suite->name;
+	t->suite_start_ms = test_now_ms();
+	t->report_last_ms = t->suite_start_ms;
+}
+
+void test_suite_end(struct test *t)
+{
+	struct test_suite_record *suite;
+	int i;
+
+	if (t->suite_count >= TEST_MAX_SUITES) {
+		return;
+	}
+
+	suite = &t->suites[t->suite_count];
+	suite->duration_ms = test_now_ms() - t->suite_start_ms;
+	for (i = 0; i < t->tests; i++) {
+		if (strcmp(t->cases[i].suite, suite->name) != 0) {
+			continue;
+		}
+		suite->tests++;
+		switch (t->cases[i].status) {
+		case TEST_STATUS_PASS:
+			suite->pass++;
+			break;
+		case TEST_STATUS_SKIP:
+			suite->skip++;
+			break;
+		case TEST_STATUS_FAIL:
+			suite->fail++;
+			break;
+		case TEST_STATUS_ERROR:
+		default:
+			suite->error++;
+			break;
+		}
+	}
+	t->suite_count++;
+}
 
 /* Runner types for independent CP and PD management */
 enum runner_type {
@@ -335,35 +678,177 @@ int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd)
 
 void test_start(struct test *t, int log_level)
 {
-	printf("\n");
-	printf("------------------------------------------\n");
-	printf("            OSDP - Unit Tests             \n");
-	printf("------------------------------------------\n");
-
-	t->tests = 0;
-	t->success = 0;
-	t->failure = 0;
+	memset(t, 0, sizeof(*t));
 	t->loglevel = log_level;
+	t->current_case_idx = -1;
+	t->run_start_ms = test_now_ms();
+	g_active_test = t;
+	g_color_enabled = isatty(STDOUT_FILENO) != 0;
+
+	fprintf(stdout, "\n");
+	fprintf(stdout, "===============================================================\n");
+	if (g_color_enabled) {
+		fprintf(stdout, C_CYN "LibOSDP Unit Tests\n" C_RST);
+	} else {
+		fprintf(stdout, "LibOSDP Unit Tests\n");
+	}
+	fprintf(stdout, "===============================================================\n");
+}
+
+static void print_test_results_table(const struct test *t)
+{
+	int i;
+	char dur[24];
+
+	fprintf(stdout, "\nTest Results\n");
+	fprintf(stdout, "+-----+----------------------+------------------------------+--------+----------+\n");
+	fprintf(stdout, "| #   | Suite                | Test                         | Status | Time     |\n");
+	fprintf(stdout, "+-----+----------------------+------------------------------+--------+----------+\n");
+	for (i = 0; i < t->tests; i++) {
+		const struct test_case_record *rec = &t->cases[i];
+		const char *s = status_str(rec->status);
+		format_duration(rec->duration_ms, dur, sizeof(dur));
+		if (g_color_enabled) {
+			fprintf(stdout, "| %-3d | %-20.20s | %-28.28s | %s%-6s%s | %-8.8s |\n",
+				i + 1, rec->suite, rec->name,
+				status_color(rec->status), s, C_RST, dur);
+		} else {
+			fprintf(stdout, "| %-3d | %-20.20s | %-28.28s | %-6s | %-8.8s |\n",
+				i + 1, rec->suite, rec->name, s, dur);
+		}
+	}
+	fprintf(stdout, "+-----+----------------------+------------------------------+--------+----------+\n");
+}
+
+static void print_suite_summary_table(const struct test *t)
+{
+	int i;
+	char dur[24];
+
+	fprintf(stdout, "\nSuite Summary\n");
+	fprintf(stdout, "+----------------------+-------+------+------+------+-------+----------+\n");
+	fprintf(stdout, "| Suite                | Tests | Pass | Fail | Skip | Error | Time     |\n");
+	fprintf(stdout, "+----------------------+-------+------+------+------+-------+----------+\n");
+	for (i = 0; i < t->suite_count; i++) {
+		const struct test_suite_record *s = &t->suites[i];
+		format_duration(s->duration_ms, dur, sizeof(dur));
+		fprintf(stdout, "| %-20.20s | %5d | %4d | %4d | %4d | %5d | %-8.8s |\n",
+			s->name, s->tests, s->pass, s->fail, s->skip,
+			s->error, dur);
+	}
+	fprintf(stdout, "+----------------------+-------+------+------+------+-------+----------+\n");
+}
+
+static void print_failed_tests(const struct test *t)
+{
+	int i, count = 0;
+
+	for (i = 0; i < t->tests; i++) {
+		if (t->cases[i].status == TEST_STATUS_FAIL ||
+		    t->cases[i].status == TEST_STATUS_ERROR) {
+			count++;
+		}
+	}
+	if (!count) {
+		return;
+	}
+
+	fprintf(stdout, "\nFailures\n");
+	fprintf(stdout, "+-----+----------------------+------------------------------+-------------------------------+\n");
+	fprintf(stdout, "| #   | Suite                | Test                         | Message                       |\n");
+	fprintf(stdout, "+-----+----------------------+------------------------------+-------------------------------+\n");
+	for (i = 0; i < t->tests; i++) {
+		const struct test_case_record *rec = &t->cases[i];
+		if (rec->status != TEST_STATUS_FAIL &&
+		    rec->status != TEST_STATUS_ERROR) {
+			continue;
+		}
+		fprintf(stdout, "| %-3d | %-20.20s | %-28.28s | %-29.29s |\n",
+			i + 1, rec->suite, rec->name,
+			rec->message[0] ? rec->message : "failure");
+	}
+	fprintf(stdout, "+-----+----------------------+------------------------------+-------------------------------+\n");
+}
+
+static void print_slowest_tests(const struct test *t, int n)
+{
+	int i, j, used[TEST_MAX_CASES] = { 0 };
+	char dur[24];
+
+	if (n > t->tests) {
+		n = t->tests;
+	}
+	fprintf(stdout, "\nSlowest Tests\n");
+	for (i = 0; i < n; i++) {
+		int best = -1;
+		for (j = 0; j < t->tests; j++) {
+			if (used[j]) {
+				continue;
+			}
+			if (best < 0 || t->cases[j].duration_ms > t->cases[best].duration_ms) {
+				best = j;
+			}
+		}
+		if (best < 0) {
+			break;
+		}
+		used[best] = 1;
+		format_duration(t->cases[best].duration_ms, dur, sizeof(dur));
+		fprintf(stdout, "  %d. %s.%s (%s)\n", i + 1,
+			t->cases[best].suite, t->cases[best].name,
+			dur);
+	}
 }
 
 int test_end(struct test *t)
 {
-	printf("\n");
-	printf("------------------------------------------\n");
-	printf("Tests: %d\tSuccess: %d\tFailure: %d\n", t->tests, t->success,
-	       t->failure);
-	printf("\n");
+	double total_ms = test_now_ms() - t->run_start_ms;
+	double pass_rate = (t->tests > 0) ? ((double)t->success * 100.0 / t->tests) : 0.0;
+	char dur[24];
 
-	if (t->tests != t->success)
+	print_test_results_table(t);
+	print_suite_summary_table(t);
+	print_failed_tests(t);
+	print_slowest_tests(t, 5);
+
+	fprintf(stdout, "\nSummary\n");
+	fprintf(stdout, "  Suites:   %d\n", t->suite_count);
+	fprintf(stdout, "  Tests:    %d\n", t->tests);
+	fprintf(stdout, "  Pass:     %d\n", t->success);
+	fprintf(stdout, "  Fail:     %d\n", t->failure);
+	fprintf(stdout, "  Skip:     %d\n", t->skipped);
+	fprintf(stdout, "  Errors:   %d\n", t->errors);
+	fprintf(stdout, "  Warnings: %d\n", t->warnings);
+	fprintf(stdout, "  PassRate: %.1f%%\n", pass_rate);
+	format_duration(total_ms, dur, sizeof(dur));
+	fprintf(stdout, "  Time:     %s\n\n", dur);
+
+	if (t->failure > 0 || t->errors > 0)
 		return -1;
 
 	return 0;
 }
 
+static void run_file_tx_suite(struct test *t)
+{
+	run_file_tx_tests(t, false);
+}
+
 int main(int argc, char *argv[])
 {
-	int rc;
+	int i, rc;
 	struct test t;
+	static const struct test_suite_entry suites[] = {
+		{ "cp_phy", run_cp_phy_tests },
+		{ "cp_fsm", run_cp_fsm_tests },
+		{ "file_tx", run_file_tx_suite },
+		{ "commands", run_command_tests },
+		{ "events", run_event_tests },
+		{ "hotplug", run_hotplug_tests },
+		{ "async_fuzz", run_async_fuzz_tests },
+		{ "sc", run_sc_tests },
+		{ "vectors", run_vector_tests },
+	};
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -374,19 +859,13 @@ int main(int argc, char *argv[])
 
 	test_start(&t, OSDP_LOG_INFO);
 
-	run_cp_phy_tests(&t);
-
-	run_cp_fsm_tests(&t);
-
-	run_file_tx_tests(&t, false);
-
-	run_command_tests(&t);
-
-	run_event_tests(&t);
-
-	run_hotplug_tests(&t);
-
-	run_async_fuzz_tests(&t);
+	for (i = 0; i < (int)(sizeof(suites) / sizeof(suites[0])); i++) {
+		test_suite_begin(&t, suites[i].name);
+		if (suites[i].run) {
+			suites[i].run(&t);
+		}
+		test_suite_end(&t);
+	}
 
 	rc = test_end(&t);
 

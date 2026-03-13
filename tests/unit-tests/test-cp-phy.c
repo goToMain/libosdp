@@ -187,6 +187,305 @@ int test_phy_decode_packet_ack(struct osdp *ctx)
 	return 0;
 }
 
+static int test_phy_parse_hardcoded_plain_checksum_ack(struct osdp *ctx)
+{
+	uint8_t *buf;
+	int len, err;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x07, 0x00, 0x01, 0x40, 0x80
+	};
+	static const uint8_t expected[] = { REPLY_ACK };
+
+	printf(SUB_1 "Testing hardcoded parser fixture (plain+checksum ACK) -- ");
+	reset_pd_packet_state(p);
+	sc_deactivate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	if ((len = osdp_phy_decode_packet(p, &buf)) < 0) {
+		printf("failed! decode returned %d\n", len);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CHECK_ARRAY(buf, len, expected);
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_plain_crc_nak(struct osdp *ctx)
+{
+	uint8_t *buf;
+	int len, err;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x09, 0x00, 0x05, 0x41, 0x01, 0x0e, 0x8f
+	};
+	static const uint8_t expected[] = { REPLY_NAK, 0x01 };
+
+	printf(SUB_1 "Testing hardcoded parser fixture (plain+CRC NAK) -- ");
+	reset_pd_packet_state(p);
+	sc_deactivate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	if ((len = osdp_phy_decode_packet(p, &buf)) < 0) {
+		printf("failed! decode returned %d\n", len);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CHECK_ARRAY(buf, len, expected);
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_sc_scs12_checksum_ccrypt(struct osdp *ctx)
+{
+	uint8_t *buf;
+	int len, err;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x2a, 0x00, 0x09, 0x03, 0x12, 0x01, 0x76,
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+		0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+		0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+		0x19
+	};
+	static const uint8_t expected[] = {
+		REPLY_CCRYPT,
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+		0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+		0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f
+	};
+
+	printf(SUB_1 "Testing hardcoded parser fixture (SC SCS_12 + checksum) -- ");
+	reset_pd_packet_state(p);
+	sc_deactivate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	if ((len = osdp_phy_decode_packet(p, &buf)) < 0) {
+		printf("failed! decode returned %d\n", len);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CHECK_ARRAY(buf, len, expected);
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_sc_scs14_crc_rmaci(struct osdp *ctx)
+{
+	uint8_t *buf;
+	int len, err;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x1b, 0x00, 0x0d, 0x03, 0x14, 0x01, 0x78,
+		0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+		0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
+		0xca, 0xba
+	};
+	static const uint8_t expected[] = {
+		REPLY_RMAC_I,
+		0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+		0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf
+	};
+
+	printf(SUB_1 "Testing hardcoded parser fixture (SC SCS_14 + CRC) -- ");
+	reset_pd_packet_state(p);
+	sc_deactivate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	if ((len = osdp_phy_decode_packet(p, &buf)) < 0) {
+		printf("failed! decode returned %d\n", len);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CHECK_ARRAY(buf, len, expected);
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_sc_invalid_type_reject(struct osdp *ctx)
+{
+	int err;
+	uint8_t *buf = NULL;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x09, 0x00, 0x09, 0x02, 0x19, 0x40, 0x5b
+	};
+
+	printf(SUB_1 "Testing hardcoded parser fixture (invalid SC type reject) -- ");
+	reset_pd_packet_state(p);
+	sc_deactivate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	err = osdp_phy_decode_packet(p, &buf);
+	if (err != OSDP_ERR_PKT_NACK || p->nak_code != OSDP_PD_NAK_SC_COND) {
+		printf("failed! decode returned %d nak=%d\n", err, p->nak_code);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_sc_inactive_scs16_reject(struct osdp *ctx)
+{
+	int err;
+	uint8_t *buf = NULL;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x09, 0x00, 0x09, 0x02, 0x16, 0x40, 0x5e
+	};
+
+	printf(SUB_1 "Testing hardcoded parser fixture (inactive SC SCS_16 reject) -- ");
+	reset_pd_packet_state(p);
+	sc_deactivate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	err = osdp_phy_decode_packet(p, &buf);
+	if (err != OSDP_ERR_PKT_NACK || p->nak_code != OSDP_PD_NAK_SC_COND) {
+		printf("failed! decode returned %d nak=%d\n", err, p->nak_code);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_sc_active_invalid_mac_reject(struct osdp *ctx)
+{
+	int err;
+	uint8_t *buf = NULL;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x0d, 0x00, 0x09, 0x02, 0x16, 0x40,
+		0x00, 0x00, 0x00, 0x00, 0x5a
+	};
+
+	printf(SUB_1 "Testing hardcoded parser fixture (active SC invalid MAC reject) -- ");
+	reset_pd_packet_state(p);
+	memset(&p->sc, 0, sizeof(p->sc));
+	sc_activate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	err = osdp_phy_decode_packet(p, &buf);
+	if (err != OSDP_ERR_PKT_NACK || p->nak_code != OSDP_PD_NAK_SC_COND ||
+	    sc_is_active(p)) {
+		printf("failed! decode returned %d nak=%d sc=%d\n",
+		       err, p->nak_code, sc_is_active(p));
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+static int test_phy_parse_hardcoded_plaintext_when_sc_active_reject(struct osdp *ctx)
+{
+	int err;
+	uint8_t *buf = NULL;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	static const uint8_t packet[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0xe5, 0x07, 0x00, 0x01, 0x40, 0x80
+	};
+
+	printf(SUB_1 "Testing hardcoded parser fixture (plaintext while SC active reject) -- ");
+	reset_pd_packet_state(p);
+	sc_activate(p);
+	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	osdp_rb_push_buf(p->rx_rb, (uint8_t *)packet, sizeof(packet));
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_NONE) {
+		printf("failed! check returned %d\n", err);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	err = osdp_phy_decode_packet(p, &buf);
+	if (err != OSDP_ERR_PKT_NACK || p->nak_code != OSDP_PD_NAK_SC_COND) {
+		printf("failed! decode returned %d nak=%d\n", err, p->nak_code);
+		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+		return -1;
+	}
+	sc_deactivate(p);
+	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
 int test_phy_decode_packet_ignore_leading_mark_bytes(struct osdp *ctx)
 {
 	uint8_t *buf;
@@ -295,6 +594,54 @@ int test_cp_build_packet_with_crc(struct osdp *ctx)
 		return -1;
 	}
 
+	printf("success!\n");
+	return 0;
+}
+
+int test_cp_build_packet_checksum_mode_trailer(struct osdp *ctx)
+{
+	int len;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	uint8_t packet[512] = { CMD_POLL };
+	uint8_t expected[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0x65, 0x07, 0x00, 0x00, 0x60, 0xe1
+	};
+
+	printf(SUB_1 "Testing cp_build_and_send_packet checksum trailer -- ");
+	reset_pd_packet_state(p);
+	CLEAR_FLAG(p, PD_FLAG_CP_USE_CRC);
+	if ((len = test_cp_build_and_send_packet(p, packet, 1, sizeof(packet))) < 0) {
+		return -1;
+	}
+	CHECK_ARRAY(packet, len, expected);
+	printf("success!\n");
+	return 0;
+}
+
+int test_cp_build_packet_crc_mode_trailer(struct osdp *ctx)
+{
+	int len;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	uint8_t packet[512] = { CMD_POLL };
+	uint8_t expected[] = {
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+		0xff,
+#endif
+		0x53, 0x65, 0x08, 0x00, 0x04, 0x60, 0x60, 0x90
+	};
+
+	printf(SUB_1 "Testing cp_build_and_send_packet CRC trailer -- ");
+	reset_pd_packet_state(p);
+	SET_FLAG(p, PD_FLAG_CP_USE_CRC);
+	if ((len = test_cp_build_and_send_packet(p, packet, 1, sizeof(packet))) < 0) {
+		CLEAR_FLAG(p, PD_FLAG_CP_USE_CRC);
+		return -1;
+	}
+	CLEAR_FLAG(p, PD_FLAG_CP_USE_CRC);
+	CHECK_ARRAY(packet, len, expected);
 	printf("success!\n");
 	return 0;
 }
@@ -843,6 +1190,16 @@ void run_cp_phy_tests(struct test *t)
 	DO_TEST(t, test_cp_build_packet_id);
 	DO_TEST(t, test_cp_build_packet_chlng);
 	DO_TEST(t, test_cp_build_packet_with_crc);
+	DO_TEST(t, test_cp_build_packet_checksum_mode_trailer);
+	DO_TEST(t, test_cp_build_packet_crc_mode_trailer);
+	DO_TEST(t, test_phy_parse_hardcoded_plain_checksum_ack);
+	DO_TEST(t, test_phy_parse_hardcoded_plain_crc_nak);
+	DO_TEST(t, test_phy_parse_hardcoded_sc_scs12_checksum_ccrypt);
+	DO_TEST(t, test_phy_parse_hardcoded_sc_scs14_crc_rmaci);
+	DO_TEST(t, test_phy_parse_hardcoded_sc_invalid_type_reject);
+	DO_TEST(t, test_phy_parse_hardcoded_sc_inactive_scs16_reject);
+	DO_TEST(t, test_phy_parse_hardcoded_sc_active_invalid_mac_reject);
+	DO_TEST(t, test_phy_parse_hardcoded_plaintext_when_sc_active_reject);
 	DO_TEST(t, test_phy_build_packet_without_mark);
 	DO_TEST(t, test_phy_packet_multiple_commands);
 	DO_TEST(t, test_phy_decode_packet_ack);

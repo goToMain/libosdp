@@ -245,3 +245,12 @@ void osdp_sc_teardown(struct osdp_pd *pd)
 	ARG_UNUSED(pd);
 	osdp_crypt_teardown();
 }
+
+#ifdef UNIT_TESTING
+int (*test_osdp_compute_mac)(struct osdp_pd *pd, int is_cmd,
+			     const uint8_t *data, int len) = osdp_compute_mac;
+int (*test_osdp_encrypt_data)(struct osdp_pd *pd, int is_cmd,
+			      uint8_t *data, int length) = osdp_encrypt_data;
+int (*test_osdp_decrypt_data)(struct osdp_pd *pd, int is_cmd,
+			      uint8_t *data, int length) = osdp_decrypt_data;
+#endif /* UNIT_TESTING */

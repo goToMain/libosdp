@@ -41,6 +41,8 @@ jobs:
         ./configure.sh
     - name: make
       run: make V=1
+    - name: make check
+      run: make V=1 check
 
   DocBuild:
     runs-on: ubuntu-latest
@@ -67,9 +69,7 @@ jobs:
     - name: Configure
       run: cmake -DCMAKE_BUILD_TYPE=Debug .
     - name: Run unit-tests
-      run: cmake --build . --parallel 7 --target check-ut
-    - name: Run pytest
-      run: tests/pytest/run.sh
+      run: cmake --build . --parallel 7 --target check
 
   CheckPatch:
     runs-on: ubuntu-latest

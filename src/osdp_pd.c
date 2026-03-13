@@ -1242,7 +1242,6 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 {
 	struct osdp_pd *pd;
 	struct osdp *ctx;
-	char name[16] = {0};
 
 	assert(info);
 	assert(channel);
@@ -1262,6 +1261,7 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 	input_check_init(ctx);
 	ctx->_num_pd = 1;
 	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
+	logger_get_default(&ctx->logger);
 
 	SET_CURRENT_PD(ctx, 0);
 	pd = osdp_to_pd(ctx, 0);
@@ -1286,9 +1286,6 @@ osdp_t *osdp_pd_setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 	}
 
 	pd_collect_init_flags(pd, info->flags);
-	logger_get_default(&pd->logger);
-	snprintf(name, sizeof(name), "OSDP: PD-%d", pd->address);
-	logger_set_name(&pd->logger, name);
 
 	if (pd_event_queue_init(pd)) {
 		goto error;

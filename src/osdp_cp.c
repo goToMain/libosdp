@@ -1448,7 +1448,6 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 	int i, old_num_pd;
 	struct osdp_pd *old_pd_array, *new_pd_array, *pd;
 	const osdp_pd_info_t *info;
-	char name[24] = { 0 };
 
 	assert(num_pd);
 	assert(info_list);
@@ -1495,10 +1494,6 @@ static int cp_add_pd(struct osdp *ctx, int num_pd, const osdp_pd_info_t *info_li
 			SET_FLAG(pd, PD_FLAG_PKT_SKIP_MARK);
 		}
 
-		logger_get_default(&pd->logger);
-		snprintf(name, sizeof(name), "OSDP: CP: PD-%d", pd->address);
-		logger_set_name(&pd->logger, name);
-
 		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_init(pd);
 		}
@@ -1540,6 +1535,7 @@ osdp_t *osdp_cp_setup(const struct osdp_channel *channel, int num_pd,
 
 	input_check_init(ctx);
 	ctx->tx_packet_buf = ctx->tx_packet_buf_store;
+	logger_get_default(&ctx->logger);
 	memcpy(&ctx->channel, channel, sizeof(ctx->channel));
 
 	if (num_pd && cp_add_pd(ctx, num_pd, info)) {

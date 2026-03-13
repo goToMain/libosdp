@@ -36,22 +36,42 @@
 
 #define ARG_UNUSED(x) (void)(x)
 
-#define LOG_EM(...)    __logger_log(&pd->logger, LOG_EMERG,  __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_ALERT(...) __logger_log(&pd->logger, LOG_ALERT,  __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_CRIT(...)  __logger_log(&pd->logger, LOG_CRIT,   __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_ERR(...)   __logger_log(&pd->logger, LOG_ERR,    __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_INF(...)   __logger_log(&pd->logger, LOG_INFO,   __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_WRN(...)   __logger_log(&pd->logger, LOG_WARNING,__FILE__, __LINE__, __VA_ARGS__)
+#define OSDP_PD_LOG(_level, ...)                                              \
+	do {                                                                   \
+		struct osdp *__ctx = pd_to_osdp(pd);                           \
+		if (!__ctx->logger.cb &&                                      \
+		    ((_level) < LOG_EMERG || (_level) >= LOG_MAX_LEVEL ||      \
+		     (_level) > __ctx->logger.log_level)) {                    \
+			break;                                                 \
+		}                                                                \
+		logger_t __log_ctx = __ctx->logger;                            \
+		char __name[LOGGER_NAME_MAXLEN];                               \
+		if (is_cp_mode(pd)) {                                           \
+			snprintf(__name, sizeof(__name), "OSDP: CP: PD-%d",    \
+				 pd->address);                              \
+		} else {                                                         \
+			snprintf(__name, sizeof(__name), "OSDP: PD-%d", pd->address);\
+		}                                                                \
+		logger_set_name(&__log_ctx, __name);                            \
+		__logger_log(&__log_ctx, _level, __FILE__, __LINE__, __VA_ARGS__);\
+	} while (0)
+
+#define LOG_EM(...)    OSDP_PD_LOG(LOG_EMERG, __VA_ARGS__)
+#define LOG_ALERT(...) OSDP_PD_LOG(LOG_ALERT, __VA_ARGS__)
+#define LOG_CRIT(...)  OSDP_PD_LOG(LOG_CRIT, __VA_ARGS__)
+#define LOG_ERR(...)   OSDP_PD_LOG(LOG_ERR, __VA_ARGS__)
+#define LOG_INF(...)   OSDP_PD_LOG(LOG_INFO, __VA_ARGS__)
+#define LOG_WRN(...)   OSDP_PD_LOG(LOG_WARNING, __VA_ARGS__)
 #define LOG_WRN_ONCE(...) \
 do {\
   static int warned = 0; \
   if(!warned) { \
-    __logger_log(&pd->logger, LOG_WARNING,__FILE__, __LINE__, __VA_ARGS__);\
+    OSDP_PD_LOG(LOG_WARNING, __VA_ARGS__); \
     warned = 1;\
   }\
 }while(0)
-#define LOG_NOT(...)   __logger_log(&pd->logger, LOG_NOTICE, __FILE__, __LINE__, __VA_ARGS__)
-#define LOG_DBG(...)   __logger_log(&pd->logger, LOG_DEBUG,  __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_NOT(...)   OSDP_PD_LOG(LOG_NOTICE, __VA_ARGS__)
+#define LOG_DBG(...)   OSDP_PD_LOG(LOG_DEBUG, __VA_ARGS__)
 
 #define ISSET_FLAG(p, f)       (((p)->flags & (f)) == (f))
 #define SET_FLAG(p, f)          ((p)->flags |= (f))
@@ -403,9 +423,6 @@ struct osdp_pd {
 	void *event_completion_callback_arg;
 	pd_event_completion_callback_t event_completion_callback;
 
-	/* logger context (from utils/logger.h) */
-	logger_t logger;
-
 #ifndef __BARE_METAL__
 	/* Opaque packet capture pointer (see osdp_pcap.c) */
 	void *packet_capture_ctx;
@@ -422,6 +439,8 @@ struct osdp {
 	uint8_t *tx_packet_buf;
 	unsigned long tx_packet_len;
 	unsigned long tx_packet_buf_len;
+	/* logger context (from utils/logger.h) */
+	logger_t logger;
 
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;

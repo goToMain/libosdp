@@ -7,6 +7,28 @@
 #include <stdarg.h>
 #include "module.h"
 
+#if PY_VERSION_HEX < 0x030c0000
+static PyObject *PyErr_GetRaisedException(void)
+{
+	PyObject *type, *value, *tb;
+	PyErr_Fetch(&type, &value, &tb);
+	PyErr_NormalizeException(&type, &value, &tb);
+	if (tb != NULL) {
+		PyException_SetTraceback(value, tb);
+		Py_DECREF(tb);
+	}
+	Py_XDECREF(type);
+	return value;
+}
+
+static void PyErr_SetRaisedException(PyObject *exc)
+{
+	PyObject *type = (PyObject *)Py_TYPE(exc);
+	Py_INCREF(type);
+	PyErr_Restore(type, exc, NULL);
+}
+#endif
+
 int pyosdp_dict_add_bool(PyObject *dict, const char *key, bool val)
 {
 	int ret;

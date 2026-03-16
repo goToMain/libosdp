@@ -64,7 +64,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           submodules: recursive
@@ -81,7 +81,7 @@ jobs:
 
       - name: Set up Python (for macOS/Windows runners cibuildwheel uses local Pythons)
         if: matrix.platform != 'linux'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -104,7 +104,7 @@ jobs:
           ls -la ${{ env.CIBW_OUTPUT_DIR }} || true
 
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cibw-wheelhouse-${{ matrix.os }}-${{ matrix.image }}-${{ matrix.archs }}
           path: ${{ env.CIBW_OUTPUT_DIR }}
@@ -113,7 +113,7 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Build sdist
@@ -122,7 +122,7 @@ jobs:
           pushd python
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: cibw-sdist
           path: python/dist/*.tar.gz
@@ -135,7 +135,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: cibw-*
           path: python/dist

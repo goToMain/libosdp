@@ -16,7 +16,7 @@ jobs:
   CmakeBuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Configure
@@ -25,7 +25,7 @@ jobs:
       run: cmake --build . --parallel 7 --target all --target cpp_cp_sample --target cpp_pd_sample
     - name: Package
       run: cmake --build . --target package  --target package_source
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: libosdp-ubuntu-latest-binaries.zip
         path: artifacts/
@@ -33,7 +33,7 @@ jobs:
   MakeBuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: configure
@@ -45,7 +45,7 @@ jobs:
   DocBuild:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Install dependencies
@@ -61,7 +61,7 @@ jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Configure
@@ -74,7 +74,7 @@ jobs:
   CheckPatch:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: ClangFormatCheck
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Install pypa/build
@@ -94,7 +94,7 @@ jobs:
       - name: Build a binary wheel and a source tarball
         run: python3 -m build python
       - name: Store the distribution packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python-package-distributions
           path: python/dist/
@@ -107,7 +107,7 @@ jobs:
           - examples/platformio/cp.ino
           - examples/platformio/pd.ino
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
       - uses: actions/cache@v4
@@ -116,7 +116,7 @@ jobs:
             ~/.cache/pip
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install PlatformIO Core

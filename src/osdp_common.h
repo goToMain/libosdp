@@ -62,33 +62,33 @@ int osdp_log_emit(bool is_cp, int pd_address, int log_level,
 #else
 
 __format_printf(6, 7)
-int osdp_log_cb_emit_pd(bool is_cp, int pd_address, int log_level,
-			const char *file, unsigned long line,
-			const char *fmt, ...);
+int osdp_log_cb_emit(bool is_cp, int pd_address, int log_level,
+		     const char *file, unsigned long line,
+		     const char *fmt, ...);
 
-#define OSDP_PD_LOG(_level, ...)                                              \
+#define OSDP_PD_LOG(_level, ...)                                               \
 	do {                                                                   \
 		struct osdp *__ctx = pd_to_osdp(pd);                           \
-		if (!__ctx->logger.cb &&                                      \
+		if (!__ctx->logger.cb &&                                       \
 		    ((_level) < LOG_EMERG || (_level) >= LOG_MAX_LEVEL ||      \
 		     (_level) > __ctx->logger.log_level)) {                    \
 			break;                                                 \
-		}                                                                \
+		}                                                              \
 		logger_t __log_ctx = __ctx->logger;                            \
 		char __name[LOGGER_NAME_MAXLEN];                               \
-		if (is_cp_mode(pd)) {                                           \
+		if (is_cp_mode(pd)) {                                          \
 			snprintf(__name, sizeof(__name), "OSDP: CP: PD-%d",    \
-				 pd->address);                              \
-		} else {                                                         \
+				 pd->address);                                 \
+		} else {                                                       \
 			snprintf(__name, sizeof(__name), "OSDP: PD-%d", pd->address);\
-		}                                                                \
-			logger_set_name(&__log_ctx, __name);                            \
-			if (__ctx->logger.cb) {                                     \
-				osdp_log_cb_emit_pd(is_cp_mode(pd), pd->address,     \
-						 _level, __FILE__, __LINE__, \
+		}                                                              \
+			logger_set_name(&__log_ctx, __name);                   \
+			if (__ctx->logger.cb) {                                \
+				osdp_log_cb_emit(is_cp_mode(pd), pd->address,  \
+						 _level, __FILE__, __LINE__,   \
 						 __VA_ARGS__);                 \
-				break;                                             \
-			}                                                          \
+				break;                                         \
+			}                                                      \
 			__logger_log(&__log_ctx, _level, __FILE__, __LINE__, __VA_ARGS__);\
 	} while (0)
 

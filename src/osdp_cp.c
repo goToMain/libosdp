@@ -1630,6 +1630,15 @@ void osdp_cp_refresh(osdp_t *ctx)
 
 		state_update(pd);
 
+		/*
+		 * On a shared multi-drop bus the CP must complete one PD's
+		 * exchange before starting the next. Break while the channel
+		 * is occupied with a send/reply/retry cycle.
+		 */
+		if (cp_phy_running(pd)) {
+			break;
+		}
+
 		next_pd_idx = pd->idx + 1;
 		if (next_pd_idx >= cp_ctx->_num_pd) {
 			next_pd_idx = 0;

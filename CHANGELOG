@@ -1,3 +1,14 @@
+v3.2.1
+------
+
+19 March 2026
+
+A point release to fix rust builds
+
+Fixes:
+  - utils: Bump submodule to pull in fix for slab_t packing issue
+
+
 v3.2.0
 ------
 

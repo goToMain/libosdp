@@ -52,7 +52,7 @@ void osdp_packet_capture_finish(struct osdp_pd *pd)
 		LOG_ERR("Unable to stop capture (flush/close failed)");
 		return;
 	}
-	LOG_INF("Captured %d packets", num_packets);
+	LOG_INF("Captured %zu packets", num_packets);
 }
 
 void osdp_capture_packet(struct osdp_pd *pd, uint8_t *buf, int len)

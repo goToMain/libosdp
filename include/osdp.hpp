@@ -120,6 +120,11 @@ public:
 		osdp_cp_set_command_completion_callback(_ctx, cb, arg);
 	}
 
+	int get_pd_by_addr(int address)
+	{
+		return osdp_cp_get_pd_by_addr(_ctx, address);
+	}
+
 	int get_pd_id(int pd, struct osdp_pd_id *id)
 	{
 		return osdp_cp_get_pd_id(_ctx, pd, id);

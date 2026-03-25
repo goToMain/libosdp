@@ -1177,6 +1177,20 @@ OSDP_EXPORT
 void osdp_cp_teardown(osdp_t *ctx);
 
 /**
+ * @brief Get the PD offset (0-indexed) in the internal `osdp_pd_info_t *`
+ * list that is registered in the given address.
+ *
+ * @param ctx OSDP context
+ * @param address PD address of the device in `osdp_pd_info_t *` passed to
+ * osdp_cp_setup()
+ *
+ * @retval PD offset (0-indexed) on success
+ * @retval -1 on failure
+ */
+OSDP_EXPORT
+int osdp_cp_get_pd_by_addr(osdp_t *ctx, int address);
+
+/**
  * @brief Generic command enqueue API.
  *
  * @param ctx OSDP context

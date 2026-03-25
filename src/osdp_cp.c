@@ -1612,6 +1612,22 @@ void osdp_cp_teardown(osdp_t *ctx)
 #endif
 }
 
+int osdp_cp_get_pd_by_addr(osdp_t *ctx, int address)
+{
+	input_check(ctx);
+	int i;
+	struct osdp_pd *pd;
+
+	for (i = 0; i < NUM_PD(ctx); i++) {
+		pd = osdp_to_pd(ctx, i);
+		if (pd->address == address) {
+			return i;
+		}
+	}
+
+	return -1;
+}						
+
 void osdp_cp_refresh(osdp_t *ctx)
 {
 	input_check(ctx);

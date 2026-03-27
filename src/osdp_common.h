@@ -417,6 +417,7 @@ struct osdp_pd {
 	tick_t tstamp;         /* Last POLL command issued time in ticks */
 	tick_t sc_tstamp;      /* Last received secure reply time in ticks */
 	tick_t phy_tstamp;     /* Time in ticks since command was sent */
+	tick_t resp_expected;  /* Time in ticks when the response is expected */
 	uint32_t request;      /* Event loop requests */
 
 	uint16_t peer_rx_size; /* Receive buffer size of the peer PD/CP */

@@ -814,7 +814,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->phy_state = OSDP_CP_PHY_STATE_SEND_CMD;
 		__fallthrough;
 	case OSDP_CP_PHY_STATE_SEND_CMD:
-		/* Check if we have any commands in the queue */
+		if (pd->phy_retry_count > 0) {
+			struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
+			if (channel->flush)
+				channel->flush(channel->data);
+			pd->seq_number = pd->phy_tx_seq - 1;
+		}
 		if (cp_build_and_send_packet(pd)) {
 			LOG_ERR("Failed to build/send packet for CMD: %s(%02x)",
 				osdp_cmd_name(pd->cmd_id), pd->cmd_id);

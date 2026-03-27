@@ -413,6 +413,7 @@ struct osdp_pd {
 	int state;             /* FSM state (CP mode only) */
 	int phy_state;         /* phy layer FSM state (CP mode only) */
 	int phy_retry_count;   /* command retry counter */
+	int phy_tx_seq;        /* seq number embedded in last TX packet */
 	uint32_t wait_ms;      /* wait time in MS to retry communication */
 	tick_t tstamp;         /* Last POLL command issued time in ticks */
 	tick_t sc_tstamp;      /* Last received secure reply time in ticks */

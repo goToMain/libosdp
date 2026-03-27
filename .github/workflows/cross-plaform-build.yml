@@ -8,6 +8,7 @@ name: Cross Platform Build
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   cross_platform_build:
@@ -22,7 +23,7 @@ jobs:
       with:
         submodules: recursive
     - name: Configure
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug .
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DOPT_OSDP_LIB_ONLY=on .
     - name: Build
       run: cmake --build build --parallel 8
     - name: Run unit-tests

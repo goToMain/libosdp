@@ -795,6 +795,10 @@ static void cp_phy_state_wait(struct osdp_pd *pd, uint32_t wait_ms)
 	pd->phy_state = OSDP_CP_PHY_STATE_WAIT;
 }
 
+static int cp_calculate_transmit_time(struct osdp_pd* pd){
+	return (pd->packet_buf_len * 10000U + pd->baud_rate - 1) / pd->baud_rate;
+}
+
 static int cp_phy_state_update(struct osdp_pd *pd)
 {
 	int rc, ret = OSDP_CP_ERR_DEFER;
@@ -830,6 +834,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		pd->reply_id = REPLY_INVALID;
 		pd->phy_state = OSDP_CP_PHY_STATE_REPLY_WAIT;
 		pd->phy_tstamp = osdp_millis_now();
+		pd->resp_expected = pd->phy_tstamp + OSDP_RESP_TOUT_MS + cp_calculate_transmit_time(pd);
 		break;
 	case OSDP_CP_PHY_STATE_REPLY_WAIT:
 		rc = cp_process_reply(pd);
@@ -856,7 +861,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 			cp_phy_state_wait(pd, OSDP_CMD_RETRY_WAIT_MS);
 			return OSDP_CP_ERR_DEFER;
 		}
-		if (osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
+		if (osdp_millis_since(pd->phy_tstamp) > pd->resp_expected) {
 			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
 				pd->phy_retry_count += 1;
 				LOG_WRN("No response in 200ms; probing (%d)",

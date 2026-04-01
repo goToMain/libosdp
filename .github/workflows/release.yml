@@ -43,6 +43,7 @@ jobs:
           py_version="$(perl -ne 'print $1 if (/^project_version = "(\d+\.\d+\.\d+)"/)' python/setup.py)"
           platformio_version="$(perl -ne 'print $1 if (/^  "version": "(\d+\.\d+\.\d+)",$/)' library.json)"
           config_version="$(perl -ne 'print $1 if (/^#define PROJECT_VERSION\s+"(\d+\.\d+\.\d+)"/)' platformio/osdp_config.h)"
+          release_file="CHANGELOG/RELEASE-${tag}.md"
 
           for declared in "${cmake_version}" "${py_version}" "${platformio_version}" "${config_version}"; do
             if [[ "${declared}" != "${version}" ]]; then
@@ -51,14 +52,15 @@ jobs:
             fi
           done
 
-          if ! grep -q -E "^v${version} " CHANGELOG; then
-            echo "CHANGELOG is missing an entry for ${tag}" >&2
+          if [[ ! -f "${release_file}" ]]; then
+            echo "CHANGELOG is missing ${release_file} for ${tag}" >&2
             exit 1
           fi
 
-          perl -e 'local $/; $_=<>; print $1 if (/-{4,}\n+\d+.*?\n+(.*?)\n+v\d+\./sg)' CHANGELOG > RELEASE.txt
+          python3 scripts/changelog_tool.py validate --file "${release_file}" --expected-version "${tag}" --quiet
+          python3 scripts/changelog_tool.py notes --file "${release_file}" --output RELEASE.txt
           if [[ ! -s RELEASE.txt ]]; then
-            echo "Failed to extract release notes from CHANGELOG" >&2
+            echo "Failed to extract release notes from ${release_file}" >&2
             exit 1
           fi
 

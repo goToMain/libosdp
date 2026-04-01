@@ -10,6 +10,15 @@ on:
   workflow_call:
 
 jobs:
+  Changelog:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        submodules: recursive
+    - name: Validate changelog files
+      run: python3 scripts/changelog_tool.py validate --dir CHANGELOG --quiet
+
   CmakeBuild:
     runs-on: ubuntu-latest
     steps:

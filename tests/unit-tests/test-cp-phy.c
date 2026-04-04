@@ -12,10 +12,44 @@ extern int (*test_osdp_phy_packet_init)(struct osdp_pd *pd, uint8_t *buf, int ma
 extern uint16_t (*test_osdp_compute_crc16)(const uint8_t *buf, size_t len);
 extern uint8_t (*test_osdp_compute_checksum)(uint8_t *msg, int length);
 
+struct refresh_yield_test_data {
+	int send_count;
+	int last_pd_address;
+};
+
 static void reset_pd_packet_state(struct osdp_pd *pd)
 {
 	osdp_phy_state_reset(pd, true);
 	pd->seq_number = -1;
+}
+
+static int test_cp_refresh_yield_send(void *data, uint8_t *buf, int len)
+{
+	struct refresh_yield_test_data *t = data;
+	int addr_offset;
+
+	if (len <= 0) {
+		return len;
+	}
+
+#ifndef OPT_OSDP_SKIP_MARK_BYTE
+	addr_offset = 2;
+#else
+	addr_offset = 1;
+#endif
+
+	t->send_count++;
+	t->last_pd_address = buf[addr_offset] & 0x7f;
+	return len;
+}
+
+static int test_cp_refresh_yield_recv(void *data, uint8_t *buf, int len)
+{
+	ARG_UNUSED(data);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	return 0;
 }
 
 /* Helper function to create valid test packets using a simple approach */
@@ -1148,6 +1182,204 @@ int test_phy_state_reset_functionality(struct osdp *ctx)
 	return 0;
 }
 
+int test_cp_refresh_yields_from_waiting_pd(struct osdp *ctx)
+{
+	struct refresh_yield_test_data data = {};
+	struct osdp_channel channel = {
+		.data = &data,
+		.send = test_cp_refresh_yield_send,
+		.recv = test_cp_refresh_yield_recv,
+		.flush = NULL,
+	};
+	osdp_pd_info_t info[] = {
+		{
+			.address = 101,
+			.baud_rate = 9600,
+			.flags = 0,
+			.scbk = NULL,
+		},
+		{
+			.address = 102,
+			.baud_rate = 9600,
+			.flags = 0,
+			.scbk = NULL,
+		},
+	};
+	struct osdp *cp_ctx;
+	struct osdp_pd *pd0, *pd1;
+
+	ARG_UNUSED(ctx);
+
+	printf(SUB_1 "Testing osdp_cp_refresh() yields during probe wait -- ");
+
+	cp_ctx = (struct osdp *)osdp_cp_setup(&channel, 2, info);
+	if (cp_ctx == NULL) {
+		printf("setup failed!\n");
+		return -1;
+	}
+
+	pd0 = osdp_to_pd(cp_ctx, 0);
+	pd1 = osdp_to_pd(cp_ctx, 1);
+	SET_CURRENT_PD(cp_ctx, 0);
+
+	pd0->phy_state = OSDP_CP_PHY_STATE_WAIT;
+	pd0->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
+	pd0->phy_tstamp = osdp_millis_now();
+
+	osdp_cp_refresh((osdp_t *)cp_ctx);
+	if (GET_CURRENT_PD(cp_ctx) != pd1 ||
+	    pd1->phy_state != OSDP_CP_PHY_STATE_SEND_CMD ||
+	    data.send_count != 0) {
+		printf("scheduler did not advance to next PD\n");
+		osdp_cp_teardown((osdp_t *)cp_ctx);
+		return -1;
+	}
+
+	osdp_cp_refresh((osdp_t *)cp_ctx);
+	if (data.send_count != 1 || data.last_pd_address != pd1->address) {
+		printf("wrong PD used after yielding (%d, addr=%d)\n",
+		       data.send_count, data.last_pd_address);
+		osdp_cp_teardown((osdp_t *)cp_ctx);
+		return -1;
+	}
+
+	osdp_cp_teardown((osdp_t *)cp_ctx);
+	printf("success!\n");
+	return 0;
+}
+
+int test_cp_refresh_yields_between_probe_retries(struct osdp *ctx)
+{
+	struct refresh_yield_test_data data = {};
+	struct osdp_channel channel = {
+		.data = &data,
+		.send = test_cp_refresh_yield_send,
+		.recv = test_cp_refresh_yield_recv,
+		.flush = NULL,
+	};
+	osdp_pd_info_t info[] = {
+		{
+			.address = 101,
+			.baud_rate = 9600,
+			.flags = 0,
+			.scbk = NULL,
+		},
+		{
+			.address = 102,
+			.baud_rate = 9600,
+			.flags = 0,
+			.scbk = NULL,
+		},
+	};
+	struct osdp *cp_ctx;
+	struct osdp_pd *pd0, *pd1;
+
+	ARG_UNUSED(ctx);
+
+	printf(SUB_1 "Testing osdp_cp_refresh() yields between probe retries -- ");
+
+	cp_ctx = (struct osdp *)osdp_cp_setup(&channel, 2, info);
+	if (cp_ctx == NULL) {
+		printf("setup failed!\n");
+		return -1;
+	}
+
+	pd0 = osdp_to_pd(cp_ctx, 0);
+	pd1 = osdp_to_pd(cp_ctx, 1);
+	SET_CURRENT_PD(cp_ctx, 0);
+
+	pd0->phy_state = OSDP_CP_PHY_STATE_WAIT;
+	pd0->cmd_id = CMD_POLL;
+	pd0->phy_retry_count = 1;
+	pd0->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
+	pd0->phy_tstamp = osdp_millis_now() - pd0->wait_ms;
+
+	osdp_cp_refresh((osdp_t *)cp_ctx);
+	if (GET_CURRENT_PD(cp_ctx) != pd1 ||
+	    pd0->phy_state != OSDP_CP_PHY_STATE_RETRY_CMD ||
+	    pd1->phy_state != OSDP_CP_PHY_STATE_SEND_CMD ||
+	    data.send_count != 0) {
+		printf("scheduler did not yield retry probe to next PD\n");
+		osdp_cp_teardown((osdp_t *)cp_ctx);
+		return -1;
+	}
+
+	osdp_cp_refresh((osdp_t *)cp_ctx);
+	if (GET_CURRENT_PD(cp_ctx) != pd1 ||
+	    pd1->phy_state != OSDP_CP_PHY_STATE_REPLY_WAIT ||
+	    data.send_count != 1 ||
+	    data.last_pd_address != pd1->address) {
+		printf("next PD did not get the channel after yield\n");
+		osdp_cp_teardown((osdp_t *)cp_ctx);
+		return -1;
+	}
+
+	osdp_cp_teardown((osdp_t *)cp_ctx);
+	printf("success!\n");
+	return 0;
+}
+
+int test_cp_refresh_retries_on_next_turn_for_single_pd(struct osdp *ctx)
+{
+	struct refresh_yield_test_data data = {};
+	struct osdp_channel channel = {
+		.data = &data,
+		.send = test_cp_refresh_yield_send,
+		.recv = test_cp_refresh_yield_recv,
+		.flush = NULL,
+	};
+	osdp_pd_info_t info = {
+		.address = 101,
+		.baud_rate = 9600,
+		.flags = 0,
+		.scbk = NULL,
+	};
+	struct osdp *cp_ctx;
+	struct osdp_pd *pd0;
+
+	ARG_UNUSED(ctx);
+
+	printf(SUB_1 "Testing osdp_cp_refresh() retries on next turn for single PD -- ");
+
+	cp_ctx = (struct osdp *)osdp_cp_setup(&channel, 1, &info);
+	if (cp_ctx == NULL) {
+		printf("setup failed!\n");
+		return -1;
+	}
+
+	pd0 = osdp_to_pd(cp_ctx, 0);
+	SET_CURRENT_PD(cp_ctx, 0);
+
+	pd0->phy_state = OSDP_CP_PHY_STATE_WAIT;
+	pd0->cmd_id = CMD_POLL;
+	pd0->phy_retry_count = 1;
+	pd0->wait_ms = OSDP_CMD_RETRY_WAIT_MS;
+	pd0->phy_tstamp = osdp_millis_now() - pd0->wait_ms;
+
+	osdp_cp_refresh((osdp_t *)cp_ctx);
+	if (GET_CURRENT_PD(cp_ctx) != pd0 ||
+	    pd0->phy_state != OSDP_CP_PHY_STATE_RETRY_CMD ||
+	    data.send_count != 0) {
+		printf("single PD retry was not deferred to next turn\n");
+		osdp_cp_teardown((osdp_t *)cp_ctx);
+		return -1;
+	}
+
+	osdp_cp_refresh((osdp_t *)cp_ctx);
+	if (GET_CURRENT_PD(cp_ctx) != pd0 ||
+	    pd0->phy_state != OSDP_CP_PHY_STATE_REPLY_WAIT ||
+	    data.send_count != 1 ||
+	    data.last_pd_address != pd0->address) {
+		printf("single PD retry was not sent on next turn\n");
+		osdp_cp_teardown((osdp_t *)cp_ctx);
+		return -1;
+	}
+
+	osdp_cp_teardown((osdp_t *)cp_ctx);
+	printf("success!\n");
+	return 0;
+}
+
 int test_cp_phy_setup(struct test *t)
 {
 	/* mock application data */
@@ -1220,6 +1452,9 @@ void run_cp_phy_tests(struct test *t)
 	DO_TEST(t, test_phy_packet_data_offset);
 	DO_TEST(t, test_phy_packet_different_commands);
 	DO_TEST(t, test_phy_state_reset_functionality);
+	DO_TEST(t, test_cp_refresh_yields_from_waiting_pd);
+	DO_TEST(t, test_cp_refresh_yields_between_probe_retries);
+	DO_TEST(t, test_cp_refresh_retries_on_next_turn_for_single_pd);
 
 	printf(SUB_1 "cp_phy tests %s\n", t->failure == 0 ? "succeeded" : "failed");
 

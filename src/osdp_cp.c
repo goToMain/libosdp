@@ -762,11 +762,17 @@ static void fill_local_keyset_cmd(struct osdp_pd *pd, struct osdp_cmd *cmd)
 	memcpy(cmd->keyset.data, pd->sc.scbk, sizeof(pd->sc.scbk));
 }
 
-static inline bool cp_phy_running(struct osdp_pd *pd)
+static inline bool cp_phy_bus_is_busy(struct osdp_pd *pd)
 {
 	return (pd->phy_state == OSDP_CP_PHY_STATE_SEND_CMD ||
-		pd->phy_state == OSDP_CP_PHY_STATE_REPLY_WAIT ||
-		pd->phy_state == OSDP_CP_PHY_STATE_WAIT);
+		pd->phy_state == OSDP_CP_PHY_STATE_REPLY_WAIT);
+}
+
+static inline bool cp_phy_running(struct osdp_pd *pd)
+{
+	return cp_phy_bus_is_busy(pd) ||
+	       pd->phy_state == OSDP_CP_PHY_STATE_WAIT ||
+	       pd->phy_state == OSDP_CP_PHY_STATE_RETRY_CMD;
 }
 
 static inline bool cp_phy_kick(struct osdp_pd *pd)
@@ -815,6 +821,9 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		if (osdp_millis_since(pd->phy_tstamp) < pd->wait_ms) {
 			return OSDP_CP_ERR_DEFER;
 		}
+		pd->phy_state = OSDP_CP_PHY_STATE_RETRY_CMD;
+		return OSDP_CP_ERR_DEFER;
+	case OSDP_CP_PHY_STATE_RETRY_CMD:
 		pd->phy_state = OSDP_CP_PHY_STATE_SEND_CMD;
 		__fallthrough;
 	case OSDP_CP_PHY_STATE_SEND_CMD:
@@ -1645,7 +1654,7 @@ void osdp_cp_refresh(osdp_t *ctx)
 		 * exchange before starting the next. Break while the channel
 		 * is occupied with a send/reply/retry cycle.
 		 */
-		if (cp_phy_running(pd)) {
+		if (cp_phy_bus_is_busy(pd)) {
 			break;
 		}
 

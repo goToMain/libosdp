@@ -579,6 +579,14 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case REPLY_FTSTAT:
 		ret = osdp_file_cmd_stat_decode(pd, buf + pos, len);
+		if (ret == 0) {
+			struct osdp_cmd_file_stat *p = (struct osdp_cmd_file_stat *)(buf + pos);
+			struct osdp_file *f = TO_FILE(pd);
+			event.type = OSDP_EVENT_FILE;
+			event.file.id = f->file_id;
+			event.file.status = (enum osdp_event_file_status_e)(p->status);
+			cp_dispatch_event(pd, &event);
+		}
 		break;
 	case REPLY_CCRYPT:
 		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {

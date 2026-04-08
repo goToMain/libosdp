@@ -1609,6 +1609,7 @@ void osdp_cp_teardown(osdp_t *ctx)
 		if (is_capture_enabled(pd)) {
 			osdp_packet_capture_finish(pd);
 		}
+		osdp_fill_zeros(&pd->sc, sizeof(struct osdp_secure_channel));
 
 #ifndef OPT_OSDP_STATIC
 		safe_free(pd->file);

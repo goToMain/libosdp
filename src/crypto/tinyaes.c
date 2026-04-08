@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "tinyaes_src.h"
@@ -54,6 +55,11 @@ void osdp_fill_random(uint8_t *buf, int len)
 		rnd = rand();
 		buf[i] = (uint8_t)(((float)rnd) / (float)RAND_MAX * 256);
 	}
+}
+
+void osdp_fill_zeros(void *buf, int len)
+{
+	explicit_bzero(buf, (size_t)len);
 }
 
 void osdp_crypt_teardown()

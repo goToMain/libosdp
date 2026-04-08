@@ -1127,6 +1127,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		}
 		if (pd->cmd_id == CMD_KEYSET && pd->reply_id == REPLY_ACK) {
 			memcpy(pd->sc.scbk, pd->keyset_pending, 16);
+			osdp_fill_zeros(pd->keyset_pending, 16);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
 			sc_deactivate(pd);
@@ -1339,6 +1340,8 @@ void osdp_pd_teardown(osdp_t *ctx)
 	if (is_capture_enabled(pd)) {
 		osdp_packet_capture_finish(pd);
 	}
+
+	osdp_fill_zeros(&pd->sc, sizeof(struct osdp_secure_channel));
 
 	if (pd_ctx->channel.close) {
 		pd_ctx->channel.close(pd_ctx->channel.data);

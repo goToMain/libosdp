@@ -11,6 +11,7 @@
 #include <mbedtls/aes.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/platform_util.h>
 
 #include <osdp.h>
 
@@ -86,6 +87,11 @@ void osdp_fill_random(uint8_t *buf, int len)
 
 	rc = mbedtls_ctr_drbg_random(&ctr_drbg_ctx, buf, len);
 	assert(rc == 0);
+}
+
+void osdp_fill_zeros(void *buf, int len)
+{
+	mbedtls_platform_zeroize(buf, (size_t)len);
 }
 
 void osdp_crypt_teardown()

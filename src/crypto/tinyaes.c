@@ -56,6 +56,15 @@ void osdp_fill_random(uint8_t *buf, int len)
 	}
 }
 
+void osdp_fill_zeros(void *buf, int len)
+{
+	volatile uint8_t *p = (volatile uint8_t *)buf;
+
+	while (len--) {
+		*p++ = 0;
+	}
+}
+
 void osdp_crypt_teardown()
 {
 }

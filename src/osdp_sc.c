@@ -56,6 +56,7 @@ void osdp_compute_session_keys(struct osdp_pd *pd)
 	osdp_encrypt(scbk, NULL, pd->sc.s_enc, 16);
 	osdp_encrypt(scbk, NULL, pd->sc.s_mac1, 16);
 	osdp_encrypt(scbk, NULL, pd->sc.s_mac2, 16);
+	osdp_fill_zeros(scbk, sizeof(scbk));
 }
 
 void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
@@ -93,10 +94,9 @@ int osdp_verify_cp_cryptogram(struct osdp_pd *pd)
 	memcpy(cp_crypto + 8, pd->sc.cp_random, 8);
 	osdp_encrypt(pd->sc.s_enc, NULL, cp_crypto, 16);
 
-	if (osdp_ct_compare(pd->sc.cp_cryptogram, cp_crypto, 16) != 0) {
-		return -1;
-	}
-	return 0;
+	int ret = osdp_ct_compare(pd->sc.cp_cryptogram, cp_crypto, 16) == 0 ? 0 : -1;
+	osdp_fill_zeros(cp_crypto, sizeof(cp_crypto));
+	return ret;
 }
 
 void osdp_compute_pd_cryptogram(struct osdp_pd *pd)
@@ -116,10 +116,9 @@ int osdp_verify_pd_cryptogram(struct osdp_pd *pd)
 	memcpy(pd_crypto + 8, pd->sc.pd_random, 8);
 	osdp_encrypt(pd->sc.s_enc, NULL, pd_crypto, 16);
 
-	if (osdp_ct_compare(pd->sc.pd_cryptogram, pd_crypto, 16) != 0) {
-		return -1;
-	}
-	return 0;
+	int ret = osdp_ct_compare(pd->sc.pd_cryptogram, pd_crypto, 16) == 0 ? 0 : -1;
+	osdp_fill_zeros(pd_crypto, sizeof(pd_crypto));
+	return ret;
 }
 
 void osdp_compute_rmac_i(struct osdp_pd *pd)

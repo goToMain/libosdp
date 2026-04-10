@@ -437,6 +437,12 @@ struct osdp_pd {
 	uint32_t packet_scan_skip;
 	bool reply_prebuilt;
 
+	/* Retransmit cache: last successfully-sent reply bytes live in the
+	 * shared tx_buf as long as nothing overwrites them. On a sequence
+	 * repeat we re-emit those bytes verbatim (see phy_check_packet). */
+	uint16_t last_tx_len; /* 0 = cache empty */
+	uint8_t last_cmd_id;
+
 	int cmd_id;            /* Currently processing command ID */
 	int reply_id;          /* Currently processing reply ID */
 	union {
@@ -477,6 +483,7 @@ struct osdp {
 	struct osdp_pd *pd;    /* base of PD list (must be at lest one) */
 	struct osdp_channel channel; /* OSDP channel */
 	uint8_t tx_buf[OSDP_PACKET_BUF_SIZE];
+	uint8_t *rx_buf; /* RX landing buffer: aliased to tx_buf in CP; distinct in PD */
 
 	/* CP event callback to app with opaque arg pointer as passed by app */
 	void *event_callback_arg;
@@ -704,6 +711,8 @@ static inline void sc_deactivate(struct osdp_pd *pd)
 		osdp_sc_teardown(pd);
 	}
 	CLEAR_FLAG(pd, PD_FLAG_SC_ACTIVE);
+	/* Cached retransmit reply is no longer meaningful without SC. */
+	pd->last_tx_len = 0;
 }
 
 static inline void make_request(struct osdp_pd *pd, uint32_t req) {
@@ -791,13 +800,20 @@ static inline struct osdp_rb *cp_static_rx_rb_array_get(void)
 
 static inline struct osdp *cp_ctx_alloc(void)
 {
+	struct osdp *ctx;
 #ifdef OPT_OSDP_STATIC
-	struct osdp *ctx = cp_static_ctx_get();
+	ctx = cp_static_ctx_get();
 	memset(ctx, 0, sizeof(struct osdp));
-	return ctx;
 #else
-	return calloc(1, sizeof(struct osdp));
+	ctx = calloc(1, sizeof(struct osdp));
+	if (!ctx) {
+		return NULL;
+	}
 #endif /* OPT_OSDP_STATIC */
+	/* CP mode does not cache retransmit replies; alias rx_buf to tx_buf
+	 * to preserve the legacy shared-buffer behavior with zero cost. */
+	ctx->rx_buf = ctx->tx_buf;
+	return ctx;
 }
 
 static inline struct osdp_pd *cp_pd_array_alloc(int old_num_pd, int num_pd)
@@ -861,6 +877,12 @@ static inline struct osdp_pd *pd_static_ctx_pd_get(void)
 	return &g_osdp_pd_ctx;
 }
 
+static inline uint8_t *pd_static_rx_buf_get(void)
+{
+	static uint8_t g_osdp_pd_rx_buf[OSDP_PACKET_BUF_SIZE];
+	return g_osdp_pd_rx_buf;
+}
+
 #ifdef OPT_OSDP_RX_ZERO_COPY
 
 static inline struct osdp_rx_pkt *pd_static_rx_pkt_get(void)
@@ -883,13 +905,23 @@ static inline struct osdp_rb *pd_static_rx_rb_get(void)
 
 static inline struct osdp *pd_ctx_alloc(void)
 {
+	struct osdp *ctx;
 #ifdef OPT_OSDP_STATIC
-	struct osdp *ctx = pd_static_ctx_get();
+	ctx = pd_static_ctx_get();
 	memset(ctx, 0, sizeof(struct osdp));
-	return ctx;
+	ctx->rx_buf = pd_static_rx_buf_get();
 #else
-	return calloc(1, sizeof(struct osdp));
+	ctx = calloc(1, sizeof(struct osdp));
+	if (!ctx) {
+		return NULL;
+	}
+	ctx->rx_buf = calloc(1, OSDP_PACKET_BUF_SIZE);
+	if (!ctx->rx_buf) {
+		free(ctx);
+		return NULL;
+	}
 #endif /* OPT_OSDP_STATIC */
+	return ctx;
 }
 
 static inline struct osdp_pd *pd_instance_alloc(void)

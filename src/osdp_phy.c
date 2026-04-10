@@ -395,7 +395,9 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 		return OSDP_ERR_PKT_BUILD;
 	}
 
-	return OSDP_ERR_PKT_NONE;
+	/* return the number of bytes actually put on the wire so that
+	 * callers can cache the full finalized packet for retransmit */
+	return len;
 }
 
 static int phy_validate_header(struct osdp_pd *pd, uint8_t *buf,
@@ -578,16 +580,38 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 			 * secure channels.
 			 */
 			phy_reset_seq_number(pd);
+			pd->last_tx_len = 0;
 			sc_deactivate(pd);
 		}
 		else if (comp == pd->seq_number) {
 			/**
-			 * Sometimes, a CP re-sends the same command without
-			 * incrementing the sequence number. To handle such cases,
-			 * we will move the sequence back one step (with do_inc
-			 * set to -1) and then process the packet all over again
-			 * as if it was the first time we are seeing it.
+			 * CP re-sent the same command without incrementing the
+			 * sequence number. Per OSDP spec, we must re-emit the
+			 * previous reply bit-identically. Rebuilding it here would
+			 * corrupt the SC MAC chain (r_mac/c_mac have already
+			 * advanced) and re-consume state (event/card/file data).
+			 *
+			 * If we have a cached reply and the command id matches,
+			 * re-send the bytes still sitting in tx_buf (RX goes to a
+			 * separate rx_buf in PD mode, so tx_buf is preserved).
 			 */
+			if (pd->last_tx_len > 0) {
+				int scb_len = (pkt->control & PKT_CONTROL_SCB) ?
+					pkt->data[0] : 0;
+				uint8_t rx_cmd_id = buf[sizeof(*pkt) + scb_len];
+
+				if (rx_cmd_id == pd->last_cmd_id) {
+					LOG_INF("Seq repeat: retransmitting cached reply");
+					osdp_channel_send(pd,
+						osdp_tx_staging_buf(pd),
+						pd->last_tx_len);
+					return OSDP_ERR_PKT_SKIP;
+				}
+				/* seq matches but cmd id doesn't: drop the cache
+				 * and fall through to the normal path which will
+				 * MAC-verify and NAK if the packet is bogus. */
+				pd->last_tx_len = 0;
+			}
 			phy_rollback_seq_number(pd);
 			LOG_INF("Received a sequence repeat packet!");
 		}
@@ -897,10 +921,11 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 	pd->packet_buf_len = 0;
 	pd->packet_len = 0;
 	pd->phy_state = 0;
-	pd->packet_buf = osdp_tx_staging_buf(pd);
+	pd->packet_buf = pd_to_osdp(pd)->rx_buf;
 	if (is_error) {
 		pd->phy_retry_count = 0;
 		pd->phy_tx_seq = 0;
+		pd->last_tx_len = 0;
 		phy_reset_seq_number(pd);
 		if (channel->flush) {
 			channel->flush(channel->data);

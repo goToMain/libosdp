@@ -844,6 +844,7 @@ int main(int argc, char *argv[])
 	struct test t;
 	static const struct test_suite_entry suites[] = {
 		{ "cp_phy", run_cp_phy_tests },
+		{ "pd_phy", run_pd_phy_tests },
 		{ "cp_fsm", run_cp_fsm_tests },
 		{ "file_tx", run_file_tx_suite },
 		{ "commands", run_command_tests },

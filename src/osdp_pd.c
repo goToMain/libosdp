@@ -1007,6 +1007,8 @@ static int pd_send_reply(struct osdp_pd *pd)
 		if (ret < 0) {
 			return OSDP_PD_ERR_GENERIC;
 		}
+		pd->last_tx_len = (uint16_t)ret;
+		pd->last_cmd_id = (uint8_t)pd->cmd_id;
 		return OSDP_PD_ERR_NONE;
 	}
 
@@ -1031,6 +1033,12 @@ static int pd_send_reply(struct osdp_pd *pd)
 	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
+
+	/* Snapshot the just-sent reply for potential retransmit on seq
+	 * repeat. The bytes (including CRC/MAC/encrypted payload) live in
+	 * tx_buf and are preserved until the next reply is built. */
+	pd->last_tx_len = (uint16_t)ret;
+	pd->last_cmd_id = (uint8_t)pd->cmd_id;
 
 	return OSDP_PD_ERR_NONE;
 }
@@ -1355,6 +1363,7 @@ void osdp_pd_teardown(osdp_t *ctx)
 	}
 #endif /* OPT_OSDP_RX_ZERO_COPY */
 	safe_free(pd->file);
+	safe_free(pd_ctx->rx_buf);
 	safe_free(pd);
 	safe_free(ctx);
 #endif

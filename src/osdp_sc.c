@@ -242,6 +242,10 @@ void osdp_sc_setup(struct osdp_pd *pd)
 
 	osdp_crypt_setup();
 
+	/* Any cached retransmit reply belongs to the previous session and
+	 * must not be re-emitted after a handshake. */
+	pd->last_tx_len = 0;
+
 	memcpy(scbk, pd->sc.scbk, 16);
 	memset(&pd->sc, 0, sizeof(struct osdp_secure_channel));
 	memcpy(pd->sc.scbk, scbk, 16);

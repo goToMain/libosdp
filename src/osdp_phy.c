@@ -6,6 +6,7 @@
 
 #include "osdp_common.h"
 #include "osdp_diag.h"
+#include "osdp_metrics.h"
 
 #define OSDP_PKT_MARK                  0xFF
 #define OSDP_PKT_SOM                   0x53
@@ -395,6 +396,8 @@ int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
 		return OSDP_ERR_PKT_BUILD;
 	}
 
+	osdp_metrics_report(pd, OSDP_METRIC_PACKET_SENT);
+
 	/* return the number of bytes actually put on the wire so that
 	 * callers can cache the full finalized packet for retransmit */
 	return len;
@@ -537,6 +540,10 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 	}
 	pkt = (struct osdp_packet_header *)buf;
 
+	/* Frame passed framing checks upstream; account it as received
+	 * regardless of integrity-check outcome. */
+	osdp_metrics_report(pd, OSDP_METRIC_PACKET_RECEIVED);
+
 	/* validate CRC/checksum */
 	if (pkt->control & PKT_CONTROL_CRC) {
 		pkt_len -= 2; /* consume CRC */
@@ -544,6 +551,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 		comp = osdp_compute_crc16(buf, pkt_len);
 		if (comp != cur) {
 			LOG_ERR("Invalid crc 0x%04x/0x%04x", comp, cur);
+			osdp_metrics_report(pd, OSDP_METRIC_PACKET_CHECK_ERROR);
 			return OSDP_ERR_PKT_FMT;
 		}
 	} else {
@@ -552,6 +560,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 		comp = osdp_compute_checksum(buf, pkt_len);
 		if (comp != cur) {
 			LOG_ERR("Invalid checksum %02x/%02x", comp, cur);
+			osdp_metrics_report(pd, OSDP_METRIC_PACKET_CHECK_ERROR);
 			return OSDP_ERR_PKT_FMT;
 		}
 	}

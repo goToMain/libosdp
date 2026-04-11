@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -463,6 +464,7 @@ struct osdp_pd {
 
 	struct osdp_secure_channel sc;   /* Secure Channel session context */
 	struct osdp_file *file;          /* File transfer context */
+	struct osdp_metrics metrics;     /* link/protocol health counters */
 
 	/* PD command callback to app with opaque arg pointer as passed by app */
 	void *command_callback_arg;

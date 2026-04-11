@@ -138,6 +138,46 @@ static PyObject *pyosdp_get_file_tx_status(pyosdp_base_t *self, PyObject *args)
 	return dict;
 }
 
+#define pyosdp_get_metrics_doc                                                    \
+	"Get and reset link/protocol metrics for a PD slot\n"                     \
+	"\n"                                                                      \
+	"@return dictionary with metric counters or None on invalid PD index.\n"
+static PyObject *pyosdp_get_metrics(pyosdp_base_t *self, PyObject *args)
+{
+	int pd_idx;
+	osdp_t *ctx;
+	struct osdp_metrics metrics;
+	PyObject *dict;
+	pyosdp_cp_t *cp = (pyosdp_cp_t *)self;
+	pyosdp_pd_t *pd = (pyosdp_pd_t *)self;
+
+	ctx = self->is_cp ? cp->ctx : pd->ctx;
+
+	if (!PyArg_ParseTuple(args, "I", &pd_idx))
+		Py_RETURN_NONE;
+
+	if (osdp_get_metrics(ctx, pd_idx, &metrics))
+		Py_RETURN_NONE;
+
+	dict = PyDict_New();
+	if (dict == NULL)
+		Py_RETURN_NONE;
+
+	if (pyosdp_dict_add_int(dict, "packets_sent", metrics.packets_sent) ||
+	    pyosdp_dict_add_int(dict, "packets_received", metrics.packets_received) ||
+	    pyosdp_dict_add_int(dict, "packet_check_errors", metrics.packet_check_errors) ||
+	    pyosdp_dict_add_int(dict, "nak_count", metrics.nak_count) ||
+	    pyosdp_dict_add_int(dict, "sc_handshake_count", metrics.sc_handshake_count) ||
+	    pyosdp_dict_add_int(dict, "sc_failure_count", metrics.sc_failure_count) ||
+	    pyosdp_dict_add_int(dict, "command_count", metrics.command_count) ||
+	    pyosdp_dict_add_int(dict, "event_count", metrics.event_count)) {
+		Py_DECREF(dict);
+		Py_RETURN_NONE;
+	}
+
+	return dict;
+}
+
 #define pyosdp_file_register_ops_doc                                           \
 	"Register file OPs handler\n"                                          \
 	"\n"                                                                   \
@@ -261,6 +301,8 @@ static PyMethodDef pyosdp_base_methods[] = {
 	  pyosdp_file_register_ops_doc },
 	{ "get_file_tx_status", (PyCFunction)pyosdp_get_file_tx_status, METH_VARARGS,
 	  pyosdp_file_tx_status_doc },
+	{ "get_metrics", (PyCFunction)pyosdp_get_metrics, METH_VARARGS,
+	  pyosdp_get_metrics_doc },
 	{ NULL } /* Sentinel */
 };
 

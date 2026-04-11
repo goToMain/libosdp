@@ -194,6 +194,11 @@ class ControlPanel():
         with self.lock:
             return self.ctx.get_file_tx_status(pd)
 
+    def get_metrics(self, address):
+        pd = self.pd_addr.index(address)
+        with self.lock:
+            return self.ctx.get_metrics(pd)
+
     def start(self):
         if self.thread:
             raise RuntimeError("Thread already running!")

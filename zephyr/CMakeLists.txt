@@ -69,6 +69,7 @@ if (CONFIG_LIBOSDP)
 		${OSDP_ROOT}/src/osdp_phy.c
 		${OSDP_ROOT}/src/osdp_sc.c
 		${OSDP_ROOT}/src/osdp_file.c
+		${OSDP_ROOT}/src/osdp_metrics.c
 
 		## Utils
 		## TODO: Migrate these to use (or wrap around) zephyr API

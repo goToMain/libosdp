@@ -9,6 +9,7 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 #include "osdp_diag.h"
+#include "osdp_metrics.h"
 
 #define CMD_POLL_LEN                   1
 #define CMD_LSTAT_LEN                  1
@@ -62,6 +63,7 @@ static void cp_dispatch_event(struct osdp_pd *pd,
 	if (ctx->event_callback) {
 		ctx->event_callback(ctx->event_callback_arg, pd->idx,
 				    (struct osdp_event *)event);
+		osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 	}
 }
 
@@ -380,6 +382,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (len != REPLY_NAK_DATA_LEN) {
 			break;
 		}
+		osdp_metrics_report(pd, OSDP_METRIC_NAK);
 		if (buf[pos] == OSDP_PD_NAK_MSG_CHK &&
 		    ISSET_FLAG(pd, PD_FLAG_CP_USE_CRC)) {
 			LOG_INF("PD NAK'd CRC-16, falling back to checksum");
@@ -595,6 +598,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		osdp_compute_session_keys(pd);
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
 			LOG_ERR("Failed to verify PD cryptogram");
+			osdp_metrics_report(pd, OSDP_METRIC_SC_FAILURE);
 			return OSDP_CP_ERR_APP;
 		}
 		ret = OSDP_CP_ERR_NONE;
@@ -667,6 +671,7 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 		return OSDP_CP_ERR_GENERIC;
 	}
 
+	osdp_metrics_report(pd, OSDP_METRIC_COMMAND);
 	return OSDP_CP_ERR_NONE;
 }
 
@@ -954,6 +959,7 @@ static void notify_pd_status(struct osdp_pd *pd, bool is_online)
 	evt.notif.type = OSDP_EVENT_NOTIFICATION_PD_STATUS;
 	evt.notif.arg0 = is_online;
 	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
 static void notify_sc_status(struct osdp_pd *pd)
@@ -970,6 +976,7 @@ static void notify_sc_status(struct osdp_pd *pd)
 	evt.notif.arg0 = sc_is_active(pd);
 	evt.notif.arg1 = sc_use_scbkd(pd);
 	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
 static void cp_keyset_complete(struct osdp_pd *pd)
@@ -1097,6 +1104,7 @@ static enum osdp_cp_state_e get_next_ok_state(struct osdp_pd *pd)
 		}
 		return OSDP_CP_STATE_ONLINE;
 	case OSDP_CP_STATE_SC_CHLNG:
+		osdp_metrics_report(pd, OSDP_METRIC_SC_HANDSHAKE);
 		return OSDP_CP_STATE_SC_SCRYPT;
 	case OSDP_CP_STATE_SC_SCRYPT:
 		sc_activate(pd);
@@ -1271,6 +1279,7 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	evt.notif.arg1 = status;
 
 	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
 static int state_update(struct osdp_pd *pd)

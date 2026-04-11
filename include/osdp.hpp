@@ -62,6 +62,11 @@ public:
 		return osdp_get_file_tx_status(_ctx, pd, size, offset);
 	}
 
+	int get_metrics(int pd, struct osdp_metrics *metrics)
+	{
+		return osdp_get_metrics(_ctx, pd, metrics);
+	}
+
 protected:
 	osdp_t *_ctx;
 };

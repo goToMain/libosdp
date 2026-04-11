@@ -1456,6 +1456,68 @@ OSDP_EXPORT
 void osdp_get_sc_status_mask(const osdp_t *ctx, uint8_t *bitmask);
 
 /**
+ * @brief Link/protocol health counters accumulated since the last
+ * @ref osdp_get_metrics() call.
+ *
+ * All counters saturate at their maximum value (no wraparound) and
+ * are reset to zero atomically when @ref osdp_get_metrics() returns
+ * a snapshot, giving callers interval-delta semantics without
+ * requiring subtraction.
+ */
+struct osdp_metrics {
+	/**
+	 * Packets transmitted successfully on the wire. Counted once
+	 * per @ref osdp_phy_send_packet() that reached the channel
+	 * driver with the full payload.
+	 */
+	uint32_t packets_sent;
+	/**
+	 * Packets received with a well-formed frame. Frames that failed
+	 * the CRC/checksum integrity check are still counted here; only
+	 * frames rejected earlier (bad SOM, bad length, bad direction
+	 * bit, etc.) are excluded.
+	 */
+	uint32_t packets_received;
+	/**
+	 * Inbound frames rejected at the integrity-check stage. Merged
+	 * counter across CRC-16 and single-byte checksum failures — the
+	 * check used is implicit in the negotiated capability.
+	 */
+	uint32_t packet_check_errors;
+	/**
+	 * REPLY_NAK packets observed on this context. On a PD-mode
+	 * context these are NAKs transmitted; on a CP-mode context
+	 * these are NAKs received. Direction is implicit from the role.
+	 */
+	uint32_t nak_count;
+	/** Successful secure-channel activations (post-SCRYPT). */
+	uint32_t sc_handshake_count;
+	/** Secure-channel tear-downs of a previously active session. */
+	uint32_t sc_failure_count;
+	/** Commands processed at the application callback boundary. */
+	uint32_t command_count;
+	/** Events dispatched to the application callback. */
+	uint32_t event_count;
+};
+
+/**
+ * @brief Read and reset link/protocol health counters for one PD slot.
+ *
+ * Counters are tracked per-PD. In PD mode there is only one slot
+ * (pd_idx == 0). In CP mode pass the index of the downstream PD to
+ * snapshot; callers typically iterate 0..NUM_PD-1.
+ *
+ * @param ctx OSDP context
+ * @param pd_idx PD index to snapshot (0..NUM_PD-1)
+ * @param out Destination struct filled with the current counter values.
+ *            The counters for this PD are then cleared to zero.
+ *
+ * @retval 0 on success, -1 on invalid arguments.
+ */
+OSDP_EXPORT
+int osdp_get_metrics(osdp_t *ctx, int pd_idx, struct osdp_metrics *out);
+
+/**
  * @brief Open a pre-agreed file
  *
  * @param arg Opaque pointer that was provided in @ref osdp_file_ops when the

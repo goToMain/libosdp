@@ -7,6 +7,7 @@
 #include "osdp_common.h"
 #include "osdp_file.h"
 #include "osdp_diag.h"
+#include "osdp_metrics.h"
 
 #ifndef OPT_OSDP_STATIC
 #include <stdlib.h>
@@ -110,6 +111,7 @@ static inline void pd_complete_event(struct osdp_pd *pd,
 		return;
 	pd->event_completion_callback(pd->event_completion_callback_arg,
 				      event, status);
+	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
 static int pd_translate_event(struct osdp_pd *pd, const struct osdp_event *event)
@@ -215,6 +217,7 @@ static bool do_command_callback(struct osdp_pd *pd, struct osdp_cmd *cmd)
 		pd->nak_code = OSDP_PD_NAK_RECORD;
 		return false;
 	}
+	osdp_metrics_report(pd, OSDP_METRIC_COMMAND);
 	return true;
 }
 
@@ -703,6 +706,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		sc_deactivate(pd);
 		osdp_sc_setup(pd);
+		osdp_metrics_report(pd, OSDP_METRIC_SC_HANDSHAKE);
 		memcpy(pd->sc.cp_random, buf + pos, 8);
 		pd->reply_id = REPLY_CCRYPT;
 		ret = OSDP_PD_ERR_NONE;
@@ -727,6 +731,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 			 * verify the CP_crypt.
 			 */
 			pd->nak_code = OSDP_PD_NAK_SC_UNSUP;
+			osdp_metrics_report(pd, OSDP_METRIC_SC_FAILURE);
 			LOG_WRN("failed to verify CP_crypt");
 			break;
 		}
@@ -914,6 +919,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		assert_buf_len(REPLY_NAK_LEN, max_len);
 		buf[len++] = pd->reply_id;
 		buf[len++] = pd->nak_code;
+		osdp_metrics_report(pd, OSDP_METRIC_NAK);
 		ret = OSDP_PD_ERR_NONE;
 		break;
 	case REPLY_MFGREP:
@@ -991,6 +997,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		buf[0] = REPLY_NAK;
 		buf[1] = OSDP_PD_NAK_RECORD;
 		len = 2;
+		osdp_metrics_report(pd, OSDP_METRIC_NAK);
 	}
 
 	return len;

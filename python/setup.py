@@ -132,6 +132,7 @@ lib_sources = [
     "src/osdp_file.c",
     "src/osdp_pd.c",
     "src/osdp_cp.c",
+    "src/osdp_metrics.c",
     "src/crypto/tinyaes_src.c",
     "src/crypto/tinyaes.c",
 ]
@@ -141,6 +142,7 @@ lib_includes = [
     "include/osdp_export.h",
     "src/osdp_common.h",
     "src/osdp_file.h",
+    "src/osdp_metrics.h",
     "src/crypto/tinyaes_src.h",
 ]
 

@@ -82,6 +82,14 @@ public:
 		}
 	}
 
+	void teardown()
+	{
+		if (_ctx) {
+			osdp_cp_teardown(_ctx);
+			_ctx = nullptr;
+		}
+	}
+
 	bool setup(const struct osdp_channel *channel, int num_pd, osdp_pd_info_t *info)
 	{
 		_ctx = osdp_cp_setup(channel, num_pd, info);
@@ -114,6 +122,11 @@ public:
 		return osdp_cp_submit_command(_ctx, pd, cmd);
 	}
 
+	int flush_commands(int pd)
+	{
+		return osdp_cp_flush_commands(_ctx, pd);
+	}
+
 	void set_event_callback(cp_event_callback_t cb, void *arg)
 	{
 		osdp_cp_set_event_callback(_ctx, cb, arg);
@@ -135,6 +148,26 @@ public:
 		return osdp_cp_get_capability(_ctx, pd, cap);
 	}
 
+	int modify_flag(int pd, uint32_t flags, bool do_set)
+	{
+		return osdp_cp_modify_flag(_ctx, pd, flags, do_set);
+	}
+
+	int disable_pd(int pd)
+	{
+		return osdp_cp_disable_pd(_ctx, pd);
+	}
+
+	int enable_pd(int pd)
+	{
+		return osdp_cp_enable_pd(_ctx, pd);
+	}
+
+	bool is_pd_enabled(int pd)
+	{
+		return osdp_cp_is_pd_enabled(_ctx, pd);
+	}
+
 };
 
 class OSDP_EXPORT PeripheralDevice : public Common {
@@ -148,6 +181,14 @@ public:
 		}
 	}
 
+	void teardown()
+	{
+		if (_ctx) {
+			osdp_pd_teardown(_ctx);
+			_ctx = nullptr;
+		}
+	}
+
 	bool setup(struct osdp_channel *channel, osdp_pd_info_t *info)
 	{
 		_ctx = osdp_pd_setup(channel, info);
@@ -157,6 +198,11 @@ public:
 	void refresh()
 	{
 		osdp_pd_refresh(_ctx);
+	}
+
+	void set_capabilities(const struct osdp_pd_cap *cap)
+	{
+		osdp_pd_set_capabilities(_ctx, cap);
 	}
 
 	void set_command_callback(pd_command_callback_t cb, void* args)

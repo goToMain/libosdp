@@ -18,10 +18,11 @@ class PdId:
 
 class PDInfo:
     def __init__(self, address: int, channel: Channel, scbk: bytes=None,
-                 name: str=None, flags=[], id: PdId=None):
+                 name: str=None, flags=[], id: PdId=None, baud_rate: int=9600):
         self.address = address
         self.flags = flags
         self.scbk = scbk
+        self.baud_rate = baud_rate
         if name:
             self.name = name
         else:
@@ -41,6 +42,7 @@ class PDInfo:
     def get(self) -> dict:
         return {
             'name': self.name,
+            'baud_rate': self.baud_rate,
             'address': self.address,
             'flags': self.get_flags(),
             'scbk': self.scbk,

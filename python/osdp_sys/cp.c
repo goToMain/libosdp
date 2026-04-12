@@ -472,7 +472,7 @@ static void pyosdp_cp_tp_dealloc(pyosdp_cp_t *self)
 	"@return None"
 static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs)
 {
-	int i, len;
+	int i, len, baud_rate;
 	uint8_t *scbk = NULL;
 	PyObject *py_info_list, *py_info, *channel;
 	static char *kwlist[] = { "", NULL };
@@ -528,6 +528,17 @@ static int pyosdp_cp_tp_init(pyosdp_cp_t *self, PyObject *args, PyObject *kwargs
 				"Invalid pd_info at index %d", i);
 			goto error;
 		}
+
+		if (pyosdp_dict_get_int(py_info, "baud_rate", &baud_rate)) {
+			PyErr_Clear();
+			baud_rate = 9600;
+		}
+		if (baud_rate <= 0) {
+			PyErr_Format(PyExc_ValueError,
+				     "Invalid baud_rate in pd_info at index %d", i);
+			goto error;
+		}
+		info->baud_rate = baud_rate;
 
 			if (i == 0) {
 				channel = PyDict_GetItemString(py_info, "channel");

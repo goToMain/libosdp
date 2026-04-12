@@ -345,7 +345,7 @@ error:
 	"@return None"
 static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs)
 {
-	int scbk_length;
+	int scbk_length, baud_rate;
 	osdp_t *ctx;
 	osdp_pd_info_t info = { 0 };
 	struct osdp_channel osdp_channel = { 0 };
@@ -378,6 +378,16 @@ static int pyosdp_pd_tp_init(pyosdp_pd_t *self, PyObject *args, PyObject *kwargs
 
 	if (pyosdp_dict_get_int(py_info, "flags", &info.flags))
 		goto error;
+
+	if (pyosdp_dict_get_int(py_info, "baud_rate", &baud_rate)) {
+		PyErr_Clear();
+		baud_rate = 9600;
+	}
+	if (baud_rate <= 0) {
+		PyErr_SetString(PyExc_ValueError, "Invalid baud_rate");
+		goto error;
+	}
+	info.baud_rate = baud_rate;
 
 	channel = PyDict_GetItemString(py_info, "channel");
 	if (channel == NULL) {

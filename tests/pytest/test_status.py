@@ -142,3 +142,7 @@ def test_metrics_access_and_reset():
     next_pd_metrics = pd.get_metrics()
     assert sum(next_cp_metrics.values()) <= sum(cp_metrics.values())
     assert sum(next_pd_metrics.values()) <= sum(pd_metrics.values())
+
+def test_pd_info_default_baud_rate():
+    info = PDInfo(101, f1, scbk=key).get()
+    assert info["baud_rate"] == 9600

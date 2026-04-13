@@ -26,6 +26,14 @@ config LIBOSDP_CRYPTO_TINYAES
 
 endchoice
 
+config LIBOSDP_STATIC
+	bool "Static allocation (no malloc/free)"
+	default y
+	help
+		Allocate all LibOSDP internal structures statically.
+		PD arrays are sized to OSDP_PD_MAX. This eliminates
+		all dynamic memory allocation inside LibOSDP.
+
 config LIBOSDP_RX_ZERO_COPY
 	bool "Enable zero-copy RX buffers"
 	default y
@@ -43,9 +51,31 @@ config LIBOSDP_SKIP_MARK_BYTE
 	bool "Don't send the leading mark byte (0xFF)"
 	default n
 
+config LIBOSDP_LOG_MINIMAL
+	bool "Minimal logging (reduced RAM/stack)"
+	default n
+	help
+		Use a lightweight logger that omits timestamps and
+		file/line information. Saves RAM and stack space
+		on constrained targets.
+
 config LIBOSDP_DISABLE_PRETTY_LOGGING
 	bool "Don't colorize log outputs"
 	default n
+
+config LIBOSDP_PACKET_TRACE
+	bool "Enable OSDP packet trace (PCAP)"
+	default n
+	help
+		Record raw OSDP packets for diagnostics. Enables
+		PCAP capture support via osdp_diag.
+
+config LIBOSDP_DATA_TRACE
+	bool "Enable OSDP data buffer trace"
+	default n
+	help
+		Trace command/reply data buffers for diagnostics.
+		Enables PCAP capture support via osdp_diag.
 
 config OSDP_UART_BAUD_RATE
 	int "OSDP UART baud rate"

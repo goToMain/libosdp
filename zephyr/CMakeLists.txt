@@ -25,7 +25,6 @@ if (CONFIG_LIBOSDP)
 	target_include_directories(osdp INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/include)
 
 	zephyr_library_named(modules_osdp)
-	zephyr_library_compile_definitions(__BARE_METAL__)
 
 	# Pass all OSDP Kconfig values as compile definitions
 	zephyr_library_compile_definitions(OSDP_PACKET_BUF_SIZE=${CONFIG_OSDP_PACKET_BUF_SIZE})
@@ -45,10 +44,12 @@ if (CONFIG_LIBOSDP)
 	zephyr_library_compile_definitions(OSDP_CMD_ID_OFFSET=${CONFIG_OSDP_CMD_ID_OFFSET})
 	zephyr_library_compile_definitions(OSDP_PCAP_LINK_TYPE=${CONFIG_OSDP_PCAP_LINK_TYPE})
 	zephyr_library_compile_definitions(OSDP_PD_NAME_MAXLEN=${CONFIG_OSDP_PD_NAME_MAXLEN})
+	zephyr_library_compile_definitions(OSDP_CP_MAX_PDS=${CONFIG_OSDP_PD_MAX})
 
 	zephyr_library_link_libraries(osdp)
 	target_include_directories(modules_osdp PRIVATE ${OSDP_ROOT}/utils/include)
 
+	# Feature toggles
 	if (CONFIG_LIBOSDP_SKIP_MARK_BYTE)
 		zephyr_library_compile_definitions(OPT_OSDP_SKIP_MARK_BYTE=1)
 	endif()
@@ -61,6 +62,23 @@ if (CONFIG_LIBOSDP)
 		zephyr_library_compile_definitions(OPT_DISABLE_PRETTY_LOGGING=1)
 	endif()
 
+	if (CONFIG_LIBOSDP_STATIC)
+		zephyr_library_compile_definitions(OPT_OSDP_STATIC=1)
+	endif()
+
+	if (CONFIG_LIBOSDP_LOG_MINIMAL)
+		zephyr_library_compile_definitions(OPT_OSDP_LOG_MINIMAL=1)
+	endif()
+
+	if (CONFIG_LIBOSDP_PACKET_TRACE)
+		zephyr_library_compile_definitions(OPT_OSDP_PACKET_TRACE=1)
+	endif()
+
+	if (CONFIG_LIBOSDP_DATA_TRACE)
+		zephyr_library_compile_definitions(OPT_OSDP_DATA_TRACE=1)
+	endif()
+
+	# Core sources
 	zephyr_library_sources(
 		## LibOSDP
 		${OSDP_ROOT}/src/osdp_cp.c
@@ -72,17 +90,29 @@ if (CONFIG_LIBOSDP)
 		${OSDP_ROOT}/src/osdp_metrics.c
 
 		## Utils
-		## TODO: Migrate these to use (or wrap around) zephyr API
 		${OSDP_ROOT}/utils/src/list.c
 		${OSDP_ROOT}/utils/src/queue.c
 		${OSDP_ROOT}/utils/src/utils.c
-		${OSDP_ROOT}/utils/src/logger.c
 		${OSDP_ROOT}/utils/src/disjoint_set.c
 
 		## Zephyr glue code
 		src/osdp.c
 	)
 
+	# Logger: full or minimal
+	if (NOT CONFIG_LIBOSDP_LOG_MINIMAL)
+		zephyr_library_sources(${OSDP_ROOT}/utils/src/logger.c)
+	endif()
+
+	# Diagnostics (packet/data trace → PCAP capture)
+	if (CONFIG_LIBOSDP_PACKET_TRACE OR CONFIG_LIBOSDP_DATA_TRACE)
+		zephyr_library_sources(
+			${OSDP_ROOT}/src/osdp_diag.c
+			${OSDP_ROOT}/utils/src/pcap_gen.c
+		)
+	endif()
+
+	# Crypto backend
 	if (CONFIG_LIBOSDP_CRYPTO_MBEDTLS)
 		zephyr_library_compile_definitions(OPT_OSDP_USE_MBEDTLS)
 		zephyr_library_sources(${OSDP_ROOT}/src/crypto/mbedtls.c)

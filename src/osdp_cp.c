@@ -1215,6 +1215,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		notify_pd_status(pd, false);
 		break;
 	case OSDP_CP_STATE_SC_CHLNG:
+		osdp_phy_state_reset(pd, true);
 		osdp_sc_setup(pd);
 		break;
 	case OSDP_CP_STATE_DISABLED:

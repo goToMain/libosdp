@@ -610,7 +610,7 @@ static int phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int pkt_len)
 				uint8_t rx_cmd_id = buf[sizeof(*pkt) + scb_len];
 
 				if (rx_cmd_id == pd->last_cmd_id) {
-					LOG_INF("Seq repeat: retransmitting cached reply");
+					LOG_DBG("Seq repeat: retransmitting cached reply");
 					osdp_channel_send(pd,
 						osdp_tx_staging_buf(pd),
 						pd->last_tx_len);

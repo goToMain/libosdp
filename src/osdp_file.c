@@ -416,6 +416,20 @@ int osdp_file_tx_command(struct osdp_pd *pd, int file_id, uint32_t flags)
 
 /* --- Exported Methods --- */
 
+#ifdef OPT_OSDP_STATIC
+#ifndef OSDP_FILE_STATIC_SLOTS
+#define OSDP_FILE_STATIC_SLOTS OSDP_CP_MAX_PDS
+#endif
+static inline struct osdp_file *file_static_slot_get(int pd_idx)
+{
+	static struct osdp_file g_osdp_file_slots[OSDP_FILE_STATIC_SLOTS];
+	if (pd_idx < 0 || pd_idx >= OSDP_FILE_STATIC_SLOTS) {
+		return NULL;
+	}
+	return &g_osdp_file_slots[pd_idx];
+}
+#endif /* OPT_OSDP_STATIC */
+
 int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
 			   const struct osdp_file_ops *ops)
 {
@@ -423,11 +437,20 @@ int osdp_file_register_ops(osdp_t *ctx, int pd_idx,
 	struct osdp_pd *pd = osdp_to_pd(ctx, pd_idx);
 
 	if (!pd->file) {
+#ifdef OPT_OSDP_STATIC
+		pd->file = file_static_slot_get(pd_idx);
+		if (pd->file == NULL) {
+			LOG_PRINT("No static osdp_file slot for pd_idx=%d", pd_idx);
+			return -1;
+		}
+		memset(pd->file, 0, sizeof(struct osdp_file));
+#else
 		pd->file = calloc(1, sizeof(struct osdp_file));
 		if (pd->file == NULL) {
 			LOG_PRINT("Failed to alloc struct osdp_file");
 			return -1;
 		}
+#endif
 	}
 
 	memcpy(&pd->file->ops, ops, sizeof(struct osdp_file_ops));

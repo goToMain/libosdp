@@ -21,8 +21,16 @@
 #endif
 
 /* ---------- Export / Import / Visibility ---------- */
+/*
+ * Windows/Cygwin contract (consumer-facing):
+ *   OSDP_STATIC_DEFINE  -> consumer links the static library; no decoration.
+ *   BUILDING_API        -> producer is building the shared library; dllexport.
+ *   (neither)           -> consumer links the shared library; dllimport.
+ */
 #if defined(_WIN32) || defined(__CYGWIN__)
-  #if defined(BUILDING_API)
+  #if defined(OSDP_STATIC_DEFINE)
+    #define API_EXPORT
+  #elif defined(BUILDING_API)
     #if defined(__GNUC__)
       #define API_EXPORT __attribute__ ((dllexport))
     #else

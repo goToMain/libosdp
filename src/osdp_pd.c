@@ -1179,6 +1179,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	    osdp_millis_since(pd->tstamp) > OSDP_PD_ONLINE_TOUT_MS) {
 		LOG_INF("PD offline; lost CP activity");
 		pd_set_offline(pd);
+		osdp_file_tx_abort(pd);
 		notify_pd_status(pd, false);
 	}
 

@@ -1230,6 +1230,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 		notify_sc_status(pd);
 		LOG_ERR("Going offline for %d seconds; Was in '%s' state",
 			pd->wait_ms / 1000, state_get_name(cur));
+		osdp_file_tx_abort(pd);
 		notify_pd_status(pd, false);
 		break;
 	case OSDP_CP_STATE_SC_CHLNG:
@@ -1239,6 +1240,7 @@ static void cp_state_change(struct osdp_pd *pd, enum osdp_cp_state_e next)
 	case OSDP_CP_STATE_DISABLED:
 		sc_deactivate(pd);
 		notify_sc_status(pd);
+		osdp_file_tx_abort(pd);
 		notify_pd_status(pd, false);
 		osdp_phy_state_reset(pd, true);
 		LOG_INF("PD disabled; going offline until re-enabled");

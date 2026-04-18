@@ -51,6 +51,12 @@ include(BuildType)
 ## Global settings
 if(NOT MSVC)
 	add_compile_options(-Wall -Wextra)
+else()
+	# MSVC's legacy preprocessor mis-handles the token-paste + rescan used
+	# by IS_ENABLED() in utils/include/utils/utils.h, silently returning 0
+	# for every defined-as-1 flag. /Zc:preprocessor switches to the
+	# C99/C11-conformant preprocessor (VS 2019 16.5+).
+	add_compile_options(/Zc:preprocessor)
 endif()
 
 if (OPT_BUILD_BARE_METAL)

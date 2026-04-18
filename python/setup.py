@@ -6,6 +6,7 @@
 
 import os
 import re
+import sys
 from setuptools import setup, Extension
 import shutil
 import subprocess
@@ -204,6 +205,12 @@ compile_args = (
     [ "-I" + path for path in include_dirs ] +
     [ "-D" + define + "=1" for define in definitions ]
 )
+
+# PyPI Windows wheels are built with MSVC via cibuildwheel. Its legacy
+# preprocessor breaks the IS_ENABLED() macro in utils/include/utils/utils.h;
+# /Zc:preprocessor switches to the C99/C11-conformant preprocessor.
+if sys.platform == "win32":
+    compile_args.append("/Zc:preprocessor")
 
 if os.path.exists("README.md"):
     with open("README.md", "r") as f:

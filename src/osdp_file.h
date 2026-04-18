@@ -11,11 +11,6 @@
 
 #define TO_FILE(pd) (pd)->file
 
-#define OSDP_FILE_TX_STATE_IDLE         0
-#define OSDP_FILE_TX_STATE_PENDING      1
-#define OSDP_FILE_TX_STATE_ERROR       -1
-#define OSDP_FILE_TX_STATE_WAIT        -2
-
 /**
  * @brief OSDP specified command: File Transfer:
  *
@@ -65,17 +60,19 @@ PACK(struct osdp_cmd_file_stat {
 	uint16_t rx_size;
 });
 
-enum file_tx_state_e {
-	OSDP_FILE_IDLE,
-	OSDP_FILE_INPROG,
-	OSDP_FILE_DONE,
-	OSDP_FILE_KEEP_ALIVE,
+enum osdp_file_tx_state {
+	OSDP_FILE_TX_STATE_IDLE,   /* no active transfer */
+	OSDP_FILE_TX_STATE_INPROG, /* data being exchanged */
+	OSDP_FILE_TX_STATE_WAIT,   /* CP only: PD requested more time */
+	OSDP_FILE_TX_STATE_DONE,   /* terminal; outcome captured */
 };
 
 struct osdp_file {
 	uint32_t flags;
 	int file_id;
-	enum file_tx_state_e state;
+	enum osdp_file_tx_state state;
+	enum osdp_file_tx_outcome outcome;
+	bool is_open;
 	int length;
 	uint32_t size;
 	uint32_t offset;
@@ -86,6 +83,14 @@ struct osdp_file {
 	struct osdp_file_ops ops;
 };
 
+static inline bool osdp_file_tx_is_active(struct osdp_pd *pd)
+{
+	struct osdp_file *f = TO_FILE(pd);
+
+	return f && (f->state == OSDP_FILE_TX_STATE_INPROG ||
+		     f->state == OSDP_FILE_TX_STATE_WAIT);
+}
+
 int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len);
 int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len);
 int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len);
@@ -93,5 +98,9 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len);
 int osdp_file_tx_command(struct osdp_pd *pd, int file_id, uint32_t flags);
 int osdp_file_tx_get_command(struct osdp_pd *pd);
 void osdp_file_tx_abort(struct osdp_pd *pd);
+
+/* Implemented in osdp_cp.c; called by osdp_file.c only on CP-mode PDs. */
+void osdp_file_tx_notify_done(struct osdp_pd *pd, int file_id,
+			      enum osdp_file_tx_outcome outcome);
 
 #endif /* _OSDP_FILE_H_ */

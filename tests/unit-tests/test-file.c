@@ -160,12 +160,30 @@ err:
 	return false;
 }
 
+struct file_tx_notification {
+	int count;
+	int type;
+	int arg0;
+	int arg1;
+};
+
+static struct file_tx_notification g_notif;
+
 static int event_callback(void *arg, int pd, struct osdp_event *ev)
 {
 	ARG_UNUSED(arg);
 	ARG_UNUSED(pd);
-	ARG_UNUSED(ev);
-	printf(SUB_1 "got event callback\n");
+
+	if (ev->type != OSDP_EVENT_NOTIFICATION) {
+		return 0;
+	}
+	if (ev->notif.type != OSDP_EVENT_NOTIFICATION_FILE_TX_DONE) {
+		return 0;
+	}
+	g_notif.count++;
+	g_notif.type = ev->notif.type;
+	g_notif.arg0 = ev->notif.arg0;
+	g_notif.arg1 = ev->notif.arg1;
 	return 0;
 }
 
@@ -185,6 +203,7 @@ void run_file_tx_tests(struct test *t, bool line_noise)
 	int cp_runner = -1, pd_runner = -1;
 	uint8_t status = 0;
 
+	memset(&g_notif, 0, sizeof(g_notif));
 	sender_data.is_cp = true;
 	struct osdp_file_ops sender_ops = {
 		.arg = (void *)&sender_data,
@@ -206,7 +225,8 @@ void run_file_tx_tests(struct test *t, bool line_noise)
 
 	printf(SUB_1 "setting up OSDP devices\n");
 
-	if (test_setup_devices(t, &cp_ctx, &pd_ctx)) {
+	if (test_setup_devices_ext(t, &cp_ctx, &pd_ctx,
+				   OSDP_FLAG_ENABLE_NOTIFICATION, 0)) {
 		printf(SUB_1 "Failed to setup devices!\n");
 		goto error;
 	}
@@ -257,21 +277,44 @@ void run_file_tx_tests(struct test *t, bool line_noise)
 		goto error;
 	}
 
-	printf(SUB_1 "monitoring file tx progress\n");
+	printf(SUB_1 "waiting for file tx done notification\n");
 	if (line_noise)
 		enable_line_noise();
 
-	while (1) {
+	rc = 0;
+	while (g_notif.count == 0) {
 		usleep(100 * 1000);
-		rc = osdp_get_file_tx_status(cp_ctx, 0, &size, &offset);
-		if (rc < 0) {
-			printf(SUB_1 "status query failed!\n");
+		if (++rc > 600) { /* 60s upper bound */
+			printf(SUB_1 "file tx notification not received!\n");
 			if (line_noise)
 				print_line_noise_stats();
 			goto error;
 		}
-		if (offset == size)
-			break;
+	}
+
+	if (g_notif.count != 1) {
+		printf(SUB_1 "notification fired %d times; expected 1\n",
+		       g_notif.count);
+		goto error;
+	}
+	if (g_notif.type != OSDP_EVENT_NOTIFICATION_FILE_TX_DONE) {
+		printf(SUB_1 "unexpected notification type: %d\n", g_notif.type);
+		goto error;
+	}
+	if (g_notif.arg0 != 1) {
+		printf(SUB_1 "unexpected file_id: %d (want 1)\n", g_notif.arg0);
+		goto error;
+	}
+	if (g_notif.arg1 != OSDP_FILE_TX_OUTCOME_OK) {
+		printf(SUB_1 "unexpected outcome: %d (want OK=%d)\n",
+		       g_notif.arg1, OSDP_FILE_TX_OUTCOME_OK);
+		goto error;
+	}
+
+	/* Poll API must report not-in-progress after completion. */
+	if (osdp_get_file_tx_status(cp_ctx, 0, &size, &offset) != -1) {
+		printf(SUB_1 "poll status did not reset after completion\n");
+		goto error;
 	}
 
 	result = test_check_rec_file();

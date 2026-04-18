@@ -116,6 +116,8 @@ void test_suite_end(struct test *t);
 
 /* Helpers */
 int test_setup_devices(struct test *t, osdp_t **cp, osdp_t **pd);
+int test_setup_devices_ext(struct test *t, osdp_t **cp, osdp_t **pd,
+			   uint32_t cp_flags, uint32_t pd_flags);
 int async_runner_start(osdp_t *ctx, void (*fn)(osdp_t *));
 int async_runner_stop(int runner);
 int async_cp_runner_start(osdp_t *cp_ctx);

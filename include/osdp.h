@@ -909,6 +909,27 @@ enum osdp_event_notification_type {
 	 * arg0: status -- 0: offline; 1: online
 	 */
 	OSDP_EVENT_NOTIFICATION_PD_STATUS,
+	/**
+	 * File transfer terminated (CP only).
+	 *
+	 * arg0: file ID that was being transferred
+	 * arg1: outcome -- see enum osdp_file_tx_outcome
+	 *
+	 * Fires exactly once per transfer, on any terminal state (success,
+	 * local abort, or a negative status reported by the PD).
+	 */
+	OSDP_EVENT_NOTIFICATION_FILE_TX_DONE,
+};
+
+/**
+ * @brief Outcome reported by OSDP_EVENT_NOTIFICATION_FILE_TX_DONE
+ */
+enum osdp_file_tx_outcome {
+	OSDP_FILE_TX_OUTCOME_OK = 0,           /**< Contents processed by PD */
+	OSDP_FILE_TX_OUTCOME_OK_REBOOTING = 1, /**< OK; PD will now reset */
+	OSDP_FILE_TX_OUTCOME_ABORTED = 2,      /**< Transfer aborted (local or remote) */
+	OSDP_FILE_TX_OUTCOME_UNRECOGNIZED = 3, /**< PD did not recognize file contents */
+	OSDP_FILE_TX_OUTCOME_INVALID = 4,      /**< PD rejected file data as malformed */
 };
 
 /**

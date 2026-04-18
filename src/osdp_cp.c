@@ -979,6 +979,24 @@ static void notify_sc_status(struct osdp_pd *pd)
 	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
+void osdp_file_tx_notify_done(struct osdp_pd *pd, int file_id,
+			      enum osdp_file_tx_outcome outcome)
+{
+	struct osdp *ctx = pd_to_osdp(pd);
+	struct osdp_event evt;
+
+	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
+		return;
+	}
+
+	evt.type = OSDP_EVENT_NOTIFICATION;
+	evt.notif.type = OSDP_EVENT_NOTIFICATION_FILE_TX_DONE;
+	evt.notif.arg0 = file_id;
+	evt.notif.arg1 = outcome;
+	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
+}
+
 static void cp_keyset_complete(struct osdp_pd *pd)
 {
 	const struct osdp_cmd *cmd = pd->active_cmd;

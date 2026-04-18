@@ -59,6 +59,14 @@ class EventNotification:
     Command = osdp_sys.EVENT_NOTIFICATION_COMMAND
     SecureChannelStatus = osdp_sys.EVENT_NOTIFICATION_SC_STATUS
     PeripheralDeviceStatus = osdp_sys.EVENT_NOTIFICATION_PD_STATUS
+    FileTransferDone = osdp_sys.EVENT_NOTIFICATION_FILE_TX_DONE
+
+class FileTxOutcome:
+    Ok = osdp_sys.FILE_TX_OUTCOME_OK
+    OkRebooting = osdp_sys.FILE_TX_OUTCOME_OK_REBOOTING
+    Aborted = osdp_sys.FILE_TX_OUTCOME_ABORTED
+    Unrecognized = osdp_sys.FILE_TX_OUTCOME_UNRECOGNIZED
+    Invalid = osdp_sys.FILE_TX_OUTCOME_INVALID
 
 class CompletionStatus:
     Ok = getattr(osdp_sys, "COMPLETION_OK", 0)

@@ -229,12 +229,12 @@ static bool test_async_recovery(void)
 	struct async_test_data data = {0};
 	int retry_count = 0;
 	const int max_retries = 2; /* Allow 2 retries for this challenging scenario */
+	struct test dummy_test = { .loglevel = OSDP_LOG_INFO };
 
 	printf(SUB_2 "Testing CP restart recovery\n");
 
 retry_recovery:
 	/* Setup devices with dummy test structure */
-	struct test dummy_test = { .loglevel = OSDP_LOG_INFO };
 	if (test_setup_devices(&dummy_test, &cp_ctx, &pd_ctx)) {
 		printf(SUB_2 "Failed to setup devices\n");
 		return false;

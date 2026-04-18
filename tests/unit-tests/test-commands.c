@@ -212,7 +212,7 @@ static bool wait_for_event(int expected_event_type, int timeout_sec)
 	return false;
 }
 
-static bool is_pd_online(void)
+static bool cp_sees_pd_online(void)
 {
 	uint8_t status = 0;
 
@@ -435,7 +435,7 @@ static bool test_mfg_command_nack_soft_fail()
 
 	/* NAK on CMD_MFG is a soft failure; PD remains online. */
 	usleep(200 * 1000);
-	if (!is_pd_online()) {
+	if (!cp_sees_pd_online()) {
 		printf(SUB_2 "PD went offline after MFG NAK\n");
 		return false;
 	}

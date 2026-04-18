@@ -346,6 +346,51 @@ static int pd_prebuild_status_reply(struct osdp_pd *pd, int reply_id,
 	return 0;
 }
 
+/* Deliver a libosdp-synthesized notification to the app via the PD's
+ * command callback. Gated by OSDP_FLAG_ENABLE_NOTIFICATION. Return value
+ * is ignored -- these are informational, not wire commands. */
+static void pd_deliver_notification(struct osdp_pd *pd,
+				    enum osdp_event_notification_type type,
+				    int arg0, int arg1)
+{
+	struct osdp_cmd cmd = { 0 };
+
+	if (!pd->command_callback || !is_notifications_enabled(pd)) {
+		return;
+	}
+	cmd.id = OSDP_CMD_NOTIFICATION;
+	cmd.notif.type = type;
+	cmd.notif.arg0 = arg0;
+	cmd.notif.arg1 = arg1;
+	(void)pd->command_callback(pd->command_callback_arg, &cmd);
+	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
+}
+
+static void notify_pd_status(struct osdp_pd *pd, bool is_online)
+{
+	pd_deliver_notification(pd, OSDP_EVENT_NOTIFICATION_PD_STATUS,
+				is_online, 0);
+}
+
+static void notify_sc_status(struct osdp_pd *pd)
+{
+	pd_deliver_notification(pd, OSDP_EVENT_NOTIFICATION_SC_STATUS,
+				sc_is_active(pd), sc_use_scbkd(pd));
+}
+
+/* Edge-triggered SC deactivate: only notify the app when the flag
+ * actually flips. Keeps noisy paths (pd_error_reset on an already-
+ * inactive SC) from spamming duplicate "SC inactive" events. */
+static inline void pd_sc_deactivate(struct osdp_pd *pd)
+{
+	bool was_active = sc_is_active(pd);
+
+	sc_deactivate(pd);
+	if (was_active) {
+		notify_sc_status(pd);
+	}
+}
+
 static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 {
 	int i, ret = OSDP_PD_ERR_GENERIC, pos = 0;
@@ -719,7 +764,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (!pd_cmd_cap_ok(pd, NULL)) {
 			break;
 		}
-		sc_deactivate(pd);
+		pd_sc_deactivate(pd);
 		osdp_sc_setup(pd);
 		osdp_metrics_report(pd, OSDP_METRIC_SC_HANDSHAKE);
 		memcpy(pd->sc.cp_random, buf + pos, 8);
@@ -988,6 +1033,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		smb[1] = SCS_14;  /* type */
 		smb[2] = 1;       /* CP auth succeeded */
 		sc_activate(pd);
+		notify_sc_status(pd);
 		pd->sc_tstamp = osdp_millis_now();
 		if (sc_use_scbkd(pd)) {
 			LOG_WRN("SC Active with SCBK-D");
@@ -1106,7 +1152,7 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 
 static inline void pd_error_reset(struct osdp_pd *pd)
 {
-	sc_deactivate(pd);
+	pd_sc_deactivate(pd);
 	osdp_phy_state_reset(pd, false);
 }
 
@@ -1121,7 +1167,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	if (sc_is_active(pd) &&
 	    osdp_millis_since(pd->sc_tstamp) > OSDP_PD_SC_TIMEOUT_MS) {
 		LOG_INF("PD SC session timeout!");
-		sc_deactivate(pd);
+		pd_sc_deactivate(pd);
 	}
 
 	/**
@@ -1133,6 +1179,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	    osdp_millis_since(pd->tstamp) > OSDP_PD_ONLINE_TOUT_MS) {
 		LOG_INF("PD offline; lost CP activity");
 		pd_set_offline(pd);
+		notify_pd_status(pd, false);
 	}
 
 	ret = pd_receive_and_process_command(pd);
@@ -1161,6 +1208,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 	if (!is_pd_online(pd)) {
 		LOG_INF("PD online; CP link active");
 		pd_set_online(pd);
+		notify_pd_status(pd, true);
 	}
 
 	if (ret == OSDP_PD_ERR_NONE && sc_is_active(pd)) {
@@ -1177,7 +1225,7 @@ static void osdp_pd_update(struct osdp_pd *pd)
 			memcpy(pd->sc.scbk, pd->keyset_pending, 16);
 			CLEAR_FLAG(pd, PD_FLAG_SC_USE_SCBKD);
 			CLEAR_FLAG(pd, PD_FLAG_INSTALL_MODE);
-			sc_deactivate(pd);
+			pd_sc_deactivate(pd);
 		} else if (pd->cmd_id == CMD_COMSET && pd->reply_id == REPLY_COM) {
 			struct osdp_cmd comset_done_cmd = { 0 };
 			/* COMSET command succeeded all the way:
@@ -1246,6 +1294,9 @@ static void pd_collect_init_flags(struct osdp_pd *pd, uint32_t flags)
 	}
 	if (flags & OSDP_FLAG_INSTALL_MODE) {
 		SET_FLAG(pd, PD_FLAG_INSTALL_MODE);
+	}
+	if (flags & OSDP_FLAG_ENABLE_NOTIFICATION) {
+		SET_FLAG(pd, PD_FLAG_ENABLE_NOTIF);
 	}
 	if (flags & OSDP_FLAG_CAPTURE_PACKETS) {
 		SET_FLAG(pd, PD_FLAG_CAPTURE_PKT);

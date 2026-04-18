@@ -23,10 +23,14 @@ jobs:
       with:
         submodules: recursive
     - name: Configure
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DOPT_OSDP_LIB_ONLY=on .
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug .
     - name: Build
       run: cmake --build build --parallel 8
+    # Unit tests are gated on NOT MSVC in CMakeLists.txt (utils/tests depend
+    # on pthread and POSIX APIs not available under MSVC), so the `check`
+    # target only exists on Linux/macOS. Skip the step on Windows.
     - name: Run unit-tests
+      if: matrix.os != 'windows-latest'
       run: cmake --build build --parallel 8 --target check
     - name: Pack built binaries
       run: cmake --build build --target package

@@ -127,3 +127,68 @@ jobs:
         run: pip install --upgrade platformio
       - name: Build PlatformIO examples
         run: pio ci --verbose --lib . --board=megaatmega2560 ${{ matrix.examples }}
+
+  # MSVC covers the libosdp core (src/) only — CMakeLists.txt gates utils/,
+  # unit-tests, and examples behind `NOT MSVC` because utils/ relies on POSIX
+  # APIs and GNU C extensions that MSVC does not provide.
+  WindowsMSVC:
+    name: Windows MSVC
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug .
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+  # MSYS2 toolchains are GCC/Clang-like on Windows. They do NOT define
+  # _MSC_VER, so CMake treats them as non-MSVC and builds the full tree
+  # (utils/, unit-tests, examples). This is what catches portability issues
+  # like goToMain/c-utils#36 where utils/ used MSVC-only intrinsics behind
+  # a plain `defined(_WIN32)` guard.
+  WindowsMSYS2:
+    name: Windows ${{ matrix.name }}
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: MinGW64 GCC
+            msystem: MINGW64
+            packages: >-
+              mingw-w64-x86_64-gcc
+              mingw-w64-x86_64-cmake
+              mingw-w64-x86_64-ninja
+          - name: UCRT64 GCC
+            msystem: UCRT64
+            packages: >-
+              mingw-w64-ucrt-x86_64-gcc
+              mingw-w64-ucrt-x86_64-cmake
+              mingw-w64-ucrt-x86_64-ninja
+          - name: CLANG64 Clang
+            msystem: CLANG64
+            packages: >-
+              mingw-w64-clang-x86_64-clang
+              mingw-w64-clang-x86_64-cmake
+              mingw-w64-clang-x86_64-ninja
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          cache: true
+          install: ${{ matrix.packages }}
+      - name: Configure
+        run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug .
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Run unit-tests
+        run: cmake --build build --target check --parallel

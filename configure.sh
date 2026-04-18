@@ -171,6 +171,7 @@ case "${CRYPTO}" in
 openssl)
 	echo "Crypto backend: OpenSSL"
 	LIBOSDP_SOURCES+=" src/crypto/openssl.c"
+	LDFLAGS+=" -lcrypto"
 	;;
 mbedtls)
 	echo "Crypto backend: MbedTLS"

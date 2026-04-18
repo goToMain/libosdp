@@ -61,11 +61,11 @@ $(O)/examples/c/%.o: CCFLAGS_EXTRA=-Iinclude
 
 $(O)/cp_app.elf: $(O)/libosdp.a $(OBJ_CP_APP)
 	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) $(OBJ_CP_APP) -o $@ -L$(O) -losdp
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_CP_APP) -o $@ -L$(O) -losdp $(LDFLAGS)
 
 $(O)/pd_app.elf: $(O)/libosdp.a $(OBJ_PD_APP)
 	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) $(OBJ_PD_APP) -o $@ -L$(O) -losdp
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_PD_APP) -o $@ -L$(O) -losdp $(LDFLAGS)
 
 ## Tests
 
@@ -75,7 +75,7 @@ unit-test: $(O)/unit-test
 
 $(O)/unit-test: $(OBJ_TEST)
 	@echo "LINK $(@F)"
-	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $@
+	$(Q)$(CC) $(CCFLAGS) $(OBJ_TEST) -o $@ $(LDFLAGS)
 
 .PHONY: check
 check: unit-test

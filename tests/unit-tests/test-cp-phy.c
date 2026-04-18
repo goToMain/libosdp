@@ -1182,6 +1182,35 @@ int test_phy_state_reset_functionality(struct osdp *ctx)
 	return 0;
 }
 
+int test_phy_state_reset_clears_rx_ring_on_error(struct osdp *ctx)
+{
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	uint8_t stale[] = { 0xde, 0xad, 0xbe, 0xef, 0x53, 0x65, 0x01, 0x02 };
+	uint8_t drain;
+
+	printf(SUB_1 "Testing rx ring drain on abnormal phy reset -- ");
+
+	/* Seed rx ring with stale/garbage bytes, as would happen after a
+	 * rogue PD spews junk onto the bus and overflows the ring. */
+	osdp_rb_push_buf(p->rx_rb, stale, sizeof(stale));
+	if (p->rx_rb->head == p->rx_rb->tail) {
+		printf("precondition broken: rx ring should not be empty\n");
+		return -1;
+	}
+
+	/* Abnormal reset must leave no stale bytes behind for the next
+	 * packet parse, otherwise the framer keeps chewing on garbage. */
+	osdp_phy_state_reset(p, true);
+
+	if (osdp_rb_pop(p->rx_rb, &drain) == 0) {
+		printf("stale data still in rx ring after abnormal reset\n");
+		return -1;
+	}
+
+	printf("success!\n");
+	return 0;
+}
+
 int test_cp_refresh_yields_from_waiting_pd(struct osdp *ctx)
 {
 	struct refresh_yield_test_data data = {};
@@ -1452,6 +1481,7 @@ void run_cp_phy_tests(struct test *t)
 	DO_TEST(t, test_phy_packet_data_offset);
 	DO_TEST(t, test_phy_packet_different_commands);
 	DO_TEST(t, test_phy_state_reset_functionality);
+	DO_TEST(t, test_phy_state_reset_clears_rx_ring_on_error);
 	DO_TEST(t, test_cp_refresh_yields_from_waiting_pd);
 	DO_TEST(t, test_cp_refresh_yields_between_probe_retries);
 	DO_TEST(t, test_cp_refresh_retries_on_next_turn_for_single_pd);

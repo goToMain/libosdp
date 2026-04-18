@@ -939,6 +939,9 @@ void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error)
 		if (channel->flush) {
 			channel->flush(channel->data);
 		}
+#ifndef OPT_OSDP_RX_ZERO_COPY
+		osdp_rb_reset(pd->rx_rb);
+#endif
 	}
 }
 

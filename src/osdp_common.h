@@ -524,6 +524,7 @@ int osdp_rb_push(struct osdp_rb *p, uint8_t data);
 int osdp_rb_push_buf(struct osdp_rb *p, uint8_t *buf, int len);
 int osdp_rb_pop(struct osdp_rb *p, uint8_t *data);
 int osdp_rb_pop_buf(struct osdp_rb *p, uint8_t *buf, int max_len);
+void osdp_rb_reset(struct osdp_rb *p);
 
 void osdp_crypt_setup();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);

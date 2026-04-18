@@ -617,6 +617,11 @@ int test_setup_devices_ext(struct test *t, osdp_t **cp, osdp_t **pd,
 	ARG_UNUSED(t);
 #endif /* OPT_OSDP_LOG_MINIMAL */
 
+	/* Shared mock channel; drop stale bytes left by the previous suite so a
+	 * fresh PD does not read a non-zero sequence on its first packet. */
+	CIRCBUF_FLUSH(cp_to_pd_buf);
+	CIRCBUF_FLUSH(pd_to_cp_buf);
+
 	uint8_t scbk[16] = {
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f

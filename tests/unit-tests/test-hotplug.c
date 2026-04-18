@@ -31,6 +31,8 @@ struct test_hotplug_ctx {
 
 static struct test_hotplug_ctx g_test_ctx = {0};
 
+static bool wait_for_pd_online(int timeout_sec);
+
 int test_hotplug_event_callback(void *arg, int pd, struct osdp_event *ev)
 {
 	ARG_UNUSED(pd);
@@ -69,22 +71,24 @@ static int setup_test_environment(struct test *t)
 
 	if (g_test_ctx.cp_runner < 0 || g_test_ctx.pd_runner < 0) {
 		printf(SUB_1 "Failed to created CP/PD runners\n");
+		if (g_test_ctx.cp_runner >= 0)
+			async_runner_stop(g_test_ctx.cp_runner);
+		if (g_test_ctx.pd_runner >= 0)
+			async_runner_stop(g_test_ctx.pd_runner);
+		osdp_cp_teardown(g_test_ctx.cp_ctx);
+		osdp_pd_teardown(g_test_ctx.pd_ctx);
+		memset(&g_test_ctx, 0, sizeof(g_test_ctx));
 		return -1;
 	}
 
-	/* Wait for devices to come online */
-	int rc = 0;
-	uint8_t status = 0;
-	while (1) {
-		if (rc > 10) {
-			printf(SUB_1 "PD failed to come online\n");
-			return -1;
-		}
-		osdp_get_status_mask(g_test_ctx.cp_ctx, &status);
-		if (status & 1)
-			break;
-		usleep(1000 * 1000);
-		rc++;
+	if (!wait_for_pd_online(10)) {
+		printf(SUB_1 "PD failed to come online\n");
+		async_runner_stop(g_test_ctx.cp_runner);
+		async_runner_stop(g_test_ctx.pd_runner);
+		osdp_cp_teardown(g_test_ctx.cp_ctx);
+		osdp_pd_teardown(g_test_ctx.pd_ctx);
+		memset(&g_test_ctx, 0, sizeof(g_test_ctx));
+		return -1;
 	}
 
 	return 0;

@@ -51,6 +51,16 @@ static int async_command_callback(void *data, struct osdp_cmd *cmd)
 /* Declare external variables from test.c */
 extern work_t *g_test_works[];
 
+static bool wait_for_cmd_received(struct async_test_data *data, int timeout_sec)
+{
+	for (int i = 0; i < timeout_sec * 10; i++) {
+		if (data->cmd_received)
+			return true;
+		usleep(100 * 1000);
+	}
+	return false;
+}
+
 /* Helper function to wait for all work slots to be freed */
 static void wait_for_all_work_cleanup(void)
 {
@@ -179,11 +189,7 @@ static bool test_async_startup_order(enum async_order order)
 		goto cleanup;
 	}
 
-	/* Wait for command processing */
-	usleep(2000 * 1000); /* 2 seconds */
-
-	/* Check result */
-	if (data.cmd_received) {
+	if (wait_for_cmd_received(&data, 5)) {
 		printf(SUB_2 "Order %d: SUCCESS\n", order);
 		result = true;
 	} else {
@@ -288,11 +294,7 @@ retry_recovery:
 		goto cleanup;
 	}
 
-	/* Wait for command processing */
-	usleep(2000 * 1000); /* 2 seconds */
-
-	/* Check result */
-	if (data.cmd_received) {
+	if (wait_for_cmd_received(&data, 5)) {
 		printf(SUB_2 "Recovery: SUCCESS\n");
 		result = true;
 	} else {

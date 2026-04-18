@@ -1295,7 +1295,7 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	evt.type = OSDP_EVENT_NOTIFICATION;
 	evt.notif.type = OSDP_EVENT_NOTIFICATION_COMMAND;
 	evt.notif.arg0 = app_cmd;
-	evt.notif.arg1 = status;
+	evt.notif.arg1 = status ? 0 : -1;
 
 	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
 	osdp_metrics_report(pd, OSDP_METRIC_EVENT);

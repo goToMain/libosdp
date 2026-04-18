@@ -31,6 +31,11 @@ struct test_command_ctx {
 	uint32_t mfg_vendor_code;
 	uint8_t mfg_data[64];
 	int mfg_data_len;
+
+	/* Command-outcome notification capture (OSDP_EVENT_NOTIFICATION_COMMAND) */
+	bool notif_cmd_seen;
+	int notif_cmd_arg0;
+	int notif_cmd_arg1;
 };
 
 static struct test_command_ctx g_test_ctx = {0};
@@ -46,6 +51,13 @@ int test_commands_event_callback(void *arg, int pd, struct osdp_event *ev)
 	if (ev->type == OSDP_EVENT_MFGREP) {
 		ctx->last_event_data = malloc(sizeof(struct osdp_event));
 		memcpy(ctx->last_event_data, ev, sizeof(struct osdp_event));
+	}
+
+	if (ev->type == OSDP_EVENT_NOTIFICATION &&
+	    ev->notif.type == OSDP_EVENT_NOTIFICATION_COMMAND) {
+		ctx->notif_cmd_seen = true;
+		ctx->notif_cmd_arg0 = ev->notif.arg0;
+		ctx->notif_cmd_arg1 = ev->notif.arg1;
 	}
 
 	return 0;
@@ -164,6 +176,9 @@ static void reset_test_state()
 	g_test_ctx.mfg_vendor_code = 0;
 	g_test_ctx.mfg_data_len = 0;
 	memset(g_test_ctx.mfg_data, 0, sizeof(g_test_ctx.mfg_data));
+	g_test_ctx.notif_cmd_seen = false;
+	g_test_ctx.notif_cmd_arg0 = 0;
+	g_test_ctx.notif_cmd_arg1 = 0;
 
 	if (g_test_ctx.last_event_data) {
 		free(g_test_ctx.last_event_data);
@@ -508,6 +523,80 @@ static bool test_keyset_command()
 	return wait_for_command(OSDP_CMD_KEYSET, 5);
 }
 
+static bool wait_for_cmd_notification(int expected_cmd, int expected_arg1,
+				      int timeout_sec)
+{
+	int rc = 0;
+	while (rc < timeout_sec) {
+		if (g_test_ctx.notif_cmd_seen &&
+		    g_test_ctx.notif_cmd_arg0 == expected_cmd &&
+		    g_test_ctx.notif_cmd_arg1 == expected_arg1) {
+			return true;
+		}
+		usleep(1000 * 1000);
+		rc++;
+	}
+	return false;
+}
+
+/*
+ * Regression test for https://github.com/goToMain/libosdp/issues/262:
+ * the PD used to unconditionally ACK multi-record commands (OUT/LED/BUZ)
+ * even when pd_cmd_cap_ok() had set REPLY_NAK. The fix preserves the NAK
+ * so the CP reports arg1=0 (failure) via OSDP_EVENT_NOTIFICATION_COMMAND.
+ */
+static bool test_led_unsupported_capability_naks()
+{
+	printf(SUB_2 "testing LED command on unsupported led_number NAKs\n");
+	reset_test_state();
+
+	if (osdp_cp_modify_flag(g_test_ctx.cp_ctx, 0,
+				OSDP_FLAG_ENABLE_NOTIFICATION, true)) {
+		printf(SUB_2 "Failed to enable notifications\n");
+		return false;
+	}
+
+	/* PD is configured with OSDP_PD_CAP_READER_LED_CONTROL num_items=1,
+	 * so led_number=5 is out of range and must be NAK'd. */
+	struct osdp_cmd cmd = {
+		.id = OSDP_CMD_LED,
+		.led = {
+			.reader = 0,
+			.led_number = 5,
+			.temporary = {
+				.control_code = 1,
+				.on_count = 10,
+				.off_count = 10,
+				.on_color = OSDP_LED_COLOR_RED,
+				.off_color = OSDP_LED_COLOR_NONE,
+				.timer_count = 100,
+			},
+		},
+	};
+
+	if (osdp_cp_submit_command(g_test_ctx.cp_ctx, 0, &cmd)) {
+		printf(SUB_2 "Failed to send LED command\n");
+		return false;
+	}
+
+	if (!wait_for_cmd_notification(OSDP_CMD_LED, -1, 5)) {
+		printf(SUB_2 "NAK not reported (notif arg0=%d arg1=%d seen=%d)\n",
+		       g_test_ctx.notif_cmd_arg0,
+		       g_test_ctx.notif_cmd_arg1,
+		       g_test_ctx.notif_cmd_seen);
+		return false;
+	}
+
+	if (g_test_ctx.cmd_seen && g_test_ctx.last_cmd_id == OSDP_CMD_LED) {
+		printf(SUB_2 "PD app callback must not run for unsupported cap\n");
+		return false;
+	}
+
+	osdp_cp_modify_flag(g_test_ctx.cp_ctx, 0,
+			    OSDP_FLAG_ENABLE_NOTIFICATION, false);
+	return true;
+}
+
 static bool test_status_command()
 {
 	printf(SUB_2 "testing status command\n");
@@ -555,6 +644,7 @@ void run_command_tests(struct test *t)
 	overall_result &= test_mfg_command_simple();
 	overall_result &= test_mfg_command_with_reply();
 	overall_result &= test_mfg_command_nack_soft_fail();
+	overall_result &= test_led_unsupported_capability_naks();
 
 	/* Teardown test environment */
 	teardown_test_environment();

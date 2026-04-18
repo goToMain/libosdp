@@ -13,6 +13,10 @@ if LIBOSDP
 choice LIBOSDP_CRYPTO_BACKEND
 	prompt "LibOSDP crypto backend"
 	default LIBOSDP_CRYPTO_MBEDTLS
+	help
+		Select which AES implementation LibOSDP uses for secure
+		channel crypto. Pick MbedTLS if the application already
+		pulls it in; TinyAES otherwise for smallest footprint.
 
 config LIBOSDP_CRYPTO_MBEDTLS
 	bool "MbedTLS"
@@ -20,9 +24,15 @@ config LIBOSDP_CRYPTO_MBEDTLS
 	select MBEDTLS
 	select MBEDTLS_CIPHER_AES_ENABLED
 	select MBEDTLS_CIPHER_CCM_ENABLED
+	help
+		Use Zephyr's MbedTLS module for AES. Shares code with
+		the rest of the system if MbedTLS is already linked.
 
 config LIBOSDP_CRYPTO_TINYAES
 	bool "TinyAES (in-tree)"
+	help
+		Use the bundled TinyAES implementation. No external
+		crypto dependency; smallest code size.
 
 endchoice
 

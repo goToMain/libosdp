@@ -37,6 +37,10 @@ option(OPT_OSDP_STATIC "Build without dynamic memory allocation" OFF)
 option(OPT_OSDP_LIB_ONLY "Only build the library" OFF)
 option(OPT_BUILD_BARE_METAL "Build library for bare metal targets" OFF)
 option(OPT_USE_32BIT_TICK_T "Use uint32_t tick_t on bare-metal targets" OFF)
+set(OPT_OSDP_CRYPTO_BACKEND "auto" CACHE STRING
+	"Crypto backend selection: auto, openssl, mbedtls, or tinyaes")
+set_property(CACHE OPT_OSDP_CRYPTO_BACKEND PROPERTY STRINGS
+	auto openssl mbedtls tinyaes)
 
 ## Includes
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

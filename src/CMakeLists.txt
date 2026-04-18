@@ -36,13 +36,35 @@ if (OPT_OSDP_STATIC)
 	list(APPEND LIB_OSDP_DEFINITIONS "-DOPT_OSDP_STATIC=1")
 endif()
 
-# optionally, find and use OpenSSL or MbedTLS
-find_package(OpenSSL)
+# Crypto backend selection driven by OPT_OSDP_CRYPTO_BACKEND:
+#   auto    - probe openssl, then mbedtls, else fall back to bundled tinyaes
+#   openssl - require OpenSSL (hard-fail if missing)
+#   mbedtls - require MbedTLS (hard-fail if missing)
+#   tinyaes - force bundled implementation; skip find_package entirely
+set(OpenSSL_FOUND FALSE)
+set(MbedTLS_FOUND FALSE)
 
-if (NOT OpenSSL_FOUND)
-	find_package(MbedTLS)
+if (OPT_OSDP_CRYPTO_BACKEND STREQUAL "auto")
+	find_package(OpenSSL)
+	if (NOT OpenSSL_FOUND)
+		find_package(MbedTLS)
+	endif()
+elseif (OPT_OSDP_CRYPTO_BACKEND STREQUAL "openssl")
+	find_package(OpenSSL REQUIRED)
+elseif (OPT_OSDP_CRYPTO_BACKEND STREQUAL "mbedtls")
+	find_package(MbedTLS REQUIRED)
+elseif (NOT OPT_OSDP_CRYPTO_BACKEND STREQUAL "tinyaes")
+	message(FATAL_ERROR
+		"OPT_OSDP_CRYPTO_BACKEND must be one of: auto, openssl, mbedtls, tinyaes "
+		"(got '${OPT_OSDP_CRYPTO_BACKEND}')")
+endif()
+
+if (OpenSSL_FOUND)
+	message(STATUS "libosdp crypto backend: OpenSSL")
+elseif (MbedTLS_FOUND)
+	message(STATUS "libosdp crypto backend: MbedTLS")
 else()
-	set(MbedTLS_FOUND FALSE)
+	message(STATUS "libosdp crypto backend: TinyAES (bundled)")
 endif()
 
 # Generate osdp_config.h in build dir.

@@ -112,16 +112,22 @@ if (CONFIG_LIBOSDP)
 		)
 	endif()
 
-	# Crypto backend
+	# Crypto backend (driven by the LIBOSDP_CRYPTO_BACKEND Kconfig choice)
 	if (CONFIG_LIBOSDP_CRYPTO_MBEDTLS)
+		message(STATUS "libosdp crypto backend: MbedTLS")
 		zephyr_library_compile_definitions(OPT_OSDP_USE_MBEDTLS)
 		zephyr_library_sources(${OSDP_ROOT}/src/crypto/mbedtls.c)
 		target_include_directories(modules_osdp PRIVATE ${ZEPHYR_MBEDTLS_MODULE_DIR}/include)
 		zephyr_link_libraries(mbedTLS)
 	elseif(CONFIG_LIBOSDP_CRYPTO_TINYAES)
+		message(STATUS "libosdp crypto backend: TinyAES (bundled)")
 		zephyr_library_sources(
 			${OSDP_ROOT}/src/crypto/tinyaes.c
 			${OSDP_ROOT}/src/crypto/tinyaes_src.c
 		)
+	else()
+		message(FATAL_ERROR
+			"No LibOSDP crypto backend selected. "
+			"Enable CONFIG_LIBOSDP_CRYPTO_MBEDTLS or CONFIG_LIBOSDP_CRYPTO_TINYAES.")
 	endif()
 endif()

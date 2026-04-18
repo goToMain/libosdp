@@ -19,7 +19,7 @@ usage() {
 	  --skip-mark                  Don't send the leading mark byte (0xFF)
 	  --zero-copy                  Enable zero-copy RX buffers (requires recv_pkt/release_pkt)
 	  --log-minimal                Minimize logger RAM/stack usage
-	  --crypto LIB                 Use methods from LIB (openssl/mbedtls/*tinyaes)
+	  --crypto LIB                 Crypto backend: auto|openssl|mbedtls|tinyaes (default: auto)
 	  --crypto-include-dir DIR     Include directory for crypto LIB if not in system path
 	  --crypto-ld-flags            Args to pass to linker for the crypto LIB
 	  --no-colours                 Don't colourize log ouputs
@@ -149,15 +149,43 @@ if [[ -d .git ]]; then
 	GIT_DIFF=$(git diff --quiet --exit-code || echo +)
 fi
 
-if [[ "${CRYPTO}" == "openssl" ]]; then
+## Crypto backend selection: auto probes openssl → mbedtls → tinyaes by
+## looking for the backend's public header through the compiler's default
+## include path. Explicit names skip the probe and are used as-is.
+probe_header() {
+	echo "#include <$1>" | ${CC} -xc -E - > /dev/null 2>&1
+}
+
+CRYPTO=${CRYPTO:-auto}
+if [[ "${CRYPTO}" == "auto" ]]; then
+	if probe_header openssl/evp.h; then
+		CRYPTO=openssl
+	elif probe_header mbedtls/aes.h; then
+		CRYPTO=mbedtls
+	else
+		CRYPTO=tinyaes
+	fi
+fi
+
+case "${CRYPTO}" in
+openssl)
+	echo "Crypto backend: OpenSSL"
 	LIBOSDP_SOURCES+=" src/crypto/openssl.c"
-elif [[ "${CRYPTO}" == "mbedtls" ]]; then
+	;;
+mbedtls)
+	echo "Crypto backend: MbedTLS"
 	LIBOSDP_SOURCES+=" src/crypto/mbedtls.c"
 	LDFLAGS+=" -lmbedcrypto -lmbedtls"
-else
-	echo "Using in-tree AES methods. Consider using openssl/mbedtls (see --crypto)"
+	;;
+tinyaes)
+	echo "Crypto backend: TinyAES (bundled)"
 	LIBOSDP_SOURCES+=" src/crypto/tinyaes_src.c src/crypto/tinyaes.c"
-fi
+	;;
+*)
+	echo "--crypto must be one of: auto, openssl, mbedtls, tinyaes (got '${CRYPTO}')"
+	exit 1
+	;;
+esac
 
 if [[ ! -z "${CRYPTO_INCLUDE_DIR}" ]]; then
 	CCFLAGS+=" -I${CRYPTO_INCLUDE_DIR}"

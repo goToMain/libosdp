@@ -1124,6 +1124,17 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		sc_deactivate(pd);
 	}
 
+	/**
+	 * Track online/offline based on recent CP activity. pd->tstamp is
+	 * updated by the phy layer on any inbound bytes from the CP, which
+	 * matches how osdp_get_status_mask() already infers link health.
+	 */
+	if (is_pd_online(pd) &&
+	    osdp_millis_since(pd->tstamp) > OSDP_PD_ONLINE_TOUT_MS) {
+		LOG_INF("PD offline; lost CP activity");
+		pd_set_offline(pd);
+	}
+
 	ret = pd_receive_and_process_command(pd);
 
 	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
@@ -1143,6 +1154,13 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		LOG_ERR("CMD receive error/timeout - err:%d", ret);
 		pd_error_reset(pd);
 		return;
+	}
+
+	/* ret is NONE or REPLY here: either way, a valid packet was decoded
+	 * from the CP, so the link is active. */
+	if (!is_pd_online(pd)) {
+		LOG_INF("PD online; CP link active");
+		pd_set_online(pd);
 	}
 
 	if (ret == OSDP_PD_ERR_NONE && sc_is_active(pd)) {

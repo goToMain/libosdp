@@ -70,7 +70,10 @@ $(O)/pd_app.elf: $(O)/libosdp.a $(OBJ_PD_APP)
 ## Tests
 
 .PHONY: unit-test
-unit-test: CCFLAGS_EXTRA=-DUNIT_TESTING -Iutils/include -Iinclude -Isrc -I$(O)
+# OSDP_PD_ONLINE_TOUT_MS override mirrors tests/unit-tests/CMakeLists.txt:
+# link-loss tests budget a 4000ms wait window, so the 8s production timeout
+# would guarantee failure.
+unit-test: CCFLAGS_EXTRA=-DUNIT_TESTING -DOSDP_PD_ONLINE_TOUT_MS=1500 -Iutils/include -Iinclude -Isrc -I$(O)
 unit-test: $(O)/unit-test
 
 $(O)/unit-test: $(OBJ_TEST)

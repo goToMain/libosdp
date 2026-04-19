@@ -41,6 +41,7 @@ class Command:
     Keyset = osdp_sys.CMD_KEYSET
     FileTransfer = osdp_sys.CMD_FILE_TX
     Status = osdp_sys.CMD_STATUS
+    Notification = osdp_sys.CMD_NOTIFICATION
 
 class CommandLEDColor:
     Black = osdp_sys.LED_COLOR_NONE

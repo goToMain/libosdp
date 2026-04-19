@@ -861,6 +861,7 @@ int main(int argc, char *argv[])
 		{ "commands", run_command_tests },
 		{ "events", run_event_tests },
 		{ "hotplug", run_hotplug_tests },
+		{ "notifications", run_notification_tests },
 		{ "async_fuzz", run_async_fuzz_tests },
 		{ "sc", run_sc_tests },
 		{ "vectors", run_vector_tests },

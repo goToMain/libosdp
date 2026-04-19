@@ -367,6 +367,35 @@ static int pyosdp_make_struct_cmd_status(struct osdp_cmd *p, PyObject *dict)
 	return 0;
 }
 
+static int pyosdp_make_dict_cmd_notif(PyObject *obj, struct osdp_cmd *cmd)
+{
+	if (pyosdp_dict_add_int(obj, "type", cmd->notif.type))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "arg0", cmd->notif.arg0))
+		return -1;
+	if (pyosdp_dict_add_int(obj, "arg1", cmd->notif.arg1))
+		return -1;
+	return 0;
+}
+
+static int pyosdp_make_struct_cmd_notif(struct osdp_cmd *p, PyObject *dict)
+{
+	int type, arg0, arg1;
+	struct osdp_event_notification *cmd = &p->notif;
+
+	if (pyosdp_dict_get_int(dict, "type", &type))
+		return -1;
+	if (pyosdp_dict_get_int(dict, "arg0", &arg0))
+		return -1;
+	if (pyosdp_dict_get_int(dict, "arg1", &arg1))
+		return -1;
+
+	cmd->type = type;
+	cmd->arg0 = arg0;
+	cmd->arg1 = arg1;
+	return 0;
+}
+
 /* ------------------------------- */
 /*             EVENTS              */
 /* ------------------------------- */
@@ -600,6 +629,10 @@ static struct {
 	[OSDP_CMD_STATUS] = {
 		.dict_to_struct = pyosdp_make_struct_cmd_status,
 		.struct_to_dict = pyosdp_make_dict_cmd_status,
+	},
+	[OSDP_CMD_NOTIFICATION] = {
+		.dict_to_struct = pyosdp_make_struct_cmd_notif,
+		.struct_to_dict = pyosdp_make_dict_cmd_notif,
 	},
 };
 

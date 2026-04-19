@@ -59,7 +59,7 @@ def cp_check_command_status(cmd, expected_outcome=True):
         'event': Event.Notification,
         'type': Notification.Command,
         'arg0': cmd,
-        'arg1': 1 if expected_outcome else 0,
+        'arg1': 0 if expected_outcome else -1,
     }
     wait_for_notification_event(cp, secure_pd.address, event)
 

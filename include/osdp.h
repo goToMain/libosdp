@@ -54,14 +54,16 @@ extern "C" {
 #define OSDP_FLAG_IGN_UNSOLICITED 0x00040000
 
 /**
- * @brief Enable LibOSDP notification events - @ref osdp_event_notification - to
+ * @brief Enable LibOSDP-synthesized notifications - @ref osdp_notification - to
  * be reported to the application.
  *
- * @note These events are synthesized by libosdp; they are not carried on the
- * wire. In CP mode they are delivered via the event callback registered with
- * @ref osdp_cp_set_event_callback. In PD mode they are delivered via the
- * command callback registered with @ref osdp_pd_set_command_callback, wrapped
- * in an @ref osdp_cmd with @ref OSDP_CMD_NOTIFICATION as its id.
+ * @note These notifications are synthesized by libosdp; they are not carried on
+ * the wire. In CP mode they are delivered via the event callback (registered
+ * with @ref osdp_cp_set_event_callback) wrapped in an @ref osdp_event with
+ * type @ref OSDP_EVENT_NOTIFICATION. In PD mode they are delivered via the
+ * command callback (registered with @ref osdp_pd_set_command_callback) wrapped
+ * in an @ref osdp_cmd with id @ref OSDP_CMD_NOTIFICATION. The payload carried
+ * on both paths is the same @ref osdp_notification struct.
  */
 #define OSDP_FLAG_ENABLE_NOTIFICATION 0x00080000
 
@@ -741,16 +743,17 @@ struct osdp_cmd_file_tx {
  *
  * Delivered to the application in CP mode as an @ref osdp_event with type
  * @ref OSDP_EVENT_NOTIFICATION and in PD mode as an @ref osdp_cmd with id
- * @ref OSDP_CMD_NOTIFICATION. Gated by @ref OSDP_FLAG_ENABLE_NOTIFICATION.
+ * @ref OSDP_CMD_NOTIFICATION. In both cases the payload is a
+ * @ref osdp_notification. Gated by @ref OSDP_FLAG_ENABLE_NOTIFICATION.
  */
-enum osdp_event_notification_type {
+enum osdp_notification_type {
 	/**
 	 * Application command outcome report.
 	 *
 	 * arg0: The command ID
 	 * arg1: outcome -- 0: success; -1: failure;
 	 */
-	OSDP_EVENT_NOTIFICATION_COMMAND,
+	OSDP_NOTIFICATION_COMMAND,
 	/**
 	 * Secure Channel state change.
 	 *
@@ -761,7 +764,7 @@ enum osdp_event_notification_type {
 	 * arg0: status -- 0: inactive; 1: active
 	 * arg1: scbk type -- 0: scbk; 1: scbk-d
 	 */
-	OSDP_EVENT_NOTIFICATION_SC_STATUS,
+	OSDP_NOTIFICATION_SC_STATUS,
 	/**
 	 * Peer link state change.
 	 *
@@ -772,7 +775,7 @@ enum osdp_event_notification_type {
 	 *
 	 * arg0: status -- 0: offline; 1: online
 	 */
-	OSDP_EVENT_NOTIFICATION_PD_STATUS,
+	OSDP_NOTIFICATION_PD_STATUS,
 	/**
 	 * File transfer terminated (CP only).
 	 *
@@ -782,11 +785,11 @@ enum osdp_event_notification_type {
 	 * Fires exactly once per transfer, on any terminal state (success,
 	 * local abort, or a negative status reported by the PD).
 	 */
-	OSDP_EVENT_NOTIFICATION_FILE_TX_DONE,
+	OSDP_NOTIFICATION_FILE_TX_DONE,
 };
 
 /**
- * @brief Outcome reported by OSDP_EVENT_NOTIFICATION_FILE_TX_DONE
+ * @brief Outcome reported by OSDP_NOTIFICATION_FILE_TX_DONE
  */
 enum osdp_file_tx_outcome {
 	OSDP_FILE_TX_OUTCOME_OK = 0,           /**< Contents processed by PD */
@@ -799,14 +802,15 @@ enum osdp_file_tx_outcome {
 /**
  * @brief LibOSDP notification payload.
  *
- * Carries a libosdp-synthesized notification to the application. See
- * @ref osdp_event_notification_type for the per-type meaning of @a arg0
- * and @a arg1.
+ * Carries a libosdp-synthesized notification to the application. The same
+ * struct is used in both event (CP) and command (PD) delivery paths. See
+ * @ref osdp_notification_type for the per-type meaning of @a arg0 and
+ * @a arg1.
  */
-struct osdp_event_notification {
-	enum osdp_event_notification_type type;  /**< Notification type */
-	int arg0;                                /**< Additional data member */
-	int arg1;                                /**< Additional data member */
+struct osdp_notification {
+	enum osdp_notification_type type;  /**< Notification type */
+	int arg0;                          /**< Additional data member */
+	int arg1;                          /**< Additional data member */
 };
 
 /**
@@ -867,7 +871,7 @@ struct osdp_cmd {
 		struct osdp_cmd_mfg mfg;          /**< Manufacturer specific command structure */
 		struct osdp_cmd_file_tx file_tx;  /**< File transfer command structure */
 		struct osdp_status_report status; /**< Status report command structure */
-		struct osdp_event_notification notif; /**< LibOSDP notification (PD mode) */
+		struct osdp_notification notif;   /**< LibOSDP notification (PD mode) */
 	};
 };
 
@@ -987,7 +991,7 @@ struct osdp_event {
 		struct osdp_event_cardread cardread; /**< Card read event structure */
 		struct osdp_event_mfgrep mfgrep;     /**< Manufacturer specific response event struture */
 		struct osdp_status_report status;    /**< Status report event structure */
-		struct osdp_event_notification notif;/**< Notification event structure */
+		struct osdp_notification notif;      /**< LibOSDP notification (CP mode) */
 	};
 };
 

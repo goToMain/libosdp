@@ -56,11 +56,11 @@ class CommandLEDColor:
 class CommandFileTxFlags:
     Cancel = osdp_sys.CMD_FILE_TX_FLAG_CANCEL
 
-class EventNotification:
-    Command = osdp_sys.EVENT_NOTIFICATION_COMMAND
-    SecureChannelStatus = osdp_sys.EVENT_NOTIFICATION_SC_STATUS
-    PeripheralDeviceStatus = osdp_sys.EVENT_NOTIFICATION_PD_STATUS
-    FileTransferDone = osdp_sys.EVENT_NOTIFICATION_FILE_TX_DONE
+class Notification:
+    Command = osdp_sys.NOTIFICATION_COMMAND
+    SecureChannelStatus = osdp_sys.NOTIFICATION_SC_STATUS
+    PeripheralDeviceStatus = osdp_sys.NOTIFICATION_PD_STATUS
+    FileTransferDone = osdp_sys.NOTIFICATION_FILE_TX_DONE
 
 class FileTxOutcome:
     Ok = osdp_sys.FILE_TX_OUTCOME_OK

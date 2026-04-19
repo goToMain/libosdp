@@ -32,7 +32,7 @@ struct test_command_ctx {
 	uint8_t mfg_data[64];
 	int mfg_data_len;
 
-	/* Command-outcome notification capture (OSDP_EVENT_NOTIFICATION_COMMAND) */
+	/* Command-outcome notification capture (OSDP_NOTIFICATION_COMMAND) */
 	bool notif_cmd_seen;
 	int notif_cmd_arg0;
 	int notif_cmd_arg1;
@@ -54,7 +54,7 @@ int test_commands_event_callback(void *arg, int pd, struct osdp_event *ev)
 	}
 
 	if (ev->type == OSDP_EVENT_NOTIFICATION &&
-	    ev->notif.type == OSDP_EVENT_NOTIFICATION_COMMAND) {
+	    ev->notif.type == OSDP_NOTIFICATION_COMMAND) {
 		ctx->notif_cmd_seen = true;
 		ctx->notif_cmd_arg0 = ev->notif.arg0;
 		ctx->notif_cmd_arg1 = ev->notif.arg1;
@@ -543,7 +543,7 @@ static bool wait_for_cmd_notification(int expected_cmd, int expected_arg1,
  * Regression test for https://github.com/goToMain/libosdp/issues/262:
  * the PD used to unconditionally ACK multi-record commands (OUT/LED/BUZ)
  * even when pd_cmd_cap_ok() had set REPLY_NAK. The fix preserves the NAK
- * so the CP reports arg1=0 (failure) via OSDP_EVENT_NOTIFICATION_COMMAND.
+ * so the CP reports arg1=0 (failure) via OSDP_NOTIFICATION_COMMAND.
  */
 static bool test_led_unsupported_capability_naks()
 {

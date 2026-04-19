@@ -64,11 +64,11 @@ static int pd_cmd_cb(void *arg, struct osdp_cmd *cmd)
 	}
 	pthread_mutex_lock(&nx->lock);
 	switch (cmd->notif.type) {
-	case OSDP_EVENT_NOTIFICATION_PD_STATUS:
+	case OSDP_NOTIFICATION_PD_STATUS:
 		notif_record_update(&nx->pd_pd_status, cmd->notif.type,
 				    cmd->notif.arg0, cmd->notif.arg1);
 		break;
-	case OSDP_EVENT_NOTIFICATION_SC_STATUS:
+	case OSDP_NOTIFICATION_SC_STATUS:
 		notif_record_update(&nx->pd_sc_status, cmd->notif.type,
 				    cmd->notif.arg0, cmd->notif.arg1);
 		break;
@@ -88,7 +88,7 @@ static int cp_event_cb(void *arg, int pd, struct osdp_event *ev)
 		return 0;
 	}
 	pthread_mutex_lock(&nx->lock);
-	if (ev->notif.type == OSDP_EVENT_NOTIFICATION_FILE_TX_DONE) {
+	if (ev->notif.type == OSDP_NOTIFICATION_FILE_TX_DONE) {
 		notif_record_update(&nx->cp_file_tx_done, ev->notif.type,
 				    ev->notif.arg0, ev->notif.arg1);
 	}

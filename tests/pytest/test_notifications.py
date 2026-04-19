@@ -66,10 +66,10 @@ class NotifRecorder:
         if cmd.get("command") != Command.Notification:
             return 0, None
         with self.lock:
-            if cmd["type"] == EventNotification.PeripheralDeviceStatus:
+            if cmd["type"] == Notification.PeripheralDeviceStatus:
                 self.pd_status_count += 1
                 self.pd_status_last = dict(cmd)
-            elif cmd["type"] == EventNotification.SecureChannelStatus:
+            elif cmd["type"] == Notification.SecureChannelStatus:
                 self.sc_status_count += 1
                 self.sc_status_last = dict(cmd)
         return 0, None
@@ -113,11 +113,11 @@ def test_pd_receives_pd_status_and_sc_status_notifications():
 
         with rec.lock:
             assert rec.pd_status_last["type"] == \
-                EventNotification.PeripheralDeviceStatus
+                Notification.PeripheralDeviceStatus
             assert rec.pd_status_last["arg0"] == 1, \
                 f"PD_STATUS arg0={rec.pd_status_last['arg0']}, want 1 (online)"
             assert rec.sc_status_last["type"] == \
-                EventNotification.SecureChannelStatus
+                Notification.SecureChannelStatus
             assert rec.sc_status_last["arg0"] == 1, \
                 f"SC_STATUS arg0={rec.sc_status_last['arg0']}, want 1 (active)"
     finally:
@@ -239,7 +239,7 @@ def _wait_file_tx_done(cp, expected_outcome, timeout=5.0):
             continue
         if e.get("event") != Event.Notification:
             continue
-        if e.get("type") != EventNotification.FileTransferDone:
+        if e.get("type") != Notification.FileTransferDone:
             continue
         assert e["arg0"] == FILE_ID
         assert e["arg1"] == expected_outcome, \

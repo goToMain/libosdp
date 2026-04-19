@@ -8,7 +8,7 @@ from .control_panel import ControlPanel
 from .peripheral_device import PeripheralDevice
 from .key_store import KeyStore
 from .constants import (
-    LibFlag, Command, CommandLEDColor, CommandFileTxFlags, Event, EventNotification,
+    LibFlag, Command, CommandLEDColor, CommandFileTxFlags, Event, Notification,
     FileTxOutcome, CardFormat, Capability, LogLevel, StatusReportType, CompletionStatus
 )
 from .helpers import PdId, PDInfo, PDCapabilities

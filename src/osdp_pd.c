@@ -350,7 +350,7 @@ static int pd_prebuild_status_reply(struct osdp_pd *pd, int reply_id,
  * command callback. Gated by OSDP_FLAG_ENABLE_NOTIFICATION. Return value
  * is ignored -- these are informational, not wire commands. */
 static void pd_deliver_notification(struct osdp_pd *pd,
-				    enum osdp_event_notification_type type,
+				    enum osdp_notification_type type,
 				    int arg0, int arg1)
 {
 	struct osdp_cmd cmd = { 0 };
@@ -368,13 +368,13 @@ static void pd_deliver_notification(struct osdp_pd *pd,
 
 static void notify_pd_status(struct osdp_pd *pd, bool is_online)
 {
-	pd_deliver_notification(pd, OSDP_EVENT_NOTIFICATION_PD_STATUS,
+	pd_deliver_notification(pd, OSDP_NOTIFICATION_PD_STATUS,
 				is_online, 0);
 }
 
 static void notify_sc_status(struct osdp_pd *pd)
 {
-	pd_deliver_notification(pd, OSDP_EVENT_NOTIFICATION_SC_STATUS,
+	pd_deliver_notification(pd, OSDP_NOTIFICATION_SC_STATUS,
 				sc_is_active(pd), sc_use_scbkd(pd));
 }
 

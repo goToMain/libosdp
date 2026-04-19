@@ -381,7 +381,7 @@ static int pyosdp_make_dict_cmd_notif(PyObject *obj, struct osdp_cmd *cmd)
 static int pyosdp_make_struct_cmd_notif(struct osdp_cmd *p, PyObject *dict)
 {
 	int type, arg0, arg1;
-	struct osdp_event_notification *cmd = &p->notif;
+	struct osdp_notification *cmd = &p->notif;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;
@@ -569,7 +569,7 @@ static int pyosdp_make_dict_event_notif(PyObject *obj, struct osdp_event *event)
 static int pyosdp_make_struct_event_notif(struct osdp_event *p, PyObject *dict)
 {
 	int type, arg0, arg1;
-	struct osdp_event_notification *ev = &p->notif;
+	struct osdp_notification *ev = &p->notif;
 
 	if (pyosdp_dict_get_int(dict, "type", &type))
 		return -1;

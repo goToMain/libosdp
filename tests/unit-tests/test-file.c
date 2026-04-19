@@ -177,7 +177,7 @@ static int event_callback(void *arg, int pd, struct osdp_event *ev)
 	if (ev->type != OSDP_EVENT_NOTIFICATION) {
 		return 0;
 	}
-	if (ev->notif.type != OSDP_EVENT_NOTIFICATION_FILE_TX_DONE) {
+	if (ev->notif.type != OSDP_NOTIFICATION_FILE_TX_DONE) {
 		return 0;
 	}
 	g_notif.count++;
@@ -297,7 +297,7 @@ void run_file_tx_tests(struct test *t, bool line_noise)
 		       g_notif.count);
 		goto error;
 	}
-	if (g_notif.type != OSDP_EVENT_NOTIFICATION_FILE_TX_DONE) {
+	if (g_notif.type != OSDP_NOTIFICATION_FILE_TX_DONE) {
 		printf(SUB_1 "unexpected notification type: %d\n", g_notif.type);
 		goto error;
 	}

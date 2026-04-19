@@ -57,7 +57,7 @@ cp = ControlPanel(pd_info_list, log_level=LogLevel.Debug)
 def cp_check_command_status(cmd, expected_outcome=True):
     event = {
         'event': Event.Notification,
-        'type': EventNotification.Command,
+        'type': Notification.Command,
         'arg0': cmd,
         'arg1': 1 if expected_outcome else 0,
     }

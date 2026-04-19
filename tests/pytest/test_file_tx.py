@@ -102,7 +102,7 @@ def wait_for_file_tx_done(address, expected_outcome, timeout=10.0,
             continue
         if e.get('event') != Event.Notification:
             continue
-        if e.get('type') != EventNotification.FileTransferDone:
+        if e.get('type') != Notification.FileTransferDone:
             continue
         notif = e
         break
@@ -119,7 +119,7 @@ def wait_for_file_tx_done(address, expected_outcome, timeout=10.0,
         if e is None:
             continue
         if e.get('event') == Event.Notification and \
-           e.get('type') == EventNotification.FileTransferDone:
+           e.get('type') == Notification.FileTransferDone:
             raise AssertionError("FileTransferDone fired more than once")
     return notif
 

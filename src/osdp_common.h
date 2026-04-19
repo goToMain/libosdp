@@ -304,6 +304,7 @@ static inline __noreturn void die()
 enum osdp_cp_phy_state_e {
 	OSDP_CP_PHY_STATE_IDLE,
 	OSDP_CP_PHY_STATE_SEND_CMD,
+	OSDP_CP_PHY_STATE_SEND_CMD_WAIT,
 	OSDP_CP_PHY_STATE_REPLY_WAIT,
 	OSDP_CP_PHY_STATE_WAIT,
 	OSDP_CP_PHY_STATE_RETRY_CMD,
@@ -364,6 +365,14 @@ enum osdp_pkt_errors_e {
 	 * No data received (do not confuse with OSDP_ERR_PKT_WAIT)
 	 */
 	OSDP_ERR_PKT_NO_DATA = -8,
+	/**
+	 * Channel send returned 0 (EAGAIN): transport is momentarily not
+	 * ready to queue the finalized bytes (half-duplex turnaround,
+	 * previous TX draining, etc.). The caller must yield and re-send
+	 * the same finalized buffer on the next refresh — no rebuild, no
+	 * SC/seq state advance.
+	 */
+	OSDP_ERR_PKT_WAIT_TX = -9,
 };
 
 struct osdp_slab {
@@ -437,6 +446,11 @@ struct osdp_pd {
 	unsigned long packet_len;
 	unsigned long packet_buf_len;
 	uint32_t packet_scan_skip;
+	/* A finalized packet is parked in packet_buf awaiting channel-send.
+	 * Set by the build step (fresh reply, prebuilt status reply, or
+	 * EAGAIN retry promotion); cleared after the send completes. While
+	 * set, the update loop skips RX and only retries the send — a new
+	 * RX would advance seq and stale the cached bytes. */
 	bool reply_prebuilt;
 
 	/* Retransmit cache: last successfully-sent reply bytes live in the
@@ -508,8 +522,9 @@ int osdp_phy_decode_packet(struct osdp_pd *p, uint8_t **pkt_start);
 void osdp_phy_state_reset(struct osdp_pd *pd, bool is_error);
 int osdp_phy_packet_get_data_offset(struct osdp_pd *p, const uint8_t *buf);
 uint8_t *osdp_phy_packet_get_smb(struct osdp_pd *p, const uint8_t *buf);
-int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
-                         int len, int max_len);
+int osdp_phy_finalize_packet(struct osdp_pd *pd, uint8_t *buf,
+                             int len, int max_len);
+int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf, int len);
 void osdp_phy_progress_sequence(struct osdp_pd *pd);
 void osdp_phy_release_packet(struct osdp_pd *pd);
 

@@ -29,9 +29,17 @@ static inline bool packet_has_mark(struct osdp_pd *pd)
 	return ISSET_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
 }
 
+/*
+ * Contract (see osdp_write_fn_t in osdp.h): one call, all-or-nothing.
+ *   ret == len : entire buffer queued for TX
+ *   ret == 0   : transient EAGAIN; caller must yield and retry with the
+ *                same finalized buffer on the next refresh
+ *   ret  < 0   : fatal channel error
+ *
+ * No partial-write loop: the callback never returns 0 < ret < len.
+ */
 static int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 {
-	int sent, total_sent = 0;
 	struct osdp_channel *channel = &pd_to_osdp(pd)->channel;
 
 	/* flush rx to remove any invalid data. */
@@ -39,15 +47,7 @@ static int osdp_channel_send(struct osdp_pd *pd, uint8_t *buf, int len)
 		channel->flush(channel->data);
 	}
 
-	do { /* send can block; so be greedy */
-		sent = channel->send(channel->data, buf + total_sent, len - total_sent);
-		if (sent <= 0) {
-			break;
-		}
-		total_sent += sent;
-	} while (total_sent < len);
-
-	return total_sent;
+	return channel->send(channel->data, buf, len);
 }
 
 #ifdef OPT_OSDP_RX_ZERO_COPY
@@ -254,8 +254,8 @@ int osdp_phy_packet_init(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	        sizeof(struct osdp_packet_header) + scb_len);
 }
 
-static int phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
-			       int len, int max_len)
+int osdp_phy_finalize_packet(struct osdp_pd *pd, uint8_t *buf,
+			     int len, int max_len)
 {
 	uint16_t crc16;
 	struct osdp_packet_header *pkt;
@@ -367,39 +367,35 @@ static int phy_packet_finalize(struct osdp_pd *pd, uint8_t *buf,
 		len += 1;
 	}
 
-	return len + packet_has_mark(pd);
+	len += packet_has_mark(pd);
+	if (packet_has_mark(pd)) {
+		buf -= 1; /* restore mark for capture */
+	}
+	if (is_packet_trace_enabled(pd)) {
+		osdp_capture_packet(pd, buf, len);
+	}
+	return len;
 
 out_of_space_error:
 	LOG_ERR("PKT_F: Out of buffer space! CMD(%02x)", pd->cmd_id);
 	return OSDP_ERR_PKT_FMT;
 }
 
-int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf,
-			 int len, int max_len)
+/* Caller guarantees buf[0..len) is a finalized packet (header + payload +
+ * SC/MAC + CRC, sequence-encoded). This function only queues the bytes to
+ * the transport; it never re-runs finalize. See osdp_phy_finalize_packet(). */
+int osdp_phy_send_packet(struct osdp_pd *pd, uint8_t *buf, int len)
 {
-	int ret;
+	int ret = osdp_channel_send(pd, buf, len);
 
-	/* finalize packet */
-	len = phy_packet_finalize(pd, buf, len, max_len);
-	if (len < 0) {
+	if (ret == 0) {
+		return OSDP_ERR_PKT_WAIT_TX;
+	}
+	if (ret < 0 || ret != len) {
+		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
 		return OSDP_ERR_PKT_BUILD;
 	}
-
-	if (is_packet_trace_enabled(pd)) {
-		osdp_capture_packet(pd, buf, len);
-	}
-
-	ret = osdp_channel_send(pd, buf, len);
-	if (ret != len) {
-		LOG_ERR("Channel send for %d bytes failed! ret: %d",
-			len, ret);
-		return OSDP_ERR_PKT_BUILD;
-	}
-
 	osdp_metrics_report(pd, OSDP_METRIC_PACKET_SENT);
-
-	/* return the number of bytes actually put on the wire so that
-	 * callers can cache the full finalized packet for retransmit */
 	return len;
 }
 
@@ -952,7 +948,7 @@ void osdp_phy_progress_sequence(struct osdp_pd *pd)
 
 #ifdef UNIT_TESTING
 int (*test_osdp_phy_packet_finalize)(struct osdp_pd *pd, uint8_t *buf,
-			int len, int max_len) = phy_packet_finalize;
+			int len, int max_len) = osdp_phy_finalize_packet;
 
 /* Export packet creation functions through function pointers for testing */
 int (*test_osdp_phy_packet_init)(struct osdp_pd *pd, uint8_t *buf, int max_len) = osdp_phy_packet_init;

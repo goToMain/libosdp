@@ -54,6 +54,10 @@ enum osdp_pd_error_e {
 	OSDP_PD_ERR_REPLY = -3,
 	OSDP_PD_ERR_IGNORE = -4,
 	OSDP_PD_ERR_NO_DATA = -5,
+	/* Reply was built (or prebuilt) but the channel was momentarily not
+	 * ready to queue it. The finalized packet is cached on pd; the caller
+	 * must yield and re-invoke pd_send_reply on the next refresh. */
+	OSDP_PD_ERR_RETRY_SEND = -6,
 };
 
 /* Implicit capabilities */
@@ -286,7 +290,7 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 static int pd_prebuild_status_reply(struct osdp_pd *pd, int reply_id,
 				    const struct osdp_status_report *status)
 {
-	int i, len = 0, n, hdr_len, data_off;
+	int i, len = 0, n, hdr_len, data_off, ret;
 	int packet_buf_size = get_tx_buf_size(pd);
 	uint8_t *pkt = osdp_tx_staging_buf(pd);
 	uint8_t *buf;
@@ -342,6 +346,13 @@ static int pd_prebuild_status_reply(struct osdp_pd *pd, int reply_id,
 
 	pd->packet_buf = pkt;
 	pd->packet_buf_len = hdr_len + len;
+
+	ret = osdp_phy_finalize_packet(pd, pkt, pd->packet_buf_len,
+				       packet_buf_size);
+	if (ret < 0) {
+		return -1;
+	}
+	pd->packet_buf_len = ret;
 	pd->reply_prebuilt = true;
 	return 0;
 }
@@ -1064,50 +1075,54 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 	return len;
 }
 
-static int pd_send_reply(struct osdp_pd *pd)
+/* Build + finalize the reply into the staging buffer. Sets reply_prebuilt
+ * to mark packet_buf[0..packet_buf_len) as a finalized wire packet awaiting
+ * channel queueing. pd_send_reply() will drain it. */
+static int pd_build_reply_packet(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 
-	if (pd->reply_prebuilt) {
-		ret = osdp_phy_send_packet(pd, pd->packet_buf, pd->packet_buf_len,
-					   packet_buf_size);
-		pd->reply_prebuilt = false;
-		if (ret < 0) {
-			return OSDP_PD_ERR_GENERIC;
-		}
-		pd->last_tx_len = (uint16_t)ret;
-		pd->last_cmd_id = (uint8_t)pd->cmd_id;
-		return OSDP_PD_ERR_NONE;
-	}
-
 	pd->packet_buf = osdp_tx_staging_buf(pd);
 
-	/* init packet buf with header */
 	ret = osdp_phy_packet_init(pd, pd->packet_buf, packet_buf_size);
 	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
 	pd->packet_buf_len = ret;
 
-	/* fill reply data */
 	ret = pd_build_reply(pd, pd->packet_buf, packet_buf_size);
 	if (ret <= 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
 	pd->packet_buf_len += ret;
 
-	ret = osdp_phy_send_packet(pd, pd->packet_buf, pd->packet_buf_len,
-				   packet_buf_size);
+	ret = osdp_phy_finalize_packet(pd, pd->packet_buf, pd->packet_buf_len,
+				       packet_buf_size);
 	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}
+	pd->packet_buf_len = ret;
+	pd->reply_prebuilt = true;
+	return OSDP_PD_ERR_NONE;
+}
 
-	/* Snapshot the just-sent reply for potential retransmit on seq
-	 * repeat. The bytes (including CRC/MAC/encrypted payload) live in
-	 * tx_buf and are preserved until the next reply is built. */
+/* Queue the finalized reply parked in packet_buf onto the channel. On
+ * OSDP_ERR_PKT_WAIT_TX (transport momentarily not ready) leaves
+ * reply_prebuilt set so the next refresh re-invokes this path with the
+ * same bytes. */
+static int pd_send_reply(struct osdp_pd *pd)
+{
+	int ret = osdp_phy_send_packet(pd, pd->packet_buf, pd->packet_buf_len);
+
+	if (ret == OSDP_ERR_PKT_WAIT_TX) {
+		return OSDP_PD_ERR_RETRY_SEND;
+	}
+	pd->reply_prebuilt = false;
+	if (ret < 0) {
+		return OSDP_PD_ERR_GENERIC;
+	}
 	pd->last_tx_len = (uint16_t)ret;
 	pd->last_cmd_id = (uint8_t)pd->cmd_id;
-
 	return OSDP_PD_ERR_NONE;
 }
 
@@ -1183,40 +1198,64 @@ static void osdp_pd_update(struct osdp_pd *pd)
 		notify_pd_status(pd, false);
 	}
 
-	ret = pd_receive_and_process_command(pd);
+	/* If a previous refresh left a finalized reply parked in packet_buf
+	 * (channel EAGAIN, or pd_prebuild_status_reply staged one), skip RX
+	 * entirely — accepting new RX would advance the sequence counter and
+	 * stale the pending reply. Fall through to the send stage below. */
+	if (!pd->reply_prebuilt) {
+		ret = pd_receive_and_process_command(pd);
 
-	if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
-		osdp_phy_release_packet(pd);
-	}
+		if (IS_ENABLED(OPT_OSDP_RX_ZERO_COPY)) {
+			osdp_phy_release_packet(pd);
+		}
 
-	if (ret == OSDP_PD_ERR_IGNORE || ret == OSDP_PD_ERR_NO_DATA) {
-		return;
-	}
+		if (ret == OSDP_PD_ERR_IGNORE || ret == OSDP_PD_ERR_NO_DATA) {
+			return;
+		}
 
-	if (ret == OSDP_PD_ERR_WAIT &&
-	    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
-		return;
-	}
+		if (ret == OSDP_PD_ERR_WAIT &&
+		    osdp_millis_since(pd->tstamp) < OSDP_RESP_TOUT_MS) {
+			return;
+		}
 
-	if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {
-		LOG_ERR("CMD receive error/timeout - err:%d", ret);
-		pd_error_reset(pd);
-		return;
-	}
+		if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {
+			LOG_ERR("CMD receive error/timeout - err:%d", ret);
+			pd_error_reset(pd);
+			return;
+		}
 
-	/* ret is NONE or REPLY here: either way, a valid packet was decoded
-	 * from the CP, so the link is active. */
-	if (!is_pd_online(pd)) {
-		LOG_INF("PD online; CP link active");
-		pd_set_online(pd);
-		notify_pd_status(pd, true);
-	}
+		/* ret is NONE or REPLY here: either way, a valid packet was
+		 * decoded from the CP, so the link is active. */
+		if (!is_pd_online(pd)) {
+			LOG_INF("PD online; CP link active");
+			pd_set_online(pd);
+			notify_pd_status(pd, true);
+		}
 
-	if (ret == OSDP_PD_ERR_NONE && sc_is_active(pd)) {
-		pd->sc_tstamp = osdp_millis_now();
+		if (ret == OSDP_PD_ERR_NONE && sc_is_active(pd)) {
+			pd->sc_tstamp = osdp_millis_now();
+		}
+
+		/* pd_prebuild_status_reply() may already have finalized a
+		 * status reply during dispatch; otherwise build one now. */
+		if (!pd->reply_prebuilt) {
+			ret = pd_build_reply_packet(pd);
+			if (ret != OSDP_PD_ERR_NONE) {
+				LOG_ERR("Failed to build reply for CMD(%02x)",
+					pd->cmd_id);
+				pd_error_reset(pd);
+				return;
+			}
+		}
 	}
 
 	ret = pd_send_reply(pd);
+	if (ret == OSDP_PD_ERR_RETRY_SEND) {
+		/* Channel not ready. Reply stays parked in packet_buf and
+		 * reply_prebuilt stays set; next refresh re-enters the send
+		 * stage directly. */
+		return;
+	}
 	if (ret == OSDP_PD_ERR_NONE) {
 		if (pd->active_event) {
 			pd_complete_event(pd, pd->active_event, OSDP_COMPLETION_OK);

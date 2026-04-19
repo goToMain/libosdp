@@ -636,7 +636,12 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	return ret;
 }
 
-static int cp_build_and_send_packet(struct osdp_pd *pd)
+/* Build + finalize the outgoing command into the staging buffer. Leaves
+ * the wire bytes parked in pd->packet_buf[0..packet_buf_len) ready for
+ * osdp_phy_send_packet() to queue on the channel. Must run exactly once
+ * per command — osdp_phy_finalize_packet() advances sc.c_mac and the
+ * sequence number. */
+static int cp_build_packet(struct osdp_pd *pd)
 {
 	int ret, packet_buf_size = get_tx_buf_size(pd);
 	struct osdp_cmd local_keyset_cmd;
@@ -645,7 +650,6 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 
 	pd->packet_buf = buf;
 
-	/* init packet buf with header */
 	ret = osdp_phy_packet_init(pd, buf, packet_buf_size);
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
@@ -658,20 +662,18 @@ static int cp_build_and_send_packet(struct osdp_pd *pd)
 		cmd = &local_keyset_cmd;
 	}
 
-	/* fill command data */
 	ret = cp_build_command(pd, cmd, buf, packet_buf_size);
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
 	pd->packet_buf_len += ret;
 
-	ret = osdp_phy_send_packet(pd, buf, pd->packet_buf_len,
-				   packet_buf_size);
+	ret = osdp_phy_finalize_packet(pd, buf, pd->packet_buf_len,
+				       packet_buf_size);
 	if (ret < 0) {
 		return OSDP_CP_ERR_GENERIC;
 	}
-
-	osdp_metrics_report(pd, OSDP_METRIC_COMMAND);
+	pd->packet_buf_len = ret;
 	return OSDP_CP_ERR_NONE;
 }
 
@@ -838,11 +840,27 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 				channel->flush(channel->data);
 			pd->seq_number = pd->phy_tx_seq - 1;
 		}
-		if (cp_build_and_send_packet(pd)) {
-			LOG_ERR("Failed to build/send packet for CMD: %s(%02x)",
+		if (cp_build_packet(pd)) {
+			LOG_ERR("Failed to build packet for CMD: %s(%02x)",
 				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
 			goto error;
 		}
+		pd->phy_state = OSDP_CP_PHY_STATE_SEND_CMD_WAIT;
+		__fallthrough;
+	case OSDP_CP_PHY_STATE_SEND_CMD_WAIT:
+		rc = osdp_phy_send_packet(pd, pd->packet_buf,
+					  pd->packet_buf_len);
+		if (rc == OSDP_ERR_PKT_WAIT_TX) {
+			/* Channel not ready; retry the same finalized bytes
+			 * on the next refresh. */
+			return OSDP_CP_ERR_DEFER;
+		}
+		if (rc < 0) {
+			LOG_ERR("Failed to send packet for CMD: %s(%02x)",
+				osdp_cmd_name(pd->cmd_id), pd->cmd_id);
+			goto error;
+		}
+		osdp_metrics_report(pd, OSDP_METRIC_COMMAND);
 		ret = OSDP_CP_ERR_INPROG;
 		osdp_phy_state_reset(pd, false);
 		pd->reply_id = REPLY_INVALID;
@@ -1863,7 +1881,6 @@ int (*test_cp_cmd_enqueue)(struct osdp_pd *,
                            const struct osdp_cmd *) = cp_cmd_enqueue;
 int (*test_cp_phy_state_update)(struct osdp_pd *) = cp_phy_state_update;
 int (*test_state_update)(struct osdp_pd *) = state_update;
-int (*test_cp_build_and_send_packet)(struct osdp_pd *pd) = cp_build_and_send_packet;
 const int CP_ERR_DEFER = OSDP_CP_ERR_DEFER;
 const int CP_ERR_CAN_YIELD = OSDP_CP_ERR_DEFER;
 const int CP_ERR_INPROG = OSDP_CP_ERR_INPROG;

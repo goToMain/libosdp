@@ -300,20 +300,23 @@ typedef void (*osdp_release_pkt_fn_t)(void *data, const uint8_t *buf);
 
 /**
  * @brief pointer to function that sends byte array into some channel. This
- * function should be non-blocking.
+ * function must be non-blocking.
  *
  * @param data for use by underlying layers. osdp_channel::data is passed
  * @param buf byte array to be sent
  * @param len number of bytes in `buf`
  *
- * @retval +ve: number of bytes sent. must be <= `len`
- * @retval -ve on errors
+ * @retval len    all `len` bytes queued for transmission
+ * @retval 0      transient unavailability: channel is momentarily not ready
+ *                to accept this packet (e.g., half-duplex bus turnaround
+ *                gap not elapsed, previous TX still draining). LibOSDP will
+ *                re-invoke this callback on the next refresh with the same
+ *                finalized buffer; no rebuild, no state advance.
+ * @retval < 0    fatal error; the packet is dropped.
  *
- * @note For now, LibOSDP expects method to write/queue all or no bytes over
- * the channel per-invocation; ie., it does not support partial writes and is a
- * known limitation. Since an OSDP packet isn't so large, and typical TX
- * buffers are much larger than that, it's not as bad as it sounds and hence
- * not on the priority list to be fixed.
+ * @note LibOSDP does not support partial writes. The callback must queue
+ * either the entire buffer (return `len`) or none of it (return 0 for
+ * retry-later, or a negative value for a fatal error).
  */
 typedef int (*osdp_write_fn_t)(void *data, uint8_t *buf, int len);
 

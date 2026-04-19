@@ -103,6 +103,19 @@ jobs:
           name: python-package-distributions
           path: python/dist/
 
+  PyTest:
+    name: PyTest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Run pytest suite
+        run: ./scripts/run_pytests.sh
+
   PlatformIO:
     runs-on: ubuntu-latest
     strategy:

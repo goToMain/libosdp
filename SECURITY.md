@@ -20,7 +20,7 @@ LibOSDP will support the last 2 [releases][1] for security and bug fixes.
 
 ## Reporting a Vulnerability
 
-Please send an email to sidcha.dev@gmail.com ([GPG]([2])).
+Please send an email to sidcha.dev@gmail.com ([GPG][2]).
 
 ## Security Mailing List
 

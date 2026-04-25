@@ -10,7 +10,8 @@
 #include <osdp.h>
 
 /**
- * @file: LibOSDP classical wrapper. See osdp.h for documentation.
+ * @file osdp.hpp
+ * @brief LibOSDP classical wrapper. See osdp.h for documentation.
  */
 
 namespace OSDP {

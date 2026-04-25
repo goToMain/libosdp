@@ -109,7 +109,7 @@ commands and replies and their support status in LibOSDP [here][22].
 
 Optionally,
   * Python3 (host)
-  * [Doxygen][9] (host; for building the html docs as seen [here][6])
+  * [Doxygen][9] (host; for generating API metadata)
   * [OpenSSL][8] (host and target, optional - recommended)
   * [MbedTLS][7] (host and target, optional)
   * [PyTest][5] (host; for running the integrated test suite)
@@ -146,8 +146,7 @@ cmake -B build .
 cmake --build build --parallel
 ```
 
-Refer to the [documentation][23] for more information on build and cross
-compilation.
+Refer to the project links below for more information on build and usage.
 
 ### Run the test suite
 
@@ -169,18 +168,6 @@ is how you can run them:
 
 To add new tests for the feature you are working one, see the other tests in
 `pytest` directory.
-
-### Build HTML docs
-
-This sections is for those who want to build the HTML documentation for this
-project locally. The latest version of the doc can always be found at
-[doc.osdp.dev][6].
-
-Build the docs by doing the following (build directory has the html files).
-
-```sh
-./scripts/make-html-docs.sh
-```
 
 ## Contributions, Issues and Bugs
 
@@ -218,7 +205,6 @@ Your support will ensure sustained development of LibOSDP.
 [3]: https://github.com/goTomain/libosdp/workflows/Build%20CI/badge.svg
 [4]: https://github.com/goTomain/libosdp/actions?query=workflow%3A%22Build+CI%22
 [5]: https://docs.pytest.org/en/latest/
-[6]: https://doc.osdp.dev/
 [7]: https://github.com/ARMmbed/mbedtls
 [8]: https://www.openssl.org/
 [9]: https://www.doxygen.nl/index.html
@@ -234,15 +220,12 @@ Your support will ensure sustained development of LibOSDP.
 [19]: https://crates.io/search?q=libosdp
 [20]: https://www.securityindustry.org/industry-standards/open-supervised-device-protocol/
 [21]: https://doc.osdp.dev/protocol/
-[22]: https://doc.osdp.dev/protocol/commands-and-replies.html
-[23]: https://doc.osdp.dev/libosdp/build-and-install.html
+[22]: https://doc.osdp.dev/protocol/commands-and-replies
 [24]: https://github.com/goTomain/libosdp
 [25]: https://github.com/goTomain/c-utils
 [26]: https://doc.osdp.dev/api/
-[27]: https://doc.osdp.dev/protocol/faq.html
+[27]: https://doc.osdp.dev/protocol/faq
 [28]: https://github.com/goToMain/libosdp/issues/new/choose
-[29]: https://github.com/goToMain/libosdp/blob/master/python
-[30]: https://github.com/goToMain/libosdp/tree/master/tests/pytest/testlib
 [31]: https://github.com/goToMain/libosdp/issues
 [32]: https://img.shields.io/vcpkg/v/libosdp
 [33]: https://vcpkg.link/ports/libosdp

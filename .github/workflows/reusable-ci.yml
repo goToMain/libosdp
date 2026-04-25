@@ -49,21 +49,20 @@ jobs:
     - name: make check
       run: make V=1 check
 
-  DocBuild:
+  DoxygenCheck:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
       with:
         submodules: recursive
-    - name: Install dependencies
+    - name: Install Doxygen
       run: |
         sudo apt update
         sudo apt install -y doxygen
-        pip3 install -r doc/requirements.txt
     - name: Configure
       run: cmake -DCMAKE_BUILD_TYPE=Debug .
-    - name: Build docs
-      run: cmake --build . --parallel 7 --target html_docs
+    - name: Generate Doxygen XML
+      run: cmake --build . --parallel 7 --target doxygen_xml
 
   Test:
     runs-on: ubuntu-latest

@@ -119,6 +119,5 @@ def on_event_complete(event, status):
 pd.set_event_completion_handler(on_event_complete)
 ```
 
-[1]: https://doc.osdp.dev/api/
 [2]: https://github.com/goToMain/libosdp/blob/master/examples/python/cp_app.py
 [3]: https://github.com/goToMain/libosdp/blob/master/examples/python/pd_app.py

@@ -8,4 +8,4 @@ PlatformIO project.
 Note: These examples are provided only for demonstration purposes. A real world
 CP/PD device would have to do a lot more.
 
-1: https://docs.platformio.org/en/latest/what-is-platformio.html
+[1]: https://docs.platformio.org/en/latest/what-is-platformio.html

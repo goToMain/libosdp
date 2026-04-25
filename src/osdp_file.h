@@ -12,52 +12,24 @@
 #define TO_FILE(pd) (pd)->file
 
 /**
- * @brief OSDP specified command: File Transfer:
- *
- * @param type File transfer type
- *        - 1: opaque file contents recognizable by this specific PD
- *        - 2..127: Reserved for future use
- *        - 128..255: Reserved for private use
- * @param size File size (4 bytes,) little-endian format.
- * @param offset Offset in file of current message.
- * @param length Length of data section in this command.
- * @param data File contents. Variable length
+ * @brief OSDP specified file transfer command payload.
  */
 PACK(struct osdp_cmd_file_xfer {
-	uint8_t type;
-	uint32_t size;
-	uint32_t offset;
-	uint16_t length;
-	uint8_t data[];
+	uint8_t type;   /**< File transfer type: 1=opaque, 2..127 reserved, 128..255 private use. */
+	uint32_t size;  /**< File size in little-endian format. */
+	uint32_t offset; /**< Offset in the file for the current message. */
+	uint16_t length; /**< Length of the data section in this command. */
+	uint8_t data[]; /**< Variable-length file contents. */
 });
 
 /**
- * @brief OSDP specified command: File Transfer Stat:
- *
- * @param control Control flags.
- *        - bit-0: 1 = OK to interleave; 0 = dedicate for filetransfer
- *        - bit-1: 1 = shall leave secure channel for file transfer; 0 = stay in
- *                 secure channel if SC is active
- *        - bit-2: 1 = separate poll response is available; 0=no other activity
- * @param delay Request CP for a time delay in milliseconds before next
- *        CMD_FILETRANSFER message
- * @param status File transfer status. This is a signed little- endian number
- *        -  0: ok to proceed
- *        -  1: file contents processed
- *        -  2: rebooting now, expect full communications reset
- *        -  3: PD is finishing file transfer. PD should send CMD_FILETRANSFER
- *              with data length set to 0 (idle) until this status changes
- *        - -1: abort file transfer
- *        - -2: unrecognized file contents
- *        - -3: file data unacceptable (malformed)
- * @param rx_size Alternate maximum message size for CMD_FILETRANSFER. If set to
- *        0 then no change requested, otherwise use this value
+ * @brief OSDP specified file transfer status payload.
  */
 PACK(struct osdp_cmd_file_stat {
-	uint8_t control;
-	uint16_t delay;
-	int16_t status;
-	uint16_t rx_size;
+	uint8_t control; /**< Control flags: bit-0 interleave, bit-1 leave secure channel, bit-2 separate poll response available. */
+	uint16_t delay; /**< Requested delay in milliseconds before the next CMD_FILETRANSFER message. */
+	int16_t status; /**< Transfer status: 0 proceed, 1 processed, 2 rebooting, 3 finishing, -1 abort, -2 unrecognized, -3 malformed. */
+	uint16_t rx_size; /**< Alternate maximum CMD_FILETRANSFER size, or 0 to keep the current value. */
 });
 
 enum osdp_file_tx_state {

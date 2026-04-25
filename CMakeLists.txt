@@ -73,6 +73,24 @@ else()
 	include(GNUInstallDirs)
 endif()
 
+find_program(DOXYGEN_EXECUTABLE doxygen)
+if(DOXYGEN_EXECUTABLE)
+	set(DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/doxygen")
+	configure_file(
+		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in"
+		"${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+		@ONLY
+	)
+	add_custom_target(doxygen_xml
+		COMMAND "${DOXYGEN_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		COMMENT "Generating Doxygen XML"
+		VERBATIM
+	)
+else()
+	message(STATUS "Doxygen not found; doxygen_xml target unavailable")
+endif()
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -86,7 +104,6 @@ if (NOT OPT_OSDP_STATIC AND NOT OPT_OSDP_LIB_ONLY AND NOT MSVC)
 	add_subdirectory(tests/unit-tests)
 	add_subdirectory(examples/c)
 	add_subdirectory(examples/cpp)
-	add_subdirectory(doc)
 endif()
 
 ## uninstall target

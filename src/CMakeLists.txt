@@ -326,6 +326,23 @@ install(EXPORT LibOSDPTargets
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
 	COMPONENT config_files
 )
+
+# Compose find_dependency block for the consumer-side libosdpConfig.cmake.
+# When libosdp is built against MbedTLS, also ship our FindMbedTLS.cmake
+# alongside the package config so the consumer's find_dependency() resolves.
+if (OpenSSL_FOUND)
+	set(LIBOSDP_FIND_DEPENDENCY_BLOCK "find_dependency(OpenSSL)")
+elseif (MbedTLS_FOUND)
+	set(LIBOSDP_FIND_DEPENDENCY_BLOCK
+		"list(APPEND CMAKE_MODULE_PATH \"\${CMAKE_CURRENT_LIST_DIR}\")\nfind_dependency(MbedTLS)")
+	install(FILES "${PROJECT_SOURCE_DIR}/cmake/FindMbedTLS.cmake"
+		DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/libosdp"
+		COMPONENT config_files
+	)
+else()
+	set(LIBOSDP_FIND_DEPENDENCY_BLOCK "")
+endif()
+
 configure_package_config_file(
 	${PROJECT_SOURCE_DIR}/cmake/libosdpConfig.cmake.in
 	${CMAKE_BINARY_DIR}/libosdpConfig.cmake

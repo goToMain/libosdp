@@ -6,7 +6,7 @@
 
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/LibOSDPTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/libosdpTargets.cmake")
 
 if(@OpenSSL_FOUND@)
   include(CMakeFindDependencyMacro)

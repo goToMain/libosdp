@@ -156,7 +156,12 @@ if (OPT_BUILD_STATIC)
 set(LIB_OSDP_STATIC osdpstatic)
 set(LIB_TARGET ${LIB_OSDP_STATIC}) ## to be used in libosdp.pc.in
 add_library(${LIB_OSDP_STATIC} STATIC ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
-target_link_libraries(${LIB_OSDP_STATIC} ${LIB_OSDP_LIBRARIES})
+add_library(libosdp::osdpstatic ALIAS ${LIB_OSDP_STATIC})
+if (OpenSSL_FOUND)
+	target_link_libraries(${LIB_OSDP_STATIC} PUBLIC OpenSSL::Crypto)
+elseif (MbedTLS_FOUND)
+	target_link_libraries(${LIB_OSDP_STATIC} PUBLIC MbedTLS::mbedcrypto)
+endif()
 
 set_target_properties(${LIB_OSDP_STATIC} PROPERTIES
 	VERSION ${PROJECT_VERSION}
@@ -191,9 +196,9 @@ install(
 	TARGETS ${LIB_OSDP_STATIC}
 	COMPONENT distributables
 	EXPORT LibOSDPTargets
-	LIBRARY DESTINATION ${LIBOSDP_LIBRARY_DIR}
-	ARCHIVE DESTINATION ${LIBOSDP_LIBRARY_DIR}
-	PUBLIC_HEADER DESTINATION include/libosdp
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 )
 
 endif() # OPT_BUILD_STATIC
@@ -221,6 +226,7 @@ endif()
 set(LIB_OSDP_UTILS_SRC ${LIB_OSDP_UTILS_SRC} PARENT_SCOPE)
 
 add_library(${LIB_OSDP_SHARED} SHARED ${LIB_OSDP_SOURCES} ${LIB_OSDP_UTILS_SRC})
+add_library(libosdp::osdp ALIAS ${LIB_OSDP_SHARED})
 if (OpenSSL_FOUND)
 	target_link_libraries(${LIB_OSDP_SHARED} PUBLIC OpenSSL::Crypto)
 elseif (MbedTLS_FOUND)
@@ -261,13 +267,13 @@ install(
 	EXPORT LibOSDPTargets
 	LIBRARY
 		COMPONENT distributables
-		DESTINATION ${LIBOSDP_LIBRARY_DIR}
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE
 		COMPONENT distributables
-		DESTINATION ${LIBOSDP_LIBRARY_DIR}
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	PUBLIC_HEADER
 		COMPONENT headers
-		DESTINATION include/libosdp
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 )
 
 endif() # OPT_BUILD_SHARED
@@ -277,9 +283,29 @@ install(FILES ${PROJECT_SOURCE_DIR}/include/osdp_export.h
 	COMPONENT headers
 )
 
+# Default alias: pick shared if available, else static. Lets consumers
+# (both find_package and add_subdirectory) write
+# `target_link_libraries(... libosdp::libosdp)` without caring which
+# variant was built.
+if (OPT_BUILD_SHARED)
+	add_library(libosdp::libosdp ALIAS ${LIB_OSDP_SHARED})
+elseif (OPT_BUILD_STATIC)
+	add_library(libosdp::libosdp ALIAS ${LIB_OSDP_STATIC})
+endif()
+
 if (NOT OPT_BUILD_BARE_METAL)
 
-# pkg-config file
+# pkg-config file. LIBOSDP_PC_LIBDIR_REL/REQUIRES_PRIVATE are substituted
+# into misc/libosdp.pc.in. The lean Make build (configure.sh) substitutes
+# the same tokens with simpler defaults.
+set(LIBOSDP_PC_LIBDIR_REL "${CMAKE_INSTALL_LIBDIR}")
+if (OpenSSL_FOUND)
+	set(LIBOSDP_PC_REQUIRES_PRIVATE "openssl")
+elseif (MbedTLS_FOUND)
+	set(LIBOSDP_PC_REQUIRES_PRIVATE "mbedcrypto")
+else()
+	set(LIBOSDP_PC_REQUIRES_PRIVATE "")
+endif()
 configure_file(
 	${PROJECT_SOURCE_DIR}/misc/libosdp.pc.in
 	${CMAKE_BINARY_DIR}/libosdp.pc @ONLY
@@ -290,29 +316,30 @@ install(FILES ${CMAKE_BINARY_DIR}/libosdp.pc
 	COMPONENT config_files
 )
 
-## Package Configuration
+## Package Configuration. Names follow `find_package(libosdp)` convention:
+## libosdpConfig.cmake / libosdpConfigVersion.cmake / libosdpTargets.cmake.
 
 include(CMakePackageConfigHelpers)
 install(EXPORT LibOSDPTargets
-	FILE LibOSDPTargets.cmake
+	FILE libosdpTargets.cmake
 	NAMESPACE libosdp::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
 	COMPONENT config_files
 )
 configure_package_config_file(
-	${PROJECT_SOURCE_DIR}/cmake/LibOSDPConfig.cmake.in
-	${CMAKE_BINARY_DIR}/LibOSDPConfig.cmake
+	${PROJECT_SOURCE_DIR}/cmake/libosdpConfig.cmake.in
+	${CMAKE_BINARY_DIR}/libosdpConfig.cmake
 	INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
 	NO_CHECK_REQUIRED_COMPONENTS_MACRO
 	INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}
 )
-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/LibOSDPConfigVersion.cmake"
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/libosdpConfigVersion.cmake"
 	VERSION ${PROJECT_VERSION}
 	COMPATIBILITY SameMajorVersion
 )
 install(FILES
-          "${CMAKE_BINARY_DIR}/LibOSDPConfig.cmake"
-          "${CMAKE_CURRENT_BINARY_DIR}/LibOSDPConfigVersion.cmake"
+		"${CMAKE_BINARY_DIR}/libosdpConfig.cmake"
+		"${CMAKE_CURRENT_BINARY_DIR}/libosdpConfigVersion.cmake"
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libosdp
 	COMPONENT config_files
 )

@@ -21,8 +21,6 @@ set(PROJECT_HOMEPAGE     "https://doc.osdp.dev/")
 set(PROJECT_DESCRIPTION  "Open Supervised Device Protocol (OSDP) Library")
 set(PROJECT_LICENSE      "Apache License, Version 2.0 (Apache-2.0)")
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 ## Options
 option(OPT_OSDP_PACKET_TRACE "Enable raw packet trace for diagnostics" OFF)
 option(OPT_OSDP_DATA_TRACE "Enable command/reply data buffer tracing" OFF)

@@ -63,6 +63,12 @@ if (OpenSSL_FOUND)
 	message(STATUS "libosdp crypto backend: OpenSSL")
 elseif (MbedTLS_FOUND)
 	message(STATUS "libosdp crypto backend: MbedTLS")
+elseif (OPT_OSDP_CRYPTO_BACKEND STREQUAL "auto")
+	message(WARNING
+		"libosdp crypto backend: TinyAES (bundled). No system crypto "
+		"library was found in 'auto' mode; install OpenSSL or MbedTLS, "
+		"or set OPT_OSDP_CRYPTO_BACKEND=tinyaes explicitly to silence "
+		"this warning.")
 else()
 	message(STATUS "libosdp crypto backend: TinyAES (bundled)")
 endif()

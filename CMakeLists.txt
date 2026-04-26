@@ -113,9 +113,10 @@ if (NOT OPT_OSDP_STATIC AND NOT OPT_OSDP_LIB_ONLY AND NOT MSVC)
 	add_subdirectory(examples/cpp)
 endif()
 
-## uninstall target
+## uninstall target. Dedupe the manifest and tolerate already-removed
+## entries so re-runs (or future install rule changes) stay green.
 add_custom_target(uninstall
-	COMMAND xargs rm < ${CMAKE_BINARY_DIR}/install_manifest.txt
+	COMMAND sort -u ${CMAKE_BINARY_DIR}/install_manifest.txt | xargs rm -f
 )
 
 ## include package rules at last

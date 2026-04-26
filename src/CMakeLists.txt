@@ -204,7 +204,6 @@ install(
 	EXPORT LibOSDPTargets
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 )
 
 endif() # OPT_BUILD_STATIC
@@ -277,14 +276,13 @@ install(
 	ARCHIVE
 		COMPONENT distributables
 		DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	PUBLIC_HEADER
-		COMPONENT headers
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 )
 
 endif() # OPT_BUILD_SHARED
 
-install(FILES ${PROJECT_SOURCE_DIR}/include/osdp_export.h
+# Headers are installed once, regardless of how many lib variants were built.
+# Avoids duplicate manifest entries that broke the uninstall target.
+install(FILES ${LIB_OSDP_HEADERS}
 	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libosdp
 	COMPONENT headers
 )

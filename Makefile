@@ -107,7 +107,7 @@ install: libosdp
 	install -m 644 $(O)/libosdp.a $(DESTDIR)$(PREFIX)/lib/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig
 	install -m 644 $(O)/libosdp.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
-	install -d $(DESTDIR)$(PREFIX)/include/
-	install -m 644 include/osdp.h $(DESTDIR)$(PREFIX)/include/
-	install -m 644 include/osdp.hpp $(DESTDIR)$(PREFIX)/include/
-	install -m 644 $(O)/include/osdp_export.h $(DESTDIR)$(PREFIX)/include/
+	install -d $(DESTDIR)$(PREFIX)/include/libosdp/
+	install -m 644 include/osdp.h $(DESTDIR)$(PREFIX)/include/libosdp/
+	install -m 644 include/osdp.hpp $(DESTDIR)$(PREFIX)/include/libosdp/
+	install -m 644 include/osdp_export.h $(DESTDIR)$(PREFIX)/include/libosdp/

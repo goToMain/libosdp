@@ -107,6 +107,11 @@ void osdp_fill_random(uint8_t *buf, int len)
 	}
 }
 
+void osdp_fill_zeros(void *buf, int len)
+{
+	OPENSSL_cleanse(buf, (size_t)len);
+}
+
 void osdp_crypt_teardown()
 {
 }

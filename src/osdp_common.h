@@ -546,6 +546,7 @@ void osdp_crypt_setup();
 void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len);
 void osdp_fill_random(uint8_t *buf, int len);
+void osdp_fill_zeros(void *buf, int len);
 void osdp_crypt_teardown();
 
 /* --- from osdp_sc.c --- */

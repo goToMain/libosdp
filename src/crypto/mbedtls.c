@@ -9,6 +9,7 @@
 #include <assert.h>
 
 #include <mbedtls/aes.h>
+#include <mbedtls/platform_util.h>
 
 #ifdef MBEDTLS_PSA_CRYPTO_C
 #include <psa/crypto.h>
@@ -97,6 +98,11 @@ void osdp_fill_random(uint8_t *buf, int len)
 	int rc = mbedtls_ctr_drbg_random(&ctr_drbg_ctx, buf, len);
 	assert(rc == 0);
 #endif
+}
+
+void osdp_fill_zeros(void *buf, int len)
+{
+	mbedtls_platform_zeroize(buf, (size_t)len);
 }
 
 void osdp_crypt_teardown()

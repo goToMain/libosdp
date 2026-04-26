@@ -104,7 +104,7 @@ commands and replies and their support status in LibOSDP [here][22].
 ## Dependencies
 
   * A working C compiler; such as gcc, clang or msvc
-  * Cmake3 (or GNU Make)
+  * CMake 3.14 or newer (or GNU Make)
   * [goToMain/C-Utils][25] submodule
 
 Optionally,
@@ -128,10 +128,12 @@ export CCFLAGS=--specs=nosys.specs
 make
 ```
 
-To build LibOSDP and all its components you must have Cmake version 3.14 (or
+To build LibOSDP and all its components you must have CMake version 3.14 (or
 above) and a C compiler installed. This repository produces a `libosdp.so` and
-`libosdpstatic.a`; so depending on on your needs you can link these with -losdp
-or -losdpstatic, respectively.
+`libosdpstatic.a`; so depending on your needs you can link these with `-losdp`
+or `-losdpstatic`, respectively. Downstream CMake projects can consume the
+library with `find_package(libosdp CONFIG REQUIRED)` and link against the
+`libosdp::libosdp` target.
 
 Have a look at `examples/*` for a quick lookup on how to consume this library and
 structure your application.

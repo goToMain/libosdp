@@ -90,7 +90,7 @@ public:
 		}
 	}
 
-	bool setup(const struct osdp_channel *channel, int num_pd, osdp_pd_info_t *info)
+	bool setup(const struct osdp_channel *channel, int num_pd, const osdp_pd_info_t *info)
 	{
 		_ctx = osdp_cp_setup(channel, num_pd, info);
 		return _ctx != nullptr;
@@ -101,7 +101,7 @@ public:
 		return false;
 	}
 
-	int add_pd(int num_pd, osdp_pd_info_t *info)
+	int add_pd(int num_pd, const osdp_pd_info_t *info)
 	{
 		return osdp_cp_add_pd(_ctx, num_pd, info);
 	}
@@ -112,12 +112,12 @@ public:
 	}
 
 	[[deprecated]]
-	int send_command(int pd, struct osdp_cmd *cmd)
+	int send_command(int pd, const struct osdp_cmd *cmd)
 	{
 		return osdp_cp_submit_command(_ctx, pd, cmd);
 	}
 
-	int submit_command(int pd, struct osdp_cmd *cmd)
+	int submit_command(int pd, const struct osdp_cmd *cmd)
 	{
 		return osdp_cp_submit_command(_ctx, pd, cmd);
 	}
@@ -189,7 +189,7 @@ public:
 		}
 	}
 
-	bool setup(struct osdp_channel *channel, osdp_pd_info_t *info)
+	bool setup(struct osdp_channel *channel, const osdp_pd_info_t *info)
 	{
 		_ctx = osdp_pd_setup(channel, info);
 		return _ctx != nullptr;

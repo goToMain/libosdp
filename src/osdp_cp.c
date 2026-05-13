@@ -896,7 +896,8 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		if (osdp_millis_now() > pd->resp_expected) {
 			if (pd->phy_retry_count < OSDP_CMD_MAX_RETRIES) {
 				pd->phy_retry_count += 1;
-				LOG_DBG("No response in 200ms; probing (%d)",
+				LOG_DBG("No response in %dms post-transmit; probing (%d)",
+					OSDP_RESP_TOUT_MS,
 					pd->phy_retry_count);
 				cp_phy_state_wait(pd, OSDP_CMD_RETRY_WAIT_MS);
 				return OSDP_CP_ERR_DEFER;

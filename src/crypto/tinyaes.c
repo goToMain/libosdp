@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <utils/utils.h>
+
 #include "tinyaes_src.h"
 
 void osdp_crypt_setup()
@@ -48,11 +50,10 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 
 void osdp_fill_random(uint8_t *buf, int len)
 {
-	int i, rnd;
+	int i;
 
 	for (i = 0; i < len; i++) {
-		rnd = rand();
-		buf[i] = (uint8_t)(((float)rnd) / (float)RAND_MAX * 256);
+		buf[i] = (uint8_t)(rand_u32() & 0xFFu);
 	}
 }
 

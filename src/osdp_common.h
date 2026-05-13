@@ -142,8 +142,12 @@ do {\
 
 static inline __noreturn void die()
 {
+#ifdef __BARE_METAL__
+	for (;;) { }
+#else
 	exit(EXIT_FAILURE);
 	__unreachable();
+#endif
 }
 
 #define BUG() \

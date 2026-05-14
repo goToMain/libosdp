@@ -69,8 +69,10 @@ static PyObject *pyosdp_cp_sc_status(pyosdp_cp_t *self, PyObject *args)
 	return Py_BuildValue("I", bitmask);
 }
 
-int pyosdp_cp_event_cb(void *data, int address, struct osdp_event *event)
+int pyosdp_cp_event_cb(void *data, const osdp_t* ctx, int address, struct osdp_event *event)
 {
+	(void)(ctx);
+	
 	pyosdp_cp_t *self = data;
 	PyObject *arglist, *result, *event_dict;
 

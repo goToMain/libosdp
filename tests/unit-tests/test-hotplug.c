@@ -33,9 +33,10 @@ static struct test_hotplug_ctx g_test_ctx = {0};
 
 static bool wait_for_pd_online(int timeout_sec);
 
-int test_hotplug_event_callback(void *arg, int pd, struct osdp_event *ev)
+int test_hotplug_event_callback(void *arg, const osdp_t *cp_ctx, int pd, struct osdp_event *ev)
 {
 	ARG_UNUSED(pd);
+	ARG_UNUSED(cp_ctx);
 	struct test_hotplug_ctx *ctx = arg;
 
 	ctx->event_seen = true;

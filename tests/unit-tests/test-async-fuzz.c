@@ -27,11 +27,12 @@ struct async_test_data {
 	bool event_generated;
 };
 
-static int async_event_callback(void *data, int pd, struct osdp_event *event)
+static int async_event_callback(void *data, const osdp_t *ctx, int pd, struct osdp_event *event)
 {
 	struct async_test_data *d = data;
 
 	ARG_UNUSED(pd);
+	ARG_UNUSED(ctx);
 	if (event->type == OSDP_EVENT_CARDREAD) {
 		d->event_generated = true;
 	}

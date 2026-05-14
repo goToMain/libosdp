@@ -1025,6 +1025,8 @@ typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
  *
  * @param arg Opaque pointer provided by the application during callback
  * registration.
+ * @param ctx OSDP context, can be used to retrieve additional
+ * PD information. 
  * @param pd PD offset (0-indexed) of this PD in `osdp_pd_info_t *` passed to
  * osdp_cp_setup()
  * @param ev pointer to osdp_event struct (filled by libosdp).
@@ -1032,7 +1034,8 @@ typedef int (*pd_command_callback_t)(void *arg, struct osdp_cmd *cmd);
  * @retval 0 on handling the event successfully.
  * @retval -ve on errors.
  */
-typedef int (*cp_event_callback_t)(void *arg, int pd, struct osdp_event *ev);
+typedef int (*cp_event_callback_t)(void *arg, const osdp_t *ctx, int pd,
+				   struct osdp_event *ev);
 
 /**
  * @brief Terminal status of a submitted command/event object.

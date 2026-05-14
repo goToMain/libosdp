@@ -28,9 +28,10 @@ struct test_event_ctx {
 
 static struct test_event_ctx g_test_ctx = {0};
 
-int test_events_event_callback(void *arg, int pd, struct osdp_event *ev)
+int test_events_event_callback(void *arg, const osdp_t *cp_ctx, int pd, struct osdp_event *ev)
 {
 	ARG_UNUSED(pd);
+	ARG_UNUSED(cp_ctx);
 	struct test_event_ctx *ctx = arg;
 
 	ctx->event_seen = true;

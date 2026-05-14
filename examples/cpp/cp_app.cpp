@@ -50,8 +50,9 @@ static struct osdp_channel cp_channel = {
 	.close = nullptr,
 };
 
-int event_handler(void *data, int pd, struct osdp_event *event) {
+int event_handler(void *data, const osdp_t *ctx, int pd, struct osdp_event *event) {
 	(void)(data);
+	(void)(ctx);
 
 	std::cout << "PD" << pd << " EVENT: " << event->type << std::endl;
 	return 0;

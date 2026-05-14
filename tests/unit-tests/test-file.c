@@ -169,10 +169,11 @@ struct file_tx_notification {
 
 static struct file_tx_notification g_notif;
 
-static int event_callback(void *arg, int pd, struct osdp_event *ev)
+static int event_callback(void *arg, const osdp_t *ctx, int pd, struct osdp_event *ev)
 {
 	ARG_UNUSED(arg);
 	ARG_UNUSED(pd);
+	ARG_UNUSED(ctx);
 
 	if (ev->type != OSDP_EVENT_NOTIFICATION) {
 		return 0;

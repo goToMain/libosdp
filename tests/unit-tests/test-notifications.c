@@ -78,11 +78,12 @@ static int pd_cmd_cb(void *arg, struct osdp_cmd *cmd)
 	return 0;
 }
 
-static int cp_event_cb(void *arg, int pd, struct osdp_event *ev)
+static int cp_event_cb(void *arg, const osdp_t *ctx, int pd, struct osdp_event *ev)
 {
 	struct notif_ctx *nx = arg;
 
 	ARG_UNUSED(pd);
+	ARG_UNUSED(ctx);
 
 	if (ev->type != OSDP_EVENT_NOTIFICATION) {
 		return 0;

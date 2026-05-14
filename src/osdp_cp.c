@@ -58,10 +58,10 @@ enum osdp_cp_error_e {
 static void cp_dispatch_event(struct osdp_pd *pd,
 			      const struct osdp_event *event)
 {
-	struct osdp *ctx = pd_to_osdp(pd);
+	const struct osdp *ctx = pd_to_osdp(pd);
 
 	if (ctx->event_callback) {
-		ctx->event_callback(ctx->event_callback_arg, pd->idx,
+		ctx->event_callback(ctx->event_callback_arg, ctx, pd->idx,
 				    (struct osdp_event *)event);
 		osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 	}
@@ -966,7 +966,7 @@ static int cp_get_online_command(struct osdp_pd *pd)
 
 static void notify_pd_status(struct osdp_pd *pd, bool is_online)
 {
-	struct osdp *ctx = pd_to_osdp(pd);
+	const struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_event evt;
 
 	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
@@ -976,13 +976,13 @@ static void notify_pd_status(struct osdp_pd *pd, bool is_online)
 	evt.type = OSDP_EVENT_NOTIFICATION;
 	evt.notif.type = OSDP_NOTIFICATION_PD_STATUS;
 	evt.notif.arg0 = is_online;
-	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	ctx->event_callback(ctx->event_callback_arg, ctx, pd->idx, &evt);
 	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
 static void notify_sc_status(struct osdp_pd *pd)
 {
-	struct osdp *ctx = pd_to_osdp(pd);
+	const struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_event evt;
 
 	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
@@ -993,14 +993,14 @@ static void notify_sc_status(struct osdp_pd *pd)
 	evt.notif.type = OSDP_NOTIFICATION_SC_STATUS;
 	evt.notif.arg0 = sc_is_active(pd);
 	evt.notif.arg1 = sc_use_scbkd(pd);
-	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	ctx->event_callback(ctx->event_callback_arg, ctx, pd->idx, &evt);
 	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
 void osdp_file_tx_notify_done(struct osdp_pd *pd, int file_id,
 			      enum osdp_file_tx_outcome outcome)
 {
-	struct osdp *ctx = pd_to_osdp(pd);
+	const struct osdp *ctx = pd_to_osdp(pd);
 	struct osdp_event evt;
 
 	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
@@ -1011,7 +1011,7 @@ void osdp_file_tx_notify_done(struct osdp_pd *pd, int file_id,
 	evt.notif.type = OSDP_NOTIFICATION_FILE_TX_DONE;
 	evt.notif.arg0 = file_id;
 	evt.notif.arg1 = outcome;
-	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	ctx->event_callback(ctx->event_callback_arg, ctx, pd->idx, &evt);
 	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 
@@ -1280,7 +1280,7 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 {
 	int app_cmd;
 	struct osdp_event evt;
-	struct osdp *ctx = pd_to_osdp(pd);
+	const struct osdp *ctx = pd_to_osdp(pd);
 
 	if (!ctx->event_callback || !is_notifications_enabled(pd)) {
 		return;
@@ -1317,7 +1317,7 @@ static void notify_command_status(struct osdp_pd *pd, int status)
 	evt.notif.arg0 = app_cmd;
 	evt.notif.arg1 = status ? 0 : -1;
 
-	ctx->event_callback(ctx->event_callback_arg, pd->idx, &evt);
+	ctx->event_callback(ctx->event_callback_arg, ctx, pd->idx, &evt);
 	osdp_metrics_report(pd, OSDP_METRIC_EVENT);
 }
 

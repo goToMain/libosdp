@@ -58,9 +58,10 @@ void init_cp_info()
     cp_channel.send = serial1_send_func;
 }
 
-int event_handler(void *data, int pd, struct osdp_event *event)
+int event_handler(void *data, const osdp_t *ctx, int pd, struct osdp_event *event)
 {
     (void)(data);
+    (void)(ctx);
 
     Serial.println("Received an event!");
     return 0;

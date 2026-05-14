@@ -40,8 +40,9 @@ struct test_command_ctx {
 
 static struct test_command_ctx g_test_ctx = {0};
 
-int test_commands_event_callback(void *arg, int pd, struct osdp_event *ev)
+int test_commands_event_callback(void *arg, const osdp_t* cp_ctx, int pd, struct osdp_event *ev)
 {
+	ARG_UNUSED(cp_ctx);
 	ARG_UNUSED(pd);
 	struct test_command_ctx *ctx = arg;
 

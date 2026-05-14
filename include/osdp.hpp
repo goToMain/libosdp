@@ -71,6 +71,13 @@ protected:
 	osdp_t *_ctx;
 };
 
+class ControlPanel;
+
+class OSDP_EXPORT ControlPanelEventHandler {
+public:
+	virtual int event_handler(const ControlPanel& cp, int pd, struct osdp_event *ev) = 0;
+};
+
 class OSDP_EXPORT ControlPanel : public Common {
 public:
 	ControlPanel() {}
@@ -127,9 +134,9 @@ public:
 		return osdp_cp_flush_commands(_ctx, pd);
 	}
 
-	void set_event_callback(cp_event_callback_t cb, void *arg)
+	void set_event_callback(ControlPanelEventHandler *cb)
 	{
-		osdp_cp_set_event_callback(_ctx, cb, arg);
+		osdp_cp_set_event_callback(_ctx, ControlPanel::event_callback, cb);
 	}
 
 	void set_command_completion_callback(cp_command_completion_callback_t cb,
@@ -168,6 +175,17 @@ public:
 		return osdp_cp_is_pd_enabled(_ctx, pd);
 	}
 
+private:
+	static int event_callback(void *arg, const osdp_t *ctx, int pd,
+				   struct osdp_event *ev)
+	{
+		ControlPanel cp;
+		cp._ctx = const_cast<osdp_t *>(ctx); 
+		int result = static_cast<ControlPanelEventHandler*>(arg)
+			->event_handler(const_cast<const ControlPanel&>(cp), pd, ev);
+		cp._ctx = nullptr; 
+		return result;
+	}
 };
 
 class OSDP_EXPORT PeripheralDevice : public Common {

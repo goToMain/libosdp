@@ -58,14 +58,23 @@ void init_cp_info()
     cp_channel.send = serial1_send_func;
 }
 
-int event_handler(void *data, const osdp_t *ctx, int pd, struct osdp_event *event)
+class EventHandler : public OSDP::ControlPanelEventHandler
 {
-    (void)(data);
-    (void)(ctx);
+private:
+	const char* _message;
+public:
+	explicit EventHandler(const char* message) : _message{message} {}
 
-    Serial.println("Received an event!");
-    return 0;
-}
+	int event_handler(const OSDP::ControlPanel& cp, 
+					   int pd, struct osdp_event *event) override
+	{
+		(void)(cp);
+		(void)(pd);
+		(void)(event);
+		Serial.println("Received an event!");
+        return 0;
+	}
+};
 
 void setup()
 {
@@ -76,7 +85,9 @@ void setup()
 
     init_cp_info();
     cp.setup(&cp_channel, 1, pd_info);
-    cp.set_event_callback(event_handler, nullptr);
+
+	EventHandler handler { "Hello world!" };
+    cp.set_event_callback(&handler);
 }
 
 void loop()

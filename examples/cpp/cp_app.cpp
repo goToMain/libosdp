@@ -50,13 +50,22 @@ static struct osdp_channel cp_channel = {
 	.close = nullptr,
 };
 
-int event_handler(void *data, const osdp_t *ctx, int pd, struct osdp_event *event) {
-	(void)(data);
-	(void)(ctx);
+class EventHandler : public OSDP::ControlPanelEventHandler
+{
+private:
+	const char* _message;
+public:
+	explicit EventHandler(const char* message) : _message{message} {}
 
-	std::cout << "PD" << pd << " EVENT: " << event->type << std::endl;
-	return 0;
-}
+	int event_handler(const OSDP::ControlPanel& cp, 
+					   int pd, struct osdp_event *event) override
+	{
+		(void)(cp);
+		std::cout << "PD " << pd << " EVENT: " << event->type << std::endl;
+		std::cout << _message << std::endl;
+		return 0;
+	}
+};
 
 int main()
 {
@@ -66,11 +75,12 @@ int main()
 
 	cp.setup(&cp_channel, 1, pd_info);
 
-	cp.set_event_callback(event_handler, nullptr);
+	EventHandler handler { "Hello world!" };
+
+	cp.set_event_callback(&handler);
 
 	while (1) {
 		// your application code.
-
 		cp.refresh();
 		std::this_thread::sleep_for(std::chrono::microseconds(10 * 1000));
 	}

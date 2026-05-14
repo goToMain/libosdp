@@ -32,22 +32,22 @@ public:
 		osdp_set_log_callback(cb);
 	}
 
-	const char *get_version()
+	const char *get_version() const
 	{
 		return osdp_get_version();
 	}
 
-	const char *get_source_info()
+	const char *get_source_info() const
 	{
 		return osdp_get_source_info();
 	}
 
-	void get_status_mask(uint8_t *bitmask)
+	void get_status_mask(uint8_t *bitmask) const
 	{
 		osdp_get_status_mask(_ctx, bitmask);
 	}
 
-	void get_sc_status_mask(uint8_t *bitmask)
+	void get_sc_status_mask(uint8_t *bitmask) const
 	{
 		osdp_get_sc_status_mask(_ctx, bitmask);
 	}
@@ -57,7 +57,7 @@ public:
 		return osdp_file_register_ops(_ctx, pd, ops);
 	}
 
-	int file_tx_get_status(int pd, int *size, int *offset)
+	int file_tx_get_status(int pd, int *size, int *offset) const
 	{
 		return osdp_get_file_tx_status(_ctx, pd, size, offset);
 	}
@@ -101,7 +101,7 @@ public:
 		return false;
 	}
 
-	int add_pd(int num_pd, const osdp_pd_info_t *info)
+	int add_pd(int num_pd, const osdp_pd_info_t *info) const
 	{
 		return osdp_cp_add_pd(_ctx, num_pd, info);
 	}
@@ -138,12 +138,12 @@ public:
 		osdp_cp_set_command_completion_callback(_ctx, cb, arg);
 	}
 
-	int get_pd_id(int pd, struct osdp_pd_id *id)
+	int get_pd_id(int pd, struct osdp_pd_id *id) const
 	{
 		return osdp_cp_get_pd_id(_ctx, pd, id);
 	}
 
-	int get_capability(int pd, struct osdp_pd_cap *cap)
+	int get_capability(int pd, struct osdp_pd_cap *cap) const
 	{
 		return osdp_cp_get_capability(_ctx, pd, cap);
 	}
@@ -163,7 +163,7 @@ public:
 		return osdp_cp_enable_pd(_ctx, pd);
 	}
 
-	bool is_pd_enabled(int pd)
+	bool is_pd_enabled(int pd) const
 	{
 		return osdp_cp_is_pd_enabled(_ctx, pd);
 	}

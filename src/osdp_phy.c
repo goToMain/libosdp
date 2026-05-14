@@ -428,10 +428,18 @@ static int phy_validate_header(struct osdp_pd *pd, uint8_t *buf,
 
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
 	if (pkt_len > max_len ||
-	    pkt_len < sizeof(struct osdp_packet_header) + 1 ||
-	    (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
-	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+	    pkt_len < sizeof(struct osdp_packet_header) + 1) {
 		return OSDP_ERR_PKT_FMT;
+	}
+
+	/**
+	 * Wrong-direction packets must be silently skipped; on a multi-drop
+	 * bus, every PD sees every other PD's replies (along with commands to
+	 * other PDs).
+	 */
+	if ((is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
+	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+		return OSDP_ERR_PKT_SKIP;
 	}
 
 	return (int)(pkt_len + mark);

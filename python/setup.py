@@ -236,9 +236,9 @@ setup(
         )
     ],
     packages     = [ "osdp" ],
+    license_expression = "Apache-2.0",
     classifiers  = [
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     long_description              = long_description,

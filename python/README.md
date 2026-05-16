@@ -29,7 +29,7 @@ Or, from source using,
 ```sh
 git clone https://github.com/goToMain/libosdp --recurse-submodules
 cd libosdp/python
-python3 setup.py install
+pip install .
 ```
 
 ## Quick Start

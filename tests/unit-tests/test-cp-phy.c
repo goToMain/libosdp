@@ -883,17 +883,23 @@ int test_phy_decode_packet_broadcast(struct osdp *ctx)
 	int len, err, pkt_len;
 	struct osdp_pd *p = GET_CURRENT_PD(ctx);
 	reset_pd_packet_state(p);
-	uint8_t cmd_data[] = { CMD_POLL };
+	uint8_t reply_data[] = { REPLY_ACK };
 	uint8_t packet[32];
+	uint8_t expected[] = { REPLY_ACK };
 
 	printf(SUB_1 "Testing phy_decode_packet broadcast address -- ");
 
 	/* Skip sequence check to focus on broadcast address handling */
 	SET_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
 
-	/* Create a valid broadcast packet with address 0x7f */
-	uint8_t control = 0x01; /* sequence 1, no CRC - match working tests */
-	pkt_len = test_osdp_create_packet(0x7f, control, cmd_data, 1, packet, sizeof(packet));
+	/*
+	 * A PD that received a broadcast command keeps the broadcast address
+	 * (0x7f) in its reply and sets the reply bit, so the CP sees 0xff on
+	 * the wire. The CP must accept it instead of rejecting it as an
+	 * address mismatch.
+	 */
+	uint8_t control = 0x01; /* sequence 1, no CRC */
+	pkt_len = test_osdp_create_packet(0xff, control, reply_data, 1, packet, sizeof(packet));
 	if (pkt_len < 0) {
 		printf("failed to create packet!\n");
 		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
@@ -902,40 +908,52 @@ int test_phy_decode_packet_broadcast(struct osdp *ctx)
 
 	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
 	err = osdp_phy_check_packet(p);
-
-	/* For broadcast packets, OSDP_ERR_PKT_WAIT might be expected behavior */
-	if (err == OSDP_ERR_PKT_WAIT) {
-		/* Just verify that we can successfully create and parse a broadcast packet */
-		printf("success! (broadcast packet processed with expected wait state)\n");
-		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
-		return 0;
-	}
-
 	if (err) {
-		printf("failed! Broadcast should be accepted, got error %d\n", err);
+		printf("failed! Broadcast reply should be accepted, got error %d\n", err);
 		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
 		return -1;
 	}
 
-	/* Check if broadcast flag was set during processing */
-	if (!ISSET_FLAG(p, PD_FLAG_PKT_BROADCAST)) {
-		printf("failed! Broadcast flag not set\n");
-		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
-		return -1;
-	}
-
-	/* Try to decode */
 	if ((len = osdp_phy_decode_packet(p, &buf)) < 0) {
-		printf("success! (broadcast flag set, decode optional)\n");
+		printf("decode failed!\n");
 		CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
-		return 0;
+		return -1;
 	}
 
-	/* If decode succeeded, verify data */
-	uint8_t expected[] = { CMD_POLL };
 	CHECK_ARRAY(buf, len, expected);
 
 	CLEAR_FLAG(p, PD_FLAG_SKIP_SEQ_CHECK);
+	printf("success!\n");
+	return 0;
+}
+
+int test_phy_decode_packet_foreign_cp_command(struct osdp *ctx)
+{
+	int err, pkt_len;
+	struct osdp_pd *p = GET_CURRENT_PD(ctx);
+	reset_pd_packet_state(p);
+	uint8_t cmd_data[] = { CMD_POLL };
+	uint8_t packet[32];
+
+	printf(SUB_1 "Testing phy_decode_packet skips a foreign CP's command -- ");
+
+	/*
+	 * A command-direction packet (address MSB clear) on the bus can only
+	 * have come from a second CP, since a bus must have exactly one. The
+	 * CP must skip it instead of mistaking it for a reply.
+	 */
+	pkt_len = test_osdp_create_packet(0x65, 0x01, cmd_data, 1, packet, sizeof(packet));
+	if (pkt_len < 0) {
+		printf("failed to create packet!\n");
+		return -1;
+	}
+
+	osdp_rb_push_buf(p->rx_rb, packet, pkt_len);
+	err = osdp_phy_check_packet(p);
+	if (err != OSDP_ERR_PKT_SKIP) {
+		printf("failed! Expected OSDP_ERR_PKT_SKIP, got %d\n", err);
+		return -1;
+	}
 	printf("success!\n");
 	return 0;
 }
@@ -1475,6 +1493,7 @@ void run_cp_phy_tests(struct test *t)
 	DO_TEST(t, test_phy_decode_packet_sequence_mismatch);
 	DO_TEST(t, test_phy_decode_packet_invalid_som);
 	DO_TEST(t, test_phy_decode_packet_broadcast);
+	DO_TEST(t, test_phy_decode_packet_foreign_cp_command);
 	DO_TEST(t, test_phy_packet_too_large);
 	DO_TEST(t, test_phy_packet_too_small);
 	DO_TEST(t, test_phy_packet_zero_data);

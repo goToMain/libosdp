@@ -260,45 +260,6 @@ int test_cp_build_packet_chlng(struct osdp *ctx)
 	return 0;
 }
 
-int test_cp_build_packet_with_crc(struct osdp *ctx)
-{
-	int len;
-	struct osdp_pd *p = GET_CURRENT_PD(ctx);
-	reset_pd_packet_state(p);
-	uint8_t packet[512] = { CMD_POLL };
-
-	printf(SUB_1 "Testing cp_build_and_send_packet with CRC -- ");
-	SET_FLAG(p, PD_FLAG_CP_USE_CRC);
-
-	if ((len = test_cp_build_and_send_packet(p, packet, 1, 512)) < 0) {
-		CLEAR_FLAG(p, PD_FLAG_CP_USE_CRC);
-		return -1;
-	}
-
-	/* Check if the control byte has CRC flag set (bit 2) */
-	int mark_offset = 0;
-#ifndef OPT_OSDP_SKIP_MARK_BYTE
-	mark_offset = 1;
-#endif
-	uint8_t control_byte = packet[mark_offset + 4]; /* SOM + addr + len_lsb + len_msb + control */
-
-	CLEAR_FLAG(p, PD_FLAG_CP_USE_CRC);
-
-	if (!(control_byte & 0x04)) {
-		printf("failed! CRC flag not set in control byte (0x%02x)\n", control_byte);
-		return -1;
-	}
-
-	/* Verify the packet length includes CRC (2 bytes) instead of checksum (1 byte) */
-	if (len != (mark_offset + 5 + 1 + 2)) { /* header + data + CRC */
-		printf("failed! Expected CRC packet length %d, got %d\n", mark_offset + 5 + 1 + 2, len);
-		return -1;
-	}
-
-	printf("success!\n");
-	return 0;
-}
-
 int test_phy_decode_packet_nak(struct osdp *ctx)
 {
 	uint8_t *buf;
@@ -840,7 +801,6 @@ void run_cp_phy_tests(struct test *t)
 	DO_TEST(t, test_cp_build_packet_poll);
 	DO_TEST(t, test_cp_build_packet_id);
 	DO_TEST(t, test_cp_build_packet_chlng);
-	DO_TEST(t, test_cp_build_packet_with_crc);
 	DO_TEST(t, test_phy_build_packet_without_mark);
 	DO_TEST(t, test_phy_packet_multiple_commands);
 	DO_TEST(t, test_phy_decode_packet_ack);

@@ -170,6 +170,10 @@ other_files = [
     "utils/src/pcap_gen.c",
 ]
 
+# LICENSE lives at the repo root; vendor a copy so wheel/sdist builds
+# (which run from python/) can ship it as the PEP 639 License-File.
+license_file = "LICENSE"
+
 definitions = [
     "OPT_OSDP_PACKET_TRACE",
     # "OPT_OSDP_DATA_TRACE",
@@ -180,7 +184,7 @@ source_files = utils_sources + lib_sources + osdp_sys_sources
 
 try_vendor_sources(
     repo_root,
-    source_files + utils_includes + lib_includes + osdp_sys_include + other_files,
+    source_files + utils_includes + lib_includes + osdp_sys_include + other_files + [ license_file ],
     "vendor"
 )
 
@@ -236,13 +240,13 @@ setup(
         )
     ],
     packages     = [ "osdp" ],
+    license_expression = "Apache-2.0",
     classifiers  = [
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     long_description              = long_description,
     long_description_content_type = "text/markdown",
     python_requires               = ">=3.8",
-    package_data = { project_name : other_files }
+    license_files                 = [ os.path.join("vendor", license_file) ],
 )

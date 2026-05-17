@@ -428,10 +428,26 @@ static int phy_validate_header(struct osdp_pd *pd, uint8_t *buf,
 
 	pkt_len = (pkt->len_msb << 8) | pkt->len_lsb;
 	if (pkt_len > max_len ||
-	    pkt_len < sizeof(struct osdp_packet_header) + 1 ||
-	    (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) ||
-	    (is_pd_mode(pd) &&  (pkt->pd_address & 0x80))) {
+	    pkt_len < sizeof(struct osdp_packet_header) + 1) {
 		return OSDP_ERR_PKT_FMT;
+	}
+
+	/**
+	 * A PD on a multi-drop bus sees every other PD's replies; silently
+	 * skip those wrong-direction packets to play nice with others.
+	 */
+	if (is_pd_mode(pd) && (pkt->pd_address & 0x80)) {
+		return OSDP_ERR_PKT_SKIP;
+	}
+
+	/**
+	 * A bus must have exactly one CP. A command-direction packet seen by
+	 * a CP can only have come from a second CP contending for the bus;
+	 * warn about the misconfiguration and skip the packet.
+	 */
+	if (is_cp_mode(pd) && !(pkt->pd_address & 0x80)) {
+		LOG_WRN("Saw a command from another CP on the bus; skipping it");
+		return OSDP_ERR_PKT_SKIP;
 	}
 
 	return (int)(pkt_len + mark);

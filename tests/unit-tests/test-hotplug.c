@@ -247,6 +247,14 @@ static bool test_pd_command_blocking()
 		return false;
 	}
 
+	/* osdp_cp_disable_pd() only posts a request to the CP FSM; wait for
+	 * the FSM to actually transition the PD to disabled before exercising
+	 * command submission and re-enable below. */
+	if (!wait_for_pd_state(PD_STATE_DISABLED, 3)) {
+		printf(SUB_2 "PD didn't reach disabled state within timeout\n");
+		return false;
+	}
+
 	/* Try command on disabled PD - should fail */
 	reset_test_state();
 	ret = osdp_cp_submit_command(g_test_ctx.cp_ctx, 0, &cmd);
@@ -255,16 +263,26 @@ static bool test_pd_command_blocking()
 		return false;
 	}
 
-	/* Re-enable and test command works again */
+	/* Re-enable and test command works again. The PD is confirmed
+	 * disabled above, so enable must succeed. */
 	if (osdp_cp_enable_pd(g_test_ctx.cp_ctx, 0) != 0) {
-		printf(SUB_2 "Warning: enable returned error (might already be enabled)\n");
+		printf(SUB_2 "Failed to re-enable PD\n");
+		return false;
 	}
 
 	/* Wait for PD to come online before testing commands */
 	if (wait_for_pd_online(5)) {
+		reset_test_state();
 		ret = osdp_cp_submit_command(g_test_ctx.cp_ctx, 0, &cmd);
 		printf(SUB_2 "Command on re-enabled PD: %s\n",
 			   ret == 0 ? "SUCCESS" : "FAILED");
+		/* The CP queue keeps a reference to the caller-owned `cmd`
+		 * (app-owned queue data); wait for it to be consumed before
+		 * `cmd` leaves scope, else the CP runner dereferences a stale
+		 * stack address. */
+		if (ret == 0) {
+			wait_for_command(OSDP_CMD_BUZZER, 3);
+		}
 	} else {
 		printf(SUB_2 "PD didn't come online within timeout, skipping command test\n");
 	}

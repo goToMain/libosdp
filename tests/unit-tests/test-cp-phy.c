@@ -935,7 +935,7 @@ int test_phy_decode_packet_foreign_cp_command(struct osdp *ctx)
 	uint8_t cmd_data[] = { CMD_POLL };
 	uint8_t packet[32];
 
-	printf(SUB_1 "Testing phy_decode_packet skips a foreign CP's command -- ");
+	printf(SUB_1 "Testing phy_decode_packet ignores a foreign CP's command -- ");
 
 	/*
 	 * A command-direction packet (address MSB clear) on the bus can only

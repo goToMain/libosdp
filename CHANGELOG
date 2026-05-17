@@ -1,3 +1,15 @@
+v3.1.1
+------
+
+18 May 2026
+
+Point release to fix #298
+
+Fixes:
+  - unit-tests: Remove CRC tests now that the source patch is reverted
+  - Revert "CP: Add adaptive checksum/CRC-16 support with automatic fallback"
+
+
 v3.1.0
 ------
 

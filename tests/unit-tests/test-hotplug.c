@@ -272,9 +272,17 @@ static bool test_pd_command_blocking()
 
 	/* Wait for PD to come online before testing commands */
 	if (wait_for_pd_online(5)) {
+		reset_test_state();
 		ret = osdp_cp_submit_command(g_test_ctx.cp_ctx, 0, &cmd);
 		printf(SUB_2 "Command on re-enabled PD: %s\n",
 			   ret == 0 ? "SUCCESS" : "FAILED");
+		/* The CP queue keeps a reference to the caller-owned `cmd`
+		 * (app-owned queue data); wait for it to be consumed before
+		 * `cmd` leaves scope, else the CP runner dereferences a stale
+		 * stack address. */
+		if (ret == 0) {
+			wait_for_command(OSDP_CMD_BUZZER, 3);
+		}
 	} else {
 		printf(SUB_2 "PD didn't come online within timeout, skipping command test\n");
 	}

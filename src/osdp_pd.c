@@ -1118,6 +1118,10 @@ static int pd_send_reply(struct osdp_pd *pd)
 		return OSDP_PD_ERR_RETRY_SEND;
 	}
 	pd->reply_prebuilt = false;
+	/* packet_buf_len doubles as the staged TX reply length; clear it now
+	 * the reply is on the wire so the next RX cycle starts from zero. The
+	 * sent length lives on in last_tx_len for the seq-repeat cache. */
+	pd->packet_buf_len = 0;
 	if (ret < 0) {
 		return OSDP_PD_ERR_GENERIC;
 	}

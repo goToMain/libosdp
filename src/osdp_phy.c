@@ -89,9 +89,8 @@ void osdp_phy_release_packet(struct osdp_pd *pd)
 		pd->rx_pkt->max_len = 0;
 	}
 	pd->packet_len = 0;
-	pd->packet_buf_len = 0;
 	CLEAR_FLAG(pd, PD_FLAG_PKT_HAS_MARK);
-	pd->packet_buf = osdp_tx_staging_buf(pd);
+	pd->packet_buf = NULL;
 #else /* OPT_OSDP_RX_ZERO_COPY */
 	ARG_UNUSED(pd);
 #endif /* OPT_OSDP_RX_ZERO_COPY */

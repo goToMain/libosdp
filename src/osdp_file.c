@@ -34,6 +34,7 @@ static inline void file_state_reset(struct osdp_file *f)
 	f->state = OSDP_FILE_TX_STATE_IDLE;
 	f->outcome = OSDP_FILE_TX_OUTCOME_OK;
 	f->is_open = false;
+	f->keep_alive_pending = false;
 	f->file_id = 0;
 	f->tstamp = 0;
 	f->wait_time_ms = 0;
@@ -126,8 +127,13 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		LOG_WRN("TX_Build: Ignoring plaintext file transfer request");
 	}
 
-	if (f->state == OSDP_FILE_TX_STATE_WAIT) {
-		LOG_DBG("TX_Build: keep-alive");
+	/* PD-requested post-completion keep-alive: file is fully sent, PD
+	 * just wants the channel kept warm. No read attempt; emit a
+	 * header-only ping and let the PD drive completion via its next
+	 * stat reply. */
+	if (f->state == OSDP_FILE_TX_STATE_WAIT && f->offset == f->size) {
+		LOG_DBG("TX_Build: keep-alive (PD requested)");
+		f->length = 0;
 		write_file_tx_header(f, buf);
 		return FILE_TRANSFER_HEADER_SIZE;
 	}
@@ -150,9 +156,27 @@ int osdp_file_cmd_tx_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		goto reply_abort;
 	}
 	if (f->length == 0) {
-		LOG_WRN("TX_Build: Read 0 length chunk");
-		goto reply_abort;
+		/* App has no data ready right now. Park in WAIT and emit a
+		 * header-only keep-alive instead of tearing the transfer
+		 * down. The empty-read counter bounds the retry budget via
+		 * osdp_file_tx_get_command()'s OSDP_FILE_ERROR_RETRY_MAX
+		 * check, so a permanently-stuck app eventually still
+		 * aborts cleanly. */
+		f->errors++;
+		f->state = OSDP_FILE_TX_STATE_WAIT;
+		LOG_DBG("TX_Build: app busy; keep-alive (errors=%d)",
+			f->errors);
+		write_file_tx_header(f, buf);
+		return FILE_TRANSFER_HEADER_SIZE;
 	}
+
+	/* Got data: resume INPROG if we were waiting and clear the
+	 * empty-read retry budget. */
+	if (f->state == OSDP_FILE_TX_STATE_WAIT) {
+		LOG_DBG("TX_Build: app recovered; resuming");
+		f->state = OSDP_FILE_TX_STATE_INPROG;
+	}
+	f->errors = 0;
 
 	/* fill the packet buffer (layout: struct osdp_cmd_file_xfer) */
 	write_file_tx_header(f, buf);
@@ -201,11 +225,14 @@ int osdp_file_cmd_stat_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_PLAIN_TEXT, stat.control & 0x02)
 	SET_FLAG_V(f, OSDP_FILE_TX_FLAG_POLL_RESP, stat.control & 0x04)
 
+	/* If the prior tx was a host-busy keep-alive (length == 0), keep
+	 * the empty-read counter intact so a permanently-busy app still
+	 * hits OSDP_FILE_ERROR_RETRY_MAX. Successful data chunks clear it
+	 * in tx_build. */
 	f->offset += f->length;
 	f->wait_time_ms = stat.delay;
 	f->tstamp = osdp_millis_now();
 	f->length = 0;
-	f->errors = 0;
 
 	if (stat.status < 0) {
 		LOG_ERR("Stat_Decode: File transfer error; "
@@ -247,7 +274,10 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
-	if ((size_t)len <= sizeof(struct osdp_cmd_file_xfer)) {
+	/* A header-only frame (zero-length data) is the CP keep-alive
+	 * ping. Accept it; reject only frames that are short of the
+	 * fixed header. */
+	if ((size_t)len < sizeof(struct osdp_cmd_file_xfer)) {
 		LOG_ERR("TX_Decode: invalid decode len:%d exp>=%zu",
 			len, sizeof(struct osdp_cmd_file_xfer));
 		return -1;
@@ -293,6 +323,16 @@ int osdp_file_cmd_tx_decode(struct osdp_pd *pd, uint8_t *buf, int len)
 		return -1;
 	}
 
+	/* CP keep-alive ping (zero-length frame): skip the user write
+	 * callback entirely and leave offset unchanged. stat_build will
+	 * reply ACK without ERR_INVALID once it sees the flag. */
+	if (xfer.length == 0) {
+		LOG_DBG("TX_Decode: keep-alive ping at off:%d", xfer.offset);
+		f->keep_alive_pending = true;
+		f->length = 0;
+		return 0;
+	}
+
 	f->length = f->ops.write(f->ops.arg, data, xfer.length, xfer.offset);
 	if (f->length != xfer.length) {
 		LOG_ERR("TX_Decode: user write failed! rc:%d len:%d off:%d",
@@ -329,7 +369,11 @@ int osdp_file_cmd_stat_build(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		return -1;
 	}
 
-	if (f->length > 0) {
+	if (f->keep_alive_pending) {
+		/* CP-side keep-alive ping: ACK without advancing offset so
+		 * the CP can retry the same chunk once its app recovers. */
+		f->keep_alive_pending = false;
+	} else if (f->length > 0) {
 		f->offset += f->length;
 	} else {
 		stat.status = OSDP_FILE_TX_STATUS_ERR_INVALID;

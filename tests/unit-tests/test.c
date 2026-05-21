@@ -847,6 +847,8 @@ int test_end(struct test *t)
 static void run_file_tx_suite(struct test *t)
 {
 	run_file_tx_tests(t, false);
+	run_file_tx_intermittent_tests(t);
+	run_file_tx_permanent_busy_tests(t);
 }
 
 int main(int argc, char *argv[])

@@ -63,7 +63,7 @@ PACK(struct osdp_cmd_file_stat {
 enum osdp_file_tx_state {
 	OSDP_FILE_TX_STATE_IDLE,   /* no active transfer */
 	OSDP_FILE_TX_STATE_INPROG, /* data being exchanged */
-	OSDP_FILE_TX_STATE_WAIT,   /* CP only: PD requested more time */
+	OSDP_FILE_TX_STATE_WAIT,   /* CP only: app or PD requested time */
 	OSDP_FILE_TX_STATE_DONE,   /* terminal; outcome captured */
 };
 
@@ -73,6 +73,7 @@ struct osdp_file {
 	enum osdp_file_tx_state state;
 	enum osdp_file_tx_outcome outcome;
 	bool is_open;
+	bool keep_alive_pending; /* PD: last frame was a zero-length ping */
 	int length;
 	uint32_t size;
 	uint32_t offset;

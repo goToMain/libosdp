@@ -1,3 +1,15 @@
+v3.2.2
+------
+
+09 June 2026
+
+Point release for Apache Mynewt platform support
+
+Fixes:
+  - utils: Bump submodule pointer for Apache Mynewt fix
+  - API: Undefine API_DEPRECATED to fix macos build issue
+
+
 v3.2.1
 ------
 

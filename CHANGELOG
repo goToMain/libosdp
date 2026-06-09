@@ -6,6 +6,9 @@ v3.2.2
 Point release for Apache Mynewt platform support
 
 Fixes:
+  - Update cibuildwheel version to 3.4.0
+  - Fix test build failure on windows platforms
+  - Enable MSVC's conformwat /Zc:preprocessor
   - utils: Bump submodule pointer for Apache Mynewt fix
   - API: Undefine API_DEPRECATED to fix macos build issue
 

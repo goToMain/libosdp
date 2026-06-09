@@ -96,6 +96,9 @@ jobs:
           CIBW_ARCHS_WINDOWS: ${{ matrix.archs }}
           # Only build for the selected image type
           CIBW_BUILD: "*-${{ matrix.image }}_*"
+          # Python 3.8 is EOL and unbuildable: the PEP 639 license_expression
+          # in setup.py needs setuptools>=77, which dropped Python 3.8.
+          CIBW_SKIP: "cp38-*"
 
       - name: List produced wheels
         shell: bash

@@ -77,7 +77,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: matrix.platform == 'linux'
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v4
 
       - name: Set up Python (for macOS/Windows runners cibuildwheel uses local Pythons)
         if: matrix.platform != 'linux'

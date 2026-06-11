@@ -107,7 +107,7 @@ jobs:
           ls -la ${{ env.CIBW_OUTPUT_DIR }} || true
 
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cibw-wheelhouse-${{ matrix.os }}-${{ matrix.image }}-${{ matrix.archs }}
           path: ${{ env.CIBW_OUTPUT_DIR }}
@@ -125,7 +125,7 @@ jobs:
           pushd python
           python -m build --sdist
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: cibw-sdist
           path: python/dist/*.tar.gz

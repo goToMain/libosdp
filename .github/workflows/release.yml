@@ -65,7 +65,7 @@ jobs:
           fi
 
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: RELEASE.txt
@@ -96,7 +96,7 @@ jobs:
       - name: Pack built binaries
         run: cmake --build build --target package
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: libosdp-${{ matrix.os }}-binaries
           path: build/artifacts/
@@ -174,7 +174,7 @@ jobs:
           # in setup.py needs setuptools>=77, which dropped Python 3.8.
           CIBW_SKIP: "cp38-*"
       - name: Upload wheelhouse artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cibw-wheelhouse-${{ matrix.os }}-${{ matrix.image }}-${{ matrix.archs }}
           path: ${{ env.CIBW_OUTPUT_DIR }}
@@ -193,7 +193,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel build
           pushd python
           python -m build --sdist
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: cibw-sdist
           path: python/dist/*.tar.gz
@@ -209,7 +209,7 @@ jobs:
           submodules: recursive
       - name: Archive PlatformIO package source
         run: git archive --format tar.gz --prefix "libosdp-${GITHUB_REF_NAME}/" -o libosdp-platformio-${GITHUB_REF_NAME}.tar.gz "${GITHUB_SHA}"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: platformio-package
           path: libosdp-platformio-${{ github.ref_name }}.tar.gz

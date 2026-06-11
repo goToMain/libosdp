@@ -71,7 +71,7 @@ jobs:
 
       - name: Set up QEMU (Linux cross-arch userspace for aarch64)
         if: matrix.platform == 'linux'
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: all
 

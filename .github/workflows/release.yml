@@ -149,7 +149,7 @@ jobs:
           submodules: recursive
       - name: Set up QEMU
         if: matrix.platform == 'linux'
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: all
       - name: Set up Docker Buildx

@@ -10,9 +10,9 @@
 
 This is a cross-platform open source implementation of IEC 60839-11-5 Open
 Supervised Device Protocol (OSDP). The protocol is intended to improve
-interoperability among access control and security products. It supports Secure
-Channel (SC) for encrypted and authenticated communication between configured
-devices.
+[interoperability][40] among access control and security products. It supports
+Secure Channel (SC) for encrypted and authenticated communication between
+configured devices.
 
 OSDP describes the communication protocol for interfacing one or more Peripheral
 Devices (PD) to a Control Panel (CP) over a two-wire RS-485 multi-drop serial
@@ -27,7 +27,7 @@ This protocol is developed and maintained by [Security Industry Association][20]
 
   - Supports secure channel communication (AES-128) by default and provides a
     custom init-time flag to enforce a higher level of security not mandated by
-    the specification
+    the specification ([see][41])
   - Can be used to setup a PD or CP mode of operation (see [examples][39]).
   - Exposes a well defined contract though a single [header file][38].
   - Cross-platform; can be built to run on bare-metal embedded devices, Linux,
@@ -237,3 +237,5 @@ Your support will ensure sustained development of LibOSDP.
 [37]: https://crates.io/crates/osdpctl
 [38]: https://github.com/goToMain/libosdp/blob/master/include/osdp.h
 [39]: https://github.com/goToMain/libosdp/tree/master/examples
+[40]: https://doc.osdp.dev/libosdp/compatibility
+[41]: https://doc.osdp.dev/libosdp/secure-channel

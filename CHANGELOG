@@ -1,3 +1,18 @@
+v3.1.2
+------
+
+14 June 2026
+
+Point fix for #298; cherry-picks b922873
+
+Fixes:
+  - CP: Fix bug in sequence number progression
+  - ci: Trigger PyPI publish on tag push instead of workflow_run
+  - API: Undefine API_DEPRECATED to fix macos build issue
+  - ci: Replace deprecated macos-13 runner with macos-15-intel
+  - Update macos runners that were deprecated
+
+
 v3.1.1
 ------
 
